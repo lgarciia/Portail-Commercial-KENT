@@ -1,0 +1,1180 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Evol Analyse — PSA</title>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --line:rgba(255,255,255,0.10);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.62);
+      --muted2:rgba(255,255,255,0.46);
+      --accent:#7c3aed;
+      --accent2:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ff6b6b;
+      --shadow:0 18px 40px rgba(0,0,0,.45);
+      --radius:18px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:
+        radial-gradient(1200px 800px at 20% 0%, rgba(124,58,237,.20), transparent 55%),
+        radial-gradient(900px 700px at 85% 10%, rgba(34,197,94,.12), transparent 55%),
+        radial-gradient(900px 700px at 50% 110%, rgba(245,158,11,.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      padding:18px 14px 28px;
+    }
+    .wrap{max-width:1280px;margin:0 auto;position:relative;isolation:isolate;}
+
+    /* ===== NAVBAR ===== */
+    .navbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 16px;border-radius:18px;
+      background: rgba(255,255,255,0.04);
+      border:1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      position: sticky; top: 12px; z-index: 20;
+    }
+    .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+    .logo{
+      width:42px;height:42px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(34,197,94,.70));
+      box-shadow: 0 10px 26px rgba(124,58,237,.25);
+      flex:0 0 auto;
+    }
+    .title{display:flex;flex-direction:column;line-height:1.1;min-width:0;}
+    .title b{font-size:15px; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .title span{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .navRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.15s transform, .15s background;
+      white-space:nowrap;
+      user-select:none;
+    }
+    .btn:hover{background: rgba(255,255,255,0.08)}
+    .btn:active{transform: scale(.98)}
+    .btn.primary{
+      border-color: rgba(124,58,237,.35);
+      background: rgba(124,58,237,.14);
+    }
+    .btn.ghost{background: rgba(255,255,255,0.04);}
+
+    select, input[type="text"]{
+      height:42px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.25);
+      color:var(--text);
+      padding:0 12px;
+      outline:none;
+      font-size:14px;
+      font-weight:900;
+    }
+    input[type="text"]::placeholder{color: rgba(255,255,255,0.38); font-weight:700;}
+    select:focus, input[type="text"]:focus{
+      border-color: rgba(124,58,237,.55);
+      box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+    }
+
+    .card{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      backdrop-filter: blur(10px);
+      margin-top:12px;
+    }
+    .sectionTitle{
+      margin:0 0 10px;
+      font-size:13px;color:var(--muted);
+      letter-spacing:.3px;text-transform:uppercase;
+    }
+    .meta{
+      margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;
+      color:var(--muted);font-size:12px;
+    }
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+    }
+    .dot{width:8px;height:8px;border-radius:99px;background: rgba(255,255,255,0.25);}
+    .dot.ok{background: var(--accent2)}
+    .dot.warn{background: var(--warn)}
+    .dot.bad{background: var(--bad)}
+    .muted{color:var(--muted);}
+
+    /* ===== TABLE ===== */
+    .tableWrap{overflow:auto;border-radius:16px;border:1px solid var(--line);}
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:980px;}
+    thead th{
+      position:sticky; top:0;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--line);
+      padding:10px 10px;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.25px;
+      color: var(--muted);
+      font-weight:950;
+      text-align:right;
+      white-space:nowrap;
+    }
+    thead th:first-child{text-align:left;}
+    tbody td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      font-size:13px;
+      font-weight:850;
+      text-align:right;
+      white-space:nowrap;
+    }
+    tbody td:first-child{text-align:left;}
+    tbody tr:hover{background: rgba(255,255,255,0.03);}
+    tbody tr.clickable{cursor:pointer;}
+    .pos{color: var(--accent2);}
+    .neg{color: var(--bad);}
+    .zero{color: rgba(255,255,255,0.70);}
+    .rowTotal td{
+      background: rgba(124,58,237,.14);
+      border-bottom:1px solid rgba(124,58,237,.25);
+      font-weight:950;
+    }
+    .rowCum td{
+      background: rgba(34,197,94,.10);
+      border-bottom:1px solid rgba(34,197,94,.20);
+      font-weight:950;
+    }
+    input.comment{
+      width:100%;min-width:280px;height:36px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.22);
+      color: var(--text);
+      padding:0 10px;
+      outline:none;
+      font-size:13px;
+      font-weight:800;
+    }
+
+    /* ✅ bouton “Sem.” dans la cellule MOIS */
+    .moCell{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .wkMini{
+      height:22px;
+      padding:0 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.86);
+      font-weight:950;
+      font-size:11px;
+      cursor:pointer;
+      opacity:.75;
+      transition:.12s;
+      white-space:nowrap;
+    }
+    .wkMini:hover{ opacity:1; background: rgba(255,255,255,0.10); transform: translateY(-1px); }
+    .wkMini:active{ transform: translateY(0px); }
+
+    /* ===== DRAWER (Drilldown) ===== */
+    .drawerOverlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+      display:none;
+      z-index: 50;
+    }
+    .drawerOverlay.show{display:block;}
+    .drawer{
+      position:fixed; right:0; top:0; bottom:0;
+      width:min(560px, 92vw);
+      background: rgba(10,14,22,0.92);
+      border-left:1px solid var(--line);
+      box-shadow: -18px 0 40px rgba(0,0,0,.55);
+      transform: translateX(100%);
+      transition: .18s transform ease;
+      z-index: 60;
+      display:flex;
+      flex-direction:column;
+    }
+    .drawer.show{transform: translateX(0);}
+    .drawerHeader{
+      padding:14px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .drawerHeader b{font-size:14px;}
+    .drawerHeader span{font-size:12px;color:var(--muted);}
+    .drawerBody{padding:14px; overflow:auto; flex:1;}
+    .drawerActions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:8px;}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .pill:hover{background: rgba(255,255,255,0.08);}
+    .listCard{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      border-radius:16px;
+      padding:12px;
+      margin-bottom:10px;
+      cursor:pointer;
+    }
+    .listCard:hover{background: rgba(255,255,255,0.06);}
+    .listTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+    .listTop .name{font-weight:950;font-size:13px;min-width:0;word-break:break-word;}
+    .listTop .val{font-weight:950;font-size:13px;white-space:nowrap;}
+    .listSub{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12px;}
+    .tag{
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:4px 8px;
+      background: rgba(255,255,255,0.03);
+    }
+    .empty{color:var(--muted);font-weight:900;padding:12px 0;}
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="navbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <b>Evol Analyse — PSA</b>
+        <span>Budget vs Réalisé — clic mois → clients → achats</span>
+      </div>
+    </div>
+
+    <div class="navRight">
+      <span class="muted" style="font-weight:900;font-size:12px;">Année</span>
+      <select id="yearSelect" title="Choix de l'année"></select>
+      <button class="btn primary" id="btnReload">Recharger</button>
+      <button class="btn ghost" id="btnOpenEvol">Évol Report vs Budget</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sectionTitle">Sources</p>
+    <div class="meta">
+      <span class="chip"><span class="dot" id="dotBudget"></span><span id="budgetText">Budget : —</span></span>
+      <span class="chip"><span class="dot" id="dotReal"></span><span id="realText">Réalisé : —</span></span>
+      <span class="chip"><span class="dot ok" id="dotYear"></span><span id="yearText">Année : —</span></span>
+    </div>
+    <div class="meta" style="margin-top:8px;">
+      <span class="chip"><span class="dot" id="dotUrlBudget"></span><span id="urlBudgetText">URL budget : —</span></span>
+      <span class="chip"><span class="dot" id="dotUrlReal"></span><span id="urlRealText">URL réalisé : —</span></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sectionTitle">Analyse mensuelle</p>
+    <div class="tableWrap">
+      <table id="tbl"></table>
+    </div>
+    <div class="meta" style="margin-top:10px;">
+      <span class="muted" style="font-weight:850;">Clic sur un mois = drilldown. (Le commentaire est sauvegardé localement.)</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Drawer drilldown -->
+<div class="drawerOverlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawerHeader">
+    <div style="min-width:0">
+      <b id="drawerTitle">—</b><br>
+      <span id="drawerSub">—</span>
+      <div class="drawerActions" id="drawerActions"></div>
+    </div>
+    <button class="btn" id="btnCloseDrawer" style="padding:9px 10px">✕</button>
+  </div>
+  <div class="drawerBody" id="drawerBody"></div>
+</div>
+
+<script>
+(function(){
+  /* =======================
+     CONFIG À DUPLIQUER
+  ======================= */
+  const CONFIG = {
+    LABEL: "PSA",
+    YEAR_MIN: 2024,
+    YEAR_MAX: 2028,
+
+    // Budget (tu peux mettre 1 fichier unique ou par année)
+    BUDGET_FILES: {
+    2024: "budgetpsa.xlsx",
+    2025: "budgetpsa.xlsx",
+    2026: "budgetpsa.xlsx",
+    2027: "budgetpsa.xlsx",
+    2028: "budgetpsa.xlsx",
+    },
+
+    // Réel PSA (fetch)
+    REAL_FILE: "activitereelpsa.xlsx",
+
+    // ✅ colonne date pour la vue semaine (si elle existe dans ton réel)
+    REAL_DATE_COL: "Date vente",
+
+    // Page Evol Report vs Budget
+    EVOL_REPORT_PAGE: "evol-reporting-psa.html",
+
+    // ✅ Page vue semaine
+    WEEK_VIEW_PAGE: "vue_semaine.html",
+
+    // Cache commentaires
+    COMMENT_CACHE_PREFIX: "EVOL_ANALYSE_PSA_COMMENTS_",
+  };
+
+  const MONTHS = [
+    "Janvier","Février","Mars","Avril","Mai","Juin",
+    "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
+  ];
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthIdx = now.getMonth(); // 0..11
+
+  const el = {
+    yearSelect: document.getElementById("yearSelect"),
+    btnReload: document.getElementById("btnReload"),
+    btnOpenEvol: document.getElementById("btnOpenEvol"),
+    tbl: document.getElementById("tbl"),
+
+    dotBudget: document.getElementById("dotBudget"),
+    budgetText: document.getElementById("budgetText"),
+    dotReal: document.getElementById("dotReal"),
+    realText: document.getElementById("realText"),
+    yearText: document.getElementById("yearText"),
+
+    dotUrlBudget: document.getElementById("dotUrlBudget"),
+    urlBudgetText: document.getElementById("urlBudgetText"),
+    dotUrlReal: document.getElementById("dotUrlReal"),
+    urlRealText: document.getElementById("urlRealText"),
+
+    drawerOverlay: document.getElementById("drawerOverlay"),
+    drawer: document.getElementById("drawer"),
+    btnCloseDrawer: document.getElementById("btnCloseDrawer"),
+    drawerTitle: document.getElementById("drawerTitle"),
+    drawerSub: document.getElementById("drawerSub"),
+    drawerBody: document.getElementById("drawerBody"),
+    drawerActions: document.getElementById("drawerActions"),
+  };
+
+  let selectedYear = (currentYear>=CONFIG.YEAR_MIN && currentYear<=CONFIG.YEAR_MAX) ? currentYear : CONFIG.YEAR_MAX;
+  let budgetMonthly = new Array(12).fill(0);
+  let realMonthly = new Array(12).fill(0);
+
+  // lignes réel pour drilldown (clients/achats + vue semaine)
+  // normalized rows: {monthIdx, weekIdx, date, clientInternal, clientName, amount, ref, des, qty}
+  let realRows = [];
+
+  let comments = {};
+
+  initYearSelect();
+  loadComments(selectedYear);
+  bindDrawer();
+
+  refreshAll(false);
+
+  el.yearSelect.addEventListener("change", async () => {
+    selectedYear = Number(el.yearSelect.value);
+    loadComments(selectedYear);
+    await refreshAll(false);
+  });
+
+  el.btnReload.addEventListener("click", async () => {
+    await refreshAll(true);
+  });
+
+  el.btnOpenEvol.addEventListener("click", () => {
+    window.location.href = `${CONFIG.EVOL_REPORT_PAGE}?year=${encodeURIComponent(selectedYear)}`;
+  });
+
+  async function refreshAll(){
+    el.yearText.textContent = `Année : ${selectedYear}`;
+    await loadBudgetForYear(selectedYear);
+    await loadRealForYear(selectedYear);
+    renderTable();
+  }
+
+  function initYearSelect(){
+    const years = [];
+    for(let y=CONFIG.YEAR_MIN;y<=CONFIG.YEAR_MAX;y++) years.push(y);
+    el.yearSelect.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join("");
+    el.yearSelect.value = String(selectedYear);
+    el.yearText.textContent = `Année : ${selectedYear}`;
+  }
+
+  /* =========================
+     BUDGET: fetch + somme mensuelle globale
+  ========================= */
+  async function loadBudgetForYear(year){
+    const file = CONFIG.BUDGET_FILES[year] || "budgetpsa.xlsx";
+    el.budgetText.textContent = `Budget : chargement… (${file})`;
+    setDot(el.dotBudget, "warn");
+    setDot(el.dotUrlBudget, "warn");
+    el.urlBudgetText.textContent = `URL budget : —`;
+
+    try{
+      const {buffer, usedUrl} = await fetchXlsxWithFallback(file);
+      el.urlBudgetText.textContent = `URL budget : ${usedUrl}`;
+      setDot(el.dotUrlBudget, "ok");
+
+      const wb = XLSX.read(buffer, { type: "array" });
+      const sheetName = pickBestSheet(wb);
+      const ws = wb.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+      if (!raw.length){
+        budgetMonthly = new Array(12).fill(0);
+        el.budgetText.textContent = `Budget : fichier vide`;
+        setDot(el.dotBudget, "bad");
+        return;
+      }
+
+      const headerMap = buildHeaderMap(raw[0]);
+      const monthCols = MONTHS.map(m => findCol(headerMap, [m]));
+      const missing = monthCols.map((c,i)=>!c?MONTHS[i]:null).filter(Boolean);
+      if (missing.length){
+        budgetMonthly = new Array(12).fill(0);
+        el.budgetText.textContent = `Budget : colonnes mois manquantes (${missing.join(", ")})`;
+        setDot(el.dotBudget, "bad");
+        return;
+      }
+
+      const sums = new Array(12).fill(0);
+      for (const r of raw){
+        for (let i=0;i<12;i++) sums[i] += toNumber(r[monthCols[i]]);
+      }
+      budgetMonthly = sums;
+
+      el.budgetText.textContent = `Budget : OK (${file}) — sheet: ${sheetName}`;
+      setDot(el.dotBudget, "ok");
+    }catch(err){
+      console.error(err);
+      budgetMonthly = new Array(12).fill(0);
+      el.budgetText.textContent = `Budget : fetch/lecture impossible`;
+      setDot(el.dotBudget, "bad");
+      setDot(el.dotUrlBudget, "bad");
+      el.urlBudgetText.textContent = `URL budget : erreur`;
+    }
+  }
+
+  /* =========================
+     REAL: fetch + somme mensuelle globale + stockage drilldown
+     ✅ + weekIdx calculé via Date vente si dispo
+  ========================= */
+  async function loadRealForYear(year){
+    const file = CONFIG.REAL_FILE;
+
+    el.realText.textContent = `Réalisé : chargement… (${file})`;
+    setDot(el.dotReal, "warn");
+    setDot(el.dotUrlReal, "warn");
+    el.urlRealText.textContent = `URL réalisé : —`;
+
+    try{
+      const {buffer, usedUrl} = await fetchXlsxWithFallback(file);
+      el.urlRealText.textContent = `URL réalisé : ${usedUrl}`;
+      setDot(el.dotUrlReal, "ok");
+
+      const wb = XLSX.read(buffer, { type: "array" });
+      const sheetName = pickBestSheet(wb);
+      const ws = wb.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+      if (!raw.length){
+        realMonthly = new Array(12).fill(0);
+        realRows = [];
+        el.realText.textContent = `Réalisé : fichier vide`;
+        setDot(el.dotReal, "bad");
+        return;
+      }
+
+      const headerMap = buildHeaderMap(raw[0]);
+
+      // ✅ date vente (pour semaines)
+      const colDate = findCol(headerMap, [CONFIG.REAL_DATE_COL, "date vente", "date"]);
+      // mois fallback
+      const colMonth = findCol(headerMap, ["mois","mois2","month"]);
+      // montant
+      const colAmt = findCol(headerMap, [
+        "montant prix achat kent",
+        "ca total",
+        "ca",
+        "chiffre d'affaire",
+        "chiffre affaire",
+        "montant",
+        "montant ca"
+      ]);
+
+      // client
+      const colClientInt = findCol(headerMap, [
+        "n° client interne","no client interne","n client interne","numero client interne","n° client","code livré","code livre","code"
+      ]);
+      const colClientName = findCol(headerMap, ["nom du client","nom client","client"]);
+
+      // détail achats (si dispo)
+      const colRef = findCol(headerMap, ["reference produits","référence produits","reference produit","référence produit","ref produit","ref"]);
+      const colDes = findCol(headerMap, ["désignation","designation","design"]);
+      const colQty = findCol(headerMap, ["quantité payante servie","quantite payante servie","quantité","quantite","qte","qté"]);
+
+      if (!colAmt || (!colDate && !colMonth)){
+        realMonthly = new Array(12).fill(0);
+        realRows = [];
+        el.realText.textContent = `Réalisé : colonnes Date/Mois ou CA introuvables`;
+        setDot(el.dotReal, "bad");
+        return;
+      }
+
+      const sums = new Array(12).fill(0);
+      const rows = [];
+
+      for (const r of raw){
+        const amount = toNumber(r[colAmt]);
+        if (!amount) continue;
+
+        let dt = null;
+        if (colDate) dt = parseAnyDate(r[colDate]);
+
+        let mi = -1;
+        if (dt) mi = dt.getMonth(); // 0..11
+        if (mi < 0 && colMonth) mi = monthToIndex(String(r[colMonth] ?? "").trim());
+        if (mi < 0) continue;
+
+        sums[mi] += amount;
+
+        rows.push({
+          monthIdx: mi,
+          weekIdx: dt ? weekBucket(dt) : -1, // 0..3 si date ok
+          date: dt,
+          clientInternal: colClientInt ? String(r[colClientInt] ?? "").trim() : "",
+          clientName: colClientName ? String(r[colClientName] ?? "").trim() : "",
+          amount,
+          ref: colRef ? String(r[colRef] ?? "").trim() : "",
+          des: colDes ? String(r[colDes] ?? "").trim() : "",
+          qty: colQty ? toNumber(r[colQty]) : 0,
+        });
+      }
+
+      realMonthly = sums;
+      realRows = rows;
+
+      const dateInfo = colDate ? `Date OK (${CONFIG.REAL_DATE_COL})` : `Sans Date vente (mode mois2)`;
+      el.realText.textContent = `Réalisé : OK (${file}) — sheet: ${sheetName} — ${dateInfo}`;
+      setDot(el.dotReal, "ok");
+    }catch(err){
+      console.error(err);
+      realMonthly = new Array(12).fill(0);
+      realRows = [];
+      el.realText.textContent = `Réalisé : erreur fetch/lecture`;
+      setDot(el.dotReal, "bad");
+      setDot(el.dotUrlReal, "bad");
+      el.urlRealText.textContent = `URL réalisé : erreur`;
+    }
+  }
+
+  /* =========================
+     TABLE main
+     ✅ Ajout bouton “Sem.” par mois
+  ========================= */
+  function renderTable(){
+    const prevMonthIdx = computePrevMonthIdx(selectedYear);
+
+    const rows = MONTHS.map((m, idx) => {
+      const budget = budgetMonthly[idx] || 0;
+      const real = realMonthly[idx] || 0;
+      const ecart = real - budget;
+      const comment = comments[idx] || "";
+      return { idx, mois: m, real, budget, ecart, comment };
+    });
+
+    const totalBudget = rows.reduce((s,r)=>s+r.budget,0);
+    const totalReal = rows.reduce((s,r)=>s+r.real,0);
+    const totalEcart = totalReal - totalBudget;
+
+    const cumBudget = (prevMonthIdx >= 0) ? rows.slice(0, prevMonthIdx+1).reduce((s,r)=>s+r.budget,0) : 0;
+    const cumReal = (prevMonthIdx >= 0) ? rows.slice(0, prevMonthIdx+1).reduce((s,r)=>s+r.real,0) : 0;
+    const cumEcart = cumReal - cumBudget;
+
+    el.tbl.innerHTML = `
+      <thead>
+        <tr>
+          <th style="text-align:left;min-width:190px">Mois</th>
+          <th style="min-width:150px">CA Réalisé</th>
+          <th style="min-width:150px">Budget</th>
+          <th style="min-width:150px">Écart</th>
+          <th style="text-align:left;min-width:340px">Commentaire</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr class="clickable" data-month-row="${r.idx}">
+            <td style="text-align:left">
+              <div class="moCell">
+                <span>${esc(r.mois)}</span>
+                <button class="wkMini" type="button"
+                  data-weekbtn="1"
+                  data-mi="${r.idx}"
+                  data-mlabel="${escAttr(r.mois)}"
+                  title="Voir semaine par semaine">
+                  Sem.
+                </button>
+              </div>
+            </td>
+            <td>${fmt(r.real)}</td>
+            <td>${fmt(r.budget)}</td>
+            <td>${fmtEcart(r.ecart)}</td>
+            <td style="text-align:left">
+              <input class="comment" data-month="${r.idx}" placeholder="Note / analyse…" value="${escAttr(r.comment)}" />
+            </td>
+          </tr>
+        `).join("")}
+
+        <tr class="rowTotal">
+          <td style="text-align:left">TOTAL</td>
+          <td>${fmt(totalReal)}</td>
+          <td>${fmt(totalBudget)}</td>
+          <td>${fmtEcart(totalEcart)}</td>
+          <td class="muted" style="text-align:left">Somme annuelle</td>
+        </tr>
+
+        <tr class="rowCum">
+          <td style="text-align:left">CUMUL M-1</td>
+          <td>${fmt(cumReal)}</td>
+          <td>${fmt(cumBudget)}</td>
+          <td>${fmtEcart(cumEcart)}</td>
+          <td class="muted" style="text-align:left">
+            ${prevMonthIdx >= 0 ? `Somme Jan → ${MONTHS[prevMonthIdx]}` : `Aucun mois à cumuler (année future)`}
+          </td>
+        </tr>
+      </tbody>
+    `;
+
+    // bind comments
+    el.tbl.querySelectorAll("input[data-month]").forEach(inp => {
+      inp.addEventListener("input", () => {
+        const mi = Number(inp.getAttribute("data-month"));
+        comments[mi] = inp.value || "";
+        saveComments(selectedYear);
+      });
+    });
+
+    // ✅ click "Sem." -> page semaine (sans déclencher le drilldown)
+    el.tbl.querySelectorAll("button[data-weekbtn='1']").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+
+        const mi = Number(btn.getAttribute("data-mi"));
+        const monthLabel = btn.getAttribute("data-mlabel") || "";
+
+        // month key attendu par vue_semaine : jan/feb/... (comme tes autres pages)
+        const mk = monthIdxToKey(mi);
+
+        const qs = new URLSearchParams({
+          entity: CONFIG.LABEL,
+          month: mk,
+          monthLabel,
+          realFile: CONFIG.REAL_FILE,
+          dateCol: CONFIG.REAL_DATE_COL,
+
+          // budget : on passe le fichier + année (la page semaine refetch si tu veux)
+          // 👉 si tu préfères localStorage (comme evol-reporting), dis-moi et je te le câble pareil.
+          year: String(selectedYear),
+      budgetFile: (CONFIG.BUDGET_FILES[selectedYear] || "budgetpsa.xlsx")
+        });
+
+        window.location.href = `${CONFIG.WEEK_VIEW_PAGE}?${qs.toString()}`;
+      });
+    });
+
+    // bind month click -> drilldown clients
+    el.tbl.querySelectorAll("tr[data-month-row]").forEach(tr => {
+      tr.addEventListener("click", (e) => {
+        if (e.target && (e.target.tagName === "INPUT" || e.target.closest("button"))) return;
+        const mi = Number(tr.getAttribute("data-month-row"));
+        openMonthDetails(mi);
+      });
+    });
+  }
+
+  function fmtEcart(v){
+    const cls = v > 0 ? "pos" : v < 0 ? "neg" : "zero";
+    return `<span class="${cls}">${fmt(v)}</span>`;
+  }
+
+  /* =========================
+     Drilldown: Month -> Clients
+  ========================= */
+  function openMonthDetails(monthIdx){
+    const monthName = MONTHS[monthIdx];
+
+    const rows = realRows.filter(r => r.monthIdx === monthIdx);
+    const agg = new Map();
+
+    for (const r of rows){
+      const key = makeClientId(r.clientInternal, r.clientName);
+      if (!agg.has(key)){
+        agg.set(key, {
+          clientInternal: r.clientInternal,
+          clientName: r.clientName,
+          amount: 0,
+          lines: 0,
+        });
+      }
+      const it = agg.get(key);
+      it.amount += r.amount;
+      it.lines += 1;
+    }
+
+    let clients = Array.from(agg.values()).sort((a,b)=>b.amount-a.amount);
+    const total = clients.reduce((s,x)=>s+x.amount,0);
+
+    showDrawer({
+      title: `Détail clients — ${monthName}`,
+      sub: `${CONFIG.LABEL} • ${selectedYear} • ${clients.length} clients • CA ${fmt(total)}`,
+      actions: [
+        { label: "Évol Report vs Budget", onClick: () => goEvolReport(monthIdx) },
+        { label: "Fermer", onClick: closeDrawer },
+      ],
+      bodyHtml: `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <input id="clientSearch" type="text" placeholder="Rechercher un client…" style="flex:1;min-width:220px;">
+          <button class="pill" id="sortClientBtn">Tri CA: ▼</button>
+        </div>
+        <div id="clientList">
+          ${clients.length ? clients.map(c => clientCardHtml(c)).join("") : `<div class="empty">Aucune ligne réel pour ce mois.</div>`}
+        </div>
+      `,
+      afterRender: () => {
+        const search = document.getElementById("clientSearch");
+        const list = document.getElementById("clientList");
+        const sortBtn = document.getElementById("sortClientBtn");
+
+        let desc = true;
+
+        function render(listData){
+          list.innerHTML = listData.length
+            ? listData.map(c => clientCardHtml(c)).join("")
+            : `<div class="empty">Aucun client.</div>`;
+
+          list.querySelectorAll("[data-client]").forEach(card => {
+            card.addEventListener("click", () => {
+              const cid = card.getAttribute("data-client");
+              const obj = listData.find(x => makeClientId(x.clientInternal, x.clientName) === cid);
+              if (obj) openClientDetails(monthIdx, obj.clientInternal, obj.clientName);
+            });
+          });
+        }
+
+        function apply(){
+          const q = norm(search.value || "");
+          let filtered = clients.filter(c => {
+            const a = norm(c.clientInternal);
+            const b = norm(c.clientName);
+            return !q || a.includes(q) || b.includes(q);
+          });
+
+          filtered.sort((a,b)=> desc ? (b.amount-a.amount) : (a.amount-b.amount));
+          render(filtered);
+        }
+
+        sortBtn.addEventListener("click", () => {
+          desc = !desc;
+          sortBtn.textContent = `Tri CA: ${desc ? "▼" : "▲"}`;
+          apply();
+        });
+
+        search.addEventListener("input", () => apply());
+        apply();
+      }
+    });
+
+    function clientCardHtml(c){
+      const id = makeClientId(c.clientInternal, c.clientName);
+      return `
+        <div class="listCard" data-client="${escAttr(id)}">
+          <div class="listTop">
+            <div class="name">${esc(c.clientName || "—")}</div>
+            <div class="val">${fmt(c.amount)}</div>
+          </div>
+          <div class="listSub">
+            <span class="tag">N°: <b>${esc(c.clientInternal || "—")}</b></span>
+            <span class="tag">Lignes: <b>${c.lines}</b></span>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  /* =========================
+     Drilldown: Client -> Purchases (month)
+  ========================= */
+  function openClientDetails(monthIdx, clientInternal, clientName){
+    const monthName = MONTHS[monthIdx];
+
+    const rows = realRows.filter(r =>
+      r.monthIdx === monthIdx &&
+      norm(r.clientInternal) === norm(clientInternal) &&
+      norm(r.clientName) === norm(clientName)
+    );
+
+    const total = rows.reduce((s,x)=>s+x.amount,0);
+
+    const hasProduct = rows.some(r => (r.ref || r.des));
+    let blocksHtml = "";
+
+    if (hasProduct){
+      const agg = new Map();
+      for (const r of rows){
+        const k = (r.ref || "") + "||" + (r.des || "");
+        if (!agg.has(k)){
+          agg.set(k, { ref: r.ref, des: r.des, qty: 0, amount: 0, lines: 0 });
+        }
+        const it = agg.get(k);
+        it.qty += (r.qty || 0);
+        it.amount += r.amount;
+        it.lines += 1;
+      }
+      const items = Array.from(agg.values()).sort((a,b)=>b.amount-a.amount);
+
+      blocksHtml = `
+        ${items.map(it => `
+          <div class="listCard" style="cursor:default;">
+            <div class="listTop">
+              <div class="name">${esc(it.des || it.ref || "—")}</div>
+              <div class="val">${fmt(it.amount)}</div>
+            </div>
+            <div class="listSub">
+              <span class="tag">Ref: <b>${esc(it.ref || "—")}</b></span>
+              <span class="tag">Qté: <b>${fmt(it.qty)}</b></span>
+              <span class="tag">Lignes: <b>${it.lines}</b></span>
+            </div>
+          </div>
+        `).join("")}
+      `;
+    } else {
+      blocksHtml = `
+        <div class="empty">Pas de colonnes Réf/Désignation détectées → affichage brut des lignes.</div>
+        ${rows.slice(0, 300).map(r => `
+          <div class="listCard" style="cursor:default;">
+            <div class="listTop">
+              <div class="name">Ligne</div>
+              <div class="val">${fmt(r.amount)}</div>
+            </div>
+            <div class="listSub">
+              <span class="tag">N°: <b>${esc(r.clientInternal || "—")}</b></span>
+              <span class="tag">Client: <b>${esc(r.clientName || "—")}</b></span>
+            </div>
+          </div>
+        `).join("")}
+      `;
+    }
+
+    showDrawer({
+      title: `Achats — ${monthName}`,
+      sub: `${esc(clientName || "—")} • ${esc(clientInternal || "—")} • CA ${fmt(total)}`,
+      actions: [
+        { label: "← Clients", onClick: () => openMonthDetails(monthIdx) },
+        { label: "Évol Report vs Budget", onClick: () => goEvolReport(monthIdx) },
+        { label: "Fermer", onClick: closeDrawer },
+      ],
+      bodyHtml: blocksHtml
+    });
+  }
+
+  function goEvolReport(monthIdx){
+    window.location.href = `${CONFIG.EVOL_REPORT_PAGE}?year=${encodeURIComponent(selectedYear)}&month=${encodeURIComponent(monthIdx+1)}`;
+  }
+
+  /* =========================
+     Drawer helpers
+  ========================= */
+  function bindDrawer(){
+    el.btnCloseDrawer.addEventListener("click", closeDrawer);
+    el.drawerOverlay.addEventListener("click", closeDrawer);
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeDrawer();
+    });
+    window.addEventListener("pageshow", () => closeDrawer()); // bfcache safe
+  }
+
+  function showDrawer({title, sub, actions, bodyHtml, afterRender}){
+    el.drawerTitle.textContent = title || "—";
+    el.drawerSub.textContent = sub || "—";
+    el.drawerBody.innerHTML = bodyHtml || "";
+    el.drawerActions.innerHTML = (actions || []).map((a, i) =>
+      `<button class="pill" data-act="${i}">${esc(a.label)}</button>`
+    ).join("");
+
+    el.drawerActions.querySelectorAll("[data-act]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.getAttribute("data-act"));
+        const a = actions[idx];
+        if (a && typeof a.onClick === "function") a.onClick();
+      });
+    });
+
+    el.drawerOverlay.classList.add("show");
+    el.drawer.classList.add("show");
+    if (typeof afterRender === "function") afterRender();
+  }
+
+  function closeDrawer(){
+    el.drawerOverlay.classList.remove("show");
+    el.drawer.classList.remove("show");
+  }
+
+  /* =========================
+     CUMUL M-1 logic
+  ========================= */
+  function computePrevMonthIdx(year){
+    if (year < currentYear) return 11;
+    if (year > currentYear) return -1;
+    return Math.max(-1, currentMonthIdx - 1);
+  }
+
+  /* =========================
+     Comments cache
+  ========================= */
+  function commentsKey(year){ return CONFIG.COMMENT_CACHE_PREFIX + String(year); }
+
+  function loadComments(year){
+    comments = {};
+    try{
+      const raw = localStorage.getItem(commentsKey(year));
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === "object") comments = obj;
+    }catch{}
+  }
+  function saveComments(year){
+    try{
+      localStorage.setItem(commentsKey(year), JSON.stringify(comments || {}));
+    }catch{}
+  }
+
+  /* =========================
+     Fetch helpers (GitHub safe)
+  ========================= */
+  async function fetchXlsxWithFallback(fileName){
+    const pageDir = location.href.replace(/[#?].*$/,"").replace(/\/[^\/]*$/, "/");
+    const urlSame = new URL(fileName, pageDir).toString();
+    const urlData = new URL("data/" + fileName, pageDir).toString();
+
+    const candidates = [urlSame, urlData];
+    let lastErr = "";
+
+    for (const u of candidates){
+      const url = u + (u.includes("?") ? "&" : "?") + "v=" + Date.now();
+      const res = await fetch(url, { cache: "no-store" });
+      const buf = await res.arrayBuffer();
+
+      if (!res.ok){
+        lastErr = `HTTP ${res.status} sur ${u}`;
+        continue;
+      }
+
+      const sniff = sniffBuffer(buf);
+      if (sniff.looksHtml || !sniff.isZip){
+        lastErr = `Contenu invalide sur ${u} (HTML/404 ou pas XLSX)`;
+        continue;
+      }
+
+      return { buffer: buf, usedUrl: u };
+    }
+
+    throw new Error(lastErr || "fetchXlsxWithFallback failed");
+  }
+
+  function sniffBuffer(arrayBuffer){
+    const u8 = new Uint8Array(arrayBuffer);
+    const a = u8[0], b = u8[1];
+    const isZip = (a === 0x50 && b === 0x4B); // PK
+
+    const head = u8.slice(0, Math.min(220, u8.length));
+    let preview = "";
+    try{ preview = new TextDecoder("utf-8").decode(head).trim(); }catch{ preview = ""; }
+    const p = (preview || "").toLowerCase();
+    const looksHtml = p.startsWith("<") || p.includes("<!doctype html") || p.includes("<html");
+    return { isZip, looksHtml };
+  }
+
+  function pickBestSheet(wb){
+    let best = wb.SheetNames[0];
+    let bestScore = -1;
+    for (const name of wb.SheetNames){
+      const ws = wb.Sheets[name];
+      const ref = ws && ws["!ref"];
+      if (!ref) continue;
+      const range = XLSX.utils.decode_range(ref);
+      const rows = (range.e.r - range.s.r + 1);
+      const cols = (range.e.c - range.s.c + 1);
+      const score = rows * cols;
+      if (score > bestScore){
+        bestScore = score;
+        best = name;
+      }
+    }
+    return best;
+  }
+
+  /* =========================
+     Header tolerant helpers
+  ========================= */
+  function buildHeaderMap(sampleRow){
+    const map = {};
+    for (const k of Object.keys(sampleRow || {})){
+      map[norm(k)] = k;
+    }
+    return map;
+  }
+  function findCol(headerMap, candidates){
+    for (const c of candidates){
+      const nk = norm(c);
+      if (headerMap[nk]) return headerMap[nk];
+    }
+    return null;
+  }
+  function norm(s){
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+  function toNumber(v){
+    if (v === null || v === undefined) return 0;
+    if (typeof v === "number") return isFinite(v) ? v : 0;
+    const s = String(v).trim();
+    if (!s) return 0;
+    const n = Number(s.replace(/\s/g,"").replace(",","."));
+    return isFinite(n) ? n : 0;
+  }
+  function fmt(n){
+    const x = Number(n) || 0;
+    return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(x);
+  }
+  function setDot(dotEl, type){
+    dotEl.className = "dot " + (type === "ok" ? "ok" : type === "bad" ? "bad" : "warn");
+  }
+  function esc(str){
+    return String(str ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+  function escAttr(str){
+    return esc(str).replace(/"/g, "&quot;");
+  }
+
+  function monthToIndex(m){
+    const map = {
+      "janvier":0,"jan":0,"1":0,
+      "fevrier":1,"février":1,"fev":1,"2":1,
+      "mars":2,"3":2,
+      "avril":3,"4":3,
+      "mai":4,"5":4,
+      "juin":5,"6":5,
+      "juillet":6,"7":6,
+      "aout":7,"août":7,"8":7,
+      "septembre":8,"sep":8,"9":8,
+      "octobre":9,"oct":9,"10":9,
+      "novembre":10,"nov":10,"11":10,
+      "decembre":11,"décembre":11,"dec":11,"12":11
+    };
+    return map[norm(m)] ?? -1;
+  }
+
+  function monthIdxToKey(i){
+    const keys = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+    return keys[i] || "jan";
+  }
+
+  // ✅ 4 semaines fixes : 1..7 / 8..14 / 15..21 / 22..fin
+  function weekBucket(date){
+    const d = date.getDate();
+    if (d <= 7) return 0;
+    if (d <= 14) return 1;
+    if (d <= 21) return 2;
+    return 3;
+  }
+
+  function parseAnyDate(v){
+    if (!v && v !== 0) return null;
+    if (v instanceof Date && !isNaN(v.getTime())) return v;
+
+    // Excel serial
+    if (typeof v === "number" && isFinite(v)){
+      const d = XLSX.SSF.parse_date_code(v);
+      if (!d) return null;
+      const dt = new Date(d.y, (d.m||1)-1, d.d||1);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    const s = String(v).trim();
+    if (!s) return null;
+
+    // dd/mm/yyyy
+    const m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+    if (m1){
+      const dd = Number(m1[1]), mm = Number(m1[2]), yy = Number(m1[3]);
+      const yyyy = yy < 100 ? 2000 + yy : yy;
+      const dt = new Date(yyyy, mm-1, dd);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    const t = Date.parse(s);
+    return isNaN(t) ? null : new Date(t);
+  }
+
+  function makeClientId(clientInternal, clientName){
+    const a = norm(clientInternal).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+    const b = norm(clientName).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+    return (a || "noid") + "__" + (b || "noname");
+  }
+
+})();
+</script>
+</body>
+</html>

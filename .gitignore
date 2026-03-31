@@ -1,0 +1,6 @@
+~$*.xlsx
+.DS_Store
+Thumbs.db
+.vscode/
+.vercel/
+node_modules/

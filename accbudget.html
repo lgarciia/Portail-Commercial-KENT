@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Espace budgétaire</title>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --stroke:rgba(255,255,255,0.12);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.6);
+      --shadow:0 18px 45px rgba(0,0,0,0.35);
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Segoe UI,Roboto,sans-serif;
+      background:
+        radial-gradient(900px 600px at 20% -10%, rgba(90,140,255,0.15), transparent 60%),
+        radial-gradient(900px 600px at 100% 20%, rgba(255,120,200,0.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      overflow:hidden;
+    }
+
+    /* NAVBAR */
+
+    .navbar{
+      height:64px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 18px;
+      border-bottom:1px solid var(--stroke);
+      background:rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    .logo{
+      font-weight:900;
+      letter-spacing:.3px;
+    }
+
+    .navBtns{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      height:38px;
+      padding:0 16px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
+      color:var(--text);
+      font-weight:800;
+      font-size:13px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      text-decoration:none;
+      transition:.15s;
+      user-select:none;
+      white-space:nowrap;
+    }
+
+    .btn:hover{
+      background:rgba(255,255,255,0.12);
+      transform:translateY(-1px);
+    }
+
+    .btn.primary{
+      background:linear-gradient(135deg,#7fb3ff55,#ff7ad955);
+      border-color:#7fb3ff66;
+    }
+
+    /* bouton ? */
+
+    .helpBtn{
+      width:22px;
+      height:22px;
+      border-radius:50%;
+      border:none;
+      background:rgba(255,255,255,0.18);
+      color:white;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:.2s;
+    }
+
+    .helpBtn:hover{
+      background:rgba(255,255,255,0.35);
+      transform:translateY(-1px);
+    }
+
+    /* Dropdown */
+
+    .dd{ position:relative; display:inline-flex; align-items:center; }
+
+    .ddBtn{
+      appearance:none;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      color:var(--text);
+      height:38px;
+      padding:0 14px 0 16px;
+      border-radius:999px;
+      font-weight:800;
+      font-size:13px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      transition:.15s;
+      user-select:none;
+      white-space:nowrap;
+    }
+
+    .ddBtn:hover{ background:rgba(255,255,255,0.12); transform:translateY(-1px); }
+
+    .chev{
+      width:9px;height:9px;
+      display:inline-block;
+      border-right:2px solid rgba(255,255,255,0.75);
+      border-bottom:2px solid rgba(255,255,255,0.75);
+      transform: rotate(45deg);
+      margin-top:-2px;
+    }
+
+    .menu{
+      position:absolute;
+      top:46px;
+      right:0;
+      width:260px;
+      background:rgba(12,16,26,0.96);
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:14px;
+      box-shadow:0 18px 45px rgba(0,0,0,0.55);
+      padding:8px;
+      display:none;
+      z-index:50;
+    }
+
+    .menu.show{ display:block; }
+
+    .menu a{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      height:38px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid transparent;
+      background:rgba(255,255,255,0.04);
+      color:rgba(255,255,255,0.90);
+      text-decoration:none;
+      font-weight:850;
+      font-size:13px;
+      transition:.15s;
+      user-select:none;
+    }
+
+    .menu a:hover{
+      background:rgba(255,255,255,0.10);
+      border-color:rgba(255,255,255,0.10);
+      transform:translateY(-1px);
+    }
+
+    .menu small{
+      color:rgba(255,255,255,0.55);
+      font-weight:900;
+    }
+
+    /* POPUP EXPLICATION */
+
+    .helpOverlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.55);
+      backdrop-filter:blur(6px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      opacity:0;
+      visibility:hidden;
+      transition:.25s;
+      z-index:1000;
+    }
+
+    .helpOverlay.show{
+      opacity:1;
+      visibility:visible;
+    }
+
+    .helpPopup{
+      width:650px;
+      max-height:80vh;
+      background:#111827;
+      border-radius:16px;
+      box-shadow:0 25px 60px rgba(0,0,0,0.7);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .helpHeader{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:18px 22px;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+
+    .helpHeader h2{
+      margin:0;
+      font-size:18px;
+    }
+
+    .helpClose{
+      background:none;
+      border:none;
+      font-size:20px;
+      color:white;
+      cursor:pointer;
+    }
+
+    .helpBody{
+      padding:22px;
+      overflow-y:auto;
+      line-height:1.6;
+      font-size:14px;
+    }
+
+    .helpBody h3{
+      margin-top:18px;
+      font-size:15px;
+    }
+
+    .helpBody ul{
+      padding-left:20px;
+    }
+
+    /* CENTER */
+
+    .center{
+      height:calc(100vh - 64px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+
+    .imageCard{
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      max-width:min(920px, 92vw);
+    }
+
+    .imageCard img{
+      width:100%;
+      height:auto;
+      display:block;
+      max-height:72vh;
+      object-fit:contain;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="navbar">
+
+  <div class="logo">Espace budgétaire</div>
+
+  <div class="navBtns">
+
+    <!-- Budget -->
+     <button class="helpBtn" id="openHelp">?</button>
+<a class="btn primary" href="budget2026.html">Budget 2026</a>
+
+    <!-- Réel N-1 -->
+    <div class="dd" id="ddReel">
+      <button class="ddBtn" id="btnReel" type="button">
+        Réel N-1 <span class="chev"></span>
+      </button>
+
+      <div class="menu" id="menuReel">
+        <a href="activite-reelle-n-1.html">PSA <small>→</small></a>
+        <a href="activitereelgueudet.html">Gueudet <small>→</small></a>
+        <a href="activitereelford.html">Ford <small>→</small></a>
+        <a href="activitereeldirect.html">Direct <small>→</small></a>
+      </div>
+    </div>
+
+    <!-- Histo Budget -->
+    <div class="dd" id="ddHisto">
+      <button class="ddBtn" id="btnHisto" type="button">
+        Histo Budget <span class="chev"></span>
+      </button>
+
+      <div class="menu" id="menuHisto">
+        <a href="histo-budget-psa.html">PSA <small>→</small></a>
+        <a href="histo-budget-gueudet.html">Gueudet <small>→</small></a>
+        <a href="histo-budget-ford.html">Ford <small>→</small></a>
+        <a href="histo-budget-direct.html">Direct <small>→</small></a>
+      </div>
+    </div>
+
+    <!-- Projection -->
+    <a class="btn" href="projectionpsa2026.html">Projection 2026</a>
+
+  </div>
+</div>
+
+<div class="center">
+  <div class="imageCard">
+    <img src="accbudget.png" alt="Accueil Budget">
+  </div>
+</div>
+
+<!-- POPUP -->
+<div class="helpOverlay" id="helpOverlay">
+
+  <div class="helpPopup">
+
+    <div class="helpHeader">
+      <h2>Construction du Budget</h2>
+      <button class="helpClose" id="closeHelp">✕</button>
+    </div>
+
+    <div class="helpBody">
+
+      <p>Le budget est construit à partir des données de l'année précédente.</p>
+
+      <h3>1. Réel N-1</h3>
+      <p>Les données sont récupérées dans la page <b>Réel N-1</b>.</p>
+
+      <h3>2. Projection 2026</h3>
+      <p>Ces données sont injectées dans la page <b>Projection 2026</b>.</p>
+
+      <ul>
+        <li>réel N-1</li>
+        <li>nombre de jours ouvrés</li>
+        <li>année cible 2026</li>
+      </ul>
+
+      <h3>3. Génération du Budget</h3>
+      <p>La projection est exportée et devient le <b>Budget 2026</b>.</p>
+
+      <h3>4. Ajustement manuel</h3>
+
+      <ul>
+        <li>ajouter des clients</li>
+        <li>supprimer des clients</li>
+        <li>renommer des clients</li>
+        <li>modifier les montants projetés</li>
+      </ul>
+
+      <h3>5. Export final</h3>
+
+      <p>Le budget final est exporté et utilisé dans toutes les vues :</p>
+
+      <ul>
+        <li>reporting</li>
+        <li>évolutions</li>
+        <li>analyses</li>
+        <li>réel vs budget</li>
+      </ul>
+
+      <p>Les étapes doivent être répétées pour :</p>
+
+      <b>PSA • Gueudet • Ford • Clients Directs</b>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+(function(){
+
+  const dropdowns = [
+    { btn:"btnReel", menu:"menuReel"},
+    { btn:"btnHisto", menu:"menuHisto"}
+  ].map(x=>({
+    btn:document.getElementById(x.btn),
+    menu:document.getElementById(x.menu)
+  }))
+
+  function closeAll(){
+    dropdowns.forEach(d=>{
+      d.menu.classList.remove("show")
+    })
+  }
+
+  function toggle(menu){
+    const open = menu.classList.contains("show")
+    closeAll()
+    if(!open) menu.classList.add("show")
+  }
+
+  dropdowns.forEach(d=>{
+    d.btn.addEventListener("click",(e)=>{
+      e.stopPropagation()
+      toggle(d.menu)
+    })
+  })
+
+  window.addEventListener("click",closeAll)
+
+  document.addEventListener("keydown",(e)=>{
+    if(e.key==="Escape") closeAll()
+  })
+
+})()
+
+
+/* popup */
+
+const overlay = document.getElementById("helpOverlay")
+const openBtn = document.getElementById("openHelp")
+const closeBtn = document.getElementById("closeHelp")
+
+openBtn.onclick=()=>overlay.classList.add("show")
+
+closeBtn.onclick=()=>overlay.classList.remove("show")
+
+overlay.onclick=(e)=>{
+  if(e.target===overlay){
+    overlay.classList.remove("show")
+  }
+}
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="Escape"){
+    overlay.classList.remove("show")
+  }
+})
+
+</script>
+
+</body>
+</html>

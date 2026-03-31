@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Budget 2026</title>
+
+<style>
+  :root{
+    --bg:#0b0f17;
+    --panel:rgba(255,255,255,.06);
+    --panel2:rgba(0,0,0,.22);
+    --line:rgba(255,255,255,.12);
+    --text:rgba(255,255,255,.92);
+    --muted:rgba(255,255,255,.62);
+    --accent:#7c3aed;
+    --ok:#22c55e;
+    --warn:#f59e0b;
+    --danger:#ef4444;
+    --shadow:0 18px 44px rgba(0,0,0,.55);
+    --r:18px;
+  }
+  *{box-sizing:border-box}
+  html, body{height:100%}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    background:
+      radial-gradient(1200px 900px at 15% 5%, rgba(124,58,237,.22), transparent 58%),
+      radial-gradient(900px 700px at 85% 10%, rgba(34,197,94,.10), transparent 55%),
+      radial-gradient(900px 700px at 60% 110%, rgba(245,158,11,.08), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    padding: 14px 18px 16px;
+    overflow:hidden;
+  }
+
+  .wrap{
+    max-width: 1750px;
+    margin: 0 auto;
+    height: calc(100vh - 30px);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{
+    width:42px;height:42px;border-radius:16px;
+    background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(34,197,94,.70));
+    box-shadow: 0 14px 32px rgba(124,58,237,.22);
+  }
+  .title{line-height:1.15}
+  .title b{display:block;font-size:17px;letter-spacing:.2px}
+  .title span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    padding: 12px;
+    backdrop-filter: blur(10px);
+  }
+
+  .row{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;
+  }
+  .field{
+    flex: 1;
+    min-width: 300px;
+    border:1px solid var(--line);
+    background: var(--panel2);
+    border-radius: 16px;
+    padding: 10px;
+  }
+  .field .lab{
+    font-size:11px;color:var(--muted);
+    font-weight:950;text-transform:uppercase;letter-spacing:.2px;
+  }
+  .field .val{
+    margin-top:6px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .input{
+    width: 230px;
+    padding: 10px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.25);
+    color: var(--text);
+    outline:none;
+    font-weight:900;
+    font-size: 15px;
+  }
+  .input.wide{width: 360px;}
+  .input.mid{width: 220px;}
+  .input:focus{
+    border-color: rgba(124,58,237,.55);
+    box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+  }
+
+  .btn{
+    border:1px solid var(--line);
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    padding:9px 11px;border-radius:14px;font-weight:950;
+    cursor:pointer;transition:.15s transform,.15s background;
+    white-space:nowrap;
+    user-select:none;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
+  .btn:hover{background: rgba(255,255,255,0.09)}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{
+    background: rgba(124,58,237,.22);
+    border-color: rgba(124,58,237,.45);
+  }
+  .btn.green{
+    background: rgba(34,197,94,.16);
+    border-color: rgba(34,197,94,.34);
+  }
+  .btn.danger{
+    background: rgba(239,68,68,.14);
+    border-color: rgba(239,68,68,.30);
+  }
+
+  .kpiLine{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;
+    margin-top:10px;
+  }
+  .kpi{
+    flex:1;
+    min-width: 220px;
+    border:1px solid var(--line);
+    background: rgba(0,0,0,.18);
+    border-radius: 16px;
+    padding: 10px;
+  }
+  .kpi .k{font-size:11px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.2px}
+  .kpi .v{margin-top:6px;font-size:20px;font-weight:990}
+  .kpi .v.ok{color: rgba(34,197,94,.95)}
+  .kpi .v.warn{color: rgba(245,158,11,.95)}
+  .kpi .v.bad{color: rgba(239,68,68,.95)}
+
+  .tableCard{
+    flex: 1;
+    display:flex;
+    flex-direction:column;
+    min-height: 0;
+  }
+  .tableWrap{
+    flex:1;
+    min-height:0;
+    overflow:auto;
+    border-radius: 16px;
+    border:1px solid var(--line);
+    background: rgba(0,0,0,.18);
+  }
+  table{
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 1950px;
+  }
+  th, td{
+    padding: 9px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    text-align: left;
+    vertical-align: middle;
+  }
+  th{
+    position: sticky;
+    top: 0;
+    background: rgba(10,14,22,.92);
+    backdrop-filter: blur(10px);
+    color: var(--muted);
+    font-size:11px;
+    font-weight:950;
+    text-transform:uppercase;
+    letter-spacing:.2px;
+    z-index: 5;
+    white-space:nowrap;
+  }
+  td{
+    font-size:13px;
+    font-weight:900;
+  }
+  tr:hover td{background: rgba(124,58,237,.06)}
+  .right{text-align:right}
+
+  .clientCell{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width: 420px;
+  }
+  .clientName{
+    font-weight:990;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    max-width: 260px;
+  }
+  .clientNum{
+    font-variant-numeric: tabular-nums;
+    color: rgba(255,255,255,.70);
+    font-weight:950;
+    background: rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.10);
+    padding:4px 8px;
+    border-radius: 999px;
+    font-size:12px;
+  }
+
+  .actions{
+    margin-left:auto;
+    display:flex;
+    gap:6px;
+    align-items:center;
+    flex-wrap:nowrap;
+  }
+
+  /* ✅ tiny icon buttons */
+  .iconBtn{
+    width:28px;
+    height:28px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.18);
+    color: rgba(255,255,255,.82);
+    cursor:pointer;
+    user-select:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    transition:.12s transform,.12s background,.12s border-color;
+  }
+  .iconBtn:hover{ background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); transform: translateY(-1px); }
+  .iconBtn:active{ transform: translateY(0px); }
+  .iconBtn.copy{ border-color: rgba(34,197,94,.30); background: rgba(34,197,94,.10); }
+  .iconBtn.delete{ border-color: rgba(239,68,68,.30); background: rgba(239,68,68,.08); }
+  .icon{
+    width:16px;height:16px;display:block;
+    fill: currentColor;
+  }
+
+  .moneyInput{
+    width: 110px;
+    padding: 9px 10px;
+    border-radius: 12px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.22);
+    color: var(--text);
+    outline:none;
+    font-weight:900;
+    text-align:right;
+  }
+  .moneyInput:focus{
+    border-color: rgba(124,58,237,.55);
+    box-shadow: 0 0 0 4px rgba(124,58,237,.10);
+  }
+
+  .commentInput{
+    width: 280px;
+    padding: 9px 10px;
+    border-radius: 12px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.22);
+    color: var(--text);
+    outline:none;
+    font-weight:850;
+  }
+  .commentInput:focus{
+    border-color: rgba(124,58,237,.55);
+    box-shadow: 0 0 0 4px rgba(124,58,237,.10);
+  }
+
+  .totalCell{
+    font-size: 14px;
+    font-weight: 990;
+    text-align:right;
+    white-space:nowrap;
+  }
+
+  .footnote{
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .footnote code{
+    background: rgba(255,255,255,0.06);
+    border:1px solid var(--line);
+    padding:2px 6px;
+    border-radius:8px;
+  }
+
+  /* Modal */
+  .modal{
+    position:fixed;
+    inset:0;
+    background: rgba(0,0,0,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index: 9999;
+  }
+  .modal.show{display:flex}
+  .modalCard{
+    width: 860px;
+    max-width: calc(100vw - 40px);
+    border-radius: 18px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(10,14,22,.92);
+    box-shadow: 0 30px 70px rgba(0,0,0,.75);
+    padding: 14px;
+  }
+  .modalTop{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;
+  }
+  .modalTop b{font-size:14px}
+  .textarea{
+    width:100%;
+    height: 260px;
+    border-radius: 14px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.25);
+    color: var(--text);
+    outline:none;
+    padding: 10px;
+    font-weight: 800;
+    line-height: 1.35;
+    resize: vertical;
+  }
+  .modalActions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <b>Budget 2026</b>
+        <span>Import Projection (XLSX) • N CLIENT • Commentaires • Modifiable • Export XLSX/CSV/JSON</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="resetBtn">Réinitialiser</button>
+
+      <label class="btn green" style="display:inline-flex;align-items:center;gap:8px">
+        Importer Projection (.xlsx)
+        <input type="file" id="importProjectionFile" accept=".xlsx,.xls" style="display:none"/>
+      </label>
+
+      <button class="btn green" id="exportXlsxBtn">Exporter Excel (.xlsx)</button>
+      <button class="btn" id="exportCsvBtn">Exporter CSV</button>
+      <button class="btn" id="exportJsonBtn">Exporter JSON</button>
+
+      <label class="btn" style="display:inline-flex;align-items:center;gap:8px">
+        Importer JSON
+        <input type="file" id="importJsonFile" accept="application/json" style="display:none"/>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <div class="lab">Enveloppe globale</div>
+        <div class="val">
+          <input class="input" id="globalBudget" placeholder="Ex: 500000" inputmode="decimal" />
+          <button class="btn primary" id="applyBudget">Appliquer</button>
+          <span class="footnote">Formats OK : <code>500000</code>, <code>500 000</code>, <code>500000€</code></span>
+        </div>
+
+        <div class="kpiLine">
+          <div class="kpi">
+            <div class="k">Budget global</div>
+            <div class="v" id="kpiGlobal">—</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Total saisi</div>
+            <div class="v" id="kpiUsed">—</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Reste à répartir</div>
+            <div class="v" id="kpiLeft">—</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Clients</div>
+            <div class="v" id="kpiClients">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" style="min-width:520px">
+        <div class="lab">Clients</div>
+        <div class="val">
+          <button class="btn" id="pasteClientsBtn">Coller une liste</button>
+          <span class="footnote">
+            Tu peux importer une projection XLSX (CLIENT + N CLIENT + Mois + TOTAL + COMMENTAIRE).
+          </span>
+        </div>
+
+        <!-- ✅ Ajout champ N CLIENT lors de la création -->
+        <div class="val" style="margin-top:10px">
+          <input class="input wide" id="newClient" placeholder="Nom du client..." />
+          <input class="input mid" id="newClientNumber" placeholder="N CLIENT..." inputmode="numeric" />
+          <button class="btn" id="addClientBtn">Ajouter</button>
+          <button class="btn" id="addDemoBtn">Démo</button>
+        </div>
+
+        <div class="footnote" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card tableCard">
+    <div class="tableWrap">
+      <table id="budgetTable"></table>
+    </div>
+    <div class="footnote" style="margin-top:8px">
+      Astuce : <code>Tab</code> pour naviguer vite. Les totaux et le reste se calculent en temps réel.
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal paste -->
+<div class="modal" id="pasteModal" aria-hidden="true">
+  <div class="modalCard">
+    <div class="modalTop">
+      <b>Coller une liste de clients</b>
+      <button class="btn" id="closePasteModal">Fermer</button>
+    </div>
+    <div class="footnote" style="margin-bottom:8px">
+      1 client par ligne. Tu peux aussi coller du CSV : on prendra la 1ère colonne.
+      (N CLIENT restera vide).
+    </div>
+    <textarea class="textarea" id="pasteArea" placeholder="Ex:
+Client A
+Client B
+Client C"></textarea>
+    <div class="modalActions">
+      <button class="btn danger" id="pasteReplaceBtn">Remplacer la liste</button>
+      <button class="btn green" id="pasteAddBtn">Ajouter à la liste</button>
+    </div>
+  </div>
+</div>
+
+<!-- SheetJS -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script>
+/***********************
+ * State
+ ***********************/
+const LS_KEY = "budget2026_v4_projection_import";
+
+const MONTHS = [
+  { key:"jan", label:"Janvier" },
+  { key:"feb", label:"Février" },
+  { key:"mar", label:"Mars" },
+  { key:"apr", label:"Avril" },
+  { key:"may", label:"Mai" },
+  { key:"jun", label:"Juin" },
+  { key:"jul", label:"Juillet" },
+  { key:"aug", label:"Août" },
+  { key:"sep", label:"Septembre" },
+  { key:"oct", label:"Octobre" },
+  { key:"nov", label:"Novembre" },
+  { key:"dec", label:"Décembre" },
+];
+
+const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR" });
+const $ = (id) => document.getElementById(id);
+
+let state = {
+  globalBudget: 0,
+  clients: [] // {id,name,number,comment,values,lastMonthKey}
+};
+let sortTotalDesc = true;
+
+function uid(){
+  return "c_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
+}
+function parseMoney(input){
+  if (input === null || input === undefined) return 0;
+  const s = input.toString()
+    .replaceAll("€","")
+    .replaceAll(/\s/g,"")
+    .replace(",", ".")
+    .trim();
+  if (!s) return 0;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+function formatMoney(n){
+  return eur.format(Number.isFinite(n) ? n : 0);
+}
+function save(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== "object") return;
+
+    state.globalBudget = Number(data.globalBudget) || 0;
+    state.clients = Array.isArray(data.clients) ? data.clients : [];
+
+    for (const c of state.clients){
+      c.id = c.id || uid();
+      c.name = (c.name ?? "").toString().trim() || "Client";
+      c.number = (c.number ?? "").toString().trim();
+      c.comment = (c.comment ?? "").toString();
+      c.values = c.values || {};
+      c.lastMonthKey = c.lastMonthKey || "jan";
+      for (const m of MONTHS) c.values[m.key] = Number(c.values[m.key]) || 0;
+    }
+  }catch(e){
+    console.warn("Load failed", e);
+  }
+}
+
+function computeTotals(){
+  let used = 0;
+  for (const c of state.clients){
+    for (const m of MONTHS) used += Number(c.values?.[m.key] || 0);
+  }
+  const left = (Number(state.globalBudget) || 0) - used;
+  return { used, left };
+}
+function clientRowTotal(client){
+  let t = 0;
+  for (const m of MONTHS) t += Number(client.values?.[m.key] || 0);
+  return t;
+}
+function renderKPIs(){
+  const { used, left } = computeTotals();
+
+  $("kpiGlobal").textContent = formatMoney(state.globalBudget || 0);
+  $("kpiUsed").textContent = formatMoney(used);
+
+  const leftEl = $("kpiLeft");
+  leftEl.textContent = formatMoney(left);
+  leftEl.classList.remove("ok","warn","bad");
+  if (left > 0.005) leftEl.classList.add("warn");
+  else if (Math.abs(left) <= 0.005) leftEl.classList.add("ok");
+  else leftEl.classList.add("bad");
+
+  $("kpiClients").textContent = String(state.clients.length);
+}
+
+function escapeHtml(s){
+  return (s ?? "").toString()
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+/***********************
+ * Table render
+ ***********************/
+function renderTable(){
+  const table = $("budgetTable");
+
+  const head = `
+    <thead>
+      <tr>
+        <th style="min-width:520px">Client</th>
+        <th style="min-width:160px">N CLIENT</th>
+        ${MONTHS.map(m => `<th class="right">${m.label}</th>`).join("")}
+        <th class="right" style="min-width:140px;cursor:pointer" onclick="toggleTotalSort()">
+          Total ${sortTotalDesc ? "▼" : "▲"}
+        </th>
+        <th style="min-width:320px">Commentaire</th>
+      </tr>
+    </thead>
+  `;
+
+  // 🔥 TRI PAR TOTAL
+  state.clients.sort((a,b)=>{
+    const ta = clientRowTotal(a);
+    const tb = clientRowTotal(b);
+    return sortTotalDesc ? tb - ta : ta - tb;
+  });
+
+  const bodyRows = state.clients.map(c => {
+    const cells = MONTHS.map(m => {
+      const v = Number(c.values?.[m.key] || 0);
+      const display = v ? String(Math.round(v * 100) / 100) : "";
+      return `
+        <td class="right">
+          <input
+            class="moneyInput"
+            data-client="${c.id}"
+            data-month="${m.key}"
+            value="${display}"
+            placeholder="0"
+            inputmode="decimal"
+          />
+        </td>
+      `;
+    }).join("");
+
+    const total = clientRowTotal(c);
+
+    return `
+      <tr data-row-client="${c.id}">
+        <td>
+          <div class="clientCell">
+            <div class="clientName" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
+            ${c.number ? `<div class="clientNum" title="N CLIENT">${escapeHtml(c.number)}</div>` : ``}
+
+            <div class="actions">
+              <button type="button" class="iconBtn copy" data-action="copyAll" data-id="${c.id}" title="Copier mois → tous">
+                ${iconCopy()}
+              </button>
+              <button type="button" class="iconBtn" data-action="rename" data-id="${c.id}" title="Renommer / N CLIENT">
+                ${iconEdit()}
+              </button>
+              <button type="button" class="iconBtn delete" data-action="delete" data-id="${c.id}" title="Supprimer">
+                ${iconTrash()}
+              </button>
+            </div>
+          </div>
+        </td>
+
+        <td>${escapeHtml(c.number || "")}</td>
+
+        ${cells}
+
+        <td class="totalCell">${formatMoney(total)}</td>
+
+        <td>
+          <input
+            class="commentInput"
+            data-client="${c.id}"
+            value="${escapeHtml(c.comment || "")}"
+            placeholder="Commentaire..."
+          />
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  const body = `
+    <tbody>
+      ${bodyRows || `<tr><td colspan="${MONTHS.length + 4}" style="color:rgba(255,255,255,.6)">Importe une projection XLSX pour commencer.</td></tr>`}
+    </tbody>
+  `;
+
+  table.innerHTML = head + body;
+
+  // money inputs
+  table.querySelectorAll(".moneyInput").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const cid = inp.getAttribute("data-client");
+      const mon = inp.getAttribute("data-month");
+      const client = state.clients.find(x => x.id === cid);
+      if (!client) return;
+
+      const val = parseMoney(inp.value);
+      client.values[mon] = val;
+      client.lastMonthKey = mon;
+
+      const tr = inp.closest("tr");
+      tr.querySelector(".totalCell").textContent = formatMoney(clientRowTotal(client));
+
+      save();
+      renderKPIs();
+    });
+
+    inp.addEventListener("blur", () => {
+      const v = parseMoney(inp.value);
+      inp.value = v ? String(Math.round(v * 100) / 100) : "";
+    });
+  });
+
+  // comment inputs
+  table.querySelectorAll(".commentInput").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const cid = inp.getAttribute("data-client");
+      const client = state.clients.find(x => x.id === cid);
+      if (!client) return;
+      client.comment = inp.value ?? "";
+      save();
+    });
+  });
+}
+
+/* ✅ EVENT DELEGATION : supprime / rename / copy fonctionne TOUJOURS */
+function bindTableActions(){
+  const table = $("budgetTable");
+  table.addEventListener("click", (e) => {
+    const btn = e.target.closest("button.iconBtn");
+    if (!btn) return;
+
+    const action = btn.getAttribute("data-action");
+    const id = btn.getAttribute("data-id");
+    const client = state.clients.find(x => x.id === id);
+    if (!client) return;
+
+    if (action === "delete"){
+      const ok = confirm(`Supprimer "${client.name}" ?`);
+      if (!ok) return;
+      state.clients = state.clients.filter(x => x.id !== id);
+      save();
+      renderAll();
+      return;
+    }
+
+    if (action === "rename"){
+      // ✅ rename + n client (sans casser)
+      const name = prompt("Nouveau nom :", client.name);
+      if (!name) return;
+
+      const number = prompt("N CLIENT (laisser vide si aucun) :", client.number || "");
+      client.name = name.trim();
+      client.number = (number ?? "").toString().trim();
+
+      save();
+      renderAll();
+      return;
+    }
+
+    if (action === "copyAll"){
+      const tr = btn.closest("tr");
+      const active = document.activeElement;
+      if (active && active.classList.contains("moneyInput") && tr.contains(active)){
+        const mk = active.getAttribute("data-month");
+        if (mk) client.lastMonthKey = mk;
+      }
+      const srcKey = client.lastMonthKey || "jan";
+      const val = Number(client.values?.[srcKey] || 0);
+      for (const m of MONTHS) client.values[m.key] = val;
+
+      save();
+      renderAll();
+      return;
+    }
+  }, { passive:true });
+}
+
+function renderAll(){
+  renderKPIs();
+  renderTable();
+}
+
+/***********************
+ * Import Projection XLSX
+ * Expected columns:
+ * CLIENT | N CLIENT | Janvier..Décembre | TOTAL | COMMENTAIRE
+ ***********************/
+function normalizeKey(s){
+  return String(s || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g," ")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+function buildHeaderMap(sampleRow){
+  const map = {};
+  for (const k of Object.keys(sampleRow || {})){
+    map[normalizeKey(k)] = k;
+  }
+  return map;
+}
+function findCol(headerMap, candidates){
+  for (const c of candidates){
+    const nk = normalizeKey(c);
+    if (headerMap[nk]) return headerMap[nk];
+  }
+  return null;
+}
+
+async function importProjectionXlsx(file){
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:"array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
+
+    if (!rows.length){
+      alert("Fichier vide.");
+      return;
+    }
+
+    const headerMap = buildHeaderMap(rows[0]);
+    const colClient = findCol(headerMap, ["client"]);
+    const colNClient = findCol(headerMap, ["n client","n° client","numero client","num client"]);
+    const colComment = findCol(headerMap, ["commentaire","comment"]);
+
+    const colMonth = {};
+    for (const m of MONTHS){
+      colMonth[m.key] = findCol(headerMap, [m.label]);
+    }
+
+    if (!colClient){
+      alert("Colonne manquante : CLIENT");
+      return;
+    }
+
+    const imported = [];
+    for (const r of rows){
+      const name = String(r[colClient] ?? "").trim();
+      if (!name) continue;
+
+      const c = {
+        id: uid(),
+        name,
+        number: String(colNClient ? (r[colNClient] ?? "") : "").trim(),
+        comment: String(colComment ? (r[colComment] ?? "") : "").trim(),
+        values: {},
+        lastMonthKey: "jan"
+      };
+
+      for (const m of MONTHS){
+        const raw = colMonth[m.key] ? r[colMonth[m.key]] : "";
+        c.values[m.key] = parseMoney(raw);
+      }
+
+      imported.push(c);
+    }
+
+    if (!imported.length){
+      alert("Aucune ligne client détectée.");
+      return;
+    }
+
+    const replace = confirm(`Projection détectée : ${imported.length} clients.\n\nOK = Remplacer le budget\nAnnuler = Ajouter au budget`);
+    if (replace){
+      state.clients = imported;
+    }else{
+      const existing = new Set(state.clients.map(x => x.name.toLowerCase()));
+      for (const c of imported){
+        if (existing.has(c.name.toLowerCase())) continue;
+        state.clients.push(c);
+      }
+    }
+
+    save();
+    renderAll();
+  }catch(e){
+    console.error(e);
+    alert("Import impossible (XLSX invalide).");
+  }
+}
+
+/***********************
+ * Paste modal (clients only)
+ ***********************/
+function normalizeClientName(s){
+  return (s ?? "").toString().trim().replace(/\s+/g," ");
+}
+function dedupeCaseInsensitiveByName(list){
+  const seen = new Set();
+  const out = [];
+  for (const item of list){
+    const key = (item.name || "").toLowerCase();
+    if (!key) continue;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+function setClientsFromList(list, {mode="replace"} = {}){
+  const clean = list
+    .map(x => ({
+      name: normalizeClientName(x.name),
+      number: (x.number ?? "").toString().trim(),
+    }))
+    .filter(x => x.name);
+
+  const dedup = dedupeCaseInsensitiveByName(clean);
+
+  function buildClient(obj){
+    const c = { id: uid(), name: obj.name, number: obj.number || "", comment:"", values:{}, lastMonthKey:"jan" };
+    for (const m of MONTHS) c.values[m.key] = 0;
+    return c;
+  }
+
+  if (mode === "replace"){
+    state.clients = dedup.map(buildClient);
+  } else {
+    const existing = new Set(state.clients.map(c => c.name.toLowerCase()));
+    for (const it of dedup){
+      if (existing.has(it.name.toLowerCase())) continue;
+      state.clients.push(buildClient(it));
+    }
+  }
+
+  save();
+  renderAll();
+}
+
+function extractNamesFromText(text){
+  const lines = (text ?? "").toString().split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const list = [];
+  for (const line of lines){
+    const first = line.split(";")[0].split(",")[0];
+    const n = normalizeClientName(first);
+    if (n) list.push({ name: n, number: "" });
+  }
+  return list;
+}
+function openPasteModal(){
+  $("pasteArea").value = "";
+  $("pasteModal").classList.add("show");
+  $("pasteModal").setAttribute("aria-hidden","false");
+  setTimeout(()=> $("pasteArea").focus(), 50);
+}
+function closePasteModal(){
+  $("pasteModal").classList.remove("show");
+  $("pasteModal").setAttribute("aria-hidden","true");
+}
+function pasteApply(mode){
+  const txt = $("pasteArea").value || "";
+  const list = extractNamesFromText(txt);
+  if (!list.length){
+    alert("Aucun client détecté.");
+    return;
+  }
+  setClientsFromList(list, { mode });
+  closePasteModal();
+}
+
+/***********************
+ * Budget actions
+ ***********************/
+function applyGlobalBudget(){
+  const v = parseMoney($("globalBudget").value);
+  state.globalBudget = v;
+  save();
+  renderKPIs();
+}
+function addClient(name, number){
+  const n = normalizeClientName(name);
+  if (!n) return;
+
+  const exists = state.clients.some(c => c.name.toLowerCase() === n.toLowerCase());
+  if (exists){
+    alert("Ce client existe déjà.");
+    return;
+  }
+
+  const num = (number ?? "").toString().trim();
+
+  const c = { id: uid(), name: n, number: num, comment:"", values:{}, lastMonthKey:"jan" };
+  for (const m of MONTHS) c.values[m.key] = 0;
+  state.clients.push(c);
+  save();
+  renderAll();
+}
+function addDemo(){
+  setClientsFromList([
+    { name:"Gueudet", number:"10001" },
+    { name:"PSA Retail", number:"20002" },
+    { name:"Ford Centre", number:"30003" },
+    { name:"Client Direct", number:"40004" },
+  ], { mode:"add" });
+}
+function resetAll(){
+  const ok = confirm("Réinitialiser Budget 2026 (efface tout) ?");
+  if (!ok) return;
+  localStorage.removeItem(LS_KEY);
+  state = { globalBudget: 0, clients: [] };
+  $("globalBudget").value = "";
+  renderAll();
+}
+
+/***********************
+ * Export
+ ***********************/
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `budget2026_${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportCSV(){
+  const headers = ["CLIENT", "N CLIENT", ...MONTHS.map(m => m.label), "TOTAL", "COMMENTAIRE"];
+  const lines = [];
+  lines.push(headers.map(h => `"${h.replaceAll('"','""')}"`).join(";"));
+
+  for (const c of state.clients){
+    const row = [];
+    row.push(c.name);
+    row.push(c.number || "");
+    for (const m of MONTHS) row.push(String(Number(c.values[m.key] || 0)));
+    row.push(String(clientRowTotal(c)));
+    row.push((c.comment ?? "").toString());
+    lines.push(row.map(v => `"${String(v).replaceAll('"','""')}"`).join(";"));
+  }
+
+  const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `budget2026_${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportXLSX(){
+  const aoa = [];
+  aoa.push(["CLIENT", "N CLIENT", ...MONTHS.map(m => m.label), "TOTAL", "COMMENTAIRE"]);
+
+  for (const c of state.clients){
+    const row = [c.name, c.number || ""];
+    let total = 0;
+    for (const m of MONTHS){
+      const v = Number(c.values[m.key] || 0);
+      row.push(v);
+      total += v;
+    }
+    row.push(total);
+    row.push(c.comment ?? "");
+    aoa.push(row);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [
+    {wch:30},
+    {wch:14},
+    ...MONTHS.map(()=>({wch:14})),
+    {wch:16},
+    {wch:40},
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Budget2026");
+  XLSX.writeFile(wb, `budget2026_${Date.now()}.xlsx`);
+}
+
+async function importJSON(file){
+  try{
+    const txt = await file.text();
+    const data = JSON.parse(txt);
+    if (!data || typeof data !== "object") throw new Error("JSON invalide");
+
+    state.globalBudget = Number(data.globalBudget) || 0;
+    state.clients = Array.isArray(data.clients) ? data.clients : [];
+
+    for (const c of state.clients){
+      c.id = c.id || uid();
+      c.name = normalizeClientName(c.name) || "Client";
+      c.number = (c.number ?? "").toString().trim();
+      c.comment = (c.comment ?? "").toString();
+      c.values = c.values || {};
+      c.lastMonthKey = c.lastMonthKey || "jan";
+      for (const m of MONTHS){
+        c.values[m.key] = Number(c.values[m.key]) || 0;
+      }
+    }
+
+    save();
+    $("globalBudget").value = state.globalBudget ? String(state.globalBudget) : "";
+    renderAll();
+  }catch(e){
+    console.error(e);
+    alert("Import impossible : fichier JSON invalide.");
+  }
+}
+
+/***********************
+ * Tiny SVG icons
+ ***********************/
+function iconCopy(){
+  return `
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16h-9V7h9v14z"/>
+    </svg>
+  `;
+}
+function iconEdit(){
+  return `
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92 2.83H5v-.92l9.06-9.06.92.92L5.92 20.08zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/>
+    </svg>
+  `;
+}
+function iconTrash(){
+  return `
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/>
+    </svg>
+  `;
+}
+
+/***********************
+ * Init / Events
+ ***********************/
+load();
+$("globalBudget").value = state.globalBudget ? String(state.globalBudget) : "";
+
+$("applyBudget").addEventListener("click", applyGlobalBudget);
+$("globalBudget").addEventListener("keydown", (e) => { if (e.key === "Enter") applyGlobalBudget(); });
+
+$("addClientBtn").addEventListener("click", () => {
+  addClient($("newClient").value, $("newClientNumber").value);
+  $("newClient").value = "";
+  $("newClientNumber").value = "";
+  $("newClient").focus();
+});
+$("newClient").addEventListener("keydown", (e) => {
+  if (e.key === "Enter"){
+    addClient($("newClient").value, $("newClientNumber").value);
+    $("newClient").value = "";
+    $("newClient").focus();
+  }
+});
+$("newClientNumber").addEventListener("keydown", (e) => {
+  if (e.key === "Enter"){
+    addClient($("newClient").value, $("newClientNumber").value);
+    $("newClient").value = "";
+    $("newClientNumber").value = "";
+    $("newClient").focus();
+  }
+});
+
+$("addDemoBtn").addEventListener("click", addDemo);
+$("resetBtn").addEventListener("click", resetAll);
+
+$("exportJsonBtn").addEventListener("click", exportJSON);
+$("exportCsvBtn").addEventListener("click", exportCSV);
+$("exportXlsxBtn").addEventListener("click", exportXLSX);
+
+$("importJsonFile").addEventListener("change", (e) => {
+  const f = e.target.files?.[0];
+  if (f) importJSON(f);
+  e.target.value = "";
+});
+
+$("importProjectionFile").addEventListener("change", async (e) => {
+  const f = e.target.files?.[0];
+  if (f) await importProjectionXlsx(f);
+  e.target.value = "";
+});
+
+/* Paste modal */
+$("pasteClientsBtn").addEventListener("click", openPasteModal);
+$("closePasteModal").addEventListener("click", closePasteModal);
+$("pasteReplaceBtn").addEventListener("click", () => pasteApply("replace"));
+$("pasteAddBtn").addEventListener("click", () => pasteApply("add"));
+$("pasteModal").addEventListener("click", (e) => { if (e.target === $("pasteModal")) closePasteModal(); });
+window.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("pasteModal").classList.contains("show")) closePasteModal(); });
+
+window.toggleTotalSort = function(){
+  sortTotalDesc = !sortTotalDesc;
+  renderTable();
+};
+
+// ✅ bind actions once (event delegation)
+bindTableActions();
+
+renderAll();
+</script>
+</body>
+</html>

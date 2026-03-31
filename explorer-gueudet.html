@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Explorer — GUEUDET (Recherche produit)</title>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --line:rgba(255,255,255,0.10);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.62);
+      --muted2:rgba(255,255,255,0.46);
+      --accent:#7c3aed;
+      --accent2:#22c55e;
+      --warn:#f59e0b;
+      --bad: rgba(255,110,110,0.92);
+      --shadow:0 18px 40px rgba(0,0,0,.45);
+      --radius:18px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:
+        radial-gradient(1200px 800px at 20% 0%, rgba(124,58,237,.20), transparent 55%),
+        radial-gradient(900px 700px at 85% 10%, rgba(34,197,94,.12), transparent 55%),
+        radial-gradient(900px 700px at 50% 110%, rgba(245,158,11,.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      padding:18px 14px 28px;
+    }
+
+    .wrap{
+      max-width: 920px;
+      margin: 0 auto;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+    .logo{
+      width:42px;height:42px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(34,197,94,.70));
+      box-shadow: 0 10px 26px rgba(124,58,237,.25);
+      flex: 0 0 auto;
+    }
+    .title{display:flex;flex-direction:column;line-height:1.1;min-width:0;}
+    .title b{font-size:15px; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .title span{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+    .actions{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.15s transform, .15s background, .15s border-color;
+      white-space:nowrap;
+      user-select:none;
+    }
+    .btn:hover{background: rgba(255,255,255,0.08)}
+    .btn:active{transform: scale(.98)}
+    .btn.primary{
+      border-color: rgba(124,58,237,.35);
+      background: rgba(124,58,237,.14);
+    }
+    .btn.ghost{ background: rgba(255,255,255,0.04); }
+    .btnMini{
+      padding:8px 10px;
+      font-size:14px;
+      border-radius:12px;
+      background: rgba(255,255,255,0.04);
+    }
+    .btnMini:hover{
+      background: rgba(124,58,237,.18);
+      transform: translateY(-1px);
+    }
+
+    .fileInput{display:none;}
+
+    .card{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      backdrop-filter: blur(10px);
+      margin-top:12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sectionTitle{
+      margin:0 0 10px;
+      font-size:13px;color:var(--muted);
+      letter-spacing:.3px;text-transform:uppercase;
+    }
+
+    .meta{
+      margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;
+      color:var(--muted);font-size:12px;
+    }
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+    }
+    .dot{width:8px;height:8px;border-radius:99px;background: rgba(255,255,255,0.25);}
+    .dot.ok{background: var(--accent2)}
+    .dot.warn{background: var(--warn)}
+    .dot.bad{background: var(--bad)}
+
+    .grid{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .field{
+      flex:1;
+      min-width: 220px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    label{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:900;
+      letter-spacing:0.2px;
+    }
+
+    input, select{
+      height:44px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.25);
+      color:var(--text);
+      padding:0 12px;
+      outline:none;
+      font-size:14px;
+      font-weight:800;
+    }
+    input::placeholder{ color: rgba(255,255,255,0.45); font-weight:700; }
+    input:focus, select:focus{
+      border-color: rgba(124,58,237,.55);
+      box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+    }
+
+    .kpisLine{display:flex;gap:10px;flex-wrap:wrap;}
+    .kpi{
+      flex:1;min-width: 180px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,0.20);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .kpi .label{font-size:12px;color:var(--muted)}
+    .kpi .value{font-size:18px;font-weight:900;margin-top:4px}
+
+    .hint{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.35;
+    }
+    .hint code{
+      background: rgba(255,255,255,0.06);
+      border:1px solid var(--line);
+      padding:2px 6px;
+      border-radius:8px;
+    }
+
+    .list{display:flex;flex-direction:column;gap:10px;}
+    .item{
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.20);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .itemTop{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .clientName{
+      font-weight:950;
+      font-size:14px;
+      margin:0;
+      line-height:1.25;
+      min-width:0;
+      word-break:break-word;
+    }
+    .badge{
+      font-size:12px;font-weight:950;padding:6px 10px;border-radius:999px;
+      background: rgba(124,58,237,.18);
+      border: 1px solid rgba(124,58,237,.35);
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+    .sub{
+      margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;
+      color: var(--muted);font-size:12px;
+    }
+    .sub span{
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:4px 8px;
+      background: rgba(255,255,255,0.03);
+    }
+    .pillBtn{
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      padding:7px 10px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      transition:.12s transform, .12s background;
+      user-select:none;
+    }
+    .pillBtn:hover{background: rgba(255,255,255,0.07); transform: translateY(-1px);}
+    .pillBtn:active{transform: scale(.98);}
+
+    .small{
+      font-size:12px;
+      color: rgba(255,255,255,0.72);
+      font-weight:800;
+      margin-top:10px;
+      line-height:1.35;
+      word-break:break-word;
+    }
+
+    .empty{color: var(--muted); padding: 10px 0; font-weight:800;}
+
+    @media (max-width: 560px){
+      .topbar{align-items:flex-start;}
+      .actions{width:100%; justify-content:flex-end;}
+      .btn{padding:9px 10px; border-radius:13px;}
+      .brand .logo{width:40px;height:40px;border-radius:14px;}
+      .title b{font-size:14px;}
+      .title span{font-size:11px;}
+      .field{min-width: 100%;}
+      .kpi{min-width: 140px;}
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <b>Explorer — GUEUDET</b>
+        <span>Recherche produit → clients à appeler (réf / désignation)</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
+      <button class="btn btnMini" id="btnPickFile" title="Charger un fichier">📁</button>
+      <button class="btn primary" id="btnReload">Recharger gueudetdata.xlsx</button>
+      <button class="btn ghost" id="btnExportXlsx">XLSX</button>
+      <button class="btn ghost" id="btnExportCsv">CSV</button>
+      <button class="btn ghost" id="btnReset">Reset</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sectionTitle">Recherche</p>
+
+    <div class="grid">
+      <div class="field" style="min-width:340px;">
+        <label>Référence / Désignation</label>
+        <input id="q" placeholder="Tape une référence (ex: 123456) ou un nom produit…" autocomplete="off" />
+      </div>
+
+      <div class="field" style="min-width:240px;">
+        <label>Mode</label>
+        <select id="mode">
+          <option value="auto">Auto (Réf + Désignation)</option>
+          <option value="ref">Référence uniquement</option>
+          <option value="des">Désignation uniquement</option>
+        </select>
+      </div>
+
+      <div class="field" style="min-width:220px;">
+        <label>Type de match</label>
+        <select id="matchType">
+          <option value="contains">Contient</option>
+          <option value="starts">Commence par</option>
+          <option value="exact">Exact</option>
+        </select>
+      </div>
+
+      <div class="field" style="min-width:220px;">
+        <label>Min quantité (filtre)</label>
+        <input id="minQty" type="number" value="0" min="0" step="1" inputmode="numeric" />
+      </div>
+
+      <div class="field" style="min-width:160px;">
+        <label>&nbsp;</label>
+        <button class="btn primary" id="btnSearch" style="justify-content:center;">Rechercher</button>
+      </div>
+    </div>
+
+    <div class="meta" style="margin-top:12px;">
+      <span class="chip"><span class="dot" id="dotStatus"></span><span id="statusText">En attente du fichier…</span></span>
+      <span class="chip"><span class="dot ok"></span><span>Auto : <b>gueudetdata.xlsx</b></span></span>
+      <span class="chip"><span class="dot" id="dotUrl"></span><span id="urlText">URL : <b>—</b></span></span>
+      <span class="chip"><span class="dot"></span><span>Cache : <b>localStorage</b></span></span>
+    </div>
+
+    <div class="hint">
+      Colonnes attendues (tolérant sur la casse/accents) :
+      <code>N° client Interne</code>, <code>Nom du client</code>, <code>Reference Produits</code>,
+      <code>Quantité Payante servie</code>, <code>Désignation</code>.
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sectionTitle">Résumé</p>
+    <div class="kpisLine">
+      <div class="kpi">
+        <div class="label">Source</div>
+        <div class="value" id="srcLabel">—</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Lignes base</div>
+        <div class="value" id="rowsLabel">0</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Clients match</div>
+        <div class="value" id="matchLabel">0</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Qté totale</div>
+        <div class="value" id="qtyLabel">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sectionTitle">Résultats</p>
+    <div id="results" class="list">
+      <div class="empty">Aucun résultat pour le moment.</div>
+    </div>
+    <div class="hint">
+      Affichage mobile : cartes clients triées par quantité (desc). Bouton <code>Copier</code> → presse-papier.
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // =========================
+  // CONFIG
+  // =========================
+  const FILE_NAME = "gueudetdata.xlsx";
+  const CACHE_KEY = "GUEUDET_DATA_CACHE_V1";
+
+  // =========================
+  // DOM
+  // =========================
+  const el = {
+    fileInput: document.getElementById("fileInput"),
+    btnPickFile: document.getElementById("btnPickFile"),
+    btnReload: document.getElementById("btnReload"),
+    btnExportXlsx: document.getElementById("btnExportXlsx"),
+    btnExportCsv: document.getElementById("btnExportCsv"),
+    btnReset: document.getElementById("btnReset"),
+
+    srcLabel: document.getElementById("srcLabel"),
+    rowsLabel: document.getElementById("rowsLabel"),
+    matchLabel: document.getElementById("matchLabel"),
+    qtyLabel: document.getElementById("qtyLabel"),
+
+    dotStatus: document.getElementById("dotStatus"),
+    statusText: document.getElementById("statusText"),
+
+    dotUrl: document.getElementById("dotUrl"),
+    urlText: document.getElementById("urlText"),
+
+    q: document.getElementById("q"),
+    mode: document.getElementById("mode"),
+    matchType: document.getElementById("matchType"),
+    minQty: document.getElementById("minQty"),
+    btnSearch: document.getElementById("btnSearch"),
+
+    results: document.getElementById("results"),
+  };
+
+  // =========================
+  // STATE
+  // =========================
+  let baseRows = [];
+  let lastResults = [];
+  let lastAggRaw = [];
+  let lastGoodUrl = "";
+  let lastSheet = "";
+
+  // =========================
+  // INIT (cache)
+  // =========================
+  const cached = loadJSON(CACHE_KEY, null);
+  if (cached?.rows?.length){
+    baseRows = cached.rows;
+    el.srcLabel.textContent = cached.meta?.source || "cache";
+    el.rowsLabel.textContent = String(baseRows.length);
+    lastGoodUrl = cached.meta?.url || "";
+    lastSheet = cached.meta?.sheet || "";
+    setUrlChip(lastGoodUrl, !!lastGoodUrl);
+    setStatus("ok", `Base chargée (cache) — ${baseRows.length} lignes`);
+    renderEmpty("Base chargée. Lance une recherche.");
+  } else {
+    setStatus("warn", "En attente du fichier…");
+    setUrlChip("—", false);
+    renderEmpty("Mets gueudetdata.xlsx à côté ou charge un fichier.");
+  }
+
+  autoFetch(false);
+
+  // =========================
+  // EVENTS
+  // =========================
+  el.btnPickFile.addEventListener("click", () => el.fileInput.click());
+  el.btnReload.addEventListener("click", () => autoFetch(true));
+
+  el.fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    el.fileInput.value = "";
+    const buf = await file.arrayBuffer();
+    parseExcel(buf, `manuel (${file.name || FILE_NAME})`, "local-file://");
+  });
+
+  el.btnReset.addEventListener("click", () => {
+    if (!confirm("Supprimer le cache local de la base GUEUDET ?")) return;
+    localStorage.removeItem(CACHE_KEY);
+    baseRows = [];
+    lastResults = [];
+    lastAggRaw = [];
+    lastGoodUrl = "";
+    lastSheet = "";
+    el.srcLabel.textContent = "—";
+    el.rowsLabel.textContent = "0";
+    el.matchLabel.textContent = "0";
+    el.qtyLabel.textContent = "0";
+    setUrlChip("—", false);
+    renderEmpty("Cache supprimé. Recharge un fichier.");
+    setStatus("warn", "Cache supprimé. Recharge gueudetdata.xlsx.");
+  });
+
+  el.btnSearch.addEventListener("click", runSearch);
+  el.q.addEventListener("keydown", (e) => { if (e.key === "Enter") runSearch(); });
+
+  // live search (le bouton reste utile)
+  let tt = null;
+  el.q.addEventListener("input", () => {
+    clearTimeout(tt);
+    tt = setTimeout(() => {
+      const v = (el.q.value || "").trim();
+      if (v.length >= 2 && baseRows.length) runSearch(true);
+      if (!v.length) {
+        el.matchLabel.textContent = "0";
+        el.qtyLabel.textContent = "0";
+        lastResults = [];
+        lastAggRaw = [];
+        renderEmpty("Tape une référence ou une désignation.");
+      }
+    }, 180);
+  });
+
+  el.btnExportCsv.addEventListener("click", exportCSV);
+  el.btnExportXlsx.addEventListener("click", exportXLSX);
+
+  // =========================
+  // AUTO FETCH (GitHub Pages safe)
+  // =========================
+  async function autoFetch(forceToast){
+    try{
+      setStatus("warn", `Chargement auto : ${FILE_NAME}…`);
+
+      const pageDir = location.href.replace(/[#?].*$/,"").replace(/\/[^\/]*$/, "/");
+      const urlSameDir = new URL(FILE_NAME, pageDir).toString();
+      const urlDataDir = new URL("data/" + FILE_NAME, pageDir).toString();
+
+      const candidates = [ urlSameDir, urlDataDir ];
+
+      let lastErr = "";
+      for (const u of candidates){
+        const url = u + (u.includes("?") ? "&" : "?") + "v=" + Date.now();
+
+        setUrlChip(u, false);
+
+        const res = await fetch(url, { cache: "no-store" });
+        const buf = await res.arrayBuffer();
+
+        if (!res.ok){
+          lastErr = `HTTP ${res.status} sur ${u}`;
+          continue;
+        }
+
+        const sniff = sniffBuffer(buf);
+        if (sniff.looksHtml || !sniff.isZip){
+          lastErr = `Contenu invalide sur ${u} (HTML/404 ou pas un XLSX)`;
+          continue;
+        }
+
+        parseExcel(buf, `auto (${FILE_NAME})`, u);
+        if (forceToast) pulseStatus("ok", "Rechargé ✅");
+        return;
+      }
+
+      if (!baseRows.length){
+        setStatus("bad", `Fetch auto KO. ${lastErr || "Vérifie l’emplacement du fichier."}`);
+        renderEmpty("Excel introuvable ou invalide. Charge via 📁.");
+        setUrlChip("—", false);
+      } else {
+        setStatus("ok", `Base OK (cache) — fetch auto KO`);
+        setUrlChip(lastGoodUrl || "cache", true);
+        if (forceToast) alert("Fetch auto KO. Le cache est utilisé.\n\nVérifie: nom EXACT + emplacement du fichier sur GitHub.");
+      }
+
+    }catch(err){
+      console.error(err);
+      if (!baseRows.length){
+        setStatus("bad", "Fetch auto impossible (erreur réseau).");
+        renderEmpty("Fetch auto impossible. Charge un fichier via 📁.");
+        setUrlChip("—", false);
+      } else {
+        setStatus("ok", "Base OK (cache) — fetch auto impossible");
+        setUrlChip(lastGoodUrl || "cache", true);
+        if (forceToast) alert("Fetch auto impossible. Le cache est utilisé.");
+      }
+    }
+  }
+
+  function sniffBuffer(arrayBuffer){
+    const u8 = new Uint8Array(arrayBuffer);
+    const a = u8[0], b = u8[1];
+    const isZip = (a === 0x50 && b === 0x4B); // 'PK'
+
+    const head = u8.slice(0, Math.min(220, u8.length));
+    let preview = "";
+    try{
+      preview = new TextDecoder("utf-8").decode(head).trim();
+    }catch{
+      preview = "";
+    }
+    const p = (preview || "").toLowerCase();
+    const looksHtml = p.startsWith("<") || p.includes("<!doctype html") || p.includes("<html");
+
+    return { isZip, looksHtml, preview };
+  }
+
+  function setUrlChip(url, ok){
+    el.urlText.innerHTML = `URL : <b>${esc(url || "—")}</b>`;
+    el.dotUrl.classList.remove("ok","warn","bad");
+    if (!url || url === "—") el.dotUrl.classList.add("warn");
+    else if (ok) el.dotUrl.classList.add("ok");
+    else el.dotUrl.classList.add("warn");
+  }
+
+  // =========================
+  // PARSE + NORMALIZE
+  // =========================
+  function parseExcel(arrayBuffer, sourceLabel, urlUsed){
+    try{
+      const wb = XLSX.read(arrayBuffer, { type: "array" });
+
+      const sheetName = pickBestSheet(wb);
+      const ws = wb.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+      if (!raw.length){
+        setStatus("bad", "Fichier vide.");
+        renderEmpty("Fichier vide.");
+        return;
+      }
+
+      const headerMap = buildHeaderMap(raw[0]);
+
+      const colClientInt = findCol(headerMap, ["n° client interne","no client interne","n client interne","numero client interne","n° client"]);
+      const colClientName = findCol(headerMap, ["nom du client","nom client","client"]);
+      const colRef = findCol(headerMap, ["reference produits","référence produits","reference produit","référence produit","ref produit","ref"]);
+      const colQty = findCol(headerMap, ["quantité payante servie","quantite payante servie","quantité","quantite"]);
+      const colDes = findCol(headerMap, ["désignation","designation","design"]);
+
+      const missing = [
+        !colClientInt ? "N° client Interne" : null,
+        !colClientName ? "Nom du client" : null,
+        !colRef ? "Reference Produits" : null,
+        !colQty ? "Quantité Payante servie" : null,
+        !colDes ? "Désignation" : null,
+      ].filter(Boolean);
+
+      if (missing.length){
+        setStatus("bad", "Colonnes manquantes : " + missing.join(", "));
+        renderEmpty("Colonnes manquantes dans le fichier.");
+        return;
+      }
+
+      const nextRows = raw.map(r => ({
+        clientInternal: String(r[colClientInt] ?? "").trim(),
+        clientName: String(r[colClientName] ?? "").trim(),
+        ref: String(r[colRef] ?? "").trim(),
+        des: String(r[colDes] ?? "").trim(),
+        qty: toNumber(r[colQty]),
+      }))
+      .filter(x => (x.clientInternal || x.clientName) && (x.ref || x.des));
+
+      if (!nextRows.length){
+        setStatus("bad", "Aucune donnée exploitable (lignes filtrées = 0).");
+        renderEmpty("Aucune donnée exploitable.");
+        return;
+      }
+
+      baseRows = nextRows;
+
+      saveJSON(CACHE_KEY, {
+        meta: { source: sourceLabel, sheet: sheetName, updatedAt: new Date().toISOString(), file: FILE_NAME, url: urlUsed || "" },
+        rows: baseRows
+      });
+
+      lastGoodUrl = urlUsed || "";
+      lastSheet = sheetName || "";
+
+      el.srcLabel.textContent = sourceLabel;
+      el.rowsLabel.textContent = String(baseRows.length);
+
+      setUrlChip(urlUsed || "—", true);
+      setStatus("ok", `Base OK — ${baseRows.length} lignes (sheet: ${sheetName})`);
+
+      if ((el.q.value || "").trim()) runSearch();
+      else renderEmpty("Base chargée. Lance une recherche.");
+
+    }catch(err){
+      console.error(err);
+      setStatus("bad", "Erreur lecture Excel.");
+      renderEmpty("Erreur lecture Excel.");
+      setUrlChip(urlUsed || "—", false);
+    }
+  }
+
+  function pickBestSheet(wb){
+    let bestName = wb.SheetNames[0];
+    let bestScore = -1;
+    for (const name of wb.SheetNames){
+      const ws = wb.Sheets[name];
+      const ref = ws && ws["!ref"];
+      if (!ref) continue;
+      const range = XLSX.utils.decode_range(ref);
+      const rows = (range.e.r - range.s.r + 1);
+      const cols = (range.e.c - range.s.c + 1);
+      const score = rows * cols;
+      if (score > bestScore){
+        bestScore = score;
+        bestName = name;
+      }
+    }
+    return bestName;
+  }
+
+  // =========================
+  // SEARCH
+  // =========================
+  function runSearch(isSilent){
+    const query = (el.q.value || "").trim();
+    if (!query){
+      renderEmpty("Tape une référence ou une désignation puis “Rechercher”.");
+      el.matchLabel.textContent = "0";
+      el.qtyLabel.textContent = "0";
+      lastResults = [];
+      lastAggRaw = [];
+      return;
+    }
+    if (!baseRows.length){
+      renderEmpty("Base non chargée. Mets gueudetdata.xlsx à côté ou charge un fichier via 📁.");
+      return;
+    }
+
+    const mode = el.mode.value;
+    const matchType = el.matchType.value;
+    const minQty = Math.max(0, Number(el.minQty.value || 0));
+    const qNorm = norm(query);
+
+    // ✅ FIX REFS NUMÉRIQUES : ignore les zéros à gauche si c’est un nombre
+    function stripLeadingZeros(s){
+      s = String(s || "").trim();
+      if (!s) return "";
+      if (/^\d+$/.test(s)) return s.replace(/^0+/, "") || "0";
+      return s;
+    }
+
+    function matches(fieldValue){
+      const rawVal = String(fieldValue || "").trim();
+      if (!rawVal) return false;
+
+      const v = norm(rawVal);
+      if (!v) return false;
+
+      // match classique
+      if (matchType === "exact") {
+        if (v === qNorm) return true;
+      } else if (matchType === "starts") {
+        if (v.startsWith(qNorm)) return true;
+      } else {
+        if (v.includes(qNorm)) return true;
+      }
+
+      // match “numérique sans zéros”
+      const qNum = stripLeadingZeros(query);
+      const vNum = stripLeadingZeros(rawVal);
+      if (qNum && vNum && /^\d+$/.test(qNum) && /^\d+$/.test(vNum)){
+        if (matchType === "exact") return vNum === qNum;
+        if (matchType === "starts") return vNum.startsWith(qNum);
+        return vNum.includes(qNum);
+      }
+
+      return false;
+    }
+
+    const filtered = baseRows.filter(r => {
+      const okRef = (mode === "ref" || mode === "auto") ? matches(r.ref) : false;
+      const okDes = (mode === "des" || mode === "auto") ? matches(r.des) : false;
+      return okRef || okDes;
+    });
+
+    const agg = new Map();
+    for (const r of filtered){
+      const key = makeClientId(r.clientInternal, r.clientName);
+      if (!agg.has(key)){
+        agg.set(key, {
+          clientInternal: r.clientInternal,
+          clientName: r.clientName,
+          qty: 0,
+          refs: new Set(),
+          dess: new Set(),
+        });
+      }
+      const it = agg.get(key);
+      it.qty += r.qty;
+      if (r.ref) it.refs.add(r.ref);
+      if (r.des) it.dess.add(r.des);
+    }
+
+    let results = Array.from(agg.values())
+      .filter(x => x.qty >= minQty)
+      .sort((a,b) => b.qty - a.qty);
+
+    lastAggRaw = results;
+
+    lastResults = results.map(x => ({
+      "N° client Interne": x.clientInternal,
+      "Nom du client": x.clientName,
+      "Quantité": Math.round(x.qty),
+      "Désignations trouvées": Array.from(x.dess).slice(0, 6).join(" | "),
+      "Références trouvées": Array.from(x.refs).slice(0, 10).join(" | "),
+    }));
+
+    const totalQty = results.reduce((s,x)=>s+x.qty,0);
+    el.matchLabel.textContent = String(results.length);
+    el.qtyLabel.textContent = String(Math.round(totalQty));
+
+    if (!isSilent) setStatus("ok", `Résultats : ${results.length} clients — Qté ${Math.round(totalQty)}`);
+
+    renderResults(results);
+  }
+
+  function renderResults(results){
+    if (!results.length){
+      renderEmpty("Aucun client trouvé pour cette recherche.");
+      return;
+    }
+
+    el.results.innerHTML = results.map(r => {
+      const refsArr = Array.from(r.refs);
+      const dessArr = Array.from(r.dess);
+
+      const refsShort = refsArr.slice(0, 10).join(" | ");
+      const dessShort = dessArr.slice(0, 6).join(" | ");
+
+      const copyText =
+        `GUEUDET — ${r.clientName || "—"}\n` +
+        `N° client interne: ${r.clientInternal || "—"}\n` +
+        `Quantité: ${Math.round(r.qty)}\n` +
+        `Références: ${refsShort || "—"}\n` +
+        `Désignations: ${dessShort || "—"}`;
+
+      return `
+        <div class="item">
+          <div class="itemTop">
+            <div style="min-width:0">
+              <p class="clientName">${esc(r.clientName || "—")}</p>
+              <div class="sub">
+                ${r.clientInternal ? `<span>N° interne: <b>${esc(r.clientInternal)}</b></span>` : `<span>N° interne: <b>—</b></span>`}
+                <span>Refs: <b>${refsArr.length}</b></span>
+                <span>Dés.: <b>${dessArr.length}</b></span>
+              </div>
+            </div>
+            <span class="badge">Qté: ${Math.round(r.qty)}</span>
+          </div>
+
+          <div class="small"><b>Références</b> : ${esc(refsShort || "—")}</div>
+          <div class="small" style="margin-top:6px;"><b>Désignations</b> : ${esc(dessShort || "—")}</div>
+
+          <div class="sub" style="margin-top:10px;">
+            <button class="pillBtn" data-copy="${escAttr(copyText)}">Copier</button>
+            <button class="pillBtn" data-copy="${escAttr(r.clientInternal || "")}">Copier N°</button>
+            <button class="pillBtn" data-copy="${escAttr(r.clientName || "")}">Copier nom</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    el.results.querySelectorAll("[data-copy]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const txt = btn.getAttribute("data-copy") || "";
+        if (!txt) return;
+        try{
+          await navigator.clipboard.writeText(txt);
+          pulseStatus("ok", "Copié ✅");
+        }catch{
+          fallbackCopy(txt);
+          pulseStatus("ok", "Copié ✅");
+        }
+      });
+    });
+  }
+
+  function renderEmpty(msg){
+    el.results.innerHTML = `<div class="empty">${esc(msg || "—")}</div>`;
+  }
+
+  // =========================
+  // EXPORTS
+  // =========================
+  function exportCSV(){
+    if (!lastResults.length){
+      alert("Aucun résultat à exporter.");
+      return;
+    }
+    const ws = XLSX.utils.json_to_sheet(lastResults);
+    const csv = XLSX.utils.sheet_to_csv(ws, { FS: ";", RS: "\n" });
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `explorer_gueudet_${stamp()}.csv`);
+  }
+
+  function exportXLSX(){
+    if (!lastResults.length){
+      alert("Aucun résultat à exporter.");
+      return;
+    }
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(lastResults);
+    XLSX.utils.book_append_sheet(wb, ws, "Résultats");
+    const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    downloadBlob(
+      new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+      `explorer_gueudet_${stamp()}.xlsx`
+    );
+  }
+
+  // =========================
+  // STATUS
+  // =========================
+  function setStatus(type, text){
+    el.statusText.textContent = text;
+    el.dotStatus.classList.remove("ok","warn","bad");
+    if (type === "ok") el.dotStatus.classList.add("ok");
+    else if (type === "bad") el.dotStatus.classList.add("bad");
+    else el.dotStatus.classList.add("warn");
+  }
+
+  let statusTimer = null;
+  function pulseStatus(type, text){
+    clearTimeout(statusTimer);
+    const prev = el.statusText.textContent;
+    setStatus(type, text);
+    statusTimer = setTimeout(() => {
+      if (baseRows.length) setStatus("ok", `Base OK — ${baseRows.length} lignes (sheet: ${lastSheet || "?"})`);
+      else setStatus("warn", prev || "—");
+    }, 900);
+  }
+
+  // =========================
+  // HELPERS
+  // =========================
+  function loadJSON(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    }catch{
+      return fallback;
+    }
+  }
+  function saveJSON(key, val){
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  function buildHeaderMap(sampleRow){
+    const map = {};
+    for (const k of Object.keys(sampleRow || {})){
+      map[norm(k)] = k;
+    }
+    return map;
+  }
+
+  function findCol(headerMap, candidates){
+    for (const c of candidates){
+      const nk = norm(c);
+      if (headerMap[nk]) return headerMap[nk];
+    }
+    return null;
+  }
+
+  function toNumber(v){
+    if (v === null || v === undefined) return 0;
+    if (typeof v === "number") return isFinite(v) ? v : 0;
+    const s = String(v).trim();
+    if (!s) return 0;
+    const normed = s.replace(/\s/g,"").replace(",",".");
+    const n = Number(normed);
+    return isFinite(n) ? n : 0;
+  }
+
+  function norm(s){
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+
+  function makeClientId(clientInternal, clientName){
+    const a = norm(clientInternal).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+    const b = norm(clientName).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+    return (a || "noid") + "__" + (b || "noname");
+  }
+
+  function stamp(){
+    const d = new Date();
+    const pad = x => String(x).padStart(2,"0");
+    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+  }
+
+  function downloadBlob(blob, filename){
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+
+  function esc(str){
+    return String(str ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+
+  function escAttr(str){
+    return esc(str).replace(/\n/g, "&#10;");
+  }
+
+  function fallbackCopy(text){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    ta.style.top = "-9999px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try{ document.execCommand("copy"); }catch{}
+    ta.remove();
+  }
+
+})();
+</script>
+</body>
+</html>

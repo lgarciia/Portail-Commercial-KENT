@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Consultation Budget</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+:root{
+  --bg:#0b0f17;
+  --panel:rgba(255,255,255,0.06);
+  --line:rgba(255,255,255,0.10);
+  --text:rgba(255,255,255,0.92);
+  --muted:rgba(255,255,255,0.62);
+  --accent:#7c3aed;
+  --accent2:#22c55e;
+  --warn:#f59e0b;
+  --bad:#ff6b6b;
+  --shadow:0 18px 40px rgba(0,0,0,.45);
+  --radius:18px;
+  --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+}
+
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:18px 30px;
+  background:rgba(255,255,255,0.04);
+  border-bottom:1px solid var(--line);
+}
+
+.logo{
+  font-weight:900;
+  font-size:18px;
+}
+
+.badge{
+  background:rgba(124,58,237,.2);
+  padding:6px 12px;
+  border-radius:999px;
+  font-weight:900;
+  font-size:13px;
+}
+
+.container{
+  padding:30px;
+  max-width:1600px;
+  margin:auto;
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:25px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(10px);
+}
+
+.status{
+  font-weight:900;
+  margin-bottom:15px;
+}
+
+.ok{color:var(--accent2)}
+.warn{color:var(--warn)}
+.bad{color:var(--bad)}
+
+.btn{
+  padding:8px 14px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.05);
+  cursor:pointer;
+  font-weight:900;
+  margin-right:10px;
+}
+.btn:hover{background:rgba(255,255,255,0.1)}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+th, td{
+  padding:8px 10px;
+  border-bottom:1px solid var(--line);
+  text-align:right;
+}
+
+th{
+  background:rgba(255,255,255,0.05);
+  font-weight:900;
+  cursor:pointer;
+}
+
+td:first-child, th:first-child,
+td:nth-child(2), th:nth-child(2){
+  text-align:left;
+}
+
+tfoot td{
+  font-weight:900;
+  background:rgba(124,58,237,.15);
+}
+
+input{display:none}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+  <div class="logo">Consultation Budget</div>
+  <div class="badge" id="labelBadge"></div>
+</div>
+
+<div class="container">
+  <div class="card">
+
+    <div class="status warn" id="status">Chargement...</div>
+
+    <button class="btn" id="reload">Recharger</button>
+    <button class="btn" id="manual">Charger fichier</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" />
+
+    <div style="overflow:auto;margin-top:20px">
+      <table id="table"></table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+
+/* =====================================================
+   🔧 CONFIGURATION — À MODIFIER POUR GUEUDET / FORD
+===================================================== */
+const CONFIG = {
+FILE_NAME: "budgetgueudet.xlsx",
+CACHE_KEY: "CONSULT_BUDGET_GUEUDET_V1",
+LABEL: "GUEUDET"
+
+};
+/* ===================================================== */
+
+const statusEl = document.getElementById("status");
+const tableEl = document.getElementById("table");
+const reloadBtn = document.getElementById("reload");
+const manualBtn = document.getElementById("manual");
+const fileInput = document.getElementById("fileInput");
+const labelBadge = document.getElementById("labelBadge");
+
+labelBadge.textContent = CONFIG.LABEL;
+
+let dataRows = [];
+let sortDesc = true;
+
+reloadBtn.onclick = () => autoFetch();
+manualBtn.onclick = () => fileInput.click();
+
+fileInput.onchange = async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const buf = await file.arrayBuffer();
+  parseExcel(buf);
+};
+
+function setStatus(type,msg){
+  statusEl.className="status "+type;
+  statusEl.textContent=msg;
+}
+
+async function autoFetch(){
+  try{
+    setStatus("warn","Chargement automatique...");
+    const res = await fetch(CONFIG.FILE_NAME+"?v="+Date.now(),{cache:"no-store"});
+    if(!res.ok){
+      setStatus("bad","Erreur fetch ("+res.status+")");
+      return;
+    }
+    const buf = await res.arrayBuffer();
+    parseExcel(buf);
+  }catch{
+    setStatus("bad","Erreur réseau");
+  }
+}
+
+function normalizeKey(k){
+  return String(k||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+
+function parseExcel(buffer){
+  try{
+    const wb = XLSX.read(buffer,{type:"array"});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws,{defval:""});
+
+    if(!raw.length){
+      setStatus("bad","Fichier vide");
+      return;
+    }
+
+    dataRows = raw.map(r=>{
+      const obj={};
+      Object.keys(r).forEach(k=>{
+        obj[normalizeKey(k)] = r[k];
+      });
+
+      const months = [
+        obj["janvier"],obj["fevrier"],obj["mars"],obj["avril"],
+        obj["mai"],obj["juin"],obj["juillet"],obj["aout"],
+        obj["septembre"],obj["octobre"],obj["novembre"],obj["decembre"]
+      ].map(n=>Number(n)||0);
+
+      return {
+        client: obj["client"] || "",
+        nclient: obj["n client"] || "",
+        months,
+        commentaire: obj["commentaire"] || ""
+      };
+    });
+
+    render();
+    setStatus("ok","Budget chargé — "+dataRows.length+" lignes");
+
+  }catch(e){
+    console.error(e);
+    setStatus("bad","Erreur lecture Excel");
+  }
+}
+
+function render(){
+
+  dataRows.sort((a,b)=>{
+    const ta=a.months.reduce((s,x)=>s+x,0);
+    const tb=b.months.reduce((s,x)=>s+x,0);
+    return sortDesc ? tb-ta : ta-tb;
+  });
+
+  let html="<thead><tr>";
+  const headers=["CLIENT","N CLIENT","Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc","TOTAL","COMMENTAIRE"];
+  headers.forEach((h,i)=>{
+    if(h==="TOTAL"){
+      html+=`<th onclick="toggleSort()">${h} ${sortDesc?"▼":"▲"}</th>`;
+    } else {
+      html+=`<th>${h}</th>`;
+    }
+  });
+  html+="</tr></thead><tbody>";
+
+  let totalGlobal=0;
+
+  dataRows.forEach(r=>{
+    const total=r.months.reduce((a,b)=>a+b,0);
+    totalGlobal+=total;
+    html+="<tr>";
+    html+=`<td>${esc(r.client)}</td>`;
+    html+=`<td>${esc(r.nclient)}</td>`;
+    r.months.forEach(m=>html+=`<td>${format(m)}</td>`);
+    html+=`<td><b>${format(total)}</b></td>`;
+    html+=`<td style="text-align:left">${esc(r.commentaire)}</td>`;
+    html+="</tr>";
+  });
+
+  html+="</tbody><tfoot><tr><td colspan='14'>TOTAL GLOBAL</td><td>"+format(totalGlobal)+"</td><td></td></tr></tfoot>";
+  tableEl.innerHTML=html;
+}
+
+window.toggleSort=function(){
+  sortDesc=!sortDesc;
+  render();
+}
+
+function format(n){
+  return new Intl.NumberFormat("fr-FR").format(n);
+}
+
+function esc(s){
+  return String(s||"").replace(/[&<>"']/g,m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
+
+autoFetch();
+
+})();
+</script>
+
+</body>
+</html>

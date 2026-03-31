@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Paramétrage — Mémo appli</title>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --panel2:rgba(255,255,255,0.04);
+      --line:rgba(255,255,255,0.10);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.62);
+      --muted2:rgba(255,255,255,0.46);
+      --accent:#7c3aed;
+      --accent2:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ff6b6b;
+      --shadow:0 18px 40px rgba(0,0,0,.45);
+      --radius:18px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:
+        radial-gradient(1200px 800px at 20% 0%, rgba(124,58,237,.20), transparent 55%),
+        radial-gradient(900px 700px at 85% 10%, rgba(34,197,94,.12), transparent 55%),
+        radial-gradient(900px 700px at 50% 110%, rgba(245,158,11,.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      padding:18px 14px 28px;
+    }
+    .wrap{max-width:1200px;margin:0 auto;position:relative;isolation:isolate;}
+
+    .navbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 16px;border-radius:18px;
+      background: rgba(255,255,255,0.04);
+      border:1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      position: sticky; top: 12px; z-index: 20;
+    }
+    .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+    .logo{
+      width:42px;height:42px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(34,197,94,.70));
+      box-shadow: 0 10px 26px rgba(124,58,237,.25);
+      flex:0 0 auto;
+    }
+    .title{display:flex;flex-direction:column;line-height:1.1;min-width:0;}
+    .title b{font-size:15px; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .title span{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .navRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.15s transform, .15s background;
+      white-space:nowrap;
+      user-select:none;
+    }
+    .btn:hover{background: rgba(255,255,255,0.08)}
+    .btn:active{transform: scale(.98)}
+    .btn.primary{
+      border-color: rgba(124,58,237,.35);
+      background: rgba(124,58,237,.14);
+    }
+    .btn.ghost{background: rgba(255,255,255,0.04);}
+
+    input[type="text"], textarea{
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.25);
+      color:var(--text);
+      padding:10px 12px;
+      outline:none;
+      font-size:14px;
+      font-weight:850;
+      width:100%;
+    }
+    textarea{min-height:110px; resize:vertical; font-weight:800;}
+    input[type="text"]::placeholder{color: rgba(255,255,255,0.38); font-weight:700;}
+    input[type="text"]:focus, textarea:focus{
+      border-color: rgba(124,58,237,.55);
+      box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:12px;
+      margin-top:12px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns: 1fr;}
+    }
+
+    .card{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      backdrop-filter: blur(10px);
+      margin-top:12px;
+    }
+    .sectionTitle{
+      margin:0 0 10px;
+      font-size:13px;color:var(--muted);
+      letter-spacing:.3px;text-transform:uppercase;
+    }
+    .meta{
+      display:flex;gap:8px;flex-wrap:wrap;
+      color:var(--muted);font-size:12px;
+      margin-top:8px;
+    }
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+    }
+    .dot{width:8px;height:8px;border-radius:99px;background: rgba(255,255,255,0.25);}
+    .dot.ok{background: var(--accent2)}
+    .dot.warn{background: var(--warn)}
+    .dot.bad{background: var(--bad)}
+    .muted{color:var(--muted);}
+    .muted2{color:var(--muted2);}
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:10px;
+    }
+    details{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      border-radius:16px;
+      overflow:hidden;
+    }
+    summary{
+      list-style:none;
+      cursor:pointer;
+      padding:12px 12px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      user-select:none;
+    }
+    summary::-webkit-details-marker{display:none;}
+    .sumLeft{min-width:0;}
+    .sumTitle{
+      font-weight:950;
+      font-size:13px;
+      line-height:1.25;
+    }
+    .sumSub{
+      margin-top:4px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.2;
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:7px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      font-weight:950;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .badge code{font-weight:900;color:rgba(255,255,255,0.86)}
+    .content{
+      border-top:1px solid rgba(255,255,255,0.08);
+      padding:12px;
+    }
+    .kvs{
+      display:grid;
+      grid-template-columns: 160px 1fr;
+      gap:8px 12px;
+      margin-top:8px;
+    }
+    @media (max-width: 700px){
+      .kvs{grid-template-columns: 1fr;}
+    }
+    .k{color:var(--muted);font-size:12px;font-weight:950;text-transform:uppercase;letter-spacing:.2px;}
+    .v{font-size:13px;font-weight:850;color:rgba(255,255,255,0.90);line-height:1.35;}
+    .v code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12px;
+      background: rgba(0,0,0,0.28);
+      border:1px solid rgba(255,255,255,0.10);
+      padding:2px 6px;
+      border-radius:10px;
+      white-space:nowrap;
+    }
+    .v .codes{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+    .hr{
+      height:1px;background:rgba(255,255,255,0.08);
+      margin:10px 0;
+    }
+    .rowBtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:10px;}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .pill:hover{background: rgba(255,255,255,0.08);}
+    .okText{color:rgba(34,197,94,.95);font-weight:950;}
+    .warnText{color:rgba(245,158,11,.95);font-weight:950;}
+    .badText{color:rgba(255,107,107,.95);font-weight:950;}
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="navbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <b>Paramétrage — Mémo appli</b>
+        <span>Pages • Fichiers XLSX • Colonnes • URL params • localStorage</span>
+      </div>
+    </div>
+
+    <div class="navRight">
+      <button class="btn ghost" id="btnOpenAll">Tout ouvrir</button>
+      <button class="btn ghost" id="btnCloseAll">Tout fermer</button>
+      <button class="btn primary" id="btnCopyAll">Copier tout</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="sectionTitle">Recherche rapide</p>
+      <input id="q" type="text" placeholder="Chercher : page, fichier, colonne, localStorage, param URL…" />
+      <div class="meta">
+        <span class="chip"><span class="dot ok"></span><span><b>Astuce</b> : tape “CA Total”, “Date commande”, “vue_semaine”, “BUDGETFORD”...</span></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="sectionTitle">Notes (mémo perso)</p>
+      <textarea id="notes" placeholder="Écris tes notes ici (sauvegardées en localStorage)…"></textarea>
+      <div class="rowBtns">
+        <button class="pill" id="btnSaveNotes">Enregistrer</button>
+        <button class="pill" id="btnClearNotes">Vider</button>
+      </div>
+      <div class="meta">
+        <span class="chip"><span class="dot"></span><span>Clé : <code>APP_MEMO_NOTES</code></span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sectionTitle">Architecture commune</p>
+    <div class="kvs">
+      <div class="k">Lecture Excel</div>
+      <div class="v">
+        Fetch + SheetJS, conversion via <code>XLSX.utils.sheet_to_json</code>, sélection automatique de sheet via <code>pickBestSheet()</code>.
+        <div class="hr"></div>
+        <span class="muted2">⚠️ GitHub Pages : on utilise <code>fetchXlsxWithFallback()</code> qui tente : même dossier puis <code>data/</code>, + sniff ZIP “PK”.</span>
+      </div>
+
+      <div class="k">Filtrage mois</div>
+      <div class="v">
+        Priorité à la <code>date</code> si dispo, sinon fallback sur colonne <code>mois/mois2</code>.
+      </div>
+
+      <div class="k">Semaines</div>
+      <div class="v">
+        4 buckets fixes : <code>1→7</code>, <code>8→14</code>, <code>15→21</code>, <code>22→fin</code>. (Budget semaine = Budget mois / 4)
+      </div>
+
+      <div class="k">Commentaires</div>
+      <div class="v">
+        Mensuel : cache par année, préfixe selon entité. Semaine : cache par entité + année + mois.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sectionTitle">Pages de l’application</p>
+    <div class="list" id="list"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  /* =========================
+     DATA MÉMO (à adapter si besoin)
+  ========================= */
+  const PAGES = [
+    {
+      id: "home",
+      title: "Accueil (index.html / home.html)",
+      subtitle: "Point d’entrée : liens vers les analyses & reporting.",
+      tags: ["accueil","navigation"],
+      pageFile: "index.html",
+      purpose: [
+        "Affiche les accès aux pages d’analyse mensuelle et de reporting.",
+        "Peut accueillir un bouton vers Paramétrage."
+      ],
+      fetch: [],
+      columns: [],
+      urlParams: [],
+      storage: [],
+      notes: "À relier plus tard : bouton vers parametrage.html."
+    },
+
+    {
+      id: "parametrage",
+      title: "Paramétrage / Mémo (parametrage.html)",
+      subtitle: "Documentation interne : ce que fait chaque page, fichiers, colonnes, caches.",
+      tags: ["memo","docs","parametrage"],
+      pageFile: "parametrage.html",
+      purpose: [
+        "Page mémo : liste toutes les pages + configs + colonnes.",
+        "Recherche / copier / notes sauvegardées."
+      ],
+      fetch: [],
+      columns: [],
+      urlParams: [],
+      storage: ["APP_MEMO_NOTES"],
+      notes: "Cette page."
+    },
+
+    /* ===== ANALYSE MENSUELLE (Evol Analyse) ===== */
+    {
+      id: "analyse-psa",
+      title: "Evol Analyse — PSA",
+      subtitle: "Budget vs Réalisé mensuel + drilldown mois → clients → produits.",
+      tags: ["psa","analyse","drilldown"],
+      pageFile: "evol-analyse-psa.html",
+      purpose: [
+        "Charge Budget et Réel en fetch (xlsx).",
+        "Affiche tableau mensuel : Réel, Budget, Écart, Commentaire.",
+        "Clic sur un mois : liste clients, puis clic client : produits achetés.",
+        "Bouton Sem. : ouvre vue semaine."
+      ],
+      fetch: [
+        {label:"Budget", files:["budgetpsa.xlsx (selon année)"], folder:["./", "./data/"]},
+        {label:"Réel", files:["activitereelpsa.xlsx"], folder:["./", "./data/"]},
+      ],
+      columns: [
+        {area:"Réel", required:["Date vente (ou mois/mois2)", "colonne CA (ex: Montant prix achat kent / CA total / Montant...)"], optional:["N° client interne", "Nom du client", "Réf", "Désignation", "Qté"]},
+        {area:"Budget", required:["Colonnes mois: Janvier…Décembre"], optional:["autres colonnes lignes budget"]},
+      ],
+      urlParams: [
+        {name:"year", example:"2026", usedBy:"Redirection vers evol-reporting-psa.html"},
+        {name:"month", example:"1..12", usedBy:"Redirection vers evol-reporting-psa.html"},
+      ],
+      storage: [
+        "EVOL_ANALYSE_PSA_COMMENTS_<year>"
+      ],
+      notes: "PSA : date souvent en DD/MM/YYYY (Date vente)."
+    },
+
+    {
+      id: "analyse-gueudet",
+      title: "Evol Analyse — GUEUDET",
+      subtitle: "Même modèle que PSA (drilldown + Sem.).",
+      tags: ["gueudet","analyse","drilldown"],
+      pageFile: "evol-analyse-gueudet.html",
+      purpose: [
+        "Même architecture que PSA.",
+        "Réel OK (tu as dit que ça fonctionne déjà)."
+      ],
+      fetch: [
+        {label:"Budget", files:["budgetgueudet.xlsx (selon année)"], folder:["./", "./data/"]},
+        {label:"Réel", files:["activitereelgueudet.xlsx"], folder:["./", "./data/"]},
+      ],
+      columns: [
+        {area:"Réel", required:["Date vente (ou équivalent)", "colonne CA"], optional:["N° client interne", "Nom du client", "Réf/Désignation", "Qté"]},
+        {area:"Budget", required:["Janvier…Décembre"], optional:[]},
+      ],
+      urlParams: [],
+      storage: [
+        "EVOL_ANALYSE_GUEUDET_COMMENTS_<year>"
+      ],
+      notes: "Format date Gueudet : tu as dit aucun souci."
+    },
+
+    {
+      id: "analyse-ford",
+      title: "Evol Analyse — FORD",
+      subtitle: "Même modèle + FIX : produits via colonne “Description produit”.",
+      tags: ["ford","analyse","ca total","date commande"],
+      pageFile: "evol-analyse-ford.html",
+      purpose: [
+        "Charge Budget (budgetford.xlsx) + Réel (activitereelford.xlsx).",
+        "Réel Ford/Direct : CA = “CA Total”, date = “Date commande” (format YYYY-MM-DD).",
+        "Drilldown produits : utilise “Description produit”."
+      ],
+      fetch: [
+        {label:"Budget", files:["budgetford.xlsx (selon année)"], folder:["./", "./data/"]},
+        {label:"Réel", files:["activitereelford.xlsx"], folder:["./", "./data/"]},
+      ],
+      columns: [
+        {area:"Réel", required:["Date commande", "CA Total"], optional:["N° client interne / code", "Nom du client", "Description produit", "Référence", "Qté"]},
+        {area:"Budget", required:["Janvier…Décembre"], optional:[]},
+      ],
+      urlParams: [],
+      storage: [
+        "EVOL_ANALYSE_FORD_COMMENTS_<year>"
+      ],
+      notes: "Sem. doit passer dateCol=Date commande + amountColHint=CA Total."
+    },
+
+    {
+      id: "analyse-direct",
+      title: "Evol Analyse — DIRECT",
+      subtitle: "Même modèle + FIX : produits via “Description produit”.",
+      tags: ["direct","analyse","ca total","date commande"],
+      pageFile: "evol-analyse-direct.html",
+      purpose: [
+        "Charge Budget (budgetdirect.xlsx) + Réel (activitereeldirect.xlsx).",
+        "Réel Ford/Direct : CA = “CA Total”, date = “Date commande”.",
+        "Drilldown produits : utilise “Description produit”."
+      ],
+      fetch: [
+        {label:"Budget", files:["budgetdirect.xlsx (selon année)"], folder:["./", "./data/"]},
+        {label:"Réel", files:["activitereeldirect.xlsx"], folder:["./", "./data/"]},
+      ],
+      columns: [
+        {area:"Réel", required:["Date commande", "CA Total"], optional:["N° client interne / code", "Nom du client", "Description produit", "Référence", "Qté"]},
+        {area:"Budget", required:["Janvier…Décembre"], optional:[]},
+      ],
+      urlParams: [],
+      storage: [
+        "EVOL_ANALYSE_DIRECT_COMMENTS_<year>"
+      ],
+      notes: "Même mapping que Ford."
+    },
+
+    /* ===== REPORTING (Evol Reporting) ===== */
+    {
+      id: "reporting-psa",
+      title: "Evol Reporting — PSA",
+      subtitle: "Reporting Réel vs Budget avec matching N° client robuste (variantes).",
+      tags: ["reporting","psa","match n client"],
+      pageFile: "evol-reporting-psa.html",
+      purpose: [
+        "Compare Réel vs Budget au niveau client/produit (selon ton implémentation).",
+        "Matching N CLIENT robuste : 000123 ↔ 123, digits-only.",
+        "Chip contrôle : Match réel x/y (%)."
+      ],
+      fetch: [
+        {label:"Budget", files:["budgetpsa.xlsx"], folder:["./", "./data/"]},
+        {label:"Réel", files:["activitereelpsa.xlsx"], folder:["./", "./data/"]},
+      ],
+      columns: [
+        {area:"Budget", required:["N CLIENT / code client", "Colonnes mois"], optional:["produits/segments"]},
+        {area:"Réel", required:["N° client interne", "Date", "CA"], optional:["produits"]},
+      ],
+      urlParams: [
+        {name:"year", example:"2026", usedBy:"Filtre année"},
+        {name:"month", example:"1..12", usedBy:"Filtre mois (si présent)"},
+      ],
+      storage: [
+        "Caches éventuels de sélection mois / UI (selon ton code)",
+      ],
+      notes: "Objectif : verrouiller la remontée du réel (mismatch N CLIENT / mois)."
+    },
+
+    /* ===== VUE SEMAINE ===== */
+    {
+      id: "vue-semaine",
+      title: "Vue Semaine (vue_semaine.html)",
+      subtitle: "Drilldown mois → semaines (S1..S4) + commentaires par semaine.",
+      tags: ["semaine","drilldown","budget/4","date commande","date vente"],
+      pageFile: "vue_semaine.html",
+      purpose: [
+        "Re-fetch Budget et Réel.",
+        "Budget semaine = Budget mois / 4.",
+        "Réel semaine = somme des lignes dont la date est dans le mois, rangées par bucket (1-7/8-14/15-21/22-fin).",
+        "Commentaires par semaine + cumul, sauvegardés en localStorage."
+      ],
+      fetch: [
+        {label:"Budget", files:["budgetFile (param)"], folder:["./", "./data/"]},
+        {label:"Réel", files:["realFile (param)"], folder:["./", "./data/"]},
+      ],
+      columns: [
+        {area:"Réel", required:["dateCol (param)", "col montant (détection ou hint)"], optional:["autres colonnes"]},
+        {area:"Budget", required:["Colonne mois (Janvier..Décembre)"], optional:[]},
+      ],
+      urlParams: [
+        {name:"entity", example:"FORD", usedBy:"Clé localStorage + affichage"},
+        {name:"year", example:"2026", usedBy:"Filtre année"},
+        {name:"month", example:"jan", usedBy:"Index mois"},
+        {name:"monthLabel", example:"Janvier", usedBy:"Affichage + fallback colonne budget"},
+        {name:"realFile", example:"activitereelford.xlsx", usedBy:"fetch réel"},
+        {name:"budgetFile", example:"budgetford.xlsx", usedBy:"fetch budget"},
+        {name:"dateCol", example:"Date commande", usedBy:"col date réel"},
+        {name:"amountColHint", example:"CA Total", usedBy:"col montant réel (optionnel)"},
+      ],
+      storage: [
+        "WEEK_VIEW_COMMENTS_<entity>_<year>_<monthKey>"
+      ],
+      notes: "Ford/Direct : dateCol=Date commande + amountColHint=CA Total. PSA/Gueudet : souvent Date vente."
+    },
+  ];
+
+  /* =========================
+     DOM
+  ========================= */
+  const el = {
+    list: document.getElementById("list"),
+    q: document.getElementById("q"),
+    btnOpenAll: document.getElementById("btnOpenAll"),
+    btnCloseAll: document.getElementById("btnCloseAll"),
+    btnCopyAll: document.getElementById("btnCopyAll"),
+    notes: document.getElementById("notes"),
+    btnSaveNotes: document.getElementById("btnSaveNotes"),
+    btnClearNotes: document.getElementById("btnClearNotes"),
+  };
+
+  const NOTES_KEY = "APP_MEMO_NOTES";
+  el.notes.value = localStorage.getItem(NOTES_KEY) || "";
+
+  el.btnSaveNotes.addEventListener("click", () => {
+    localStorage.setItem(NOTES_KEY, el.notes.value || "");
+    toast("Notes enregistrées.");
+  });
+
+  el.btnClearNotes.addEventListener("click", () => {
+    el.notes.value = "";
+    localStorage.setItem(NOTES_KEY, "");
+    toast("Notes vidées.");
+  });
+
+  el.btnOpenAll.addEventListener("click", () => {
+    document.querySelectorAll("details").forEach(d => d.open = true);
+  });
+
+  el.btnCloseAll.addEventListener("click", () => {
+    document.querySelectorAll("details").forEach(d => d.open = false);
+  });
+
+  el.btnCopyAll.addEventListener("click", async () => {
+    const text = buildFullText(PAGES);
+    await copyText(text);
+    toast("Tout copié.");
+  });
+
+  el.q.addEventListener("input", () => render());
+
+  render();
+
+  function render(){
+    const q = norm(el.q.value || "");
+    const filtered = !q ? PAGES : PAGES.filter(p => {
+      const blob = norm(JSON.stringify(p));
+      return blob.includes(q);
+    });
+
+    el.list.innerHTML = filtered.map(p => pageCard(p)).join("");
+
+    el.list.querySelectorAll("[data-copy-one]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const id = btn.getAttribute("data-copy-one");
+        const page = PAGES.find(x => x.id === id);
+        if (!page) return;
+        await copyText(buildOneText(page));
+        toast("Bloc copié.");
+      });
+    });
+
+    el.list.querySelectorAll("[data-open-page]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const file = btn.getAttribute("data-open-page");
+        if (!file) return;
+        location.href = file; // simple navigation locale
+      });
+    });
+  }
+
+  function pageCard(p){
+    const tagLine = (p.tags || []).slice(0,4).map(t => `<span class="badge"><code>${esc(t)}</code></span>`).join(" ");
+    const fetchLine = (p.fetch || []).map(f => `<span class="chip"><span class="dot ok"></span><span>${esc(f.label)} : ${esc((f.files||[]).join(", "))}</span></span>`).join("");
+
+    return `
+      <details>
+        <summary>
+          <div class="sumLeft">
+            <div class="sumTitle">${esc(p.title)} <span class="muted2">—</span> <span class="muted2"><code>${esc(p.pageFile || "—")}</code></span></div>
+            <div class="sumSub">${esc(p.subtitle || "")}</div>
+            <div class="meta" style="margin-top:8px">${tagLine}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+            <span class="badge"><span class="dot ok"></span><code>${esc((p.fetch||[]).length ? "Fetch XLSX" : "UI")}</code></span>
+            <button class="pill" data-copy-one="${escAttr(p.id)}" type="button">Copier</button>
+          </div>
+        </summary>
+
+        <div class="content">
+          <div class="kvs">
+            <div class="k">Fichier page</div>
+            <div class="v">
+              <div class="codes">
+                <code>${esc(p.pageFile || "—")}</code>
+                ${p.pageFile ? `<button class="pill" data-open-page="${escAttr(p.pageFile)}" type="button">Ouvrir</button>` : ""}
+              </div>
+            </div>
+
+            <div class="k">Rôle</div>
+            <div class="v">${(p.purpose||[]).map(x => `• ${esc(x)}`).join("<br>") || "—"}</div>
+
+            <div class="k">Fetch</div>
+            <div class="v">
+              ${fetchLine || `<span class="muted">Aucun fetch (page pure UI / navigation).</span>`}
+              ${p.fetch?.length ? `
+                <div class="hr"></div>
+                ${(p.fetch||[]).map(f => `
+                  <div class="muted2" style="margin-bottom:6px;">
+                    <b>${esc(f.label)}</b> → Dossiers testés : ${(f.folder||[]).map(d=>`<code>${esc(d)}</code>`).join(" ")}
+                  </div>
+                `).join("")}
+              ` : ""}
+            </div>
+
+            <div class="k">Colonnes (Excel)</div>
+            <div class="v">
+              ${(p.columns||[]).length ? (p.columns||[]).map(c => `
+                <div style="margin-bottom:10px;">
+                  <span class="badge"><code>${esc(c.area)}</code></span>
+                  <div class="hr"></div>
+                  <div><span class="okText">Requises</span> : ${(c.required||[]).map(x=>`<code>${esc(x)}</code>`).join(" ") || "—"}</div>
+                  <div style="margin-top:6px;"><span class="muted">Optionnelles</span> : ${(c.optional||[]).map(x=>`<code>${esc(x)}</code>`).join(" ") || "—"}</div>
+                </div>
+              `).join("") : `<span class="muted">—</span>`}
+            </div>
+
+            <div class="k">Paramètres URL</div>
+            <div class="v">
+              ${(p.urlParams||[]).length ? (p.urlParams||[]).map(u => `
+                <div style="margin-bottom:6px;">
+                  <code>${esc(u.name)}</code> = <span class="muted2">${esc(u.example || "—")}</span>
+                  <span class="muted2"> — ${esc(u.usedBy || "")}</span>
+                </div>
+              `).join("") : `<span class="muted">Aucun (ou non utilisé).</span>`}
+            </div>
+
+            <div class="k">localStorage</div>
+            <div class="v">
+              ${(p.storage||[]).length ? (p.storage||[]).map(k => `<code>${esc(k)}</code>`).join(" ") : `<span class="muted">Aucun.</span>`}
+            </div>
+
+            <div class="k">Notes</div>
+            <div class="v">${esc(p.notes || "—")}</div>
+          </div>
+
+          <div class="rowBtns">
+            <button class="pill" data-copy-one="${escAttr(p.id)}" type="button">Copier ce bloc</button>
+          </div>
+        </div>
+      </details>
+    `;
+  }
+
+  function buildOneText(p){
+    const lines = [];
+    lines.push(`# ${p.title}`);
+    lines.push(`Fichier: ${p.pageFile || "—"}`);
+    lines.push(`Résumé: ${p.subtitle || ""}`);
+    lines.push(`Tags: ${(p.tags||[]).join(", ")}`);
+    lines.push("");
+    lines.push("Rôle:");
+    (p.purpose||[]).forEach(x => lines.push(`- ${x}`));
+    lines.push("");
+    lines.push("Fetch:");
+    (p.fetch||[]).forEach(f => {
+      lines.push(`- ${f.label}: ${(f.files||[]).join(", ")} (dossiers: ${(f.folder||[]).join(" / ")})`);
+    });
+    if (!(p.fetch||[]).length) lines.push("- Aucun");
+    lines.push("");
+    lines.push("Colonnes:");
+    (p.columns||[]).forEach(c => {
+      lines.push(`- ${c.area}`);
+      lines.push(`  - Requises: ${(c.required||[]).join(", ") || "—"}`);
+      lines.push(`  - Optionnelles: ${(c.optional||[]).join(", ") || "—"}`);
+    });
+    if (!(p.columns||[]).length) lines.push("- —");
+    lines.push("");
+    lines.push("Paramètres URL:");
+    (p.urlParams||[]).forEach(u => lines.push(`- ${u.name}=${u.example || "—"} (${u.usedBy || ""})`));
+    if (!(p.urlParams||[]).length) lines.push("- —");
+    lines.push("");
+    lines.push("localStorage:");
+    (p.storage||[]).forEach(k => lines.push(`- ${k}`));
+    if (!(p.storage||[]).length) lines.push("- —");
+    lines.push("");
+    lines.push(`Notes: ${p.notes || "—"}`);
+    return lines.join("\n");
+  }
+
+  function buildFullText(list){
+    return list.map(buildOneText).join("\n\n---\n\n");
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch{
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+  }
+
+  function toast(msg){
+    const n = document.createElement("div");
+    n.textContent = msg;
+    n.style.position = "fixed";
+    n.style.left = "50%";
+    n.style.bottom = "22px";
+    n.style.transform = "translateX(-50%)";
+    n.style.padding = "10px 12px";
+    n.style.borderRadius = "14px";
+    n.style.border = "1px solid rgba(255,255,255,0.14)";
+    n.style.background = "rgba(10,14,22,0.90)";
+    n.style.boxShadow = "0 18px 40px rgba(0,0,0,.45)";
+    n.style.backdropFilter = "blur(10px)";
+    n.style.color = "rgba(255,255,255,0.92)";
+    n.style.fontWeight = "950";
+    n.style.zIndex = "9999";
+    document.body.appendChild(n);
+    setTimeout(()=>{ n.remove(); }, 1100);
+  }
+
+  function norm(s){
+    return String(s||"")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g," ")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+  function esc(str){
+    return String(str ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+  function escAttr(str){
+    return esc(str).replace(/"/g, "&quot;");
+  }
+})();
+</script>
+</body>
+</html>

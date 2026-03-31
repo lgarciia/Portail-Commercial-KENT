@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Projection PSA 2026 — Prorata Jours Ouvrés</title>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --panel2:rgba(0,0,0,0.22);
+      --stroke:rgba(255,255,255,0.12);
+      --stroke2:rgba(255,255,255,0.16);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.62);
+      --muted2:rgba(255,255,255,0.46);
+      --accent:rgba(132,182,255,0.95);
+      --good:rgba(95,255,160,0.92);
+      --warn:rgba(245,158,11,0.92);
+      --bad:rgba(255,110,110,0.92);
+      --shadow:0 16px 40px rgba(0,0,0,0.35);
+      --radius:16px;
+      --cellH:34px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(90,140,255,0.16), transparent 60%),
+        radial-gradient(1100px 800px at 110% 20%, rgba(255,120,200,0.10), transparent 55%),
+        radial-gradient(900px 700px at 60% 110%, rgba(130,255,200,0.08), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    .topbar{
+      height:66px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 18px;
+      border-bottom:1px solid var(--stroke);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      backdrop-filter: blur(10px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width: 520px;
+    }
+    .logo{
+      width:38px;height:38px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(132,182,255,0.95), rgba(255,125,206,0.65));
+      box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+      border:1px solid rgba(255,255,255,0.15);
+      flex:0 0 auto;
+    }
+    .titleWrap{ display:flex; flex-direction:column; line-height:1.15; }
+    .title{ font-weight:1000; letter-spacing:0.2px; font-size:14px; }
+    .subtitle{ font-size:12px; color:var(--muted); }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .btn{
+      height:38px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color:var(--text);
+      font-weight:900;
+      font-size:12px;
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      cursor:pointer;
+      user-select:none;
+      text-decoration:none;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.22);
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.09); }
+    .btn:active{ transform: translateY(0px); }
+    .btn.primary{ background: linear-gradient(135deg, rgba(132,182,255,0.22), rgba(255,125,206,0.12)); border-color: rgba(132,182,255,0.30); }
+    .btn.ghost{ background: rgba(255,255,255,0.04); }
+    .btn.danger{ background: rgba(255,110,110,0.12); border-color: rgba(255,110,110,0.22); }
+
+    .fileInput{ display:none; }
+
+    .shell{
+      height: calc(100% - 66px);
+      padding:16px;
+      display:grid;
+      grid-template-rows: auto auto 1fr;
+      gap:12px;
+      overflow:hidden;
+    }
+
+    .card{
+      border:1px solid var(--stroke);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow:hidden;
+    }
+
+    .meta{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(0,0,0,0.18);
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      height:30px;
+      padding:0 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .pill strong{ color:var(--text); font-weight:1000; }
+
+    .status{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      font-weight:1000;
+      color: rgba(255,255,255,0.86);
+    }
+    .dot{
+      width:10px;height:10px;border-radius:99px;
+      background: rgba(255,255,255,0.25);
+      border:1px solid rgba(255,255,255,0.16);
+    }
+    .ok .dot{ background: rgba(95,255,160,0.65); border-color: rgba(95,255,160,0.35); }
+    .ko .dot{ background: rgba(255,110,110,0.65); border-color: rgba(255,110,110,0.35); }
+
+    .row2{
+      display:flex;
+      align-items:flex-end;
+      gap:12px;
+      flex-wrap:wrap;
+      padding:12px 14px;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:240px;
+    }
+    label{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:1000;
+      letter-spacing:0.2px;
+      text-transform:uppercase;
+    }
+    input, select{
+      height:40px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color:var(--text);
+      padding:0 12px;
+      outline:none;
+      font-size:13px;
+      font-weight:900;
+    }
+    input::placeholder{ color: var(--muted2); font-weight:800; }
+    .miniHelp{
+      font-size:11px;
+      color: var(--muted);
+      font-weight:800;
+      margin-top:2px;
+    }
+
+    .gridDays{
+      padding:12px 14px 14px;
+      display:grid;
+      grid-template-columns: 220px repeat(12, minmax(90px, 1fr)) 130px;
+      gap:8px;
+      align-items:center;
+      border-top:1px solid rgba(255,255,255,0.06);
+    }
+    .daysHead{
+      font-size:11px;
+      color: rgba(255,255,255,0.75);
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:0.2px;
+      text-align:center;
+      padding:6px 8px;
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:12px;
+      background: rgba(0,0,0,0.18);
+    }
+    .daysLabel{
+      font-weight:1000;
+      color: rgba(255,255,255,0.86);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 8px;
+    }
+    .daysInput{
+      height:36px;
+      border-radius:12px;
+      text-align:center;
+      padding:0 8px;
+      font-weight:1000;
+    }
+    .daysSum{
+      text-align:right;
+      padding:0 8px;
+      font-weight:1000;
+      color: rgba(255,255,255,0.86);
+    }
+
+    .tableScroller{
+      height:100%;
+      overflow:auto;
+      border-top:1px solid rgba(255,255,255,0.06);
+    }
+
+    table{
+      border-collapse:separate;
+      border-spacing:0;
+      width:max-content;
+      min-width:100%;
+      font-size:12px;
+    }
+
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:5;
+      background: rgba(10,15,23,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--stroke);
+      text-align:left;
+      color: rgba(255,255,255,0.78);
+      font-weight:1000;
+      letter-spacing:0.2px;
+      white-space:nowrap;
+    }
+
+    th, td{
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      border-right:1px solid rgba(255,255,255,0.08);
+      padding:8px 10px;
+      height: var(--cellH);
+      white-space:nowrap;
+      vertical-align:middle;
+    }
+
+    tbody tr:hover td{ background: rgba(255,255,255,0.03); }
+
+    .col-sticky{
+      position:sticky;
+      left:0;
+      z-index:6;
+      background: rgba(10,15,23,0.96);
+      border-right:1px solid rgba(255,255,255,0.12);
+      min-width:160px;
+      max-width:160px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .col-sticky2{
+      position:sticky;
+      left:160px;
+      z-index:6;
+      background: rgba(10,15,23,0.96);
+      border-right:1px solid rgba(255,255,255,0.12);
+      min-width:360px;
+      max-width:520px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    tbody .col-sticky, tbody .col-sticky2{ z-index:4; }
+
+    .num{ text-align:right; font-variant-numeric: tabular-nums; font-weight:1000; }
+    .mutedCell{ color: rgba(255,255,255,0.70); font-weight:900; }
+
+    .col-total{
+      position:sticky;
+      right:0;
+      z-index:6;
+      background: rgba(10,15,23,0.96);
+      border-left:1px solid rgba(255,255,255,0.12);
+      min-width:140px;
+    }
+    tbody .col-total{ z-index:4; }
+    .row-total td{
+      background: rgba(255,255,255,0.04);
+      font-weight:1000;
+    }
+
+    .empty{
+      padding:14px;
+      color:var(--muted);
+      font-weight:1000;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="titleWrap">
+        <div class="title">Projection PSA 2026</div>
+        <div class="subtitle">Réel 2025 → Budget 2026 • Prorata jours ouvrés (lun–ven) • Export Excel prêt Budget</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
+      <button class="btn primary" id="btnReload">Charger / Recharger N-1.xlsx</button>
+      <button class="btn ghost" id="btnRecalc">Recalculer projection</button>
+      <button class="btn ghost" id="btnExportXlsx">Exporter BUDGET2026_PSA.xlsx</button>
+      <button class="btn danger" id="btnReset">Reset local</button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <div class="card">
+      <div class="meta">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <div class="pill">Source : <strong id="srcLabel">—</strong></div>
+          <div class="pill">Clients : <strong id="clientsLabel">0</strong></div>
+          <div class="pill">Maj : <strong id="updatedLabel">—</strong></div>
+          <div class="pill">Coef global : <strong id="coefGlobalLabel">—</strong></div>
+        </div>
+        <div class="status ko" id="status">
+          <span class="dot"></span>
+          <span id="statusText">En attente du fichier…</span>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field" style="min-width:340px;">
+          <label>Filtre client</label>
+          <input id="search" placeholder="Recherche (N° client interne ou nom)..." />
+          <div class="miniHelp">Filtre uniquement l’affichage (n’impacte pas l’export).</div>
+        </div>
+
+        <div class="field" style="min-width:220px;">
+          <label>Année réel</label>
+          <input id="yearReal" type="number" value="2025" min="2000" max="2100" />
+        </div>
+
+        <div class="field" style="min-width:220px;">
+          <label>Année budget</label>
+          <input id="yearBudget" type="number" value="2026" min="2000" max="2100" />
+        </div>
+
+        <div class="field" style="min-width:220px;">
+          <label>Ajustement global</label>
+          <input id="uplift" type="number" value="0" step="0.1" />
+          <div class="miniHelp">+% appliqué après prorata (ex: 3 = +3%).</div>
+        </div>
+
+        <div class="field" style="min-width:220px;">
+          <label>Arrondi</label>
+          <select id="rounding">
+            <option value="0">0 décimale (entier)</option>
+            <option value="2">2 décimales</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="gridDays" id="daysGrid"></div>
+    </div>
+
+    <div class="card" style="min-height:0;">
+      <div class="tableScroller">
+        <table id="tbl"></table>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // =========================
+  // CONFIG
+  // =========================
+  const FILE_NAME = "activitereelpsan-1.xlsx";
+  const LS_KEY = "PROJECTION_PSA_2026_V1";
+
+  const MONTHS = [
+    { key:"jan", label:"Janvier", aliases:["janvier","jan"] },
+    { key:"feb", label:"Février", aliases:["février","fevrier","fév","fev"] },
+    { key:"mar", label:"Mars", aliases:["mars","mar"] },
+    { key:"apr", label:"Avril", aliases:["avril","avr"] },
+    { key:"may", label:"Mai", aliases:["mai"] },
+    { key:"jun", label:"Juin", aliases:["juin"] },
+    { key:"jul", label:"Juillet", aliases:["juillet","juil"] },
+    { key:"aug", label:"Août", aliases:["août","aout","aoû","aou"] },
+    { key:"sep", label:"Septembre", aliases:["septembre","sep","sept"] },
+    { key:"oct", label:"Octobre", aliases:["octobre","oct"] },
+    { key:"nov", label:"Novembre", aliases:["novembre","nov"] },
+    { key:"dec", label:"Décembre", aliases:["décembre","decembre","déc","dec"] },
+  ];
+
+  // =========================
+  // DOM
+  // =========================
+  const el = {
+    fileInput: document.getElementById("fileInput"),
+    btnReload: document.getElementById("btnReload"),
+    btnRecalc: document.getElementById("btnRecalc"),
+    btnExportXlsx: document.getElementById("btnExportXlsx"),
+    btnReset: document.getElementById("btnReset"),
+
+    srcLabel: document.getElementById("srcLabel"),
+    clientsLabel: document.getElementById("clientsLabel"),
+    updatedLabel: document.getElementById("updatedLabel"),
+    coefGlobalLabel: document.getElementById("coefGlobalLabel"),
+
+    status: document.getElementById("status"),
+    statusText: document.getElementById("statusText"),
+
+    search: document.getElementById("search"),
+    yearReal: document.getElementById("yearReal"),
+    yearBudget: document.getElementById("yearBudget"),
+    uplift: document.getElementById("uplift"),
+    rounding: document.getElementById("rounding"),
+
+    daysGrid: document.getElementById("daysGrid"),
+    tbl: document.getElementById("tbl"),
+  };
+
+  // =========================
+  // STATE
+  // =========================
+  let basePivot = null;     // { meta, clients: [{id, clientInternal, clientName, months:{jan..dec}}] }
+  let projected = null;    // same shape but months are projected
+  let days = {
+    yearReal: 2025,
+    yearBudget: 2026,
+    real: {},   // jan..dec
+    budget: {}, // jan..dec
+  };
+  let filterText = "";
+
+
+  // =========================
+  // INIT
+  // =========================
+  const saved = loadJSON(LS_KEY, null);
+  if (saved?.days) days = saved.days;
+  if (saved?.basePivot) basePivot = saved.basePivot;
+
+  // set UI values
+  el.yearReal.value = String(days.yearReal || 2025);
+  el.yearBudget.value = String(days.yearBudget || 2026);
+
+  // ensure day defaults computed
+  ensureDaysDefaults();
+
+  // render UI
+  renderDaysGrid();
+  if (basePivot?.clients?.length){
+    setStatus(true, `Base chargée (cache) — ${basePivot.clients.length} clients`);
+    renderAll();
+  } else {
+    setStatus(false, "En attente du fichier…");
+    renderEmpty("Charge activitereelpsa.xlsx pour générer la projection.");
+  }
+
+  autoFetchExcel(); // try from repo
+
+  // =========================
+  // EVENTS
+  // =========================
+  el.btnReload.addEventListener("click", () => el.fileInput.click());
+  el.fileInput.addEventListener("change", async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    el.fileInput.value = "";
+    const buf = await f.arrayBuffer();
+    parseAndBuildPivot(buf, `manuel (${f.name || FILE_NAME})`);
+  });
+
+  el.btnRecalc.addEventListener("click", () => {
+    ensureDaysDefaults();
+    saveLS();
+    renderAll();
+  });
+
+  el.btnExportXlsx.addEventListener("click", exportBudgetXlsx);
+
+  el.btnReset.addEventListener("click", () => {
+    if (!confirm("Reset projection PSA (cache + jours ouvrés) ?")) return;
+    localStorage.removeItem(LS_KEY);
+    basePivot = null;
+    projected = null;
+    days = { yearReal: 2025, yearBudget: 2026, real:{}, budget:{} };
+    el.yearReal.value = "2025";
+    el.yearBudget.value = "2026";
+    el.uplift.value = "0";
+    el.rounding.value = "0";
+    el.search.value = "";
+    filterText = "";
+    ensureDaysDefaults();
+    renderDaysGrid();
+    setStatus(false, "Reset effectué. Recharge le fichier.");
+    renderEmpty("Charge activitereelpsa.xlsx pour générer la projection.");
+  });
+
+  el.search.addEventListener("input", () => {
+    filterText = (el.search.value || "").trim().toLowerCase();
+    renderTableOnly();
+  });
+
+  el.yearReal.addEventListener("change", () => {
+    days.yearReal = clampYear(el.yearReal.value, 2025);
+    ensureDaysDefaults(true);
+    renderDaysGrid();
+    saveLS();
+    renderAll();
+  });
+  el.yearBudget.addEventListener("change", () => {
+    days.yearBudget = clampYear(el.yearBudget.value, 2026);
+    ensureDaysDefaults(true);
+    renderDaysGrid();
+    saveLS();
+    renderAll();
+  });
+
+  el.uplift.addEventListener("input", () => { renderAll(); });
+  el.rounding.addEventListener("change", () => { renderAll(); });
+
+  // =========================
+  // AUTO FETCH
+  // =========================
+  async function autoFetchExcel(){
+    try{
+      const res = await fetch(FILE_NAME, { cache: "no-store" });
+      if (!res.ok){
+        if (!basePivot?.clients?.length) setStatus(false, `Fetch auto KO (${res.status}) — mets ${FILE_NAME} au même niveau.`);
+        return;
+      }
+      const buf = await res.arrayBuffer();
+      parseAndBuildPivot(buf, `auto (${FILE_NAME})`);
+    }catch{
+      if (!basePivot?.clients?.length) setStatus(false, "Fetch auto impossible (serveur requis en local).");
+    }
+  }
+
+  // =========================
+  // PARSE + PIVOT (réel 2025)
+  // colonnes attendues :
+  // N° client Interne / Nom du client / Montant prix achat KENT / Mois2
+  // =========================
+  function parseAndBuildPivot(arrayBuffer, sourceLabel){
+    try{
+      const wb = XLSX.read(arrayBuffer, { type:"array" });
+      const sheetName = wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
+
+      if (!rows.length){
+        setStatus(false, "Fichier vide.");
+        renderEmpty("Fichier vide.");
+        return;
+      }
+
+      const headerMap = buildHeaderMap(rows[0]);
+
+      const colClientInterne = findCol(headerMap, ["n° client interne","no client interne","n client interne","n° client","numero client interne"]);
+      const colNomClient = findCol(headerMap, ["nom du client","nom client","client"]);
+      const colMontant = findCol(headerMap, ["montant prix achat kent","montant achat kent","montant"]);
+      const colMois = findCol(headerMap, ["mois2","mois"]);
+
+      if (!colClientInterne || !colNomClient || !colMontant || !colMois){
+        const missing = [
+          !colClientInterne ? "N° client Interne" : null,
+          !colNomClient ? "Nom du client" : null,
+          !colMontant ? "Montant prix achat KENT" : null,
+          !colMois ? "Mois2" : null,
+        ].filter(Boolean).join(", ");
+        setStatus(false, "Colonnes manquantes : " + missing);
+        renderEmpty("Colonnes manquantes : " + missing);
+        return;
+      }
+
+      const agg = new Map();
+
+      for (const r of rows){
+        const clientInternal = String(r[colClientInterne] ?? "").trim();
+        const clientName = String(r[colNomClient] ?? "").trim();
+        const moisRaw = String(r[colMois] ?? "").trim();
+
+        if (!clientInternal && !clientName) continue;
+
+        const mk = normalizeMonthToKey(moisRaw);
+        if (!mk) continue;
+
+        const montant = toNumber(r[colMontant]);
+        const id = makeClientId(clientInternal, clientName);
+
+        if (!agg.has(id)){
+          const months = {};
+          for (const m of MONTHS) months[m.key] = 0;
+          agg.set(id, { id, clientInternal, clientName, months });
+        }
+        agg.get(id).months[mk] += montant;
+      }
+
+      const clients = Array.from(agg.values())
+        .sort((a,b) => (a.clientName || "").localeCompare((b.clientName || ""), "fr"));
+
+      basePivot = {
+        meta: { source: sourceLabel, sheet: sheetName, updatedAt: new Date().toISOString(), file: FILE_NAME },
+        clients
+      };
+
+      saveLS();
+
+      setStatus(true, `Base OK — ${clients.length} clients`);
+      renderAll();
+    }catch(err){
+      console.error(err);
+      setStatus(false, "Erreur lecture Excel.");
+      renderEmpty("Erreur lecture Excel.");
+    }
+  }
+
+  function normalizeMonthToKey(value){
+    const v = normalizeKey(value);
+    if (!v) return null;
+    for (const m of MONTHS){
+      for (const a of m.aliases){
+        if (v === normalizeKey(a)) return m.key;
+      }
+    }
+    return null;
+  }
+
+  // =========================
+  // DAYS (lun–ven, modifiable)
+  // =========================
+  function ensureDaysDefaults(forceRecalc=false){
+    days.yearReal = clampYear(el.yearReal.value, days.yearReal || 2025);
+    days.yearBudget = clampYear(el.yearBudget.value, days.yearBudget || 2026);
+
+    // if empty or forceRecalc: compute defaults for each year
+    for (const m of MONTHS){
+      if (forceRecalc || !isFiniteNumber(days.real[m.key])) days.real[m.key] = businessDaysInMonth(days.yearReal, monthIndex(m.key));
+      if (forceRecalc || !isFiniteNumber(days.budget[m.key])) days.budget[m.key] = businessDaysInMonth(days.yearBudget, monthIndex(m.key));
+    }
+  }
+
+  function renderDaysGrid(){
+    const sumReal = MONTHS.reduce((s,m)=>s+(Number(days.real[m.key])||0),0);
+    const sumBud  = MONTHS.reduce((s,m)=>s+(Number(days.budget[m.key])||0),0);
+
+    const headCells = MONTHS.map(m => `<div class="daysHead">${escapeHtml(m.label)}</div>`).join("");
+
+    el.daysGrid.innerHTML = `
+      <div class="daysHead" style="text-align:left;">Jours ouvrés</div>
+      ${headCells}
+      <div class="daysHead">Total</div>
+
+      <div class="daysLabel">
+        Réel ${escapeHtml(String(days.yearReal))}
+      </div>
+      ${MONTHS.map(m => `
+        <input class="daysInput" type="number" min="0" step="1"
+               data-year="real" data-month="${m.key}"
+               value="${Number(days.real[m.key])||0}" />
+      `).join("")}
+      <div class="daysSum" id="sumReal">${sumReal}</div>
+
+      <div class="daysLabel">
+        Budget ${escapeHtml(String(days.yearBudget))}
+      </div>
+      ${MONTHS.map(m => `
+        <input class="daysInput" type="number" min="0" step="1"
+               data-year="budget" data-month="${m.key}"
+               value="${Number(days.budget[m.key])||0}" />
+      `).join("")}
+      <div class="daysSum" id="sumBud">${sumBud}</div>
+
+      <div class="daysLabel" style="color:rgba(255,255,255,0.70)">
+        Coef (Budget/Réel)
+      </div>
+      ${MONTHS.map(m => {
+        const r = Number(days.real[m.key])||0;
+        const b = Number(days.budget[m.key])||0;
+        const coef = r>0 ? (b/r) : 0;
+        return `<div class="daysHead" title="Coef ${m.label}" style="font-weight:1000">${fmtCoef(coef)}</div>`;
+      }).join("")}
+      <div class="daysHead" style="font-weight:1000">${fmtCoef(sumReal>0 ? (sumBud/sumReal) : 0)}</div>
+    `;
+
+    el.daysGrid.querySelectorAll(".daysInput").forEach(inp => {
+      inp.addEventListener("input", () => {
+        const yearType = inp.getAttribute("data-year"); // real/budget
+        const mk = inp.getAttribute("data-month");
+        const v = Math.max(0, parseInt(inp.value || "0", 10) || 0);
+        days[yearType][mk] = v;
+        saveLS();
+        renderDaysGrid();
+        renderAll();
+      });
+    });
+  }
+
+  // =========================
+  // PROJECTION
+  // =========================
+  function buildProjection(){
+    if (!basePivot?.clients?.length) return null;
+
+    const uplift = toNumber(el.uplift.value) / 100; // 0.03 for +3%
+    const rounding = parseInt(el.rounding.value || "0", 10);
+
+    // coef per month
+    const coefByMonth = {};
+    for (const m of MONTHS){
+      const r = Number(days.real[m.key]) || 0;
+      const b = Number(days.budget[m.key]) || 0;
+      coefByMonth[m.key] = (r > 0) ? (b / r) : 0;
+    }
+
+    // global coef
+    const sumReal = MONTHS.reduce((s,m)=>s+(Number(days.real[m.key])||0),0);
+    const sumBud  = MONTHS.reduce((s,m)=>s+(Number(days.budget[m.key])||0),0);
+    const coefGlobal = sumReal > 0 ? (sumBud / sumReal) : 0;
+    el.coefGlobalLabel.textContent = fmtCoef(coefGlobal);
+
+    const clients = basePivot.clients.map(c => {
+      const months = {};
+      for (const m of MONTHS){
+        const base = toNumber(c.months?.[m.key]);
+        const proj = base * coefByMonth[m.key] * (1 + uplift);
+        months[m.key] = applyRounding(proj, rounding);
+      }
+      return {
+        id: c.id,
+        clientInternal: c.clientInternal,
+        clientName: c.clientName,
+        months
+      };
+    });
+
+    return {
+      meta: {
+        source: basePivot.meta?.source || "—",
+        updatedAt: new Date().toISOString(),
+        yearReal: days.yearReal,
+        yearBudget: days.yearBudget,
+        upliftPct: toNumber(el.uplift.value),
+        rounding,
+        days
+      },
+      clients
+    };
+  }
+
+  // =========================
+  // RENDER
+  // =========================
+  function renderAll(){
+    if (!basePivot?.clients?.length){
+      renderEmpty("Charge activitereelpsa.xlsx pour générer la projection.");
+      el.srcLabel.textContent = "—";
+      el.clientsLabel.textContent = "0";
+      el.updatedLabel.textContent = "—";
+      return;
+    }
+
+    projected = buildProjection();
+
+    el.srcLabel.textContent = basePivot.meta?.source || "—";
+    el.clientsLabel.textContent = String(basePivot.clients.length);
+    el.updatedLabel.textContent = formatDateTime(projected?.meta?.updatedAt);
+
+    renderTableOnly();
+    saveLS(); // keep latest projection settings
+  }
+
+  function renderTableOnly(){
+    if (!projected?.clients?.length){
+      renderEmpty("Aucune projection.");
+      return;
+    }
+
+    const clients = projected.clients.filter(c => {
+      if (!filterText) return true;
+      const a = (c.clientInternal || "").toLowerCase();
+      const b = (c.clientName || "").toLowerCase();
+      return a.includes(filterText) || b.includes(filterText);
+    });
+
+    // totals
+    const colSums = {};
+    for (const m of MONTHS) colSums[m.key] = 0;
+    let grandTotal = 0;
+
+    const thead = `
+      <thead>
+        <tr>
+          <th class="col-sticky">N° client</th>
+          <th class="col-sticky2">Nom du client</th>
+          ${MONTHS.map(m => `<th>${escapeHtml(m.label)}</th>`).join("")}
+          <th class="col-total">TOTAL</th>
+        </tr>
+      </thead>
+    `;
+
+    const bodyRows = clients.map(c => {
+      let rowTotal = 0;
+      const cells = MONTHS.map(m => {
+        const v = toNumber(c.months?.[m.key]);
+        colSums[m.key] += v;
+        rowTotal += v;
+        return `<td class="num">${fmtNumber(v, projected.meta.rounding)}</td>`;
+      }).join("");
+      grandTotal += rowTotal;
+
+      return `
+        <tr>
+          <td class="col-sticky mutedCell">${escapeHtml(c.clientInternal || "")}</td>
+          <td class="col-sticky2">${escapeHtml(c.clientName || "")}</td>
+          ${cells}
+          <td class="num col-total">${fmtNumber(rowTotal, projected.meta.rounding)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const footerCells = MONTHS.map(m => `<td class="num">${fmtNumber(colSums[m.key], projected.meta.rounding)}</td>`).join("");
+
+    const footer = `
+      <tr class="row-total">
+        <td class="col-sticky">TOTAL</td>
+        <td class="col-sticky2">—</td>
+        ${footerCells}
+        <td class="num col-total">${fmtNumber(grandTotal, projected.meta.rounding)}</td>
+      </tr>
+    `;
+
+    el.tbl.innerHTML = thead + `<tbody>${bodyRows || ""}${footer}</tbody>`;
+  }
+
+  function renderEmpty(msg){
+    el.tbl.innerHTML = `
+      <thead>
+        <tr>
+          <th class="col-sticky">N° client</th>
+          <th class="col-sticky2">Nom du client</th>
+          ${MONTHS.map(m => `<th>${escapeHtml(m.label)}</th>`).join("")}
+          <th class="col-total">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-sticky">—</td>
+          <td class="col-sticky2"><span class="empty">${escapeHtml(msg || "—")}</span></td>
+          ${MONTHS.map(()=>`<td class="num">—</td>`).join("")}
+          <td class="num col-total">—</td>
+        </tr>
+      </tbody>
+    `;
+  }
+
+  // =========================
+  // EXPORT (format compatible Budget)
+  // Colonnes : CLIENT | N CLIENT | Janvier..Décembre | TOTAL | COMMENTAIRE
+  // =========================
+  function exportBudgetXlsx(){
+    if (!projected?.clients?.length){
+      alert("Rien à exporter.");
+      return;
+    }
+
+    const rounding = projected.meta.rounding;
+
+    const aoa = [];
+    aoa.push(["CLIENT","N CLIENT", ...MONTHS.map(m=>m.label), "TOTAL", "COMMENTAIRE"]);
+
+    for (const c of projected.clients){
+      let total = 0;
+      const row = [];
+      row.push(c.clientName || "");
+      row.push(c.clientInternal || "");
+      for (const m of MONTHS){
+        const v = toNumber(c.months?.[m.key]);
+        total += v;
+        row.push(applyRounding(v, rounding));
+      }
+      row.push(applyRounding(total, rounding));
+      row.push(""); // commentaire vide (tu pourras le remplir dans Budget)
+      aoa.push(row);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [
+      {wch:34}, // CLIENT
+      {wch:14}, // N CLIENT
+      ...MONTHS.map(()=>({wch:14})),
+      {wch:16}, // TOTAL
+      {wch:40}, // COMMENTAIRE
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "BUDGET2026_PSA");
+    XLSX.writeFile(wb, `BUDGET2026_PSA_${stamp()}.xlsx`);
+  }
+
+  // =========================
+  // UTILS
+  // =========================
+  function clampYear(v, fallback){
+    const n = parseInt(String(v||"").trim(),10);
+    if (!Number.isFinite(n) || n < 2000 || n > 2100) return fallback;
+    return n;
+  }
+
+  function monthIndex(mk){
+    return MONTHS.findIndex(m=>m.key===mk);
+  }
+
+function businessDaysInMonth(year, monthIdx){
+  const holidays = getFrenchHolidays(year); // Set "YYYY-MM-DD"
+  let count = 0;
+
+  const d = new Date(year, monthIdx, 1);
+  while (d.getMonth() === monthIdx){
+    const dow = d.getDay(); // 0 dim, 6 sam
+    if (dow !== 0 && dow !== 6){
+      const key = isoDate(d);
+      if (!holidays.has(key)) count++;
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
+
+function isoDate(dateObj){
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function getFrenchHolidays(year){
+  const set = new Set();
+
+  // Fixes
+  set.add(`${year}-01-01`);
+  set.add(`${year}-05-01`);
+  set.add(`${year}-05-08`);
+  set.add(`${year}-07-14`);
+  set.add(`${year}-08-15`);
+  set.add(`${year}-11-01`);
+  set.add(`${year}-11-11`);
+  set.add(`${year}-12-25`);
+
+  // Mobiles via Pâques
+  const easter = easterSunday(year);
+  const addDays = (dt, n) => {
+    const x = new Date(dt);
+    x.setDate(x.getDate() + n);
+    return x;
+  };
+
+  set.add(isoDate(addDays(easter, 1)));   // Lundi de Pâques
+  set.add(isoDate(addDays(easter, 39)));  // Ascension
+  set.add(isoDate(addDays(easter, 50)));  // Lundi de Pentecôte
+
+  return set;
+}
+
+function easterSunday(year){
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+  function fmtCoef(x){
+    if (!Number.isFinite(x)) return "—";
+    return (Math.round(x*1000)/1000).toFixed(3);
+  }
+
+  function fmtNumber(n, rounding){
+    const x = applyRounding(toNumber(n), rounding);
+    if (rounding === 0) return String(Math.round(x));
+    return (Math.round(x*100)/100).toFixed(2);
+  }
+
+  function applyRounding(n, rounding){
+    const x = toNumber(n);
+    if (rounding === 0) return Math.round(x);
+    return Math.round(x * 100) / 100;
+  }
+
+  function isFiniteNumber(x){ return Number.isFinite(Number(x)); }
+
+  function setStatus(ok, text){
+    el.status.classList.toggle("ok", !!ok);
+    el.status.classList.toggle("ko", !ok);
+    el.statusText.textContent = text;
+  }
+
+  function loadJSON(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    }catch{
+      return fallback;
+    }
+  }
+  function saveLS(){
+    const payload = {
+      days,
+      basePivot
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(payload));
+  }
+
+  function toNumber(v){
+    if (v === null || v === undefined) return 0;
+    if (typeof v === "number") return isFinite(v) ? v : 0;
+    const s = String(v).trim();
+    if (!s) return 0;
+    const norm = s.replace(/\s/g,"").replace(",",".");
+    const n = Number(norm);
+    return isFinite(n) ? n : 0;
+  }
+
+  function normalizeKey(s){
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g," ")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+
+  function buildHeaderMap(sampleRow){
+    const map = {};
+    for (const k of Object.keys(sampleRow || {})){
+      map[normalizeKey(k)] = k;
+    }
+    return map;
+  }
+
+  function findCol(headerMap, candidates){
+    for (const c of candidates){
+      const nk = normalizeKey(c);
+      if (headerMap[nk]) return headerMap[nk];
+    }
+    return null;
+  }
+
+  function makeClientId(clientInternal, clientName){
+    const a = normalizeKey(clientInternal).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+    const b = normalizeKey(clientName).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+    return (a || "noid") + "__" + (b || "noname");
+  }
+
+  function formatDateTime(iso){
+    try{
+      const d = new Date(iso);
+      return d.toLocaleString("fr-FR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+    }catch{ return "—"; }
+  }
+
+  function stamp(){
+    const d = new Date();
+    const pad = x => String(x).padStart(2,"0");
+    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+  }
+
+  function escapeHtml(str){
+    return String(str ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+
+})();
+</script>
+</body>
+</html>

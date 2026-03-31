@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Activité Réelle — Gueudet</title>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --panel2:rgba(255,255,255,0.045);
+      --stroke:rgba(255,255,255,0.12);
+      --stroke2:rgba(255,255,255,0.16);
+      --text:rgba(255,255,255,0.90);
+      --muted:rgba(255,255,255,0.62);
+      --muted2:rgba(255,255,255,0.46);
+      --accent:rgba(132,182,255,0.95);
+      --shadow:0 16px 40px rgba(0,0,0,0.35);
+      --radius:16px;
+      --radius2:14px;
+      --cellH:34px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(90,140,255,0.15), transparent 60%),
+        radial-gradient(1100px 800px at 110% 20%, rgba(255,120,200,0.10), transparent 55%),
+        radial-gradient(900px 700px at 60% 110%, rgba(130,255,200,0.08), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    .app{ height:100%; display:flex; flex-direction:column; }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 18px;
+      border-bottom:1px solid var(--stroke);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      backdrop-filter: blur(10px);
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; min-width: 420px; }
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background: linear-gradient(135deg, rgba(132,182,255,0.95), rgba(255,125,206,0.65));
+      box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+      border:1px solid rgba(255,255,255,0.15);
+      flex:0 0 auto;
+    }
+    .titleWrap{ display:flex; flex-direction:column; line-height:1.15; }
+    .title{ font-weight:900; letter-spacing:0.2px; font-size:15px; }
+    .subtitle{ font-size:12px; color:var(--muted); margin-top:2px; }
+
+    .actions{ display:flex; align-items:center; gap:10px; }
+    .fileInput{ display:none; }
+
+    .btn{
+      height:34px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      cursor:pointer;
+      font-weight:800;
+      font-size:12px;
+      letter-spacing:0.2px;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      white-space:nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.20); }
+    .btn:active{ transform: translateY(0px); }
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(132,182,255,0.95), rgba(255,125,206,0.60));
+      border-color: rgba(255,255,255,0.20);
+    }
+    .btn.ghost{ background: rgba(255,255,255,0.05); }
+    .btn.danger{
+      background: rgba(255, 110, 110, 0.10);
+      border-color: rgba(255,110,110,0.35);
+    }
+
+    .shell{
+      height:100%;
+      padding:18px;
+      overflow:hidden;
+    }
+
+    .card{
+      height:100%;
+      background: var(--panel);
+      border:1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .meta{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 14px 12px 14px;
+      border-bottom:1px solid var(--stroke);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+      gap:12px;
+    }
+    .metaLeft{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.82);
+      font-size:12px;
+      font-weight:800;
+    }
+    .pill strong{ color: rgba(255,255,255,0.95); }
+
+    .search{
+      height:34px;
+      width: 320px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.90);
+      padding: 0 12px;
+      outline:none;
+      font-weight:800;
+      font-size:12px;
+      scrollbar-gutter: stable;
+    }
+    .search::placeholder{ color: rgba(255,255,255,0.45); font-weight:800; }
+
+    .gridWrap{
+      position:relative;
+      height:100%;
+      padding:14px;
+      overflow:hidden;
+    }
+
+    .dropHint{
+      position:absolute;
+      inset:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius: 16px;
+      border:1px dashed rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.72);
+      font-weight:900;
+      letter-spacing:0.3px;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .12s ease;
+      z-index:4;
+      text-align:center;
+      padding: 18px;
+    }
+    .dropHint.show{ opacity:1; }
+
+    .tableScroller{
+      height: calc(100% - 72px);
+      overflow:auto;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.03);
+      scrollbar-gutter: stable;
+    }
+
+    /* custom scrollbars */
+    .tableScroller::-webkit-scrollbar{ height:10px; width:10px; }
+    .tableScroller::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.18); border-radius: 99px; }
+    .tableScroller::-webkit-scrollbar-track{ background: rgba(255,255,255,0.06); border-radius: 99px; }
+
+    table{
+      width:max-content;
+      min-width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      font-size:12px;
+    }
+
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background: rgba(20,26,40,0.92);
+      border-bottom:1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.86);
+      text-align:right;
+      height: var(--cellH);
+      padding: 0 10px;
+      white-space:nowrap;
+      font-weight:900;
+    }
+
+    tbody td{
+      height: var(--cellH);
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      padding:0 10px;
+      text-align:right;
+      white-space:nowrap;
+      color: rgba(255,255,255,0.86);
+    }
+
+    tbody tr:hover td{
+      background: rgba(255,255,255,0.03);
+    }
+
+    .col-sticky{
+      position:sticky;
+      left:0;
+      z-index:3;
+      text-align:left !important;
+      min-width:160px;
+      background: rgba(15,20,32,0.92);
+      border-right:1px solid rgba(255,255,255,0.10);
+      font-weight:900;
+    }
+    thead th.col-sticky{ z-index:5; }
+
+    .col-sticky2{
+      position:sticky;
+      left:160px;
+      z-index:3;
+      text-align:left !important;
+      min-width:360px;
+      background: rgba(15,20,32,0.92);
+      border-right:1px solid rgba(255,255,255,0.10);
+      font-weight:900;
+    }
+    thead th.col-sticky2{ z-index:5; }
+
+    .num{ font-variant-numeric: tabular-nums; }
+    .mutedNote{
+      margin-top:12px;
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.35;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.03);
+    }
+    .col-total{ font-weight:950; }
+    .clickable{ cursor:pointer; }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="titleWrap">
+          <div class="title">Activité Réelle — Gueudet</div>
+          <div class="subtitle">Fetch Excel → Pivot clients × mois • Bridge vers Reporting Annuel</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <input id="fileInput" class="fileInput" type="file" accept=".xlsx,xls" />
+        <button class="btn primary" id="btnReload">Charger / Recharger activitereelgueudet.xlsx</button>
+        <button class="btn ghost" id="btnExportXlsx">Exporter XLSX</button>
+        <button class="btn ghost" id="btnExportCsv">Exporter CSV</button>
+        <button class="btn ghost" id="btnExportJson">Exporter JSON</button>
+        <button class="btn danger" id="btnReset">Reset local</button>
+      </div>
+    </div>
+
+    <div class="shell">
+      <div class="card">
+        <div class="meta">
+          <div class="metaLeft">
+            <div class="pill">Source : <strong id="srcLabel">—</strong></div>
+            <div class="pill">Clients : <strong id="clientsCount">0</strong></div>
+            <div class="pill">Dernière maj : <strong id="lastUpdate">—</strong></div>
+            <div class="pill">Sync reporting Gueudet : <strong id="syncLabel">—</strong></div>
+            <input class="search" id="search" placeholder="Filtrer client (Code livré ou nom)." />
+          </div>
+          <div class="pill">
+            Astuce : drag&drop • <span style="opacity:.8">Ctrl+F</span>
+          </div>
+        </div>
+
+        <div class="gridWrap" id="dropZone">
+          <div class="dropHint" id="dropHint">Dépose activitereelgueudet.xlsx pour recharger</div>
+          <div class="tableScroller">
+            <table id="pivotTable"></table>
+          </div>
+          <div class="mutedNote">
+            Colonnes attendues : <strong>N° client Interne</strong> • <strong>Nom du client</strong> • <strong>Montant prix achat KENT</strong> • <strong>Mois2</strong>.
+            <br>
+            ✅ Pivot stocké dans <strong>ACTIVITE_REEL_GUEUDET_2026_V1</strong> + export “reporting annuel Gueudet” stocké dans <strong>ACTIVITEREEL_GUEUDET_V1</strong>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // =========================
+  // CONFIG
+  // =========================
+  const FILE_NAME = "activitereelgueudet.xlsx"; // nom exact sur GitHub Pages
+
+  // Pivot page Activité Réelle
+  const STORAGE_KEY_PIVOT = "ACTIVITE_REEL_GUEUDET_2026_V1";
+
+  // ✅ Clé attendue par ton reporting annuel Gueudet
+  const STORAGE_KEY_REPORTING_GUEUDET = "ACTIVITEREEL_GUEUDET_V1";
+
+  const MONTHS = [
+    { key: "jan", label: "Janvier", aliases: ["janvier","jan"] },
+    { key: "feb", label: "Février", aliases: ["février","fevrier","fév","fev"] },
+    { key: "mar", label: "Mars", aliases: ["mars","mar"] },
+    { key: "apr", label: "Avril", aliases: ["avril","avr"] },
+    { key: "may", label: "Mai", aliases: ["mai"] },
+    { key: "jun", label: "Juin", aliases: ["juin"] },
+    { key: "jul", label: "Juillet", aliases: ["juillet","juil"] },
+    { key: "aug", label: "Août", aliases: ["août","aout","aoû","aou"] },
+    { key: "sep", label: "Septembre", aliases: ["septembre","sep","sept"] },
+    { key: "oct", label: "Octobre", aliases: ["octobre","oct"] },
+    { key: "nov", label: "Novembre", aliases: ["novembre","nov"] },
+    { key: "dec", label: "Décembre", aliases: ["décembre","decembre","déc","dec"] },
+  ];
+
+  // =========================
+  // DOM
+  // =========================
+  const el = {
+    fileInput: document.getElementById("fileInput"),
+    btnReload: document.getElementById("btnReload"),
+    btnExportXlsx: document.getElementById("btnExportXlsx"),
+    btnExportCsv: document.getElementById("btnExportCsv"),
+    btnExportJson: document.getElementById("btnExportJson"),
+    btnReset: document.getElementById("btnReset"),
+
+    srcLabel: document.getElementById("srcLabel"),
+    clientsCount: document.getElementById("clientsCount"),
+    lastUpdate: document.getElementById("lastUpdate"),
+    syncLabel: document.getElementById("syncLabel"),
+
+    search: document.getElementById("search"),
+    dropZone: document.getElementById("dropZone"),
+    dropHint: document.getElementById("dropHint"),
+    table: document.getElementById("pivotTable"),
+  };
+
+  // =========================
+  // STATE
+  // =========================
+  let pivot = loadJSON(STORAGE_KEY_PIVOT, null);
+  let filterText = "";
+  let sortTotalDir = null;
+
+  // =========================
+  // INIT
+  // =========================
+  if (pivot?.clients?.length) {
+    render();
+    updateSyncLabel();
+  } else {
+    renderEmpty("Aucune donnée. Charge le fichier.");
+    updateSyncLabel();
+  }
+
+  autoFetchExcel();
+
+  // =========================
+  // EVENTS
+  // =========================
+  el.btnReload.addEventListener("click", () => el.fileInput.click());
+
+  el.fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    el.fileInput.value = "";
+    await importFromFile(file);
+  });
+
+  el.search.addEventListener("input", () => {
+    filterText = (el.search.value || "").trim().toLowerCase();
+    render();
+  });
+
+  el.btnReset.addEventListener("click", () => {
+    if (!confirm("Supprimer les données Activité Réelle Gueudet stockées en local ?")) return;
+    localStorage.removeItem(STORAGE_KEY_PIVOT);
+    localStorage.removeItem(STORAGE_KEY_REPORTING_GUEUDET);
+    pivot = null;
+    sortTotalDir = null;
+    renderEmpty("Données locales supprimées. Recharge le fichier.");
+    updateSyncLabel();
+  });
+
+  el.btnExportJson.addEventListener("click", exportJSON);
+  el.btnExportCsv.addEventListener("click", exportCSV);
+  el.btnExportXlsx.addEventListener("click", exportXLSX);
+
+  // Drag & drop
+  ["dragenter","dragover"].forEach(evt => el.dropZone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    el.dropHint.classList.add("show");
+  }));
+  ["dragleave","drop"].forEach(evt => el.dropZone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    el.dropHint.classList.remove("show");
+  }));
+  el.dropZone.addEventListener("drop", async (e) => {
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    const name = (file.name || "").toLowerCase();
+    if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+      alert("Veuillez déposer un fichier .xlsx ou .xls");
+      return;
+    }
+    await importFromFile(file);
+  });
+
+  // =========================
+  // AUTO FETCH (GitHub-safe + anti-cache)
+  // =========================
+  async function autoFetchExcel(){
+    try{
+      const url = `${FILE_NAME}?v=${Date.now()}`;
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) return;
+      const buf = await res.arrayBuffer();
+
+      // petit check "PK" (zip) pour éviter de parser une 404 html
+      if (!looksLikeZip(buf)) return;
+
+      parseAndBuildPivot(buf, `auto (${FILE_NAME})`);
+    }catch{
+      // silent
+    }
+  }
+
+  async function importFromFile(file){
+    try{
+      const buf = await file.arrayBuffer();
+      parseAndBuildPivot(buf, `manuel (${file.name || FILE_NAME})`);
+    }catch(err){
+      console.error(err);
+      alert("Import impossible : " + (err?.message || err));
+    }
+  }
+
+  // =========================
+  // PARSE + PIVOT
+  // =========================
+  function parseAndBuildPivot(arrayBuffer, sourceLabel){
+    const wb = XLSX.read(arrayBuffer, { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+    if (!rows.length){
+      renderEmpty("Fichier vide.");
+      return;
+    }
+
+    const headerMap = buildHeaderMap(rows[0]);
+
+    // ✅ Colonnes attendues (format PSA-like)
+    const colClientInterne = findCol(headerMap, [
+      "n° client interne","no client interne","n client interne","numero client interne",
+      // parfois juste n client
+      "n° client","no client","n client","numero client","nclient"
+    ]);
+
+    const colNomClient = findCol(headerMap, [
+      "nom du client","nom client","client"
+    ]);
+
+    const colMontant = findCol(headerMap, [
+      "montant prix achat kent","montant achat kent","montant",
+      // parfois ca
+      "ca total","ca","chiffre d'affaires","chiffre daffaires"
+    ]);
+
+    const colMois = findCol(headerMap, [
+      "mois2","mois","month"
+    ]);
+
+    if (!colClientInterne || !colNomClient || !colMontant || !colMois){
+      const missing = [
+        !colClientInterne ? "N° client Interne" : null,
+        !colNomClient ? "Nom du client" : null,
+        !colMontant ? "Montant prix achat KENT" : null,
+        !colMois ? "Mois2" : null,
+      ].filter(Boolean).join(", ");
+      renderEmpty("Colonnes manquantes : " + missing);
+      return;
+    }
+
+    const agg = new Map();
+
+    for (const r of rows){
+      // ✅ FIX: on utilise les bonnes colonnes (plus de colCodeLivre / colCA fantômes)
+      const clientInternal = String(r[colClientInterne] ?? "").trim();
+      const clientName = String(r[colNomClient] ?? "").trim();
+      const moisRaw = String(r[colMois] ?? "").trim();
+      if (!clientInternal && !clientName) continue;
+
+      const mk = normalizeMonthToKey(moisRaw);
+      if (!mk) continue;
+
+      const montant = toNumber(r[colMontant]);
+      const id = makeClientId(clientInternal, clientName);
+
+      if (!agg.has(id)){
+        const months = {};
+        for (const m of MONTHS) months[m.key] = 0;
+        agg.set(id, { id, clientInternal, clientName, months });
+      }
+
+      const item = agg.get(id);
+      item.months[mk] += montant;
+    }
+
+    const clients = Array.from(agg.values())
+      .sort((a,b) => (a.clientName || "").localeCompare((b.clientName || ""), "fr"));
+
+    pivot = {
+      meta: {
+        source: sourceLabel,
+        sheet: sheetName,
+        updatedAt: new Date().toISOString(),
+        file: FILE_NAME
+      },
+      clients
+    };
+
+    saveJSON(STORAGE_KEY_PIVOT, pivot);
+
+    // ✅ Bridge vers reporting annuel Gueudet
+    saveActiviteReelGueudetFromPivot(pivot);
+
+    sortTotalDir = null;
+    render();
+    updateSyncLabel();
+  }
+
+  function normalizeMonthToKey(value){
+    // ✅ support Mois2 numérique (1..12)
+    const n = Number(String(value || "").trim());
+    if (Number.isFinite(n) && n >= 1 && n <= 12) return MONTHS[n-1].key;
+
+    const v = normalizeKey(value);
+    if (!v) return null;
+    for (const m of MONTHS){
+      for (const a of m.aliases){
+        if (v === normalizeKey(a)) return m.key;
+      }
+    }
+    return null;
+  }
+
+  // =========================
+  // ✅ BRIDGE vers reporting annuel GUEUDET
+  // =========================
+  function saveActiviteReelGueudetFromPivot(p){
+    const nowIso = new Date().toISOString();
+    const clients = (p?.clients || []).map(c => ({
+      nclient: String(c.clientInternal || "").trim(), // ✅ clé stable
+      name: String(c.clientName || "").trim(),
+      months: {
+        jan: toNumber(c.months?.jan), feb: toNumber(c.months?.feb), mar: toNumber(c.months?.mar),
+        apr: toNumber(c.months?.apr), may: toNumber(c.months?.may), jun: toNumber(c.months?.jun),
+        jul: toNumber(c.months?.jul), aug: toNumber(c.months?.aug), sep: toNumber(c.months?.sep),
+        oct: toNumber(c.months?.oct), nov: toNumber(c.months?.nov), dec: toNumber(c.months?.dec),
+      }
+    }));
+
+    const payload = {
+      meta: {
+        source: "activitereelgueudet.html",
+        updatedAt: nowIso,
+        fromPivotKey: STORAGE_KEY_PIVOT,
+        sheet: p?.meta?.sheet || "",
+        file: p?.meta?.file || FILE_NAME
+      },
+      clients
+    };
+
+    localStorage.setItem(STORAGE_KEY_REPORTING_GUEUDET, JSON.stringify(payload));
+    return payload;
+  }
+
+  function updateSyncLabel(){
+    const payload = loadJSON(STORAGE_KEY_REPORTING_GUEUDET, null);
+    if (payload?.clients?.length){
+      el.syncLabel.textContent = `OK (${payload.clients.length})`;
+    } else {
+      el.syncLabel.textContent = "—";
+    }
+  }
+
+  // =========================
+  // TOTAL
+  // =========================
+  function getClientTotal(c){
+    let t = 0;
+    for (const m of MONTHS) t += toNumber(c.months?.[m.key]);
+    return t;
+  }
+
+  // =========================
+  // RENDER
+  // =========================
+  function renderEmpty(msg){
+    el.clientsCount.textContent = "0";
+    el.srcLabel.textContent = pivot?.meta?.source || "—";
+    el.lastUpdate.textContent = "—";
+
+    el.table.innerHTML = `
+      <thead>
+        <tr>
+          <th class="col-sticky" style="min-width:160px;">Code livré</th>
+          <th class="col-sticky2" style="min-width:360px;">Nom client</th>
+          ${MONTHS.map(m => `<th>${escapeHtml(m.label)}</th>`).join("")}
+          <th class="col-total">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-sticky">—</td>
+          <td class="col-sticky2">${escapeHtml(msg || "Aucune donnée.")}</td>
+          ${MONTHS.map(() => `<td class="num">—</td>`).join("")}
+          <td class="num col-total">—</td>
+        </tr>
+      </tbody>
+    `;
+  }
+
+  function render(){
+    if (!pivot?.clients?.length){
+      renderEmpty("Aucune donnée. Charge le fichier.");
+      return;
+    }
+
+    el.srcLabel.textContent = pivot.meta?.source || "—";
+    el.lastUpdate.textContent = formatDateTime(pivot.meta?.updatedAt);
+    el.clientsCount.textContent = String(pivot.clients.length);
+
+    let clients = pivot.clients.filter(c => {
+      if (!filterText) return true;
+      const a = (c.clientInternal || "").toLowerCase();
+      const b = (c.clientName || "").toLowerCase();
+      return a.includes(filterText) || b.includes(filterText);
+    });
+
+    if (sortTotalDir === "desc"){
+      clients = clients.slice().sort((a,b) => getClientTotal(b) - getClientTotal(a));
+    } else if (sortTotalDir === "asc"){
+      clients = clients.slice().sort((a,b) => getClientTotal(a) - getClientTotal(b));
+    }
+
+    const colSums = {};
+    for (const m of MONTHS) colSums[m.key] = 0;
+    let grandTotal = 0;
+
+    const sortArrow = sortTotalDir === "desc" ? "▼" : (sortTotalDir === "asc" ? "▲" : "↕");
+
+    el.table.innerHTML = `
+      <thead>
+        <tr>
+          <th class="col-sticky">Code livré</th>
+          <th class="col-sticky2">Nom client</th>
+          ${MONTHS.map(m => `<th>${escapeHtml(m.label)}</th>`).join("")}
+          <th class="col-total clickable" id="thTotal">TOTAL ${sortArrow}</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${clients.map(c => {
+          let t = 0;
+          const cells = MONTHS.map(m => {
+            const v = Math.round(toNumber(c.months?.[m.key]));
+            colSums[m.key] += v;
+            t += v;
+            return `<td class="num">${formatInt(v)}</td>`;
+          }).join("");
+          grandTotal += t;
+          return `
+            <tr>
+              <td class="col-sticky">${escapeHtml(c.clientInternal || "—")}</td>
+              <td class="col-sticky2">${escapeHtml(c.clientName || "—")}</td>
+              ${cells}
+              <td class="num col-total">${formatInt(t)}</td>
+            </tr>
+          `;
+        }).join("")}
+
+        <tr>
+          <td class="col-sticky">TOTAL</td>
+          <td class="col-sticky2">—</td>
+          ${MONTHS.map(m => `<td class="num col-total">${formatInt(colSums[m.key])}</td>`).join("")}
+          <td class="num col-total">${formatInt(grandTotal)}</td>
+        </tr>
+      </tbody>
+    `;
+
+    const thTotal = document.getElementById("thTotal");
+    if (thTotal){
+      thTotal.addEventListener("click", () => {
+        sortTotalDir = sortTotalDir === "desc" ? "asc" : (sortTotalDir === "asc" ? null : "desc");
+        render();
+      });
+    }
+  }
+
+  // =========================
+  // EXPORTS
+  // =========================
+  function exportJSON(){
+    if (!pivot?.clients?.length) return alert("Aucune donnée.");
+    downloadBlob(JSON.stringify(pivot, null, 2), `activitereel-gueudet-pivot.json`, "application/json");
+  }
+
+  function exportCSV(){
+    if (!pivot?.clients?.length) return alert("Aucune donnée.");
+    const headers = ["Code livré","Nom client", ...MONTHS.map(m=>m.label), "TOTAL"];
+    const lines = [headers.join(";")];
+    for (const c of pivot.clients){
+      const row = [];
+      row.push(csvEscape(c.clientInternal || ""));
+      row.push(csvEscape(c.clientName || ""));
+      let total = 0;
+      for (const m of MONTHS){
+        const v = Math.round(toNumber(c.months?.[m.key]));
+        total += v;
+        row.push(String(v));
+      }
+      row.push(String(total));
+      lines.push(row.join(";"));
+    }
+    downloadBlob(lines.join("\n"), `activitereel-gueudet-pivot.csv`, "text/csv;charset=utf-8");
+  }
+
+  function exportXLSX(){
+    if (!pivot?.clients?.length) return alert("Aucune donnée.");
+    const aoa = [];
+    aoa.push(["Code livré","Nom client", ...MONTHS.map(m=>m.label), "TOTAL"]);
+    for (const c of pivot.clients){
+      const row = [c.clientInternal || "", c.clientName || ""];
+      let total = 0;
+      for (const m of MONTHS){
+        const v = Math.round(toNumber(c.months?.[m.key]));
+        total += v;
+        row.push(v);
+      }
+      row.push(total);
+      aoa.push(row);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pivot");
+    XLSX.writeFile(wb, "activitereel-gueudet-pivot.xlsx");
+  }
+
+  // =========================
+  // HELPERS (structure propre)
+  // =========================
+  function buildHeaderMap(rowObj){
+    const map = new Map();
+    for (const k of Object.keys(rowObj || {})){
+      map.set(normalizeKey(k), k);
+    }
+    return map;
+  }
+
+  function findCol(headerMap, candidates){
+    for (const c of candidates){
+      const key = normalizeKey(c);
+      if (headerMap.has(key)) return headerMap.get(key);
+    }
+    return null;
+  }
+
+  function normalizeKey(str){
+    return String(str || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[’'"]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function makeClientId(code, name){
+    const a = normalizeKey(code);
+    const b = normalizeKey(name);
+    return (a || b || "client") + "::" + (b || a || "");
+  }
+
+  function toNumber(v){
+    if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+    const s = String(v ?? "").trim();
+    if (!s) return 0;
+    const clean = s.replace(/\s/g, "").replace(/\u00A0/g,"").replace(",", ".");
+    const n = Number(clean);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function formatInt(n){
+    const x = Math.round(toNumber(n));
+    return x.toLocaleString("fr-FR", { maximumFractionDigits:0 });
+  }
+
+  function formatDateTime(iso){
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleString("fr-FR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+  }
+
+  function escapeHtml(str){
+    return String(str ?? "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+
+  function csvEscape(str){
+    const s = String(str ?? "");
+    if (/[;"\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+    return s;
+  }
+
+  function downloadBlob(content, filename, mime){
+    const blob = content instanceof Blob ? content : new Blob([content], { type: mime || "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+
+  function saveJSON(key, obj){
+    localStorage.setItem(key, JSON.stringify(obj));
+  }
+
+  function loadJSON(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    }catch{
+      return fallback;
+    }
+  }
+
+  function looksLikeZip(arrayBuffer){
+    try{
+      const u8 = new Uint8Array(arrayBuffer);
+      return u8.length >= 2 && u8[0] === 0x50 && u8[1] === 0x4B; // 'PK'
+    }catch{
+      return false;
+    }
+  }
+
+})();
+</script>
+</body>
+</html>

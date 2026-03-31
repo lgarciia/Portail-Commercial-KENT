@@ -1,0 +1,1192 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reporting annuel (FORD)</title>
+
+  <!-- SheetJS (XLSX) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #0b0f17;
+      --panel: rgba(255,255,255,0.06);
+      --panel2: rgba(255,255,255,0.045);
+      --stroke: rgba(255,255,255,0.10);
+      --stroke2: rgba(255,255,255,0.14);
+      --text: rgba(255,255,255,0.88);
+      --muted: rgba(255,255,255,0.60);
+      --muted2: rgba(255,255,255,0.46);
+      --good: rgba(95, 255, 160, 0.92);
+      --bad: rgba(255, 110, 110, 0.92);
+      --accent: rgba(132, 182, 255, 0.95);
+      --shadow: 0 16px 40px rgba(0,0,0,0.35);
+      --radius: 16px;
+      --cellH: 34px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: var(--font);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(90,140,255,0.15), transparent 60%),
+        radial-gradient(1100px 800px at 110% 20%, rgba(255,120,200,0.10), transparent 55%),
+        radial-gradient(900px 700px at 60% 110%, rgba(130,255,200,0.08), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    .app{ height:100%; display:flex; flex-direction:column; }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 18px;
+      border-bottom:1px solid var(--stroke);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      backdrop-filter: blur(10px);
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background: linear-gradient(135deg, rgba(132,182,255,0.95), rgba(255,125,206,0.65));
+      box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+      border:1px solid rgba(255,255,255,0.15);
+    }
+    .titleWrap{ display:flex; flex-direction:column; line-height:1.15; }
+    .title{ font-weight:700; letter-spacing:0.2px; font-size:14px; }
+    .subtitle{ font-size:12px; color:var(--muted); }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      height:34px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.06);
+      color:var(--text);
+      font-weight:600;
+      font-size:12px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: var(--stroke2); background: rgba(255,255,255,0.08); }
+    .btn:active{ transform: translateY(0px); }
+    .btn.primary{
+      background: rgba(132,182,255,0.18);
+      border-color: rgba(132,182,255,0.28);
+    }
+    .btn.danger{
+      background: rgba(255,110,110,0.12);
+      border-color: rgba(255,110,110,0.22);
+    }
+
+    .fileInput{ display:none; }
+
+    .shell{
+      height: calc(100% - 67px);
+      padding:16px 16px 18px;
+      display:grid;
+      grid-template-rows: auto 1fr;
+      gap:12px;
+    }
+
+    .card{
+      border:1px solid var(--stroke);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow:hidden;
+
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+
+    .meta{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(0,0,0,0.18);
+      flex:0 0 auto;
+    }
+
+    .metaLeft{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      height:30px;
+      padding:0 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      color:var(--muted);
+      font-size:12px;
+    }
+    .pill strong{ color:var(--text); font-weight:700; }
+
+    .search{
+      height:30px;
+      width:280px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      color:var(--text);
+      padding:0 10px;
+      outline:none;
+      font-size:12px;
+    }
+    .search::placeholder{ color: var(--muted2); }
+
+    .gridWrap{
+      position:relative;
+      height:100%;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      flex:1;
+    }
+
+    .dropHint{
+      position:absolute;
+      inset:10px;
+      border:1px dashed rgba(255,255,255,0.20);
+      border-radius: 16px;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,0.35);
+      color: rgba(255,255,255,0.8);
+      font-weight:700;
+      letter-spacing:0.2px;
+      z-index:10;
+      pointer-events:none;
+    }
+    .dropHint.show{ display:flex; }
+
+    .tableScroller{
+      flex:1;
+      min-height:0;
+      overflow-y:auto;
+      overflow-x:hidden;
+      scrollbar-gutter: stable;
+    }
+
+    .hScroll{
+      flex:0 0 auto;
+      height:14px;
+      overflow-x:auto;
+      overflow-y:hidden;
+      border-top:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.18);
+    }
+    .hScrollInner{ height:1px; width:0px; }
+
+    table{
+      border-collapse:separate;
+      border-spacing:0;
+      width:max-content;
+      min-width:100%;
+      font-size:12px;
+    }
+
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:5;
+      background: rgba(10,15,23,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--stroke);
+    }
+
+    th, td{
+      border-right:1px solid rgba(255,255,255,0.10);
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      padding:6px 8px;
+      height: var(--cellH);
+      white-space:nowrap;
+    }
+
+    thead tr:first-child th{
+      font-weight:800;
+      color:rgba(255,255,255,0.86);
+      text-align:center;
+      border-bottom:1px solid rgba(255,255,255,0.10);
+    }
+    thead tr:nth-child(2) th{
+      font-weight:700;
+      color:var(--muted);
+      text-align:center;
+    }
+
+    tbody tr:hover td{ background: rgba(255,255,255,0.03); }
+
+    .col-client{
+      position:sticky;
+      left:0;
+      z-index:6;
+      background: rgba(10,15,23,0.96);
+      border-right:1px solid rgba(255,255,255,0.12);
+      min-width:220px;
+      max-width:360px;
+    }
+    tbody .col-client{
+      z-index:4;
+      font-weight:700;
+      color: rgba(255,255,255,0.86);
+    }
+
+    .col-nclient{
+      position:sticky;
+      left:220px;
+      z-index:6;
+      background: rgba(10,15,23,0.96);
+      border-right:1px solid rgba(255,255,255,0.12);
+      min-width:140px;
+      max-width:180px;
+      text-align:center;
+      color: rgba(255,255,255,0.78);
+      font-weight:750;
+    }
+    tbody .col-nclient{ z-index:4; }
+
+    .row-cumul td{
+      background: rgba(132,182,255,0.08);
+      font-weight:800;
+      border-bottom:1px solid rgba(132,182,255,0.18);
+    }
+    .row-cumul .col-client,
+    .row-cumul .col-nclient{
+      background: rgba(132,182,255,0.10);
+    }
+
+    .num{ text-align:right; font-variant-numeric: tabular-nums; }
+    .ecart.neg{ color: var(--bad); font-weight:800; }
+    .ecart.pos{ color: var(--good); font-weight:800; }
+    .ecart.zero{ color: rgba(255,255,255,0.55); font-weight:700; }
+    .budget{ color: rgba(255,255,255,0.78); font-weight:700; }
+
+    .dividerL{ border-left:3px solid rgba(255,255,255,0.16) !important; }
+
+    .mutedNote{
+      padding:10px 14px 14px;
+      color: var(--muted);
+      font-size:12px;
+    }
+
+    .kbd{
+      display:inline-flex;
+      align-items:center;
+      height:18px;
+      padding:0 7px;
+      border-radius:7px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.78);
+      font-weight:800;
+      font-size:11px;
+      margin:0 3px;
+    }
+
+    /* séparateur visuel chaque mois (col 3,6,9...) sur 2 lignes d'en-tête + corps */
+    #reportTable th:nth-child(3),
+    #reportTable th:nth-child(6),
+    #reportTable th:nth-child(9),
+    #reportTable th:nth-child(12),
+    #reportTable th:nth-child(15),
+    #reportTable th:nth-child(18),
+    #reportTable th:nth-child(21),
+    #reportTable th:nth-child(24),
+    #reportTable th:nth-child(27),
+    #reportTable th:nth-child(30),
+    #reportTable th:nth-child(33),
+    #reportTable th:nth-child(36),
+    #reportTable td:nth-child(3),
+    #reportTable td:nth-child(6),
+    #reportTable td:nth-child(9),
+    #reportTable td:nth-child(12),
+    #reportTable td:nth-child(15),
+    #reportTable td:nth-child(18),
+    #reportTable td:nth-child(21),
+    #reportTable td:nth-child(24),
+    #reportTable td:nth-child(27),
+    #reportTable td:nth-child(30),
+    #reportTable td:nth-child(33),
+    #reportTable td:nth-child(36) {
+      border-left: 3px solid rgba(255,255,255,0.18);
+    }
+
+    #reportTable thead tr:first-child th {
+      border-bottom: 2px solid rgba(255,255,255,0.15);
+    }
+
+    #reportTable td:last-child,
+    #reportTable th:last-child{
+      padding-right: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="titleWrap">
+          <div class="title">Reporting annuel (FORD)</div>
+          <div class="subtitle">Budget (Excel) + Réel (fetch Excel) → Écarts mensuels & cumul annuel</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <input id="fileBudget" class="fileInput" type="file" accept=".xlsx,.xls" />
+        <button class="btn primary" id="btnImport">Importer / Recharger budgetford.xlsx</button>
+        <button class="btn" id="btnExportXlsx">Exporter XLSX</button>
+        <button class="btn" id="btnExportCsv">Exporter CSV</button>
+        <button class="btn" id="btnExportJson">Exporter JSON</button>
+        <button class="btn danger" id="btnResetReal">Reset Réel</button>
+      </div>
+    </div>
+
+    <div class="shell">
+      <div class="card">
+        <div class="meta">
+          <div class="metaLeft">
+            <div class="pill">Fichier budget : <strong id="budgetFileLabel">non chargé</strong></div>
+            <div class="pill">Clients : <strong id="clientsCount">0</strong></div>
+            <div class="pill">Dernière maj : <strong id="lastUpdate">—</strong></div>
+            <div class="pill">Réel FORD : <strong id="reelStatus">chargement…</strong></div>
+            <input class="search" id="search" placeholder="Filtrer client (nom ou code livré)..." />
+          </div>
+          <div class="pill">
+            Astuce : drag&drop le fichier Excel ici • <span class="kbd">Ctrl</span>+<span class="kbd">F</span>
+          </div>
+        </div>
+
+        <div class="gridWrap" id="dropZone">
+          <div class="dropHint" id="dropHint">Dépose budgetford.xlsx pour recharger</div>
+
+          <div class="tableScroller" id="tableScroller">
+            <table id="reportTable"></table>
+          </div>
+
+          <div class="hScroll" id="hScroll" aria-label="Scroll horizontal">
+            <div class="hScrollInner" id="hScrollInner"></div>
+          </div>
+
+          <div class="mutedNote">
+            ✅ Réel FORD auto = fetch depuis <code>activitereelford.xlsx</code> (colonnes : Code livré, Nom client, CA Total, mois2).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(async function(){
+  /* ======================================================
+     CONFIG
+  ====================================================== */
+  const MONTHS = [
+    { key: "jan", label: "Janvier", excel: "Janvier" },
+    { key: "feb", label: "Février", excel: "Février" },
+    { key: "mar", label: "Mars", excel: "Mars" },
+    { key: "apr", label: "Avril", excel: "Avril" },
+    { key: "may", label: "Mai", excel: "Mai" },
+    { key: "jun", label: "Juin", excel: "Juin" },
+    { key: "jul", label: "Juillet", excel: "Juillet" },
+    { key: "aug", label: "Août", excel: "Août" },
+    { key: "sep", label: "Septembre", excel: "Septembre" },
+    { key: "oct", label: "Octobre", excel: "Octobre" },
+    { key: "nov", label: "Novembre", excel: "Novembre" },
+    { key: "dec", label: "Décembre", excel: "Décembre" },
+  ];
+
+  const STORAGE = {
+    budget: "BUDGET_FORD_DATA_V1",
+    budgetMeta: "BUDGET_FORD_META_V1",
+    real: "BUDGET_FORD_REAL_V1",
+  };
+
+  // ✅ sources fichiers
+  const REAL_FILE = "activitereelford.xlsx";
+  const BUDGET_FILE = "budgetford.xlsx";
+
+  let budgetData = null;                // { clients: [{id,name,nclient,budget:{jan..dec}}] }
+  let realData = loadJSON(STORAGE.real, {}); // écrasé par fetch
+  let filterText = "";
+
+  /* ======================================================
+     DOM
+  ====================================================== */
+  const el = {
+    fileBudget: document.getElementById("fileBudget"),
+    btnImport: document.getElementById("btnImport"),
+    btnExportXlsx: document.getElementById("btnExportXlsx"),
+    btnExportCsv: document.getElementById("btnExportCsv"),
+    btnExportJson: document.getElementById("btnExportJson"),
+    btnResetReal: document.getElementById("btnResetReal"),
+    table: document.getElementById("reportTable"),
+    budgetFileLabel: document.getElementById("budgetFileLabel"),
+    clientsCount: document.getElementById("clientsCount"),
+    lastUpdate: document.getElementById("lastUpdate"),
+    reelStatus: document.getElementById("reelStatus"),
+    search: document.getElementById("search"),
+    dropZone: document.getElementById("dropZone"),
+    dropHint: document.getElementById("dropHint"),
+
+    tableScroller: document.getElementById("tableScroller"),
+    hScroll: document.getElementById("hScroll"),
+    hScrollInner: document.getElementById("hScrollInner"),
+  };
+
+  /* ======================================================
+     INIT
+  ====================================================== */
+  const cachedBudget = loadJSON(STORAGE.budget, null);
+  const cachedMeta = loadJSON(STORAGE.budgetMeta, null);
+
+  if (cachedBudget && cachedBudget.clients?.length) {
+    budgetData = cachedBudget;
+    applyMeta(cachedMeta);
+
+    await loadRealFromFetch(); // ✅ fetch réel dès que le budget existe
+    render();
+  } else {
+    renderEmpty();
+    updateReelStatus("non chargé (budget absent)");
+    syncBottomScrollbar();
+    // option: auto-fetch budget si présent sur GitHub
+    await tryAutoFetchBudget();
+  }
+
+  /* ======================================================
+     EVENTS
+  ====================================================== */
+  el.btnImport.addEventListener("click", () => el.fileBudget.click());
+
+  el.fileBudget.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    await importBudgetFile(file);
+    el.fileBudget.value = "";
+  });
+
+  el.search.addEventListener("input", () => {
+    filterText = (el.search.value || "").trim().toLowerCase();
+    render();
+  });
+
+  el.btnResetReal.addEventListener("click", () => {
+    if (!confirm("Réinitialiser toutes les valeurs Réel (importées du fichier réel) ?")) return;
+    realData = {};
+    saveJSON(STORAGE.real, realData);
+    render();
+  });
+
+  el.btnExportJson.addEventListener("click", () => exportJSON());
+  el.btnExportCsv.addEventListener("click", () => exportCSV());
+  el.btnExportXlsx.addEventListener("click", () => exportXLSX());
+
+  ["dragenter","dragover"].forEach(evt => el.dropZone.addEventListener(evt, (e) => {
+    e.preventDefault(); e.stopPropagation();
+    el.dropHint.classList.add("show");
+  }));
+  ["dragleave","drop"].forEach(evt => el.dropZone.addEventListener(evt, (e) => {
+    e.preventDefault(); e.stopPropagation();
+    el.dropHint.classList.remove("show");
+  }));
+  el.dropZone.addEventListener("drop", async (e) => {
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    const name = (file.name || "").toLowerCase();
+    if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+      alert("Veuillez déposer un fichier .xlsx ou .xls");
+      return;
+    }
+    await importBudgetFile(file);
+  });
+
+  // ✅ sync scroll horizontal : tableScroller (X hidden) <-> hScroll (X visible)
+  let syncing = false;
+
+  el.tableScroller.addEventListener("scroll", () => {
+    if (syncing) return;
+    syncing = true;
+    el.hScroll.scrollLeft = el.tableScroller.scrollLeft;
+    syncing = false;
+  }, { passive:true });
+
+  el.hScroll.addEventListener("scroll", () => {
+    if (syncing) return;
+    syncing = true;
+    el.tableScroller.scrollLeft = el.hScroll.scrollLeft;
+    syncing = false;
+  }, { passive:true });
+
+  window.addEventListener("resize", () => syncBottomScrollbar(), { passive:true });
+
+  /* ======================================================
+     BUDGET import (comme PSA)
+  ====================================================== */
+  async function importBudgetFile(file){
+    try{
+      const arrayBuffer = await file.arrayBuffer();
+      parseBudget(arrayBuffer, file.name || BUDGET_FILE);
+
+      // ✅ fetch réel après import budget
+      await loadRealFromFetch();
+
+      render();
+    }catch(err){
+      console.error(err);
+      alert("Import impossible : " + (err?.message || err));
+    }
+  }
+
+  function parseBudget(arrayBuffer, fileLabel){
+    const wb = XLSX.read(arrayBuffer, { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+    if (!rows.length) throw new Error("Budget vide");
+
+    const headerMap = buildHeaderMap(rows[0] || {});
+
+    // Budget Ford : on accepte plusieurs conventions
+    const colClient = findCol(headerMap, ["client", "nom client", "nom du client"]);
+    const colCode = findCol(headerMap, ["code livré","code livre","code","n client","n° client","no client","numero client","nclient"]);
+
+    if (!colClient && !colCode) throw new Error("Budget : colonnes Client/Code livré introuvables.");
+
+    const monthCols = {};
+    for (const m of MONTHS){
+      const col = findCol(headerMap, [normalizeKey(m.excel)]);
+      if (!col) throw new Error(`Budget : colonne "${m.excel}" introuvable.`);
+      monthCols[m.key] = col;
+    }
+
+    const clients = [];
+    for (const r of rows){
+      const name = colClient ? String(r[colClient] ?? "").trim() : "";
+      const code = colCode ? String(r[colCode] ?? "").trim() : "";
+      if (!name && !code) continue;
+
+      const id = makeClientKey(name, code);
+
+      const budget = {};
+      for (const m of MONTHS) budget[m.key] = Math.round(toNumber(r[monthCols[m.key]]));
+
+      clients.push({ id, name: name || `Client ${code}`, nclient: code, budget });
+    }
+
+    budgetData = { clients };
+
+    saveJSON(STORAGE.budget, budgetData);
+    const meta = { filename: fileLabel, updatedAt: new Date().toISOString(), sheet: sheetName };
+    saveJSON(STORAGE.budgetMeta, meta);
+    applyMeta(meta);
+  }
+
+  async function tryAutoFetchBudget(){
+    try{
+      const { buffer } = await fetchXlsxWithFallback(BUDGET_FILE);
+      // si OK, on charge comme si import
+      parseBudget(buffer, BUDGET_FILE);
+      await loadRealFromFetch();
+      render();
+    }catch{
+      // silencieux : on laisse l'import manuel
+    }
+  }
+
+  function applyMeta(meta){
+    if (!meta) {
+      el.budgetFileLabel.textContent = "non chargé";
+      el.lastUpdate.textContent = "—";
+      return;
+    }
+    el.budgetFileLabel.textContent = meta.filename || BUDGET_FILE;
+    el.lastUpdate.textContent = formatDateTime(meta.updatedAt);
+  }
+
+  /* ======================================================
+     ✅ FETCH RÉEL (activitereelford.xlsx)
+     Colonnes : Code livré | Nom client | CA Total | mois2
+     Reconstruit realData[clientId][monthKey] = somme CA
+  ====================================================== */
+  async function loadRealFromFetch(){
+    if (!budgetData?.clients?.length){
+      updateReelStatus("budget absent");
+      return;
+    }
+
+    updateReelStatus("chargement…");
+
+    try{
+      const { buffer } = await fetchXlsxWithFallback(REAL_FILE);
+
+      const wb = XLSX.read(buffer, { type:"array" });
+      const sheetName = pickBestSheet(wb);
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
+
+      if (!rows.length){
+        realData = {};
+        saveJSON(STORAGE.real, realData);
+        updateReelStatus("fichier vide");
+        return;
+      }
+
+      const headerMap = buildHeaderMap(rows[0] || {});
+      const colCode = findCol(headerMap, ["code livré","code livre","code"]);
+      const colName = findCol(headerMap, ["nom client","nom du client","client"]);
+      const colAmt  = findCol(headerMap, ["ca total","ca","chiffre d'affaires","chiffre daffaires"]);
+      const colMonth= findCol(headerMap, ["mois2","mois","month"]);
+
+      if (!colCode || !colAmt || !colMonth){
+        realData = {};
+        saveJSON(STORAGE.real, realData);
+        updateReelStatus("colonnes Code/CA/Mois introuvables");
+        return;
+      }
+
+      // maps budget
+      const budgetByCode = new Map();
+      const budgetByName = new Map();
+      for (const bc of budgetData.clients){
+        const ckey = normKey(bc.nclient);
+        const nkey = normKey(bc.name);
+        if (ckey) budgetByCode.set(ckey, bc);
+        if (nkey) budgetByName.set(nkey, bc);
+      }
+
+      function ensureBudgetClient(codeLivre, clientName){
+        const ck = normKey(codeLivre);
+        if (!ck) return null;
+
+        let bc = budgetByCode.get(ck);
+        if (bc) return bc;
+
+        // client hors budget
+        const name = String(clientName || `Client ${codeLivre}`).trim();
+        const id = makeClientKey(name, codeLivre);
+
+        const budget = {};
+        for (const m of MONTHS) budget[m.key] = 0;
+
+        bc = { id, name, nclient: String(codeLivre).trim(), budget, isUnbudgeted: true };
+
+        budgetData.clients.push(bc);
+        budgetByCode.set(ck, bc);
+        budgetByName.set(normKey(name), bc);
+
+        return bc;
+      }
+
+      const nextReal = {};
+
+      for (const r of rows){
+        const moisStr = String(r[colMonth] ?? "").trim();
+        const monthKey = monthNameToKey(moisStr);
+        if (!monthKey) continue;
+
+        const amt = Math.round(toNumber(r[colAmt]));
+        if (!amt) continue;
+
+        const codeLivre = String(r[colCode] ?? "").trim();
+        const clientName = colName ? String(r[colName] ?? "").trim() : "";
+
+        const bc = ensureBudgetClient(codeLivre, clientName);
+        if (!bc) continue;
+
+        if (!nextReal[bc.id]) nextReal[bc.id] = {};
+        nextReal[bc.id][monthKey] = Math.round(toNumber(nextReal[bc.id][monthKey])) + amt;
+      }
+
+      realData = nextReal;
+      saveJSON(STORAGE.real, realData);
+
+      const countClients = Object.keys(realData).length;
+      updateReelStatus(`OK (${countClients} clients) — ${REAL_FILE}`);
+    }catch(err){
+      console.error(err);
+      updateReelStatus("erreur fetch/lecture");
+    }
+  }
+
+  function monthNameToKey(m){
+    // support numérique 1..12
+    const n = Number(String(m||"").trim());
+    if (Number.isFinite(n) && n >= 1 && n <= 12) return MONTHS[n-1].key;
+
+    const k = normKey(m);
+    const map = {
+      "janvier":"jan","jan":"jan",
+      "fevrier":"feb","février":"feb","fev":"feb","fév":"feb",
+      "mars":"mar",
+      "avril":"apr","avr":"apr",
+      "mai":"may",
+      "juin":"jun",
+      "juillet":"jul","juil":"jul",
+      "aout":"aug","août":"aug",
+      "septembre":"sep","sep":"sep","sept":"sep",
+      "octobre":"oct","oct":"oct",
+      "novembre":"nov","nov":"nov",
+      "decembre":"dec","décembre":"dec","dec":"dec","déc":"dec"
+    };
+    return map[k] || null;
+  }
+
+  function updateReelStatus(msg){
+    el.reelStatus.textContent = msg || "—";
+  }
+
+  /* ======================================================
+     RENDER (même structure que PSA : Réel/Budget/Écart côte à côte)
+  ====================================================== */
+  function renderEmpty(){
+    el.clientsCount.textContent = "0";
+    el.table.innerHTML = `
+      <thead>
+        <tr>
+          <th class="col-client">Client</th>
+          <th class="col-nclient">Code livré</th>
+          ${MONTHS.map(m => `<th colspan="3">${escapeHtml(m.label)}</th>`).join("")}
+          <th class="dividerL" colspan="3">Cumul</th>
+        </tr>
+        <tr>
+          <th class="col-client">—</th>
+          <th class="col-nclient">—</th>
+          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
+          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-client">Aucun budget chargé</td>
+          <td class="col-nclient">—</td>
+          ${MONTHS.map(() => `<td class="num">—</td><td class="num">—</td><td class="num">—</td>`).join("")}
+          <td class="num dividerL">—</td><td class="num">—</td><td class="num">—</td>
+        </tr>
+      </tbody>
+    `;
+  }
+
+  function render(){
+    if (!budgetData?.clients?.length){
+      renderEmpty();
+      syncBottomScrollbar();
+      return;
+    }
+
+    const clients = budgetData.clients
+      .filter(c =>
+        !filterText ||
+        (c.name||"").toLowerCase().includes(filterText) ||
+        String(c.nclient||"").toLowerCase().includes(filterText)
+      );
+
+    el.clientsCount.textContent = String(budgetData.clients.length);
+
+    const thead = `
+      <thead>
+        <tr>
+          <th class="col-client">Client</th>
+          <th class="col-nclient">Code livré</th>
+          ${MONTHS.map(m => `<th colspan="3">${escapeHtml(m.label)}</th>`).join("")}
+          <th class="dividerL" colspan="3">Cumul</th>
+        </tr>
+        <tr>
+          <th class="col-client">—</th>
+          <th class="col-nclient">—</th>
+          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
+          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
+        </tr>
+      </thead>
+    `;
+
+    const cumulGlobal = computeCumulRow(clients);
+
+    const tbodyRows = [];
+    tbodyRows.push(renderCumulRow(cumulGlobal));
+    for (const c of clients) tbodyRows.push(renderClientRow(c));
+
+    el.table.innerHTML = thead + `<tbody>${tbodyRows.join("")}</tbody>`;
+    syncBottomScrollbar();
+  }
+
+  function computeCumulRow(clients){
+    const perMonth = {};
+    for (const m of MONTHS){
+      let sumBudget = 0;
+      let sumReal = 0;
+      for (const c of clients){
+        sumBudget += Math.round(toNumber(c.budget?.[m.key]));
+        sumReal += Math.round(toNumber(realData?.[c.id]?.[m.key]));
+      }
+      perMonth[m.key] = { real: sumReal, budget: sumBudget, ecart: sumReal - sumBudget };
+    }
+
+    const annualReal = MONTHS.reduce((a,m)=>a + perMonth[m.key].real, 0);
+    const annualBudget = MONTHS.reduce((a,m)=>a + perMonth[m.key].budget, 0);
+
+    return {
+      name: "Cumul",
+      perMonth,
+      annual: { real: annualReal, budget: annualBudget, ecart: annualReal - annualBudget }
+    };
+  }
+
+  function renderCumulRow(cumul){
+    const cells = MONTHS.map(m => {
+      const v = cumul.perMonth[m.key];
+      return `
+        <td class="num">${fmt(v.real)}</td>
+        <td class="num budget">${fmt(v.budget)}</td>
+        <td class="num ecart ${ecartClass(v.ecart)}">${fmt(v.ecart)}</td>
+      `;
+    }).join("");
+
+    return `
+      <tr class="row-cumul">
+        <td class="col-client">Cumul</td>
+        <td class="col-nclient">—</td>
+        ${cells}
+        <td class="num dividerL">${fmt(cumul.annual.real)}</td>
+        <td class="num budget">${fmt(cumul.annual.budget)}</td>
+        <td class="num ecart ${ecartClass(cumul.annual.ecart)}">${fmt(cumul.annual.ecart)}</td>
+      </tr>
+    `;
+  }
+
+  function renderClientRow(client){
+    const annualBudget = MONTHS.reduce((a,m)=>a + Math.round(toNumber(client.budget?.[m.key])), 0);
+    const annualReal = MONTHS.reduce((a,m)=>a + Math.round(toNumber(realData?.[client.id]?.[m.key])), 0);
+    const annualEcart = annualReal - annualBudget;
+
+    const cells = MONTHS.map(m => {
+      const budget = Math.round(toNumber(client.budget?.[m.key]));
+      const real = Math.round(toNumber(realData?.[client.id]?.[m.key]));
+      const ecart = real - budget;
+
+      return `
+        <td class="num">${fmt(real)}</td>
+        <td class="num budget">${fmt(budget)}</td>
+        <td class="num ecart ${ecartClass(ecart)}">${fmt(ecart)}</td>
+      `;
+    }).join("");
+
+    return `
+      <tr>
+        <td class="col-client">${escapeHtml(client.name)}</td>
+        <td class="col-nclient">${escapeHtml(client.nclient || "—")}</td>
+        ${cells}
+        <td class="num dividerL">${fmt(annualReal)}</td>
+        <td class="num budget">${fmt(annualBudget)}</td>
+        <td class="num ecart ${ecartClass(annualEcart)}">${fmt(annualEcart)}</td>
+      </tr>
+    `;
+  }
+
+  function syncBottomScrollbar(){
+    const w = el.table?.scrollWidth || 0;
+    el.hScrollInner.style.width = w ? (w + "px") : "0px";
+    el.hScroll.scrollLeft = el.tableScroller.scrollLeft;
+  }
+
+  /* ======================================================
+     EXPORTS (identique à PSA)
+  ====================================================== */
+  function buildExportRows(){
+    if (!budgetData?.clients?.length) return [];
+    const clients = budgetData.clients
+      .filter(c => !filterText || (c.name||"").toLowerCase().includes(filterText) || String(c.nclient||"").toLowerCase().includes(filterText));
+
+    const cumul = computeCumulRow(clients);
+    const out = [];
+    out.push(rowFromCumul(cumul));
+    for (const c of clients) out.push(rowFromClient(c));
+    return out;
+
+    function rowFromCumul(c){
+      const r = { CLIENT: "Cumul", "CODE LIVRÉ": "" };
+      for (const m of MONTHS){
+        const v = c.perMonth[m.key];
+        r[`${m.label} Réel`] = v.real;
+        r[`${m.label} Budget`] = v.budget;
+        r[`${m.label} Écart`] = v.ecart;
+      }
+      r["Cumul Réel"] = c.annual.real;
+      r["Cumul Budget"] = c.annual.budget;
+      r["Cumul Écart"] = c.annual.ecart;
+      return r;
+    }
+
+    function rowFromClient(c){
+      const r = { CLIENT: c.name, "CODE LIVRÉ": c.nclient || "" };
+      let annualB = 0, annualR = 0;
+      for (const m of MONTHS){
+        const b = Math.round(toNumber(c.budget?.[m.key]));
+        const rr = Math.round(toNumber(realData?.[c.id]?.[m.key]));
+        annualB += b; annualR += rr;
+        r[`${m.label} Réel`] = rr;
+        r[`${m.label} Budget`] = b;
+        r[`${m.label} Écart`] = rr - b;
+      }
+      r["Cumul Réel"] = annualR;
+      r["Cumul Budget"] = annualB;
+      r["Cumul Écart"] = annualR - annualB;
+      return r;
+    }
+  }
+
+  function exportJSON(){
+    const payload = {
+      meta: loadJSON(STORAGE.budgetMeta, null),
+      budget: budgetData,
+      real: realData,
+      realSource: REAL_FILE,
+      exportedAt: new Date().toISOString()
+    };
+    downloadBlob(
+      new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+      `reporting_annuel_ford_${stamp()}.json`
+    );
+  }
+
+  function exportCSV(){
+    const rows = buildExportRows();
+    if (!rows.length) { alert("Rien à exporter."); return; }
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const csv = XLSX.utils.sheet_to_csv(ws, { FS: ";", RS: "\n" });
+    downloadBlob(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+      `reporting_annuel_ford_${stamp()}.csv`
+    );
+  }
+
+  function exportXLSX(){
+    const rows = buildExportRows();
+    if (!rows.length) { alert("Rien à exporter."); return; }
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Reporting annuel FORD");
+    const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    downloadBlob(
+      new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+      `reporting_annuel_ford_${stamp()}.xlsx`
+    );
+  }
+
+  /* ======================================================
+     HELPERS
+  ====================================================== */
+  function loadJSON(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    }catch{
+      return fallback;
+    }
+  }
+  function saveJSON(key, val){
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  function toNumber(v){
+    if (v === null || v === undefined) return 0;
+    if (typeof v === "number") return isFinite(v) ? v : 0;
+    const s = String(v).trim();
+    if (!s) return 0;
+    const norm = s.replace(/\s/g, "").replace(",", ".");
+    const n = Number(norm);
+    return isFinite(n) ? n : 0;
+  }
+
+  function fmt(n){
+    const val = Math.round(toNumber(n));
+    return new Intl.NumberFormat("fr-FR", { minimumFractionDigits:0, maximumFractionDigits:0 }).format(val);
+  }
+
+  function ecartClass(v){
+    const n = toNumber(v);
+    if (n > 0) return "pos";
+    if (n < 0) return "neg";
+    return "zero";
+  }
+
+  function stamp(){
+    const d = new Date();
+    const pad = (x)=>String(x).padStart(2,"0");
+    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+  }
+
+  function formatDateTime(iso){
+    try{
+      const d = new Date(iso);
+      return d.toLocaleString("fr-FR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+    }catch{
+      return "—";
+    }
+  }
+
+  function normKey(s){
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .replace(/\s+/g," ");
+  }
+
+  function makeClientKey(name, nclient){
+    const nc = normKey(nclient).replace(/[^a-z0-9]+/g,"").slice(0, 60);
+    if (nc) return `code_${nc}`;
+    return `name_${String(name||"")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .replace(/[^a-z0-9]+/g,"-")
+      .replace(/(^-|-$)/g,"")
+      .slice(0, 80)}`;
+  }
+
+  function buildHeaderMap(sampleRow){
+    const map = {};
+    for (const k of Object.keys(sampleRow || {})){
+      map[normalizeKey(k)] = k;
+    }
+    return map;
+  }
+
+  function normalizeKey(s){
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+
+  function findCol(headerMap, candidates){
+    for (const c of candidates){
+      const nk = normalizeKey(c);
+      if (headerMap[nk]) return headerMap[nk];
+    }
+    return null;
+  }
+
+  function downloadBlob(blob, filename){
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+
+  function escapeHtml(str){
+    return String(str ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+
+  /* =========================
+     GitHub-safe XLSX fetch
+  ========================= */
+  async function fetchXlsxWithFallback(fileName){
+    const pageDir = location.href.replace(/[#?].*$/,"").replace(/\/[^\/]*$/, "/");
+    const urlSame = new URL(fileName, pageDir).toString();
+    const urlData = new URL("data/" + fileName, pageDir).toString();
+
+    const candidates = [urlSame, urlData];
+    let lastErr = "";
+
+    for (const base of candidates){
+      const url = base + (base.includes("?") ? "&" : "?") + "v=" + Date.now();
+      const res = await fetch(url, { cache:"no-store" });
+      const buf = await res.arrayBuffer();
+
+      if (!res.ok){
+        lastErr = `HTTP ${res.status} sur ${base}`;
+        continue;
+      }
+
+      const sniff = sniffBuffer(buf);
+      if (sniff.looksHtml || !sniff.isZip){
+        lastErr = `Contenu invalide sur ${base} (HTML/404 ou pas XLSX)`;
+        continue;
+      }
+
+      return { buffer: buf, usedUrl: base };
+    }
+
+    throw new Error(lastErr || "fetchXlsxWithFallback failed");
+  }
+
+  function sniffBuffer(arrayBuffer){
+    const u8 = new Uint8Array(arrayBuffer);
+    const a = u8[0], b = u8[1];
+    const isZip = (a === 0x50 && b === 0x4B); // PK
+    const head = u8.slice(0, Math.min(220, u8.length));
+    let preview = "";
+    try{ preview = new TextDecoder("utf-8").decode(head).trim(); }catch{ preview = ""; }
+    const p = (preview || "").toLowerCase();
+    const looksHtml = p.startsWith("<") || p.includes("<!doctype html") || p.includes("<html");
+    return { isZip, looksHtml };
+  }
+
+  function pickBestSheet(wb){
+    let best = wb.SheetNames[0];
+    let bestScore = -1;
+    for (const name of wb.SheetNames){
+      const ws = wb.Sheets[name];
+      const ref = ws && ws["!ref"];
+      if (!ref) continue;
+      const range = XLSX.utils.decode_range(ref);
+      const rows = (range.e.r - range.s.r + 1);
+      const cols = (range.e.c - range.s.c + 1);
+      const score = rows * cols;
+      if (score > bestScore){
+        bestScore = score;
+        best = name;
+      }
+    }
+    return best;
+  }
+
+})();
+</script>
+</body>
+</html>

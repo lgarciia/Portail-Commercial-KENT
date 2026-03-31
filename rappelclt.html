@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rappels clients</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg1: #0f172a;
+      --bg2: #1e293b;
+      --glass: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.14);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --soft: #94a3b8;
+      --danger: #ef4444;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+      --radius: 22px;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, 0.20), transparent 28%),
+        radial-gradient(circle at top right, rgba(236, 72, 153, 0.14), transparent 26%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      padding: 24px;
+    }
+
+    .page {
+      max-width: 1450px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .title-wrap h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .title-wrap p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-box,
+    .badge-box,
+    .debug-box {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-box {
+      padding: 0 14px;
+      min-width: 340px;
+    }
+
+    .search-box input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .search-box input::placeholder {
+      color: var(--soft);
+    }
+
+    .badge-box {
+      padding: 0 16px;
+      gap: 10px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .badge-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--danger);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.8);
+    }
+
+    .debug-box {
+      padding: 0 16px;
+      color: #fde68a;
+      font-weight: 600;
+      font-size: 13px;
+      max-width: 480px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .panel {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    thead {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    th {
+      text-align: left;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #dbeafe;
+      padding: 16px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      vertical-align: top;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    tbody tr:hover {
+      background: rgba(255,255,255,0.04);
+    }
+
+    .client-name,
+    .product-name {
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .account-number {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .date-text {
+      white-space: nowrap;
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    .note-text {
+      color: var(--muted);
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-width: 520px;
+    }
+
+    .action-cell {
+      width: 90px;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    .icon-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: #f8fafc;
+    }
+
+    .empty-state,
+    .loading-state,
+    .error-state {
+      padding: 42px 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .error-state {
+      color: #fecaca;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        padding: 14px;
+      }
+
+      .topbar {
+        align-items: stretch;
+      }
+
+      .search-box {
+        min-width: unset;
+        width: 100%;
+      }
+
+      .top-actions {
+        width: 100%;
+      }
+
+      .title-wrap h1 {
+        font-size: 23px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="title-wrap">
+        <h1>Rappels clients</h1>
+        <p>Toutes les lignes rouges à suivre sur l’ensemble des clients.</p>
+      </div>
+
+      <div class="top-actions">
+        <div class="search-box">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Rechercher un client, un numéro ou un produit..."
+          />
+        </div>
+
+        <div class="badge-box">
+          <span class="badge-dot"></span>
+          <span id="alertCount">0 rappels</span>
+        </div>
+
+        <div class="debug-box" id="debugInfo">
+          Initialisation...
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Numéro</th>
+              <th>Produit</th>
+              <th>Date</th>
+              <th>Note</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="rappelTableBody">
+            <tr>
+              <td colspan="6" class="loading-state">Chargement des rappels...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<script>
+  const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const tableBody = document.getElementById("rappelTableBody");
+  const searchInput = document.getElementById("searchInput");
+  const alertCount = document.getElementById("alertCount");
+  const debugInfo = document.getElementById("debugInfo");
+
+  let allRows = [];
+
+  function escapeHtml(value) {
+    if (value === null || value === undefined) return "";
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString("fr-FR");
+  }
+
+  function updateCount(count) {
+    alertCount.textContent = `${count} rappel${count > 1 ? "s" : ""}`;
+  }
+
+  function setStatus(text) {
+    if (debugInfo) {
+      debugInfo.textContent = text;
+    }
+  }
+
+  function renderRows(rows) {
+    updateCount(rows.length);
+
+    if (!rows.length) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty-state">Aucune ligne rouge trouvée.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    tableBody.innerHTML = rows.map(row => `
+      <tr>
+        <td><div class="client-name">${escapeHtml(row.client_nom)}</div></td>
+        <td><div class="account-number">${escapeHtml(row.numero_compte)}</div></td>
+        <td><div class="product-name">${escapeHtml(row.produit_nom)}</div></td>
+        <td><div class="date-text">${escapeHtml(formatDate(row.date_visite))}</div></td>
+        <td><div class="note-text">${escapeHtml(row.note)}</div></td>
+        <td class="action-cell">
+          <button class="icon-btn" onclick="goToClient('${String(row.client_id).replace(/'/g, "\\'")}')" title="Voir la fiche client">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+              <path d="M367-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q560-607 560-640t-23.5-56.5Q513-720 480-720t-56.5 23.5Q400-673 400-640t23.5 56.5Q447-560 480-560t56.5-23.5ZM480-640Zm0 400Z"/>
+            </svg>
+          </button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  function applyFilter() {
+    const q = searchInput.value.trim().toLowerCase();
+
+    if (!q) {
+      renderRows(allRows);
+      setStatus(allRows.length ? `${allRows.length} rappel${allRows.length > 1 ? "s" : ""} actif${allRows.length > 1 ? "s" : ""}` : "Aucun rappel actif");
+      return;
+    }
+
+    const filtered = allRows.filter(row => {
+      return [
+        row.client_nom,
+        row.numero_compte,
+        row.produit_nom,
+        row.note,
+        row.date_visite
+      ]
+        .filter(Boolean)
+        .some(value => String(value).toLowerCase().includes(q));
+    });
+
+    renderRows(filtered);
+    setStatus(filtered.length ? `${filtered.length} résultat${filtered.length > 1 ? "s" : ""}` : "Aucun résultat");
+  }
+
+  function mapById(array) {
+    const map = new Map();
+    for (const item of array) {
+      if (item && item.id !== undefined && item.id !== null) {
+        map.set(String(item.id), item);
+      }
+    }
+    return map;
+  }
+
+  function normalizeColor(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  async function loadRappels() {
+    try {
+      setStatus("Chargement...");
+
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="6" class="loading-state">Chargement des rappels...</td>
+        </tr>
+      `;
+
+      const [
+        commandesRes,
+        visitesRes,
+        clientsRes,
+        produitsRes
+      ] = await Promise.all([
+        supabaseClient.from("visite_commandes").select("*"),
+        supabaseClient.from("visites").select("*"),
+        supabaseClient.from("clients").select("*"),
+        supabaseClient.from("produits").select("*")
+      ]);
+
+      if (commandesRes.error) throw new Error("visite_commandes : " + commandesRes.error.message);
+      if (visitesRes.error) throw new Error("visites : " + visitesRes.error.message);
+      if (clientsRes.error) throw new Error("clients : " + clientsRes.error.message);
+      if (produitsRes.error) throw new Error("produits : " + produitsRes.error.message);
+
+      const commandes = Array.isArray(commandesRes.data) ? commandesRes.data : [];
+      const visites = Array.isArray(visitesRes.data) ? visitesRes.data : [];
+      const clients = Array.isArray(clientsRes.data) ? clientsRes.data : [];
+      const produits = Array.isArray(produitsRes.data) ? produitsRes.data : [];
+
+      const visitesById = mapById(visites);
+      const clientsById = mapById(clients);
+      const produitsById = mapById(produits);
+
+      const rouges = commandes.filter(cmd => {
+        const c = normalizeColor(cmd.couleur);
+        return c === "rouge" || c === "red";
+      });
+
+      allRows = rouges.map(cmd => {
+        const visite = visitesById.get(String(cmd.visite_id)) || null;
+        const client = visite ? (clientsById.get(String(visite.client_id)) || null) : null;
+        const produit = produitsById.get(String(cmd.produit_id)) || null;
+
+        return {
+          client_id: visite?.client_id || "",
+          client_nom: client?.nom || "[client introuvable]",
+          numero_compte: client?.numero_compte || "-",
+          produit_nom: produit?.nom || "[produit introuvable]",
+          date_visite: visite?.date_visite || "",
+          note: visite?.note || ""
+        };
+      }).sort((a, b) => {
+        const da = a.date_visite ? new Date(a.date_visite).getTime() : 0;
+        const db = b.date_visite ? new Date(b.date_visite).getTime() : 0;
+        return db - da;
+      });
+
+      renderRows(allRows);
+      setStatus(allRows.length ? `${allRows.length} rappel${allRows.length > 1 ? "s" : ""} actif${allRows.length > 1 ? "s" : ""}` : "Aucun rappel actif");
+
+    } catch (err) {
+      console.error("Erreur loadRappels :", err);
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="6" class="error-state">
+            ${escapeHtml(err.message || "Erreur inconnue")}
+          </td>
+        </tr>
+      `;
+      updateCount(0);
+      setStatus("Erreur de chargement");
+    }
+  }
+
+  function goToClient(clientId) {
+    if (!clientId) {
+      alert("Client introuvable pour cette ligne.");
+      return;
+    }
+    window.location.href = "ficherclt.html?client_id=" + encodeURIComponent(clientId);
+  }
+
+  window.goToClient = goToClient;
+  searchInput.addEventListener("input", applyFilter);
+  loadRappels();
+</script>
+</body>
+</html>

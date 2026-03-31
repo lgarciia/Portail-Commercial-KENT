@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Requêtes — année antérieure</title>
+
+  <!-- ✅ THEME PRELOAD (même thème que le hub via APP_THEME) -->
+  <script>
+    (function(){
+      try{
+        const t = localStorage.getItem("APP_THEME") || "dark";
+        document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+      }catch(e){
+        document.documentElement.setAttribute("data-theme","dark");
+      }
+    })();
+  </script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --stroke:rgba(255,255,255,0.12);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.6);
+      --shadow:0 18px 45px rgba(0,0,0,0.35);
+    }
+
+    html[data-theme="light"]{
+      --bg:#f6f7fb;
+      --panel:rgba(0,0,0,0.045);
+      --stroke:rgba(0,0,0,0.10);
+      --text:rgba(10,14,22,0.92);
+      --muted:rgba(10,14,22,0.58);
+      --shadow:0 18px 45px rgba(10,14,22,0.16);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Segoe UI,Roboto,sans-serif;
+      background:
+        radial-gradient(900px 600px at 20% -10%, rgba(90,140,255,0.15), transparent 60%),
+        radial-gradient(900px 600px at 100% 20%, rgba(255,120,200,0.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    .navbar{
+      min-height:64px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 18px;
+      border-bottom:1px solid var(--stroke);
+      background:rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top:0;
+      z-index:10;
+    }
+
+    /* ✅ carré couleur à GAUCHE (retour hub) */
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+    .hubSquare{
+      width:42px;height:42px;border-radius:16px;
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(34,197,94,.70));
+      box-shadow: 0 14px 32px rgba(124,58,237,.22);
+      border:1px solid rgba(255,255,255,0.10);
+      cursor:pointer;
+      transition:.15s;
+      flex:0 0 auto;
+    }
+    .hubSquare:hover{ transform:translateY(-1px); filter:brightness(1.05); }
+    .hubSquare:active{ transform:translateY(0px); }
+
+    .titleWrap{
+      display:flex;
+      flex-direction:column;
+      line-height:1.1;
+      min-width:0;
+      cursor:pointer; /* clic titre = retour hub */
+      user-select:none;
+    }
+    .titleWrap b{
+      font-weight:1000;
+      letter-spacing:.3px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-size:14px;
+    }
+    .titleWrap span{
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .navBtns{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      height:38px;
+      padding:0 16px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
+      color:var(--text);
+      font-weight:900;
+      font-size:13px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      text-decoration:none;
+      transition:.15s;
+      user-select:none;
+      white-space:nowrap;
+    }
+    html[data-theme="light"] .btn{
+      border-color: rgba(10,14,22,0.10);
+      background: rgba(10,14,22,0.04);
+      color: var(--text);
+    }
+    .btn:hover{ background:rgba(255,255,255,0.12); transform:translateY(-1px); }
+    html[data-theme="light"] .btn:hover{ background: rgba(124,58,237,0.10); }
+    .btn:active{ transform:translateY(0px); }
+
+    .btn.primary{
+      background:linear-gradient(135deg,#7fb3ff55,#ff7ad955);
+      border-color:#7fb3ff66;
+    }
+
+    /* ===== CENTER ===== */
+    .center{
+      height:calc(100vh - 64px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+
+    .card{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:18px;
+  padding:26px;
+  box-shadow:var(--shadow);
+  width:min(1200px, 100%);  /* ✅ au lieu de 980px */
+  text-align:center;
+}
+    html[data-theme="light"] .card{
+      background: rgba(255,255,255,0.60);
+      border-color: rgba(10,14,22,0.10);
+    }
+
+    /* ✅ IMAGE GRANDE AU MILIEU */
+.imageCard{
+  margin: 0 auto 18px;
+  width: min(1050px, 100%); /* ✅ au lieu de 820px */
+  height: 420px;            /* ✅ au lieu de 340px */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:22px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 28px 70px rgba(0,0,0,0.42),
+    inset 0 0 0 1px rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.18);
+}
+    html[data-theme="light"] .imageCard{
+      border-color: rgba(10,14,22,0.10);
+      background: rgba(255,255,255,0.65);
+      box-shadow:
+        0 22px 60px rgba(10,14,22,0.16),
+        inset 0 0 0 1px rgba(10,14,22,0.04);
+    }
+
+    .imageCard img{
+      width:100%;
+      height:100%;
+      object-fit: cover;         /* ✅ rendu premium */
+      object-position: center;
+      transform: scale(1.03);    /* léger zoom pour effet “hero” */
+      filter: saturate(1.05) contrast(1.02);
+    }
+    html[data-theme="light"] .imageCard img{
+      filter: saturate(1.02) contrast(1.00);
+    }
+
+    .title{
+      font-size:30px;
+      font-weight:1000;
+      margin:0 0 8px;
+      letter-spacing:.2px;
+    }
+    .subtitle{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
+
+    @media (max-width: 820px){
+      .imageCard{ height: 260px; }
+      .title{ font-size: 26px; }
+    }
+    @media (max-width: 520px){
+      .imageCard{ height: 210px; border-radius: 18px; }
+      .navbar{ padding:10px 12px; }
+      .btn{ padding:0 12px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="navbar">
+    <div class="brand">
+      <div class="hubSquare" id="goHub" title="Retour au Hub"></div>
+      <div class="titleWrap" id="goHub2" title="Retour au Hub">
+        <b>Requêtes — année antérieure</b>
+        <span>PSA • Gueudet • Ford • Direct</span>
+      </div>
+    </div>
+
+    <!-- ✅ boutons requêtes en haut dans la nav bar -->
+    <div class="navBtns">
+      <a class="btn primary" href="requetepsa.html">Requête PSA</a>
+      <a class="btn" href="requetegueudet.html">Requête Gueudet</a>
+      <a class="btn" href="encours.html">Requête Ford</a>
+      <a class="btn" href="encours.html">Requête Direct</a>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="card">
+
+      <!-- ✅ image grande intégrée -->
+      <div class="imageCard">
+        <img src="produits-kent.png" alt="Produits Kent">
+      </div>
+
+      <h1 class="title">Requêtes — année antérieure</h1>
+      <p class="subtitle">Utilise les boutons en haut pour accéder directement à la requête souhaitée.</p>
+
+    </div>
+  </div>
+
+  <script>
+    // ✅ Retour hub via carré + titre
+    (function(){
+      const HUB = "index.html";
+      const go = () => window.location.href = HUB;
+      const a = document.getElementById("goHub");
+      const b = document.getElementById("goHub2");
+      if(a) a.addEventListener("click", go);
+      if(b) b.addEventListener("click", go);
+    })();
+  </script>
+
+</body>
+</html>

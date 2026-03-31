@@ -1,0 +1,1346 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Évol Cumule — PSA + Gueudet + Ford + Direct</title>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- ✅ THEME PRELOAD -->
+  <script>
+    (function(){
+      try{
+        const t = localStorage.getItem("APP_THEME") || "dark";
+        document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+      }catch(e){
+        document.documentElement.setAttribute("data-theme","dark");
+      }
+    })();
+  </script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --panel2:rgba(255,255,255,0.045);
+      --line:rgba(255,255,255,0.10);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.62);
+      --muted2:rgba(255,255,255,0.46);
+      --shadow:0 18px 40px rgba(0,0,0,.45);
+      --radius:18px;
+
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ff6b6b;
+
+      /* Couleurs entités */
+      --psa:#7c3aed;       /* violet */
+      --gueudet:#38bdf8;   /* bleu */
+      --ford:#fb923c;      /* orange */
+      --direct:#34d399;    /* vert */
+
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    html[data-theme="light"]{
+      --bg:#f6f7fb;
+      --panel:rgba(0,0,0,0.045);
+      --panel2:rgba(0,0,0,0.035);
+      --line:rgba(0,0,0,0.10);
+      --text:rgba(10,14,22,0.92);
+      --muted:rgba(10,14,22,0.58);
+      --muted2:rgba(10,14,22,0.46);
+      --shadow:0 18px 40px rgba(10,14,22,.16);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:
+        radial-gradient(1200px 800px at 20% 0%, rgba(124,58,237,.20), transparent 55%),
+        radial-gradient(900px 700px at 85% 10%, rgba(34,197,94,.12), transparent 55%),
+        radial-gradient(900px 700px at 50% 110%, rgba(245,158,11,.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      padding:18px 14px 28px;
+    }
+    .wrap{max-width:1280px;margin:0 auto;position:relative;isolation:isolate;}
+
+    /* ===== NAVBAR ===== */
+    .navbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 16px;border-radius:18px;
+      background: rgba(255,255,255,0.04);
+      border:1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      position: sticky; top: 12px; z-index: 20;
+    }
+    .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+    .logo{
+      width:42px;height:42px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(34,197,94,.70));
+      box-shadow: 0 10px 26px rgba(124,58,237,.25);
+      flex:0 0 auto;
+      cursor:pointer;
+    }
+    .title{display:flex;flex-direction:column;line-height:1.1;min-width:0;cursor:pointer;user-select:none;}
+    .title b{font-size:15px; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .title span{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .navRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.15s transform, .15s background, .15s border-color;
+      white-space:nowrap;
+      user-select:none;
+    }
+    .btn:hover{background: rgba(255,255,255,0.08)}
+    .btn:active{transform: scale(.98)}
+    .btn.primary{border-color: rgba(124,58,237,.35); background: rgba(124,58,237,.14);}
+    .btn.ghost{background: transparent;}
+    .btn.small{padding:9px 10px;border-radius:12px;font-size:13px}
+
+    select{
+      height:42px;border-radius:14px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.25);
+      color:var(--text);
+      padding:0 12px;
+      outline:none;
+      font-size:14px;
+      font-weight:900;
+    }
+    html[data-theme="light"] select{ background: rgba(255,255,255,0.65); border-color: rgba(10,14,22,0.10); }
+    select:focus{border-color: rgba(124,58,237,.55); box-shadow: 0 0 0 4px rgba(124,58,237,.12);}
+
+    .card{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      backdrop-filter: blur(10px);
+      margin-top:12px;
+    }
+    .sectionTitle{
+      margin:0 0 10px;
+      font-size:13px;color:var(--muted);
+      letter-spacing:.3px;text-transform:uppercase;
+    }
+    .meta{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12px;}
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      font-weight:900;
+    }
+    .dot{width:8px;height:8px;border-radius:99px;background: rgba(255,255,255,0.25);}
+    .dot.ok{background: var(--ok)}
+    .dot.warn{background: var(--warn)}
+    .dot.bad{background: var(--bad)}
+    .muted{color:var(--muted);}
+
+    /* ===== TABLE ===== */
+    .tableWrap{overflow:auto;border-radius:16px;border:1px solid var(--line);}
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:980px;}
+    thead th{
+      position:sticky; top:0;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--line);
+      padding:10px 10px;
+      font-size:12px;text-transform:uppercase;letter-spacing:.25px;
+      color: var(--muted);font-weight:950;text-align:right;white-space:nowrap;
+    }
+    thead th:first-child{text-align:left;}
+    tbody td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      font-size:13px;font-weight:850;text-align:right;white-space:nowrap;
+    }
+    tbody td:first-child{text-align:left;}
+    tbody tr:hover{background: rgba(255,255,255,0.03);}
+    tbody tr.clickable{cursor:pointer;}
+    .pos{color: var(--ok);}
+    .neg{color: var(--bad);}
+    .zero{color: rgba(255,255,255,0.70);}
+    .rowTotal td{background: rgba(124,58,237,.14);border-bottom:1px solid rgba(124,58,237,.25);font-weight:950;}
+    .rowCum td{background: rgba(34,197,94,.10);border-bottom:1px solid rgba(34,197,94,.20);font-weight:950;}
+
+    input.comment{
+      width:100%;min-width:280px;height:36px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.22);
+      color: var(--text);
+      padding:0 10px;
+      outline:none;
+      font-size:13px;
+      font-weight:800;
+    }
+    html[data-theme="light"] input.comment{
+      background: rgba(255,255,255,0.65);
+      border-color: rgba(10,14,22,0.10);
+      color: rgba(10,14,22,0.92);
+    }
+
+    /* ===== MODAL (nouvelle DA moderne, colonnes) ===== */
+    .modalOverlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,0.58);
+      backdrop-filter: blur(6px);
+      display:none;
+      z-index: 80;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+    }
+    .modalOverlay.show{display:flex;}
+    .modal{
+      width: min(1100px, 96vw);
+      max-height: min(88vh, 920px);
+      overflow:hidden;
+      background: rgba(10,14,22,0.94);
+      border:1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      display:flex;
+      flex-direction:column;
+    }
+    html[data-theme="light"] .modal{background: rgba(255,255,255,0.94);}
+
+    .modalHeader{
+      padding:14px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+    }
+    .mhLeft{min-width:0}
+    .mhLeft b{font-size:15px;}
+    .mhLeft span{font-size:12px;color:var(--muted);}
+    .modalBody{padding:14px;overflow:auto;}
+
+    .kpiRow{
+      display:grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    @media (max-width: 980px){ .kpiRow{grid-template-columns:1fr;} }
+
+    .kpiCard{
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:14px;
+      background: rgba(255,255,255,0.03);
+      position:relative;
+      overflow:hidden;
+    }
+    .kpiCard::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(600px 180px at 0% 0%, rgba(124,58,237,.18), transparent 55%);
+      pointer-events:none;
+    }
+    .kpiTop{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+      position:relative;
+    }
+    .kpiTitle{
+      font-weight:950;
+      letter-spacing:.2px;
+      font-size:12px;
+      color:var(--muted);
+      text-transform:uppercase;
+    }
+    .kpiValue{
+      font-weight:1000;
+      font-size:26px;
+      line-height:1.05;
+      margin-top:6px;
+    }
+    .kpiSub{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      position:relative;
+    }
+    @media (max-width:560px){ .kpiSub{grid-template-columns:1fr;} }
+
+    .mini{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px;
+      background: rgba(255,255,255,0.03);
+    }
+    .mini .k{font-size:11px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.2px;}
+    .mini .v{margin-top:6px;font-size:13px;font-weight:950;white-space:nowrap;}
+
+    .actions{
+      display:flex; flex-wrap:wrap; gap:8px;
+      justify-content:flex-end;
+      margin-top:10px;
+      position:relative;
+    }
+
+    .gridEntities{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:12px;
+    }
+    @media (max-width: 1100px){ .gridEntities{grid-template-columns: repeat(2, 1fr);} }
+    @media (max-width: 620px){ .gridEntities{grid-template-columns: 1fr;} }
+
+    .entityCard{
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:12px;
+      background: rgba(255,255,255,0.03);
+      position:relative;
+      overflow:hidden;
+    }
+    .entityCard[data-accent="psa"]::before,
+    .entityCard[data-accent="gueudet"]::before,
+    .entityCard[data-accent="ford"]::before,
+    .entityCard[data-accent="direct"]::before{
+      content:"";
+      position:absolute; left:-1px; top:-1px; bottom:-1px;
+      width:6px;
+      border-radius:20px 0 0 20px;
+      background: var(--psa);
+    }
+    .entityCard[data-accent="gueudet"]::before{background: var(--gueudet);}
+    .entityCard[data-accent="ford"]::before{background: var(--ford);}
+    .entityCard[data-accent="direct"]::before{background: var(--direct);}
+
+    .entityHead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:10px;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:7px 10px;
+      background: rgba(255,255,255,0.05);
+      font-weight:950;
+      font-size:12px;
+    }
+    .swatch{width:10px;height:10px;border-radius:99px;background: var(--psa);}
+    .swatch.gueudet{background: var(--gueudet);}
+    .swatch.ford{background: var(--ford);}
+    .swatch.direct{background: var(--direct);}
+
+    .entityKpis{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .entityKpis .mini{padding:10px}
+
+    .contrib{
+      margin-top:10px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px;
+      background: rgba(0,0,0,0.18);
+    }
+    html[data-theme="light"] .contrib{background: rgba(255,255,255,0.45);}
+    .contribTop{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      font-weight:950;
+      font-size:12px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.2px;
+      margin-bottom:8px;
+    }
+    .bar{
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,0.08);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.10);
+    }
+    .fill{height:100%;width:0%;border-radius:999px;background: var(--psa);}
+    .fill.gueudet{background: var(--gueudet);}
+    .fill.ford{background: var(--ford);}
+    .fill.direct{background: var(--direct);}
+
+    .insight{
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:12px;
+      background: rgba(124,58,237,.10);
+      font-weight:900;
+      line-height:1.35;
+      color: var(--text);
+    }
+    .insight small{display:block;color:var(--muted);font-weight:850;margin-top:6px;}
+
+    .divider{height:1px;background:rgba(255,255,255,0.08);margin:14px 0;}
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="navbar">
+    <div class="brand">
+      <div class="logo" id="goHub" title="Retour Hub"></div>
+      <div class="title" id="goHub2" title="Retour Hub">
+        <b>Évol Cumule</b>
+        <span>Budget vs Réalisé — PSA + Gueudet + Ford + Direct</span>
+      </div>
+    </div>
+
+    <div class="navRight">
+      <span class="muted" style="font-weight:900;font-size:12px;">Année</span>
+      <select id="yearSelect" title="Choix de l'année"></select>
+      <button class="btn primary" id="btnReload">Recharger</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sectionTitle">Sources (cumul)</p>
+    <div class="meta">
+      <span class="chip"><span class="dot" id="dotPsa"></span><span id="psaText">PSA : —</span></span>
+      <span class="chip"><span class="dot" id="dotGueudet"></span><span id="gueudetText">Gueudet : —</span></span>
+      <span class="chip"><span class="dot" id="dotFord"></span><span id="fordText">Ford : —</span></span>
+      <span class="chip"><span class="dot" id="dotDirect"></span><span id="directText">Direct : —</span></span>
+      <span class="chip"><span class="dot ok"></span><span id="yearText">Année : —</span></span>
+    </div>
+    <div class="meta" style="margin-top:8px;">
+      <span class="chip"><span class="dot" id="dotCum"></span><span id="cumText">Cumul : —</span></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sectionTitle">Analyse mensuelle (cumul 4 entités)</p>
+    <div class="tableWrap">
+      <table id="tbl"></table>
+    </div>
+    <div class="meta" style="margin-top:10px;">
+      <span class="muted" style="font-weight:850;">Clic sur un mois = popup moderne (cards + contribution + liens analyse).</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ✅ MODAL -->
+<div class="modalOverlay" id="modalOverlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modalHeader">
+      <div class="mhLeft">
+        <b id="modalTitle">—</b><br>
+        <span id="modalSub">—</span>
+      </div>
+      <button class="btn small" id="btnCloseModal">✕</button>
+    </div>
+    <div class="modalBody" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* =======================
+     CONFIG
+  ======================= */
+  const CONFIG = {
+    HUB_PAGE: "index.html",
+    YEAR_MIN: 2024,
+    YEAR_MAX: 2028,
+    COMMENT_CACHE_PREFIX: "EVOL_CUMULE_COMMENTS_",
+
+    // ✅ Mets ici les vraies pages si besoin
+    ANALYSE_PAGES: {
+      psa: "evol-analyse-psa.html",
+      gueudet: "evol-analyse-gueudet.html",
+      ford: "evol-analyse-ford.html",
+      direct: "evol-analyse-direct.html",
+      global: "evol-analyse-global.html"
+    },
+
+    ENTITIES: [
+      {
+        key: "psa",
+        label: "PSA",
+        accent: "psa",
+      budgetFiles: { 2024:"budgetpsa.xlsx", 2025:"budgetpsa.xlsx", 2026:"budgetpsa.xlsx", 2027:"budgetpsa.xlsx", 2028:"budgetpsa.xlsx" },
+        realFile: "activitereelpsa.xlsx",
+        dateCandidates: ["Date vente","date vente","Date","date"],
+        amtCandidates: ["Montant prix achat kent","CA Total","CA","Montant","montant"],
+      },
+      {
+        key: "gueudet",
+        label: "Gueudet",
+        accent: "gueudet",
+      budgetFiles: { 2024:"budgetgueudet.xlsx", 2025:"budgetgueudet.xlsx", 2026:"budgetgueudet.xlsx", 2027:"budgetgueudet.xlsx", 2028:"budgetgueudet.xlsx" },
+        realFile: "activitereelgueudet.xlsx",
+        dateCandidates: ["Date vente","date vente","Date","date"],
+        amtCandidates: ["Montant prix achat kent","CA Total","CA","Montant","montant"],
+      },
+      {
+        key: "ford",
+        label: "Ford",
+        accent: "ford",
+      budgetFiles: { 2024:"budgetford.xlsx", 2025:"budgetford.xlsx", 2026:"budgetford.xlsx", 2027:"budgetford.xlsx", 2028:"budgetford.xlsx" },
+        realFile: "activitereelford.xlsx",
+        dateCandidates: ["Date commande","date commande","Date vente","date vente","Date","date"],
+        amtCandidates: ["CA Total","Montant prix achat kent","CA","Montant","montant"],
+      },
+      {
+        key: "direct",
+        label: "Direct",
+        accent: "direct",
+      budgetFiles: { 2024:"budgetdirect.xlsx", 2025:"budgetdirect.xlsx", 2026:"budgetdirect.xlsx", 2027:"budgetdirect.xlsx", 2028:"budgetdirect.xlsx" },
+        realFile: "activitereeldirect.xlsx",
+        dateCandidates: ["Date commande","date commande","Date vente","date vente","Date","date"],
+        amtCandidates: ["CA Total","Montant prix achat kent","CA","Montant","montant"],
+      }
+    ],
+  };
+
+  const MONTHS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+
+  /* =======================
+     STATE
+  ======================= */
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthIdx = now.getMonth();
+  let selectedYear = (currentYear>=CONFIG.YEAR_MIN && currentYear<=CONFIG.YEAR_MAX) ? currentYear : CONFIG.YEAR_MAX;
+
+  let budgetMonthly = new Array(12).fill(0);
+  let realMonthly = new Array(12).fill(0);
+
+  let entityBudget = {}; // { psa:[12], ... }
+  let entityReal = {};   // { psa:[12], ... }
+
+  let comments = {};
+
+  /* =======================
+     DOM
+  ======================= */
+  const el = {
+    yearSelect: document.getElementById("yearSelect"),
+    btnReload: document.getElementById("btnReload"),
+    tbl: document.getElementById("tbl"),
+
+    yearText: document.getElementById("yearText"),
+    cumText: document.getElementById("cumText"),
+    dotCum: document.getElementById("dotCum"),
+
+    dotPsa: document.getElementById("dotPsa"),
+    psaText: document.getElementById("psaText"),
+    dotGueudet: document.getElementById("dotGueudet"),
+    gueudetText: document.getElementById("gueudetText"),
+    dotFord: document.getElementById("dotFord"),
+    fordText: document.getElementById("fordText"),
+    dotDirect: document.getElementById("dotDirect"),
+    directText: document.getElementById("directText"),
+
+    goHub: document.getElementById("goHub"),
+    goHub2: document.getElementById("goHub2"),
+
+    modalOverlay: document.getElementById("modalOverlay"),
+    btnCloseModal: document.getElementById("btnCloseModal"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalSub: document.getElementById("modalSub"),
+    modalBody: document.getElementById("modalBody"),
+  };
+
+  /* =======================
+     INIT
+  ======================= */
+  initYearSelect();
+  loadComments(selectedYear);
+  bindModal();
+  bindHub();
+  refreshAll();
+
+  el.yearSelect.addEventListener("change", async () => {
+    selectedYear = Number(el.yearSelect.value);
+    loadComments(selectedYear);
+    await refreshAll();
+  });
+
+  el.btnReload.addEventListener("click", async () => {
+    await refreshAll(true);
+  });
+
+  /* =======================
+     MAIN
+  ======================= */
+  async function refreshAll(){
+    el.yearText.textContent = `Année : ${selectedYear}`;
+    setDot(el.dotCum, "warn");
+    el.cumText.textContent = "Cumul : chargement…";
+
+    budgetMonthly = new Array(12).fill(0);
+    realMonthly = new Array(12).fill(0);
+    entityBudget = {};
+    entityReal = {};
+
+    const status = {};
+    for (const ent of CONFIG.ENTITIES){
+      status[ent.key] = { ok:false, msg:"—" };
+      entityBudget[ent.key] = new Array(12).fill(0);
+      entityReal[ent.key] = new Array(12).fill(0);
+    }
+
+    for (const ent of CONFIG.ENTITIES){
+      try{
+        const b = await loadBudgetEntity(ent, selectedYear);
+        const r = await loadRealEntity(ent);
+
+        entityBudget[ent.key] = b.slice();
+        entityReal[ent.key] = r.slice();
+
+        for (let i=0;i<12;i++){
+          budgetMonthly[i] += (b[i] || 0);
+          realMonthly[i] += (r[i] || 0);
+        }
+        status[ent.key] = { ok:true, msg:"OK (B+R)" };
+      }catch(err){
+        console.error(ent.key, err);
+        status[ent.key] = { ok:false, msg:`Erreur` };
+      }
+    }
+
+    setEntityChip("psa", status.psa);
+    setEntityChip("gueudet", status.gueudet);
+    setEntityChip("ford", status.ford);
+    setEntityChip("direct", status.direct);
+
+    const okCount = Object.values(status).filter(s=>s.ok).length;
+    if (okCount === 4){
+      setDot(el.dotCum, "ok");
+      el.cumText.textContent = `Cumul : OK (4/4 sources)`;
+    } else if (okCount === 0){
+      setDot(el.dotCum, "bad");
+      el.cumText.textContent = `Cumul : 0/4 sources`;
+    } else {
+      setDot(el.dotCum, "warn");
+      el.cumText.textContent = `Cumul : partiel (${okCount}/4 sources)`;
+    }
+
+    renderTable();
+  }
+
+  function setEntityChip(key, st){
+    const map = {
+      psa:    { dot: el.dotPsa, text: el.psaText, label: "PSA" },
+      gueudet:{ dot: el.dotGueudet, text: el.gueudetText, label: "Gueudet" },
+      ford:   { dot: el.dotFord, text: el.fordText, label: "Ford" },
+      direct: { dot: el.dotDirect, text: el.directText, label: "Direct" },
+    };
+    const it = map[key];
+    if (!it) return;
+    it.text.textContent = `${it.label} : ${st.msg}`;
+    setDot(it.dot, st.ok ? "ok" : "bad");
+  }
+
+  /* =========================
+     TABLE (clic mois -> modal)
+  ========================= */
+  function renderTable(){
+    const prevMonthIdx = computePrevMonthIdx(selectedYear);
+
+    const rows = MONTHS.map((m, idx) => {
+      const budget = budgetMonthly[idx] || 0;
+      const real = realMonthly[idx] || 0;
+      const ecart = real - budget;
+      const comment = comments[idx] || "";
+      return { idx, mois: m, real, budget, ecart, comment };
+    });
+
+    const totalBudget = rows.reduce((s,r)=>s+r.budget,0);
+    const totalReal = rows.reduce((s,r)=>s+r.real,0);
+    const totalEcart = totalReal - totalBudget;
+
+    const cumBudget = (prevMonthIdx >= 0) ? rows.slice(0, prevMonthIdx+1).reduce((s,r)=>s+r.budget,0) : 0;
+    const cumReal = (prevMonthIdx >= 0) ? rows.slice(0, prevMonthIdx+1).reduce((s,r)=>s+r.real,0) : 0;
+    const cumEcart = cumReal - cumBudget;
+
+    el.tbl.innerHTML = `
+      <thead>
+        <tr>
+          <th style="text-align:left;min-width:190px">Mois</th>
+          <th style="min-width:160px">CA Réalisé (cumul)</th>
+          <th style="min-width:160px">Budget (cumul)</th>
+          <th style="min-width:160px">Écart</th>
+          <th style="text-align:left;min-width:360px">Commentaire</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr class="clickable" data-mi="${r.idx}">
+            <td style="text-align:left">${esc(r.mois)}</td>
+            <td>${fmt(r.real)}</td>
+            <td>${fmt(r.budget)}</td>
+            <td>${fmtEcart(r.ecart)}</td>
+            <td style="text-align:left">
+              <input class="comment" data-month="${r.idx}" placeholder="Note / analyse…" value="${escAttr(r.comment)}" />
+            </td>
+          </tr>
+        `).join("")}
+
+        <tr class="rowTotal">
+          <td style="text-align:left">TOTAL</td>
+          <td>${fmt(totalReal)}</td>
+          <td>${fmt(totalBudget)}</td>
+          <td>${fmtEcart(totalEcart)}</td>
+          <td class="muted" style="text-align:left">Somme annuelle</td>
+        </tr>
+
+        <tr class="rowCum">
+          <td style="text-align:left">CUMUL M-1</td>
+          <td>${fmt(cumReal)}</td>
+          <td>${fmt(cumBudget)}</td>
+          <td>${fmtEcart(cumEcart)}</td>
+          <td class="muted" style="text-align:left">
+            ${prevMonthIdx >= 0 ? `Somme Jan → ${MONTHS[prevMonthIdx]}` : `Aucun mois à cumuler (année future)`}
+          </td>
+        </tr>
+      </tbody>
+    `;
+
+    // commentaires
+    el.tbl.querySelectorAll("input[data-month]").forEach(inp => {
+      inp.addEventListener("input", () => {
+        const mi = Number(inp.getAttribute("data-month"));
+        comments[mi] = inp.value || "";
+        saveComments(selectedYear);
+      });
+    });
+
+    // clic mois -> modal (ignore click input)
+    el.tbl.querySelectorAll("tr[data-mi]").forEach(tr => {
+      tr.addEventListener("click", (e) => {
+        if (e.target && e.target.tagName === "INPUT") return;
+        const mi = Number(tr.getAttribute("data-mi"));
+        openMonthPopup(mi);
+      });
+    });
+  }
+
+  /* =========================
+     POPUP MODERNE (cards en colonnes)
+  ========================= */
+  function openMonthPopup(mi){
+    const monthName = MONTHS[mi];
+
+    const lines = CONFIG.ENTITIES.map(ent => {
+      const b = (entityBudget[ent.key]?.[mi] || 0);
+      const r = (entityReal[ent.key]?.[mi] || 0);
+      const e = r - b;
+      const pctVsBudget = pctSigned(e, b); // (R-B)/B
+      const attain = pctSimple(r, b);      // R/B
+      return { key: ent.key, label: ent.label, accent: ent.accent, budget: b, real: r, ecart: e, pctVsBudget, attain };
+    });
+
+    const totalB = lines.reduce((s,x)=>s+x.budget,0);
+    const totalR = lines.reduce((s,x)=>s+x.real,0);
+    const totalE = totalR - totalB;
+
+    const totalPctVsBudget = pctSigned(totalE, totalB);
+    const totalAttain = pctSimple(totalR, totalB);
+
+    // contribution : poids en valeur absolue
+    const sumAbsE = sumAbs(lines.map(z=>z.ecart));
+    const byImpact = lines.slice().sort((a,b)=>Math.abs(b.ecart)-Math.abs(a.ecart));
+    const driver = byImpact[0] || null;
+
+    // message CG
+    const insight = buildInsight(totalB, totalR, totalE, totalPctVsBudget, driver);
+
+    el.modalTitle.textContent = `Analyse — ${monthName}`;
+    el.modalSub.textContent =
+      `${selectedYear} • Écart global ${fmt(totalE)} (${fmtPctSignedText(totalPctVsBudget)}) • Atteinte ${fmtPct(totalAttain)} • Driver : ${driver ? driver.label : "—"}`;
+
+    const driverKey = driver ? driver.key : "global";
+    const driverPage = CONFIG.ANALYSE_PAGES[driverKey] || CONFIG.ANALYSE_PAGES.global || "#";
+
+    el.modalBody.innerHTML = `
+      <div class="kpiRow">
+        <div class="kpiCard">
+          <div class="kpiTop">
+            <div>
+              <div class="kpiTitle">Écart global (cumul)</div>
+              <div class="kpiValue">${fmtEcartInline(totalE)}</div>
+            </div>
+            <div class="actions">
+              <button class="btn primary small" id="btnGoDriver">Aller analyser : ${esc(driver ? driver.label : "Global")}</button>
+              <button class="btn ghost small" id="btnGoGlobal">Analyse globale</button>
+              <button class="btn small" id="btnCopySummary">Copier résumé</button>
+            </div>
+          </div>
+
+          <div class="kpiSub">
+            <div class="mini">
+              <div class="k">Budget</div>
+              <div class="v">${fmt(totalB)}</div>
+            </div>
+            <div class="mini">
+              <div class="k">Réalisé</div>
+              <div class="v">${fmt(totalR)}</div>
+            </div>
+            <div class="mini">
+              <div class="k">Écart % (vs budget)</div>
+              <div class="v">${fmtPctSignedHTML(totalPctVsBudget)}</div>
+            </div>
+            <div class="mini">
+              <div class="k">Taux d’atteinte</div>
+              <div class="v">${fmtPct(totalAttain)}</div>
+            </div>
+          </div>
+
+          <div class="insight">
+            ${esc(insight.title)}<br>
+            ${esc(insight.body)}
+            <small>${esc(insight.footer)}</small>
+          </div>
+        </div>
+
+        <div class="kpiCard" style="background: rgba(255,255,255,0.02)">
+          <div class="kpiTitle">Contribution à l’écart (qui explique le global)</div>
+          <div style="margin-top:10px;display:grid;gap:10px;position:relative;">
+            ${lines.map(x => {
+              const w = sumAbsE ? Math.round((Math.abs(x.ecart)/sumAbsE)*100) : 0;
+              const cls = x.accent;
+              const signTxt = x.ecart>0 ? "+" : "";
+              return `
+                <div class="contrib">
+                  <div class="contribTop">
+                    <span>${esc(x.label)} • ${signTxt}${fmt(x.ecart)} (${fmtPctSignedText(x.pctVsBudget)})</span>
+                    <span>${w}%</span>
+                  </div>
+                  <div class="bar"><div class="fill ${cls}" style="width:${w}%"></div></div>
+                </div>
+              `;
+            }).join("")}
+            <div class="muted" style="font-weight:900;font-size:12px;">
+              Lecture : le % ci-dessus = <b>poids dans l’écart</b> (valeur absolue). C’est ce qui explique le global.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="gridEntities">
+        ${lines.map(x => entityCardHTML(x, sumAbsE)).join("")}
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="muted" style="font-weight:900;font-size:12px;">
+        Rappel : <b>Écart %</b> = (Réalisé − Budget) / Budget. <b>Atteinte</b> = Réalisé / Budget.
+      </div>
+    `;
+
+    // bind boutons
+    const btnGoDriver = document.getElementById("btnGoDriver");
+    const btnGoGlobal = document.getElementById("btnGoGlobal");
+    const btnCopySummary = document.getElementById("btnCopySummary");
+
+    if (btnGoDriver){
+      btnGoDriver.addEventListener("click", () => {
+        if (!driverPage || driverPage === "#") return;
+        // on passe mois + année en querystring (si tu veux les récupérer dans la page cible)
+        window.location.href = `${driverPage}?year=${encodeURIComponent(selectedYear)}&month=${encodeURIComponent(mi+1)}`;
+      });
+    }
+    if (btnGoGlobal){
+      const p = CONFIG.ANALYSE_PAGES.global || "#";
+      btnGoGlobal.addEventListener("click", () => {
+        if (!p || p === "#") return;
+        window.location.href = `${p}?year=${encodeURIComponent(selectedYear)}&month=${encodeURIComponent(mi+1)}`;
+      });
+    }
+    if (btnCopySummary){
+      btnCopySummary.addEventListener("click", async () => {
+        const txt = buildCopySummary(selectedYear, monthName, totalB, totalR, totalE, totalPctVsBudget, totalAttain, driver, lines);
+        try{
+          await navigator.clipboard.writeText(txt);
+          btnCopySummary.textContent = "Copié ✓";
+          setTimeout(()=>btnCopySummary.textContent="Copier résumé", 1000);
+        }catch{
+          alert("Impossible de copier (clipboard bloqué).");
+        }
+      });
+    }
+
+    // bind boutons entités (dans les cards)
+    el.modalBody.querySelectorAll("[data-go-entity]").forEach(b => {
+      b.addEventListener("click", () => {
+        const k = b.getAttribute("data-go-entity");
+        const p = CONFIG.ANALYSE_PAGES[k];
+        if (!p) return;
+        window.location.href = `${p}?year=${encodeURIComponent(selectedYear)}&month=${encodeURIComponent(mi+1)}`;
+      });
+    });
+
+    openModal();
+  }
+
+  function entityCardHTML(x, sumAbsE){
+    const w = sumAbsE ? Math.round((Math.abs(x.ecart)/sumAbsE)*100) : 0;
+    const ec = fmtEcartInline(x.ecart);
+    const pctE = fmtPctSignedHTML(x.pctVsBudget);
+    const att = fmtPct(x.attain);
+
+    const sw = x.accent === "psa" ? "swatch" :
+               x.accent === "gueudet" ? "swatch gueudet" :
+               x.accent === "ford" ? "swatch ford" : "swatch direct";
+
+    return `
+      <div class="entityCard" data-accent="${escAttr(x.accent)}">
+        <div class="entityHead">
+          <span class="badge"><span class="${sw}"></span>${esc(x.label)}</span>
+          <button class="btn small" data-go-entity="${escAttr(x.key)}">Analyser</button>
+        </div>
+
+        <div class="entityKpis">
+          <div class="mini">
+            <div class="k">Budget</div>
+            <div class="v">${fmt(x.budget)}</div>
+          </div>
+          <div class="mini">
+            <div class="k">Réalisé</div>
+            <div class="v">${fmt(x.real)}</div>
+          </div>
+          <div class="mini">
+            <div class="k">Écart</div>
+            <div class="v">${ec}</div>
+          </div>
+          <div class="mini">
+            <div class="k">Écart % (vs budget)</div>
+            <div class="v">${pctE}</div>
+          </div>
+          <div class="mini">
+            <div class="k">Poids dans l’écart</div>
+            <div class="v">${w}%</div>
+          </div>
+          <div class="mini">
+            <div class="k">Atteinte</div>
+            <div class="v">${att}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildCopySummary(year, monthName, totalB, totalR, totalE, totalPct, totalAttain, driver, lines){
+    const d = driver ? `${driver.label} (${fmt(driver.ecart)} ; ${fmtPctSignedText(driver.pctVsBudget)} ; poids ${weightPct(driver.ecart, lines)}%)` : "—";
+    const per = lines.map(x => `- ${x.label}: Budget ${fmt(x.budget)} | Réalisé ${fmt(x.real)} | Écart ${fmt(x.ecart)} | ${fmtPctSignedText(x.pctVsBudget)} | poids ${weightPct(x.ecart, lines)}%`).join("\n");
+    return [
+      `Analyse ${monthName} ${year}`,
+      `Global: Budget ${fmt(totalB)} | Réalisé ${fmt(totalR)} | Écart ${fmt(totalE)} | ${fmtPctSignedText(totalPct)} | Atteinte ${fmtPct(totalAttain)}`,
+      `Driver principal: ${d}`,
+      `Détail:`,
+      per
+    ].join("\n");
+  }
+  function weightPct(ecart, lines){
+    const sumAbsE = sumAbs(lines.map(z=>z.ecart));
+    if (!sumAbsE) return 0;
+    return Math.round((Math.abs(ecart)/sumAbsE)*100);
+  }
+
+  function buildInsight(totalB, totalR, totalE, totalPct, driver){
+    const driverLabel = driver ? driver.label : "—";
+    const driverE = driver ? driver.ecart : 0;
+
+    if (!totalB){
+      return {
+        title: "Budget nul / absent",
+        body: "Écart % non interprétable. Lecture uniquement en valeur.",
+        footer: `Driver principal (valeur) : ${driverLabel} (${fmt(driverE)}).`
+      };
+    }
+
+    if (totalE > 0){
+      return {
+        title: "Surperformance vs budget",
+        body: `Le réalisé dépasse le budget de ${fmt(totalE)} (${fmtPct(Math.abs(totalPct))}).`,
+        footer: `Driver principal : ${driverLabel} (${fmt(driverE)}).`
+      };
+    }
+
+    if (totalE < 0){
+      const sev = Math.abs(totalE) / totalB;
+      const level = sev >= 0.10 ? "Alerte" : sev >= 0.05 ? "Vigilance" : "Écart contenu";
+      return {
+        title: `${level} : sous-performance vs budget`,
+        body: `Le réalisé est en dessous du budget de ${fmt(Math.abs(totalE))} (${fmtPct(Math.abs(totalPct))}).`,
+        footer: `Priorité : analyser ${driverLabel} (impact ${fmt(driverE)}).`
+      };
+    }
+
+    return {
+      title: "Conforme au budget",
+      body: "Écart global proche de zéro : exécution conforme.",
+      footer: `Driver résiduel : ${driverLabel} (${fmt(driverE)}).`
+    };
+  }
+
+  /* =========================
+     MODAL
+  ========================= */
+  function bindModal(){
+    el.btnCloseModal.addEventListener("click", closeModal);
+    el.modalOverlay.addEventListener("click", (e) => { if (e.target === el.modalOverlay) closeModal(); });
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+    window.addEventListener("pageshow", () => closeModal());
+  }
+  function openModal(){
+    el.modalOverlay.classList.add("show");
+    el.modalOverlay.setAttribute("aria-hidden","false");
+    document.body.style.overflow = "hidden";
+  }
+  function closeModal(){
+    el.modalOverlay.classList.remove("show");
+    el.modalOverlay.setAttribute("aria-hidden","true");
+    document.body.style.overflow = "";
+  }
+
+  function bindHub(){
+    const go = () => window.location.href = CONFIG.HUB_PAGE;
+    if (el.goHub) el.goHub.addEventListener("click", go);
+    if (el.goHub2) el.goHub2.addEventListener("click", go);
+  }
+
+  /* =========================
+     CUMUL M-1 logic
+  ========================= */
+  function computePrevMonthIdx(year){
+    if (year < currentYear) return 11;
+    if (year > currentYear) return -1;
+    return Math.max(-1, currentMonthIdx - 1);
+  }
+
+  /* =========================
+     Comments cache
+  ========================= */
+  function commentsKey(year){ return CONFIG.COMMENT_CACHE_PREFIX + String(year); }
+  function loadComments(year){
+    comments = {};
+    try{
+      const raw = localStorage.getItem(commentsKey(year));
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === "object") comments = obj;
+    }catch{}
+  }
+  function saveComments(year){
+    try{ localStorage.setItem(commentsKey(year), JSON.stringify(comments || {})); }catch{}
+  }
+
+  function initYearSelect(){
+    const years = [];
+    for(let y=CONFIG.YEAR_MIN;y<=CONFIG.YEAR_MAX;y++) years.push(y);
+    el.yearSelect.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join("");
+    el.yearSelect.value = String(selectedYear);
+    el.yearText.textContent = `Année : ${selectedYear}`;
+  }
+
+  /* =========================
+     BUDGET entity -> [12]
+  ========================= */
+  async function loadBudgetEntity(ent, year){
+    const file = ent.budgetFiles?.[year];
+    if (!file) throw new Error("Budget file manquant");
+
+    const {buffer} = await fetchXlsxWithFallback(file);
+    const wb = XLSX.read(buffer, { type:"array" });
+    const sheetName = pickBestSheet(wb);
+    const ws = wb.Sheets[sheetName];
+    const raw = XLSX.utils.sheet_to_json(ws, { defval:"" });
+
+    if (!raw.length) return new Array(12).fill(0);
+
+    const headerMap = buildHeaderMap(raw[0]);
+    const monthCols = MONTHS.map(m => findCol(headerMap, [m]));
+    const missing = monthCols.map((c,i)=>!c?MONTHS[i]:null).filter(Boolean);
+    if (missing.length) throw new Error(`Budget: colonnes mois manquantes (${missing.join(", ")})`);
+
+    const sums = new Array(12).fill(0);
+    for (const r of raw){
+      for (let i=0;i<12;i++) sums[i] += toNumber(r[monthCols[i]]);
+    }
+    return sums;
+  }
+
+  /* =========================
+     REAL entity -> [12]
+  ========================= */
+  async function loadRealEntity(ent){
+    const file = ent.realFile;
+    if (!file) throw new Error("Real file manquant");
+
+    const {buffer} = await fetchXlsxWithFallback(file);
+    const wb = XLSX.read(buffer, { type:"array" });
+    const sheetName = pickBestSheet(wb);
+    const ws = wb.Sheets[sheetName];
+    const raw = XLSX.utils.sheet_to_json(ws, { defval:"" });
+
+    if (!raw.length) return new Array(12).fill(0);
+
+    const headerMap = buildHeaderMap(raw[0]);
+    const colDate = findCol(headerMap, ent.dateCandidates || ["Date vente","Date commande","Date"]);
+    const colMonth = findCol(headerMap, ["mois","mois2","month"]);
+    const colAmt = findCol(headerMap, ent.amtCandidates || ["CA Total","Montant prix achat kent","CA","Montant"]);
+
+    if (!colAmt || (!colDate && !colMonth)){
+      throw new Error("Réel: colonnes Date/Mois ou CA introuvables");
+    }
+
+    const sums = new Array(12).fill(0);
+
+    for (const r of raw){
+      const amount = toNumber(r[colAmt]);
+      if (!amount) continue;
+
+      let dt = null;
+      if (colDate) dt = parseAnyDate(r[colDate]);
+
+      let mi = -1;
+      if (dt) mi = dt.getMonth();
+      if (mi < 0 && colMonth) mi = monthToIndex(String(r[colMonth] ?? "").trim());
+      if (mi < 0) continue;
+
+      sums[mi] += amount;
+    }
+
+    return sums;
+  }
+
+  /* =========================
+     Fetch helpers (GitHub safe)
+  ========================= */
+  async function fetchXlsxWithFallback(fileName){
+    const pageDir = location.href.replace(/[#?].*$/,"").replace(/\/[^\/]*$/, "/");
+    const urlSame = new URL(fileName, pageDir).toString();
+    const urlData = new URL("data/" + fileName, pageDir).toString();
+
+    const candidates = [urlSame, urlData];
+    let lastErr = "";
+
+    for (const u of candidates){
+      const url = u + (u.includes("?") ? "&" : "?") + "v=" + Date.now();
+      const res = await fetch(url, { cache: "no-store" });
+      const buf = await res.arrayBuffer();
+
+      if (!res.ok){
+        lastErr = `HTTP ${res.status} sur ${u}`;
+        continue;
+      }
+
+      const sniff = sniffBuffer(buf);
+      if (sniff.looksHtml || !sniff.isZip){
+        lastErr = `Contenu invalide sur ${u} (HTML/404 ou pas XLSX)`;
+        continue;
+      }
+
+      return { buffer: buf, usedUrl: u };
+    }
+
+    throw new Error(lastErr || "fetchXlsxWithFallback failed");
+  }
+
+  function sniffBuffer(arrayBuffer){
+    const u8 = new Uint8Array(arrayBuffer);
+    const a = u8[0], b = u8[1];
+    const isZip = (a === 0x50 && b === 0x4B); // PK
+
+    const head = u8.slice(0, Math.min(220, u8.length));
+    let preview = "";
+    try{ preview = new TextDecoder("utf-8").decode(head).trim(); }catch{ preview = ""; }
+    const p = (preview || "").toLowerCase();
+    const looksHtml = p.startsWith("<") || p.includes("<!doctype html") || p.includes("<html");
+    return { isZip, looksHtml };
+  }
+
+  function pickBestSheet(wb){
+    let best = wb.SheetNames[0];
+    let bestScore = -1;
+    for (const name of wb.SheetNames){
+      const ws = wb.Sheets[name];
+      const ref = ws && ws["!ref"];
+      if (!ref) continue;
+      const range = XLSX.utils.decode_range(ref);
+      const rows = (range.e.r - range.s.r + 1);
+      const cols = (range.e.c - range.s.c + 1);
+      const score = rows * cols;
+      if (score > bestScore){
+        bestScore = score;
+        best = name;
+      }
+    }
+    return best;
+  }
+
+  /* =========================
+     Helpers
+  ========================= */
+  function buildHeaderMap(sampleRow){
+    const map = {};
+    for (const k of Object.keys(sampleRow || {})){
+      map[norm(k)] = k;
+    }
+    return map;
+  }
+  function findCol(headerMap, candidates){
+    for (const c of candidates){
+      const nk = norm(c);
+      if (headerMap[nk]) return headerMap[nk];
+    }
+    return null;
+  }
+  function norm(s){
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+  function toNumber(v){
+    if (v === null || v === undefined) return 0;
+    if (typeof v === "number") return isFinite(v) ? v : 0;
+    const s = String(v).trim();
+    if (!s) return 0;
+    const n = Number(s.replace(/\s/g,"").replace(",",".")); // 12 345,67 -> 12345.67
+    return isFinite(n) ? n : 0;
+  }
+  function fmt(n){
+    const x = Number(n) || 0;
+    return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(x);
+  }
+  function setDot(dotEl, type){
+    dotEl.className = "dot " + (type === "ok" ? "ok" : type === "bad" ? "bad" : "warn");
+  }
+
+  function fmtEcart(v){
+    const cls = v > 0 ? "pos" : v < 0 ? "neg" : "zero";
+    return `<span class="${cls}">${fmt(v)}</span>`;
+  }
+  function fmtEcartInline(v){
+    const cls = v > 0 ? "pos" : v < 0 ? "neg" : "zero";
+    const sign = v > 0 ? "+" : "";
+    return `<span class="${cls}">${sign}${fmt(v)}</span>`;
+  }
+
+  function pctSimple(real, budget){
+    if (!budget) return 0;
+    return (real / budget) * 100;
+  }
+  function pctSigned(ecart, budget){
+    if (!budget) return 0;
+    return (ecart / budget) * 100;
+  }
+  function fmtPct(n){
+    const x = Number(n);
+    if (!isFinite(x)) return "0%";
+    return `${Math.round(x)}%`;
+  }
+  function fmtPctSignedText(n){
+    const x = Number(n);
+    if (!isFinite(x)) return "0%";
+    const sign = x > 0 ? "+" : "";
+    return `${sign}${Math.round(x)}%`;
+  }
+  function fmtPctSignedHTML(n){
+    const x = Number(n);
+    if (!isFinite(x)) return `<span class="zero">0%</span>`;
+    const cls = x > 0 ? "pos" : x < 0 ? "neg" : "zero";
+    const sign = x > 0 ? "+" : "";
+    return `<span class="${cls}">${sign}${Math.round(x)}%</span>`;
+  }
+
+  function parseAnyDate(v){
+    if (!v && v !== 0) return null;
+    if (v instanceof Date && !isNaN(v.getTime())) return v;
+
+    // Excel serial
+    if (typeof v === "number" && isFinite(v)){
+      const d = XLSX.SSF.parse_date_code(v);
+      if (!d) return null;
+      const dt = new Date(d.y, (d.m||1)-1, d.d||1);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    const s = String(v).trim();
+    if (!s) return null;
+
+    // dd/mm/yyyy
+    const m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+    if (m1){
+      const dd = Number(m1[1]), mm = Number(m1[2]), yy = Number(m1[3]);
+      const yyyy = yy < 100 ? 2000 + yy : yy;
+      const dt = new Date(yyyy, mm-1, dd);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    // yyyy-mm-dd
+    const m2 = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+    if (m2){
+      const yyyy = Number(m2[1]), mm = Number(m2[2]), dd = Number(m2[3]);
+      const dt = new Date(yyyy, mm-1, dd);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    const t = Date.parse(s);
+    return isNaN(t) ? null : new Date(t);
+  }
+
+  function monthToIndex(m){
+    const map = {
+      "janvier":0,"jan":0,"1":0,
+      "fevrier":1,"février":1,"fev":1,"2":1,
+      "mars":2,"3":2,
+      "avril":3,"4":3,
+      "mai":4,"5":4,
+      "juin":5,"6":5,
+      "juillet":6,"7":6,
+      "aout":7,"août":7,"8":7,
+      "septembre":8,"sep":8,"9":8,
+      "octobre":9,"oct":9,"10":9,
+      "novembre":10,"nov":10,"11":10,
+      "decembre":11,"décembre":11,"dec":11,"12":11
+    };
+    return map[norm(m)] ?? -1;
+  }
+
+  function sumAbs(arr){
+    return (arr||[]).reduce((s,v)=>s+Math.abs(v||0),0);
+  }
+
+  function esc(str){
+    return String(str ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+  function escAttr(str){
+    return esc(str).replace(/"/g, "&quot;");
+  }
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestion des tarifs</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0b1020;
+      --bg2: #11162a;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --muted: #b8bfd3;
+      --muted-2: #94a3b8;
+      --accent: #7c3aed;
+      --accent-hover: #8b5cf6;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --info: #3b82f6;
+      --input: rgba(255, 255, 255, 0.06);
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      --radius: 16px;
+    }
+
+    *::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.12);
+      border-radius: 999px;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124, 58, 237, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 25%),
+        radial-gradient(circle at bottom, rgba(236, 72, 153, 0.12), transparent 30%),
+        linear-gradient(135deg, var(--bg), var(--bg2));
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .page-title h1 {
+      font-size: 1.85rem;
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .page-title p {
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .glass-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .grid-top {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 18px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.86rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      background: var(--input);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      padding: 11px 13px;
+      border-radius: 12px;
+      outline: none;
+      transition: 0.2s ease;
+      font-size: 0.92rem;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      transition: 0.2s ease;
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #5b21b6);
+      color: white;
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.28);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-success {
+      background: rgba(34, 197, 94, 0.16);
+      color: #dcfce7;
+      border: 1px solid rgba(34, 197, 94, 0.24);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.14);
+      color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.18);
+    }
+
+    .btn-warning {
+      background: rgba(245, 158, 11, 0.14);
+      color: #fde68a;
+      border: 1px solid rgba(245, 158, 11, 0.18);
+    }
+
+    .btn-sm {
+      padding: 7px 10px;
+      font-size: 0.76rem;
+      border-radius: 9px;
+      line-height: 1;
+    }
+
+    .actions-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .status-bar {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .helper-text {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .stat-box {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      min-height: 78px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .stat-label {
+      color: var(--muted-2);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .table-wrapper {
+      overflow: auto;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      vertical-align: middle;
+      font-size: 0.83rem;
+    }
+
+    th {
+      color: #d1d5db;
+      background: rgba(255, 255, 255, 0.03);
+      white-space: nowrap;
+      font-size: 0.76rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .badge.ok {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.2);
+      color: #dcfce7;
+    }
+
+    .badge.warn {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.2);
+      color: #fde68a;
+    }
+
+    .badge.err {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: #fecaca;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 32px 20px;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.8rem;
+    }
+
+    .two-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 1150px) {
+      .grid-top,
+      .two-cols,
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <div class="page-title">
+        <h1>Gestion des tarifs</h1>
+        <p>Import Excel / CSV des tarifs par plaque avec contrôle avant insertion dans Supabase</p>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-secondary" type="button" onclick="telechargerModele()">Télécharger modèle</button>
+        <button class="btn btn-primary" type="button" onclick="document.getElementById('fileInput').click()">Choisir un fichier</button>
+      </div>
+    </div>
+
+    <div class="grid-top">
+      <div class="glass-card">
+        <div class="panel-title">Import fichier</div>
+
+        <div class="field-group" style="margin-bottom: 14px;">
+          <label for="fileInput">Fichier Excel ou CSV</label>
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        </div>
+
+        <div class="helper-text">
+          Format attendu : <strong>plaque</strong> / <strong>reference_produit</strong> / <strong>prix_vente</strong><br>
+          Une ligne = un tarif pour une plaque et un produit.
+        </div>
+
+        <div class="actions-row" style="margin-top: 16px;">
+          <button class="btn btn-secondary" type="button" onclick="analyserFichier()">Analyser le fichier</button>
+          <button class="btn btn-success" type="button" onclick="importerTarifs()">Importer dans Supabase</button>
+          <button class="btn btn-danger" type="button" onclick="viderAnalyse()">Vider</button>
+        </div>
+
+        <div id="statusBar" class="status-bar">Prêt à analyser un fichier.</div>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-label">Lignes lues</div>
+            <div class="stat-value" id="statTotal">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Valides</div>
+            <div class="stat-value" id="statValides">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Plaques inconnues</div>
+            <div class="stat-value" id="statPlaques">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Produits inconnus</div>
+            <div class="stat-value" id="statProduits">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Prix invalides</div>
+            <div class="stat-value" id="statPrix">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="panel-title">Règles de fonctionnement</div>
+        <div class="helper-text">
+          L’import ne passe que sur les lignes propres.<br><br>
+          Si une combinaison <strong>plaque + produit</strong> existe déjà dans <strong>tarifs_plaques</strong>, le prix sera mis à jour.<br>
+          Si elle n’existe pas, une nouvelle ligne sera créée.<br><br>
+          Les lignes en erreur resteront visibles dans la prévisualisation pour que tu voies exactement ce qui bloque.
+        </div>
+
+        <div style="margin-top: 18px; display:flex; gap:10px; flex-wrap:wrap;">
+          <span class="badge ok">Ligne valide</span>
+          <span class="badge warn">À vérifier</span>
+          <span class="badge err">Bloquante</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="panel-title">Prévisualisation de l’import</div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Plaque fichier</th>
+              <th>Référence fichier</th>
+              <th>Prix fichier</th>
+              <th>Plaque trouvée</th>
+              <th>Produit trouvé</th>
+              <th>Référence produit</th>
+              <th>Prix normalisé</th>
+              <th>Statut</th>
+              <th>Détail</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody">
+            <tr>
+              <td colspan="10">
+                <div class="empty-state">Aucune donnée chargée.</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="two-cols">
+      <div class="glass-card">
+        <div class="panel-title">Erreurs détectées</div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Ligne</th>
+                <th>Type</th>
+                <th>Détail</th>
+              </tr>
+            </thead>
+            <tbody id="errorsBody">
+              <tr>
+                <td colspan="3">
+                  <div class="empty-state">Aucune erreur.</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="panel-title">Résumé importable</div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Plaque</th>
+                <th>Produit</th>
+                <th>Référence</th>
+                <th>Prix</th>
+              </tr>
+            </thead>
+            <tbody id="validBody">
+              <tr>
+                <td colspan="4">
+                  <div class="empty-state">Aucune ligne valide.</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <script>
+    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let plaques = [];
+    let produits = [];
+    let parsedRows = [];
+    let analyzedRows = [];
+
+    function setStatus(message) {
+      document.getElementById("statusBar").textContent = message;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeText(value) {
+      return String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function normalizeReference(value) {
+      return String(value ?? "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toUpperCase();
+    }
+
+    function parsePrice(value) {
+      if (value === null || value === undefined || value === "") return NaN;
+
+      if (typeof value === "number") return value;
+
+      const cleaned = String(value)
+        .trim()
+        .replace(/\s/g, "")
+        .replace(",", ".");
+
+      return Number(cleaned);
+    }
+
+    function formatCurrency(value) {
+      return Number(value || 0).toLocaleString("fr-FR", {
+        style: "currency",
+        currency: "EUR"
+      });
+    }
+
+    async function fetchPlaques() {
+      const { data, error } = await supabaseClient
+        .from("plaques")
+        .select("id, nom")
+        .order("nom", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchProduits() {
+      const { data, error } = await supabaseClient
+        .from("produits")
+        .select("id, nom, reference_produit, actif")
+        .order("nom", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    function updateStats() {
+      const total = analyzedRows.length;
+      const valides = analyzedRows.filter(r => r.isValid).length;
+      const plaquesKo = analyzedRows.filter(r => r.errors.some(e => e.type === "plaque")).length;
+      const produitsKo = analyzedRows.filter(r => r.errors.some(e => e.type === "produit")).length;
+      const prixKo = analyzedRows.filter(r => r.errors.some(e => e.type === "prix")).length;
+
+      document.getElementById("statTotal").textContent = total;
+      document.getElementById("statValides").textContent = valides;
+      document.getElementById("statPlaques").textContent = plaquesKo;
+      document.getElementById("statProduits").textContent = produitsKo;
+      document.getElementById("statPrix").textContent = prixKo;
+    }
+
+    function renderPreview() {
+      const body = document.getElementById("previewBody");
+
+      if (!analyzedRows.length) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="10">
+              <div class="empty-state">Aucune donnée chargée.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      body.innerHTML = analyzedRows.map(row => {
+        const badgeClass = row.isValid ? "ok" : (row.errors.length ? "err" : "warn");
+        const badgeText = row.isValid ? "Valide" : "Erreur";
+        const detail = row.errors.length
+          ? row.errors.map(e => escapeHtml(e.message)).join(" • ")
+          : "Prête à importer";
+
+        return `
+          <tr>
+            <td>${row.index}</td>
+            <td>${escapeHtml(row.raw.plaque)}</td>
+            <td class="mono">${escapeHtml(row.raw.reference_produit)}</td>
+            <td>${escapeHtml(String(row.raw.prix_vente ?? ""))}</td>
+            <td>${row.plaque ? escapeHtml(row.plaque.nom) : "—"}</td>
+            <td>${row.produit ? escapeHtml(row.produit.nom) : "—"}</td>
+            <td class="mono">${row.produit ? escapeHtml(row.produit.reference_produit || "") : "—"}</td>
+            <td>${Number.isFinite(row.prix) ? formatCurrency(row.prix) : "—"}</td>
+            <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+            <td>${escapeHtml(detail)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderErrors() {
+      const body = document.getElementById("errorsBody");
+
+      const errors = [];
+      analyzedRows.forEach(row => {
+        row.errors.forEach(err => {
+          errors.push({
+            index: row.index,
+            type: err.type,
+            message: err.message
+          });
+        });
+      });
+
+      if (!errors.length) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="3">
+              <div class="empty-state">Aucune erreur.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      body.innerHTML = errors.map(err => `
+        <tr>
+          <td>${err.index}</td>
+          <td>${escapeHtml(err.type)}</td>
+          <td>${escapeHtml(err.message)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderValidRows() {
+      const body = document.getElementById("validBody");
+      const valides = analyzedRows.filter(r => r.isValid);
+
+      if (!valides.length) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="4">
+              <div class="empty-state">Aucune ligne valide.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      body.innerHTML = valides.map(row => `
+        <tr>
+          <td>${escapeHtml(row.plaque.nom)}</td>
+          <td>${escapeHtml(row.produit.nom || "")}</td>
+          <td class="mono">${escapeHtml(row.produit.reference_produit || "")}</td>
+          <td>${formatCurrency(row.prix)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function findPlaqueByName(name) {
+      const normalized = normalizeText(name);
+      return plaques.find(p => normalizeText(p.nom) === normalized) || null;
+    }
+
+    function findProduitByReference(reference) {
+      const normalized = normalizeReference(reference);
+      return produits.find(p => normalizeReference(p.reference_produit) === normalized) || null;
+    }
+
+    function analyserDonnees(rows) {
+      analyzedRows = rows.map((raw, idx) => {
+        const plaque = findPlaqueByName(raw.plaque);
+        const produit = findProduitByReference(raw.reference_produit);
+        const prix = parsePrice(raw.prix_vente);
+        const errors = [];
+
+        if (!raw.plaque || !String(raw.plaque).trim()) {
+          errors.push({ type: "plaque", message: "Plaque vide." });
+        } else if (!plaque) {
+          errors.push({ type: "plaque", message: `Plaque introuvable : ${raw.plaque}` });
+        }
+
+        if (!raw.reference_produit || !String(raw.reference_produit).trim()) {
+          errors.push({ type: "produit", message: "Référence produit vide." });
+        } else if (!produit) {
+          errors.push({ type: "produit", message: `Produit introuvable : ${raw.reference_produit}` });
+        }
+
+        if (!Number.isFinite(prix) || prix < 0) {
+          errors.push({ type: "prix", message: `Prix invalide : ${raw.prix_vente}` });
+        }
+
+        return {
+          index: idx + 2,
+          raw,
+          plaque,
+          produit,
+          prix,
+          errors,
+          isValid: errors.length === 0
+        };
+      });
+
+      updateStats();
+      renderPreview();
+      renderErrors();
+      renderValidRows();
+    }
+
+    function readFileAsArrayBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function analyserFichier() {
+      try {
+        const fileInput = document.getElementById("fileInput");
+        const file = fileInput.files[0];
+
+        if (!file) {
+          alert("Choisis un fichier avant d’analyser.");
+          return;
+        }
+
+        setStatus("Lecture du fichier...");
+        const buffer = await readFileAsArrayBuffer(file);
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        if (!jsonData.length) {
+          alert("Le fichier est vide.");
+          return;
+        }
+
+        parsedRows = jsonData.map(row => ({
+          plaque: row.plaque ?? row.PLAQUE ?? row.Plaque ?? "",
+          reference_produit: row.reference_produit ?? row.REFERENCE_PRODUIT ?? row["reference produit"] ?? row["Référence produit"] ?? "",
+          prix_vente: row.prix_vente ?? row.PRIX_VENTE ?? row["prix vente"] ?? row["Prix vente"] ?? ""
+        }));
+
+        analyserDonnees(parsedRows);
+        setStatus(`${parsedRows.length} ligne(s) lue(s), analyse terminée.`);
+      } catch (error) {
+        console.error("Erreur analyse fichier:", error);
+        setStatus("Erreur de lecture du fichier.");
+        alert("Impossible de lire le fichier. Vérifie le format et les colonnes.");
+      }
+    }
+
+    async function importerTarifs() {
+      try {
+        const valides = analyzedRows.filter(r => r.isValid);
+
+        if (!analyzedRows.length) {
+          alert("Aucune donnée analysée.");
+          return;
+        }
+
+        if (!valides.length) {
+          alert("Aucune ligne valide à importer.");
+          return;
+        }
+
+        if (!confirm(`Importer ${valides.length} ligne(s) dans tarifs_plaques ?`)) {
+          return;
+        }
+
+        setStatus("Préparation de l’import...");
+
+        const payload = valides.map(row => ({
+          plaque_id: row.plaque.id,
+          produit_id: row.produit.id,
+          prix_vente: row.prix
+        }));
+
+        const { error } = await supabaseClient
+          .from("tarifs_plaques")
+          .upsert(payload, {
+            onConflict: "plaque_id,produit_id"
+          });
+
+        if (error) throw error;
+
+        setStatus(`Import terminé avec succès • ${payload.length} ligne(s) insérée(s) ou mise(s) à jour.`);
+        alert(`Import terminé : ${payload.length} ligne(s) traitée(s).`);
+      } catch (error) {
+        console.error("Erreur import:", error);
+        setStatus("Erreur pendant l’import.");
+        alert("Erreur pendant l’import. Vérifie surtout la contrainte unique sur plaque_id + produit_id.");
+      }
+    }
+
+    function viderAnalyse() {
+      parsedRows = [];
+      analyzedRows = [];
+      document.getElementById("fileInput").value = "";
+      updateStats();
+      renderPreview();
+      renderErrors();
+      renderValidRows();
+      setStatus("Analyse vidée.");
+    }
+
+    function telechargerModele() {
+      const rows = [
+        { plaque: "MRA", reference_produit: "86807 00", prix_vente: 13 },
+        { plaque: "EURO", reference_produit: "86807 00", prix_vente: 12 },
+        { plaque: "Concessionnaire", reference_produit: "86807 00", prix_vente: 11.5 }
+      ];
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Tarifs");
+      XLSX.writeFile(workbook, "modele_import_tarifs.xlsx");
+    }
+
+    async function initApp() {
+      try {
+        setStatus("Connexion à Supabase...");
+        plaques = await fetchPlaques();
+        produits = await fetchProduits();
+        setStatus(`Connexion OK • ${plaques.length} plaque(s) • ${produits.length} produit(s) chargés.`);
+      } catch (error) {
+        console.error("Erreur init:", error);
+        setStatus("Erreur de connexion à Supabase.");
+        alert("Impossible de charger les plaques et les produits depuis Supabase.");
+      }
+    }
+
+    document.getElementById("fileInput").addEventListener("change", () => {
+      setStatus("Fichier sélectionné. Lance l’analyse.");
+    });
+
+    initApp();
+  </script>
+</body>
+</html>

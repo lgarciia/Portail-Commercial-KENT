@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Activité Réelle</title>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --panel2:rgba(255,255,255,0.045);
+      --stroke:rgba(255,255,255,0.12);
+      --stroke2:rgba(255,255,255,0.16);
+      --text:rgba(255,255,255,0.90);
+      --muted:rgba(255,255,255,0.62);
+      --muted2:rgba(255,255,255,0.46);
+      --accent:rgba(132,182,255,0.95);
+      --shadow:0 16px 40px rgba(0,0,0,0.35);
+      --radius:16px;
+      --radius2:14px;
+      --cellH:34px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(90,140,255,0.15), transparent 60%),
+        radial-gradient(1100px 800px at 110% 20%, rgba(255,120,200,0.10), transparent 55%),
+        radial-gradient(900px 700px at 60% 110%, rgba(130,255,200,0.08), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    .app{ height:100%; display:flex; flex-direction:column; }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 18px;
+      border-bottom:1px solid var(--stroke);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      backdrop-filter: blur(10px);
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; min-width: 420px; }
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background: linear-gradient(135deg, rgba(132,182,255,0.95), rgba(255,125,206,0.65));
+      box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+      border:1px solid rgba(255,255,255,0.15);
+      flex:0 0 auto;
+    }
+    .titleWrap{ display:flex; flex-direction:column; line-height:1.15; }
+    .title{ font-weight:900; letter-spacing:0.2px; font-size:14px; }
+    .subtitle{ font-size:12px; color:var(--muted); }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      height:34px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.06);
+      color:var(--text);
+      font-weight:800;
+      font-size:12px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: var(--stroke2); background: rgba(255,255,255,0.08); }
+    .btn:active{ transform: translateY(0px); }
+    .btn.primary{ background: rgba(132,182,255,0.18); border-color: rgba(132,182,255,0.28); }
+    .btn.ghost{ background: rgba(255,255,255,0.04); }
+    .btn.danger{ background: rgba(255,110,110,0.12); border-color: rgba(255,110,110,0.22); }
+
+    .fileInput{ display:none; }
+
+    .shell{
+      height: calc(100% - 67px);
+      padding:10px 12px 12px;
+      display:grid;
+      grid-template-rows: auto 1fr;
+      gap:10px;
+      min-height: calc(100vh - 67px);
+    }
+
+    .card{
+      border:1px solid var(--stroke);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow:hidden;
+
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+
+    .meta{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .metaLeft{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      height:30px;
+      padding:0 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      color:var(--muted);
+      font-size:12px;
+    }
+    .pill strong{ color:var(--text); font-weight:900; }
+
+    .search{
+      height:30px;
+      width:320px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      color:var(--text);
+      padding:0 10px;
+      outline:none;
+      font-size:12px;
+    }
+    .search::placeholder{ color: var(--muted2); }
+
+    .gridWrap{ position:relative; flex:1; min-height:0; }
+
+    .dropHint{
+      position:absolute;
+      inset:10px;
+      border:1px dashed rgba(255,255,255,0.20);
+      border-radius: 16px;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,0.35);
+      color: rgba(255,255,255,0.86);
+      font-weight:900;
+      letter-spacing:0.2px;
+      z-index:10;
+      pointer-events:none;
+    }
+    .dropHint.show{ display:flex; }
+
+    .tableScroller{ flex:1; min-height:0; height:100%; overflow:auto; }
+
+    table{
+      border-collapse:separate;
+      border-spacing:0;
+      width:max-content;
+      min-width:100%;
+      font-size:12px;
+    }
+
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:5;
+      background: rgba(10,15,23,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--stroke);
+    }
+
+    th, td{
+      border-right:1px solid rgba(255,255,255,0.10);
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      padding:6px 8px;
+      height: var(--cellH);
+      white-space:nowrap;
+      vertical-align:middle;
+    }
+
+    thead tr:first-child th{
+      font-weight:900;
+      color:rgba(255,255,255,0.86);
+      text-align:center;
+      border-bottom:1px solid rgba(255,255,255,0.10);
+    }
+    thead tr:nth-child(2) th{
+      font-weight:800;
+      color:rgba(255,255,255,0.70);
+      text-align:center;
+    }
+
+    tbody tr:hover td{ background: rgba(255,255,255,0.03); }
+
+    .col-sticky{
+      position:sticky;
+      left:0;
+      z-index:6;
+      background: rgba(10,15,23,0.96);
+      border-right:1px solid rgba(255,255,255,0.12);
+    }
+    .col-sticky2{
+      position:sticky;
+      left:160px;
+      z-index:6;
+      background: rgba(10,15,23,0.96);
+      border-right:1px solid rgba(255,255,255,0.12);
+    }
+
+    tbody .col-sticky{ z-index:4; font-weight:900; }
+    tbody .col-sticky2{ z-index:4; font-weight:800; color: rgba(255,255,255,0.86); }
+
+    .num{
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+      font-weight:800;
+    }
+
+    .col-total{
+      position:sticky;
+      right:0;
+      z-index:6;
+      background: rgba(10,15,23,0.96);
+      border-left:1px solid rgba(255,255,255,0.12);
+      min-width:140px;
+    }
+    tbody .col-total{ z-index:4; }
+
+    .sortable{ cursor:pointer; user-select:none; }
+    .sortHint{ display:inline-flex; align-items:center; gap:6px; opacity:0.9; }
+    .chev{ font-size:12px; opacity:0.85; }
+
+    .row-total td{
+      background: rgba(255,255,255,0.04);
+      font-weight:900;
+    }
+    .row-total:hover td{ background: rgba(255,255,255,0.04); }
+
+    .mutedNote{
+      padding:10px 14px 14px;
+      color: var(--muted);
+      font-size:12px;
+    }
+
+    .kbd{
+      display:inline-flex;
+      align-items:center;
+      height:18px;
+      padding:0 7px;
+      border-radius:7px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.78);
+      font-weight:900;
+      font-size:11px;
+      margin:0 3px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="titleWrap">
+          <div class="title">Activité Réelle</div>
+          <div class="subtitle">Clients en lignes • Mois en colonnes • Montants agrégés • Stockage local pour le reporting</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
+        <button class="btn primary" id="btnReload">Charger / Recharger activitereelpsa.xlsx</button>
+        <button class="btn ghost" id="btnExportXlsx">Exporter XLSX</button>
+        <button class="btn ghost" id="btnExportCsv">Exporter CSV</button>
+        <button class="btn ghost" id="btnExportJson">Exporter JSON</button>
+        <button class="btn danger" id="btnReset">Reset local</button>
+      </div>
+    </div>
+
+    <div class="shell">
+      <div class="card">
+        <div class="meta">
+          <div class="metaLeft">
+            <div class="pill">Source : <strong id="srcLabel">—</strong></div>
+            <div class="pill">Clients : <strong id="clientsCount">0</strong></div>
+            <div class="pill">Dernière maj : <strong id="lastUpdate">—</strong></div>
+            <div class="pill">Sync reporting PSA : <strong id="syncLabel">—</strong></div>
+            <input class="search" id="search" placeholder="Filtrer client (N° interne ou nom)..." />
+          </div>
+          <div class="pill">
+            Astuce : drag&drop le fichier Excel ici • <span class="kbd">Ctrl</span>+<span class="kbd">F</span> pour rechercher
+          </div>
+        </div>
+
+        <div class="gridWrap" id="dropZone">
+          <div class="dropHint" id="dropHint">Dépose activitereelpsa.xlsx pour recharger</div>
+          <div class="tableScroller">
+            <table id="pivotTable"></table>
+          </div>
+          <div class="mutedNote">
+            Colonnes attendues : <strong>N° client Interne</strong> • <strong>Nom du client</strong> • <strong>Montant prix achat KENT</strong> • <strong>Mois2</strong>.
+            <br>
+            ✅ Pivot stocké dans <strong>ACTIVITE_REEL_2026_V1</strong> + export “reporting annuel PSA” stocké dans <strong>ACTIVITEREEL_PSA_V1</strong>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+<script>
+(function(){
+  // =========================
+  // CONFIG
+  // =========================
+  const FILE_NAME = "activitereelpsa.xlsx";
+
+  // Ton pivot historique
+  const STORAGE_KEY_PIVOT = "ACTIVITE_REEL_2026_V1";
+
+  // ✅ Clé attendue par repoting-annuelpsa.html
+  const STORAGE_KEY_REPORTING_PSA = "ACTIVITEREEL_PSA_V1";
+
+  const MONTHS = [
+    { key: "jan", label: "Janvier", aliases: ["janvier","jan"] },
+    { key: "feb", label: "Février", aliases: ["février","fevrier","fév","fev"] },
+    { key: "mar", label: "Mars", aliases: ["mars","mar"] },
+    { key: "apr", label: "Avril", aliases: ["avril","avr"] },
+    { key: "may", label: "Mai", aliases: ["mai"] },
+    { key: "jun", label: "Juin", aliases: ["juin"] },
+    { key: "jul", label: "Juillet", aliases: ["juillet","juil"] },
+    { key: "aug", label: "Août", aliases: ["août","aout","aoû","aou"] },
+    { key: "sep", label: "Septembre", aliases: ["septembre","sep","sept"] },
+    { key: "oct", label: "Octobre", aliases: ["octobre","oct"] },
+    { key: "nov", label: "Novembre", aliases: ["novembre","nov"] },
+    { key: "dec", label: "Décembre", aliases: ["décembre","decembre","déc","dec"] },
+  ];
+
+  // =========================
+  // DOM
+  // =========================
+  const el = {
+    fileInput: document.getElementById("fileInput"),
+    btnReload: document.getElementById("btnReload"),
+    btnExportXlsx: document.getElementById("btnExportXlsx"),
+    btnExportCsv: document.getElementById("btnExportCsv"),
+    btnExportJson: document.getElementById("btnExportJson"),
+    btnReset: document.getElementById("btnReset"),
+
+    srcLabel: document.getElementById("srcLabel"),
+    clientsCount: document.getElementById("clientsCount"),
+    lastUpdate: document.getElementById("lastUpdate"),
+    syncLabel: document.getElementById("syncLabel"),
+
+    search: document.getElementById("search"),
+    dropZone: document.getElementById("dropZone"),
+    dropHint: document.getElementById("dropHint"),
+    table: document.getElementById("pivotTable"),
+
+   
+  };
+
+  // =========================
+  // STATE
+  // =========================
+  let pivot = loadJSON(STORAGE_KEY_PIVOT, null);
+  let filterText = "";
+  let sortTotalDir = null;
+
+  // =========================
+  // INIT
+  // =========================
+  if (pivot?.clients?.length) {
+    render();
+    updateSyncLabel();
+  } else {
+    renderEmpty("Aucune donnée. Charge le fichier.");
+    updateSyncLabel();
+  }
+
+  autoFetchExcel();
+
+  // =========================
+  // EVENTS
+  // =========================
+  el.btnReload.addEventListener("click", () => el.fileInput.click());
+  el.fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    el.fileInput.value = "";
+    await importFromFile(file);
+  });
+
+  el.search.addEventListener("input", () => {
+    filterText = (el.search.value || "").trim().toLowerCase();
+    render();
+  });
+
+  el.btnReset.addEventListener("click", () => {
+    if (!confirm("Supprimer les données Activité Réelle stockées en local ?")) return;
+    localStorage.removeItem(STORAGE_KEY_PIVOT);
+    localStorage.removeItem(STORAGE_KEY_REPORTING_PSA);
+    pivot = null;
+    sortTotalDir = null;
+    renderEmpty("Données locales supprimées. Recharge le fichier.");
+    updateSyncLabel();
+  });
+
+  el.btnExportJson.addEventListener("click", exportJSON);
+  el.btnExportCsv.addEventListener("click", exportCSV);
+  el.btnExportXlsx.addEventListener("click", exportXLSX);
+
+  
+
+  // Drag & drop
+  ["dragenter","dragover"].forEach(evt => el.dropZone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    el.dropHint.classList.add("show");
+  }));
+  ["dragleave","drop"].forEach(evt => el.dropZone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    el.dropHint.classList.remove("show");
+  }));
+  el.dropZone.addEventListener("drop", async (e) => {
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    const name = (file.name || "").toLowerCase();
+    if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+      alert("Veuillez déposer un fichier .xlsx ou .xls");
+      return;
+    }
+    await importFromFile(file);
+  });
+
+  // =========================
+  // AUTO FETCH
+  // =========================
+  async function autoFetchExcel(){
+    try{
+      const res = await fetch(FILE_NAME, { cache: "no-store" });
+      if (!res.ok) return;
+      const buf = await res.arrayBuffer();
+      parseAndBuildPivot(buf, `auto (${FILE_NAME})`);
+    }catch{
+      // silent
+    }
+  }
+
+  async function importFromFile(file){
+    try{
+      const buf = await file.arrayBuffer();
+      parseAndBuildPivot(buf, `manuel (${file.name || FILE_NAME})`);
+    }catch(err){
+      console.error(err);
+      alert("Import impossible : " + (err?.message || err));
+    }
+  }
+
+  // =========================
+  // PARSE + PIVOT
+  // =========================
+  function parseAndBuildPivot(arrayBuffer, sourceLabel){
+    const wb = XLSX.read(arrayBuffer, { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+    if (!rows.length){
+      renderEmpty("Fichier vide.");
+      return;
+    }
+
+    const headerMap = buildHeaderMap(rows[0]);
+
+    const colClientInterne = findCol(headerMap, ["n° client interne","no client interne","n client interne","n° client","numero client interne"]);
+    const colNomClient = findCol(headerMap, ["nom du client","nom client","client"]);
+    const colMontant = findCol(headerMap, ["montant prix achat kent","montant achat kent","montant"]);
+    const colMois = findCol(headerMap, ["mois2","mois"]);
+
+    if (!colClientInterne || !colNomClient || !colMontant || !colMois){
+      const missing = [
+        !colClientInterne ? "N° client Interne" : null,
+        !colNomClient ? "Nom du client" : null,
+        !colMontant ? "Montant prix achat KENT" : null,
+        !colMois ? "Mois2" : null,
+      ].filter(Boolean).join(", ");
+      renderEmpty("Colonnes manquantes : " + missing);
+      return;
+    }
+
+    const agg = new Map();
+
+    for (const r of rows){
+      const clientInternal = String(r[colClientInterne] ?? "").trim();
+      const clientName = String(r[colNomClient] ?? "").trim();
+      const moisRaw = String(r[colMois] ?? "").trim();
+      if (!clientInternal && !clientName) continue;
+
+      const mk = normalizeMonthToKey(moisRaw);
+      if (!mk) continue;
+
+      const montant = toNumber(r[colMontant]);
+      const id = makeClientId(clientInternal, clientName);
+
+      if (!agg.has(id)){
+        const months = {};
+        for (const m of MONTHS) months[m.key] = 0;
+        agg.set(id, { id, clientInternal, clientName, months });
+      }
+
+      const item = agg.get(id);
+      item.months[mk] += montant;
+    }
+
+    const clients = Array.from(agg.values())
+      .sort((a,b) => (a.clientName || "").localeCompare((b.clientName || ""), "fr"));
+
+    pivot = {
+      meta: {
+        source: sourceLabel,
+        sheet: sheetName,
+        updatedAt: new Date().toISOString(),
+        file: FILE_NAME
+      },
+      clients
+    };
+
+    // ✅ 1) Sauvegarde pivot (ta clé historique)
+    saveJSON(STORAGE_KEY_PIVOT, pivot);
+
+    // ✅ 2) Sauvegarde format “reporting annuel PSA” attendu
+    saveActiviteReelPSAFromPivot(pivot);
+
+    sortTotalDir = null;
+    render();
+    updateSyncLabel();
+  }
+
+  function normalizeMonthToKey(value){
+    const v = normalizeKey(value);
+    if (!v) return null;
+    for (const m of MONTHS){
+      for (const a of m.aliases){
+        if (v === normalizeKey(a)) return m.key;
+      }
+    }
+    return null;
+  }
+
+  // =========================
+  // ✅ BRIDGE vers reporting annuel PSA
+  // =========================
+  function saveActiviteReelPSAFromPivot(p){
+    const nowIso = new Date().toISOString();
+    const clients = (p?.clients || []).map(c => ({
+      nclient: String(c.clientInternal || "").trim(), // ✅ clé stable
+      name: String(c.clientName || "").trim(),
+      months: {
+        jan: toNumber(c.months?.jan), feb: toNumber(c.months?.feb), mar: toNumber(c.months?.mar),
+        apr: toNumber(c.months?.apr), may: toNumber(c.months?.may), jun: toNumber(c.months?.jun),
+        jul: toNumber(c.months?.jul), aug: toNumber(c.months?.aug), sep: toNumber(c.months?.sep),
+        oct: toNumber(c.months?.oct), nov: toNumber(c.months?.nov), dec: toNumber(c.months?.dec),
+      }
+    }));
+
+    const payload = {
+      meta: {
+        source: "activitereelpsa.html",
+        updatedAt: nowIso,
+        fromPivotKey: STORAGE_KEY_PIVOT,
+        sheet: p?.meta?.sheet || "",
+        file: p?.meta?.file || FILE_NAME
+      },
+      clients
+    };
+
+    localStorage.setItem(STORAGE_KEY_REPORTING_PSA, JSON.stringify(payload));
+    return payload;
+  }
+
+  function updateSyncLabel(){
+    const payload = loadJSON(STORAGE_KEY_REPORTING_PSA, null);
+    if (payload?.clients?.length){
+      el.syncLabel.textContent = `OK (${payload.clients.length})`;
+    } else {
+      el.syncLabel.textContent = "—";
+    }
+  }
+
+  function exportActiviteReelPSAJson(){
+    const payload = loadJSON(STORAGE_KEY_REPORTING_PSA, null);
+    if (!payload?.clients?.length){
+      alert("Aucune donnée Réel PSA en cache. Recharge d’abord le fichier.");
+      return;
+    }
+    downloadBlob(
+      new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" }),
+      `activitereel_psa_${stamp()}.json`
+    );
+  }
+
+  // =========================
+  // TOTAL
+  // =========================
+  function getClientTotal(c){
+    let t = 0;
+    for (const m of MONTHS) t += toNumber(c.months?.[m.key]);
+    return t;
+  }
+
+  // =========================
+  // RENDER
+  // =========================
+  function renderEmpty(msg){
+    el.clientsCount.textContent = "0";
+    el.srcLabel.textContent = pivot?.meta?.source || "—";
+    el.lastUpdate.textContent = "—";
+
+    el.table.innerHTML = `
+      <thead>
+        <tr>
+          <th class="col-sticky" style="min-width:160px;">N° client</th>
+          <th class="col-sticky2" style="min-width:360px;">Nom du client</th>
+          ${MONTHS.map(m => `<th>${escapeHtml(m.label)}</th>`).join("")}
+          <th class="col-total">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-sticky">—</td>
+          <td class="col-sticky2">${escapeHtml(msg || "Aucune donnée.")}</td>
+          ${MONTHS.map(() => `<td class="num">—</td>`).join("")}
+          <td class="num col-total">—</td>
+        </tr>
+      </tbody>
+    `;
+  }
+
+  function render(){
+    if (!pivot?.clients?.length){
+      renderEmpty("Aucune donnée. Charge le fichier.");
+      return;
+    }
+
+    el.srcLabel.textContent = pivot.meta?.source || "—";
+    el.lastUpdate.textContent = formatDateTime(pivot.meta?.updatedAt);
+    el.clientsCount.textContent = String(pivot.clients.length);
+
+    let clients = pivot.clients.filter(c => {
+      if (!filterText) return true;
+      const a = (c.clientInternal || "").toLowerCase();
+      const b = (c.clientName || "").toLowerCase();
+      return a.includes(filterText) || b.includes(filterText);
+    });
+
+    if (sortTotalDir === "desc"){
+      clients = clients.slice().sort((a,b) => getClientTotal(b) - getClientTotal(a));
+    } else if (sortTotalDir === "asc"){
+      clients = clients.slice().sort((a,b) => getClientTotal(a) - getClientTotal(b));
+    }
+
+    const colSums = {};
+    for (const m of MONTHS) colSums[m.key] = 0;
+    let grandTotal = 0;
+
+    const sortArrow = sortTotalDir === "desc" ? "▼" : (sortTotalDir === "asc" ? "▲" : "↕");
+    const thead = `
+      <thead>
+        <tr>
+          <th class="col-sticky" style="min-width:160px;">N° client</th>
+          <th class="col-sticky2" style="min-width:360px;">Nom du client</th>
+          ${MONTHS.map(m => `<th>${escapeHtml(m.label)}</th>`).join("")}
+          <th class="col-total sortable" id="thTotal">
+            <span class="sortHint">TOTAL <span class="chev">${sortArrow}</span></span>
+          </th>
+        </tr>
+      </thead>
+    `;
+
+    const tbodyRows = clients.map(c => {
+      let rowTotal = 0;
+
+      const cells = MONTHS.map(m => {
+        const v = toNumber(c.months?.[m.key]);
+        colSums[m.key] += v;
+        rowTotal += v;
+        return `<td class="num">${fmt0(v)}</td>`;
+      }).join("");
+
+      grandTotal += rowTotal;
+
+      return `
+        <tr>
+          <td class="col-sticky">${escapeHtml(c.clientInternal || "")}</td>
+          <td class="col-sticky2">${escapeHtml(c.clientName || "")}</td>
+          ${cells}
+          <td class="num col-total">${fmt0(rowTotal)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const footerCells = MONTHS.map(m => `<td class="num">${fmt0(colSums[m.key])}</td>`).join("");
+    const tbodyFooter = `
+      <tr class="row-total">
+        <td class="col-sticky">TOTAL</td>
+        <td class="col-sticky2">—</td>
+        ${footerCells}
+        <td class="num col-total">${fmt0(grandTotal)}</td>
+      </tr>
+    `;
+
+    el.table.innerHTML = thead + `<tbody>${tbodyRows}${tbodyFooter}</tbody>`;
+
+    const thTotal = document.getElementById("thTotal");
+    if (thTotal){
+      thTotal.addEventListener("click", () => {
+        if (sortTotalDir === null) sortTotalDir = "desc";
+        else if (sortTotalDir === "desc") sortTotalDir = "asc";
+        else sortTotalDir = "desc";
+        render();
+      }, { passive:true });
+    }
+  }
+
+  // =========================
+  // EXPORTS
+  // =========================
+  function exportJSON(){
+    if (!pivot?.clients?.length) { alert("Rien à exporter."); return; }
+    downloadBlob(
+      new Blob([JSON.stringify(pivot, null, 2)], { type: "application/json" }),
+      `activite_reelle_2026_${stamp()}.json`
+    );
+  }
+
+  function exportCSV(){
+    if (!pivot?.clients?.length) { alert("Rien à exporter."); return; }
+
+    const rows = pivot.clients.map(c => {
+      const r = {
+        "N° client Interne": c.clientInternal || "",
+        "Nom du client": c.clientName || "",
+      };
+      for (const m of MONTHS) r[m.label] = Math.round(toNumber(c.months?.[m.key]));
+      r["TOTAL"] = Math.round(getClientTotal(c));
+      return r;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const csv = XLSX.utils.sheet_to_csv(ws, { FS: ";", RS: "\n" });
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `activite_reelle_2026_${stamp()}.csv`);
+  }
+
+  function exportXLSX(){
+    if (!pivot?.clients?.length) { alert("Rien à exporter."); return; }
+
+    const rows = pivot.clients.map(c => {
+      const r = {
+        "N° client Interne": c.clientInternal || "",
+        "Nom du client": c.clientName || "",
+      };
+      for (const m of MONTHS) r[m.label] = toNumber(c.months?.[m.key]);
+      r["TOTAL"] = getClientTotal(c);
+      return r;
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Activité Réelle (Pivot)");
+    const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    downloadBlob(
+      new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+      `activite_reelle_2026_${stamp()}.xlsx`
+    );
+  }
+
+  // =========================
+  // HELPERS
+  // =========================
+  function loadJSON(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    }catch{
+      return fallback;
+    }
+  }
+
+  function saveJSON(key, val){
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  function toNumber(v){
+    if (v === null || v === undefined) return 0;
+    if (typeof v === "number") return isFinite(v) ? v : 0;
+    const s = String(v).trim();
+    if (!s) return 0;
+    const norm = s.replace(/\s/g,"").replace(",",".");
+    const n = Number(norm);
+    return isFinite(n) ? n : 0;
+  }
+
+function fmt0(n){
+  const val = Math.round(toNumber(n));
+  return new Intl.NumberFormat("fr-FR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(val);
+}
+
+  function normalizeKey(s){
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g," ")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+
+  function buildHeaderMap(sampleRow){
+    const map = {};
+    for (const k of Object.keys(sampleRow || {})){
+      map[normalizeKey(k)] = k;
+    }
+    return map;
+  }
+
+  function findCol(headerMap, candidates){
+    for (const c of candidates){
+      const nk = normalizeKey(c);
+      if (headerMap[nk]) return headerMap[nk];
+    }
+    return null;
+  }
+
+  function makeClientId(clientInternal, clientName){
+    const a = normalizeKey(clientInternal).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+    const b = normalizeKey(clientName).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+    return (a || "noid") + "__" + (b || "noname");
+  }
+
+  function formatDateTime(iso){
+    try{
+      const d = new Date(iso);
+      return d.toLocaleString("fr-FR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+    }catch{
+      return "—";
+    }
+  }
+
+  function stamp(){
+    const d = new Date();
+    const pad = (x)=>String(x).padStart(2,"0");
+    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+  }
+
+  function downloadBlob(blob, filename){
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+
+  function escapeHtml(str){
+    return String(str ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+
+})();
+</script>
+</body>
+</html>

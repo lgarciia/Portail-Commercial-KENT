@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>KENT • Client Lookup (PSA)</title>
+
+<style>
+  :root{
+    --bg: #0b0f17;
+    --panel: rgba(255,255,255,0.06);
+    --line: rgba(255,255,255,0.10);
+    --text: rgba(255,255,255,0.92);
+    --muted: rgba(255,255,255,0.62);
+    --accent: #7c3aed;
+    --accent-2: #22c55e;
+    --warn: #f59e0b;
+    --shadow: 0 18px 40px rgba(0,0,0,.45);
+    --radius: 18px;
+  }
+
+  *{box-sizing:border-box}
+
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    background:
+      radial-gradient(1200px 800px at 20% 0%, rgba(124,58,237,.20), transparent 55%),
+      radial-gradient(900px 700px at 85% 10%, rgba(34,197,94,.12), transparent 55%),
+      radial-gradient(900px 700px at 50% 110%, rgba(245,158,11,.10), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    padding:18px 14px 28px;
+  }
+
+  .wrap{
+    max-width: 880px;
+    margin: 0 auto;
+    position: relative;
+    isolation: isolate;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand{display:flex;align-items:center;gap:10px;}
+  .logo{
+    width:42px;height:42px;border-radius:14px;
+    background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(34,197,94,.70));
+    box-shadow: 0 10px 26px rgba(124,58,237,.25);
+  }
+  .title{display:flex;flex-direction:column;line-height:1.1;}
+  .title b{font-size:15px; letter-spacing:.2px}
+  .title span{font-size:12px; color:var(--muted)}
+
+  .btn{
+    border:1px solid var(--line);
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    padding:10px 12px;
+    border-radius:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.15s transform, .15s background;
+    white-space:nowrap;
+  }
+  .btn:hover{background: rgba(255,255,255,0.08)}
+  .btn:active{transform: scale(.98)}
+
+  /* ✅ Bouton discret vers la page Recherche Produit */
+  .btnMini{
+    padding:8px 10px;
+    font-size:14px;
+    border-radius:12px;
+    background: rgba(255,255,255,0.04);
+  }
+  .btnMini:hover{
+    background: rgba(124,58,237,.18);
+    transform: translateY(-1px);
+  }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    backdrop-filter: blur(10px);
+    margin-top:12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card.searchCard{z-index: 50;}
+  .searchWrap{position:relative;z-index:60;}
+
+  .input{
+    width: 100%;
+    padding: 14px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: rgba(0,0,0,0.25);
+    color: var(--text);
+    outline: none;
+    font-size: 16px;
+  }
+  .input::placeholder{color: rgba(255,255,255,0.45)}
+  .input:focus{
+    border-color: rgba(124,58,237,.55);
+    box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+  }
+
+  .suggest{
+    position:absolute;
+    left:0; right:0;
+    top: calc(100% + 8px);
+    background: rgba(10,14,22,.98);
+    border:1px solid var(--line);
+    border-radius: 16px;
+    overflow:hidden;
+    box-shadow: 0 18px 40px rgba(0,0,0,.70);
+    display:none;
+    max-height: 320px;
+    overflow:auto;
+    z-index: 9999;
+    transform: translateZ(0);
+  }
+  .suggest.show{display:block;}
+
+  .sItem{
+    padding:12px 12px;
+    cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center;
+  }
+  .sItem:last-child{border-bottom:none;}
+  .sItem:hover{background: rgba(124,58,237,.18);}
+  .sName{font-weight:780;font-size:14px;line-height:1.2;}
+  .sHint{
+    font-size:12px;
+    color:var(--muted);
+    white-space:nowrap;
+    border:1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    padding:4px 8px;
+    border-radius:999px;
+  }
+  .hl{color:#fff;}
+
+  .meta{
+    margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;
+    color:var(--muted);font-size:12px;
+  }
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 10px;border-radius:999px;
+    border:1px solid var(--line);
+    background: rgba(255,255,255,0.05);
+  }
+  .dot{width:8px;height:8px;border-radius:99px;background: var(--accent);}
+  .dot.ok{background: var(--accent-2)}
+  .dot.warn{background: var(--warn)}
+
+  .sectionTitle{
+    margin:0 0 10px;
+    font-size:13px;color:var(--muted);
+    letter-spacing:.3px;text-transform:uppercase;
+  }
+
+  .kpisLine{display:flex;gap:10px;flex-wrap:wrap;}
+  .kpi{
+    flex:1;min-width: 180px;
+    border:1px solid var(--line);
+    background: rgba(0,0,0,0.20);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .kpi .label{font-size:12px;color:var(--muted)}
+  .kpi .value{font-size:18px;font-weight:850;margin-top:4px}
+
+  .list{display:flex;flex-direction:column;gap:10px;}
+  .item{
+    border: 1px solid var(--line);
+    background: rgba(0,0,0,0.20);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .itemTop{
+    display:flex;justify-content:space-between;gap:10px;align-items:flex-start;
+  }
+  .prod{
+    font-weight:850;font-size:14px;margin:0;line-height:1.25;min-width:0;
+  }
+  .ref{
+    font-weight:750;
+    font-size:12px;
+    color: rgba(255,255,255,0.72);
+    border:1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    padding:3px 8px;
+    border-radius:999px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-left:8px;
+  }
+  .badge{
+    font-size:12px;font-weight:850;padding:6px 10px;border-radius:999px;
+    background: rgba(124,58,237,.18);
+    border: 1px solid rgba(124,58,237,.35);
+    white-space:nowrap;
+  }
+  .sub{
+    margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;
+    color: var(--muted);font-size:12px;
+  }
+  .sub span{
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:4px 8px;
+    background: rgba(255,255,255,0.03);
+  }
+  .empty{color: var(--muted);padding: 10px 0;}
+  .footerNote{margin-top: 10px;color: var(--muted);font-size: 12px;line-height: 1.35;}
+  .footerNote code{
+    background: rgba(255,255,255,0.06);
+    border:1px solid var(--line);
+    padding:2px 6px;
+    border-radius:8px;
+  }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <b>KENT • Client Lookup (PSA)</b>
+        <span>Recherche mobile-friendly — Nom ou N° client interne</span>
+      </div>
+    </div>
+
+    <!-- ✅ Zone actions à droite (bouton discret + reload) -->
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btnMini" id="goProductSearch" title="Recherche produit">🔎</button>
+      <button class="btn" id="reloadBtn">Recharger</button>
+    </div>
+  </div>
+
+  <!-- Recherche -->
+  <div class="card searchCard">
+    <div class="searchWrap">
+      <input class="input" id="searchInput" placeholder="Nom client OU N° client interne…" autocomplete="off"/>
+      <div id="suggestBox" class="suggest"></div>
+    </div>
+
+    <div class="meta">
+      <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargement…</span></span>
+      <span class="chip"><span class="dot ok"></span><span>Fichier : <b>psadata.xlsx</b></span></span>
+      <span class="chip"><span class="dot"></span><span>Recherche : <b>Nom du client</b> OU <b>N° client Interne</b></span></span>
+    </div>
+  </div>
+
+  <!-- Résumé -->
+  <div class="card">
+    <p class="sectionTitle">Résumé</p>
+    <div class="kpisLine">
+      <div class="kpi">
+        <div class="label">Client (match)</div>
+        <div class="value" id="kpiClient">—</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Lignes trouvées</div>
+        <div class="value" id="kpiLines">—</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Quantité totale</div>
+        <div class="value" id="kpiQty">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Produits agrégés -->
+  <div class="card">
+    <p class="sectionTitle">Produits (agrégés)</p>
+    <div id="agg" class="list">
+      <div class="empty">—</div>
+    </div>
+    <div class="footerNote">
+      Affiche <b>tous</b> les produits agrégés (pas de limite).
+    </div>
+  </div>
+
+  <!-- Détails -->
+  <div class="card">
+    <p class="sectionTitle">Détail des ventes</p>
+    <div id="results" class="list">
+      <div class="empty">—</div>
+    </div>
+    <div class="footerNote">
+      Détail : <code>Désignation</code> + <code>Ref</code> + <code>Qté</code> + <code>DATE CDE</code>.
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script>
+  const EXCEL_URL = "./psadata.xlsx";
+
+  const COL_ID    = "N° client Interne";
+  const COL_NAME  = "Nom du client";
+
+  const COL_PROD  = "Désignation";
+  const COL_REF   = "Reference Produits";
+  const COL_QTE   = "Quantité Payante servie";
+  const COL_DATEC = "DATE CDE"; // ✅ on l'affiche dans le détail
+
+  const MAX_DETAIL = 120;
+  const MAX_SUGGEST = 10;
+  const MAX_AGG = Infinity;
+
+  let rows = [];
+  let clientPairs = [];
+  let clientIndex = [];
+
+  const $ = (id) => document.getElementById(id);
+
+  const normalize = (s) =>
+    (s ?? "").toString().trim().toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const toNumber = (v) => {
+    if (v === null || v === undefined) return 0;
+    const s = v.toString().replace(",", ".").replace(/\s/g, "");
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  function parseExcelDate(v) {
+    if (!v) return null;
+    if (typeof v === "number") {
+      const d = XLSX.SSF.parse_date_code(v);
+      if (!d) return null;
+      return new Date(d.y, d.m - 1, d.d);
+    }
+    const s = v.toString().trim();
+    const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m1) return new Date(Number(m1[3]), Number(m1[2]) - 1, Number(m1[1]));
+    const m2 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m2) return new Date(Number(m2[1]), Number(m2[2]) - 1, Number(m2[3]));
+    const d = new Date(s);
+    return Number.isFinite(d.getTime()) ? d : null;
+  }
+
+  const formatDate = (d) => {
+    if (!d) return "—";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yy = d.getFullYear();
+    return `${dd}/${mm}/${yy}`;
+  };
+
+  const escapeHtml = (s) =>
+    (s ?? "").toString()
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+
+  function setStatus(type, text){
+    const dot = $("dotStatus");
+    dot.classList.remove("ok","warn");
+    if (type === "ok") dot.classList.add("ok");
+    if (type === "warn") dot.classList.add("warn");
+    $("status").textContent = text;
+  }
+
+  function openSuggest(){ $("suggestBox").classList.add("show"); }
+  function closeSuggest(){ $("suggestBox").classList.remove("show"); $("suggestBox").innerHTML=""; }
+
+  function highlightMatch(text, q){
+    const t = text.toString();
+    if (!q) return escapeHtml(t);
+    const rawIdx = t.toLowerCase().indexOf(q.toLowerCase());
+    if (rawIdx < 0) return escapeHtml(t);
+
+    const before = escapeHtml(t.slice(0, rawIdx));
+    const mid = escapeHtml(t.slice(rawIdx, rawIdx + q.length));
+    const after = escapeHtml(t.slice(rawIdx + q.length));
+    return `${before}<span class="hl">${mid}</span>${after}`;
+  }
+
+  function buildClientPairs(){
+    const map = new Map();
+    for (const r of rows){
+      const id = (r[COL_ID] ?? "").toString().trim();
+      const name = (r[COL_NAME] ?? "").toString().trim();
+      if (!id && !name) continue;
+
+      const key = `${id}||${name}`;
+      if (!map.has(key)) map.set(key, { id, name });
+    }
+    clientPairs = [...map.values()];
+    clientIndex = clientPairs.map(p => normalize(`${p.name} ${p.id}`));
+  }
+
+  function renderSuggestions(qRaw){
+    const q = (qRaw ?? "").trim();
+    if (!q || q.length < 2 || !clientPairs.length){
+      closeSuggest();
+      return;
+    }
+
+    const nq = normalize(q);
+    const found = [];
+    for (let i=0; i<clientPairs.length; i++){
+      if (clientIndex[i].includes(nq)) found.push(clientPairs[i]);
+      if (found.length >= MAX_SUGGEST) break;
+    }
+
+    if (!found.length){
+      closeSuggest();
+      return;
+    }
+
+    $("suggestBox").innerHTML = found.map(p => {
+      const label = p.name ? p.name : "(Sans nom)";
+      const hint = p.id ? `N° ${p.id}` : "N° —";
+      return `
+        <div class="sItem" PSAdata-value="${escapeHtml(p.id || p.name)}">
+          <div class="sName">${highlightMatch(label, q)}</div>
+          <div class="sHint">${escapeHtml(hint)}</div>
+        </div>
+      `;
+    }).join("");
+
+    $("suggestBox").querySelectorAll(".sItem").forEach(el => {
+      el.addEventListener("click", () => {
+        const value = el.getAttribute("PSAdata-value");
+        $("searchInput").value = value;
+        closeSuggest();
+        runSearch();
+      });
+    });
+
+    openSuggest();
+  }
+
+  async function loadExcel(){
+    setStatus("warn", "Chargement de la base PSA…");
+
+    try{
+      const res = await fetch(EXCEL_URL, { cache: "no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const buf = await res.arrayBuffer();
+      const wb = XLSX.read(buf, { type:"array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
+
+      buildClientPairs();
+      setStatus("ok", `Base chargée : ${rows.length} lignes — ${clientPairs.length} clients`);
+
+      $("kpiClient").textContent = "—";
+      $("kpiLines").textContent = "—";
+      $("kpiQty").textContent = "—";
+      $("agg").innerHTML = `<div class="empty">Tape un client ou un N° interne…</div>`;
+      $("results").innerHTML = `<div class="empty">—</div>`;
+
+    }catch(e){
+      console.error(e);
+      setStatus("warn", `Impossible de charger ${EXCEL_URL}`);
+      $("agg").innerHTML = `<div class="empty">⚠️ Excel introuvable ou bloqué.</div>`;
+      $("results").innerHTML = `<div class="empty">Vérifie que <b>psadata.xlsx</b> est bien à côté de <b>index.html</b>.</div>`;
+    }
+  }
+
+  function runSearch(){
+    if(!rows.length) return;
+
+    const raw = $("searchInput").value.trim();
+    const q = normalize(raw);
+
+    if(!q){
+      $("kpiClient").textContent = "—";
+      $("kpiLines").textContent = "—";
+      $("kpiQty").textContent = "—";
+      $("agg").innerHTML = `<div class="empty">Tape un client ou un N° interne…</div>`;
+      $("results").innerHTML = `<div class="empty">—</div>`;
+      return;
+    }
+
+    const matches = rows.filter(r => {
+      const name = normalize(r[COL_NAME]);
+      const id   = normalize(r[COL_ID]);
+      return name.includes(q) || id.includes(q);
+    });
+
+    if(!matches.length){
+      $("kpiClient").textContent = raw;
+      $("kpiLines").textContent = "0";
+      $("kpiQty").textContent = "0";
+      $("agg").innerHTML = `<div class="empty">Aucun produit trouvé.</div>`;
+      $("results").innerHTML = `<div class="empty">Aucune vente trouvée.</div>`;
+      return;
+    }
+
+    const freqName = new Map();
+    for (const r of matches){
+      const name = (r[COL_NAME] ?? "").toString().trim();
+      if(!name) continue;
+      freqName.set(name, (freqName.get(name) ?? 0) + 1);
+    }
+    const bestClient = [...freqName.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0] ?? raw;
+
+    // Agrégation produits + ref
+    let totalQty = 0;
+    const byProdQty = new Map();
+    const byProdRefFreq = new Map();
+
+    for (const r of matches){
+      const prod = (r[COL_PROD] ?? "").toString().trim() || "—";
+      const ref  = (r[COL_REF] ?? "").toString().trim();
+      const qty  = toNumber(r[COL_QTE]);
+
+      totalQty += qty;
+      byProdQty.set(prod, (byProdQty.get(prod) ?? 0) + qty);
+
+      if (!byProdRefFreq.has(prod)) byProdRefFreq.set(prod, new Map());
+      if (ref){
+        const m = byProdRefFreq.get(prod);
+        m.set(ref, (m.get(ref) ?? 0) + 1);
+      }
+    }
+
+    function getBestRef(prod){
+      const m = byProdRefFreq.get(prod);
+      if (!m || m.size === 0) return "";
+      return [...m.entries()].sort((a,b)=>b[1]-a[1])[0][0];
+    }
+
+    const aggSorted = [...byProdQty.entries()].sort((a,b)=>b[1]-a[1]);
+
+    $("kpiClient").textContent = bestClient;
+    $("kpiLines").textContent = String(matches.length);
+    $("kpiQty").textContent = String(Math.round(totalQty * 100) / 100);
+
+    $("agg").innerHTML = aggSorted.map(([prod, qty]) => {
+      const ref = getBestRef(prod);
+      return `
+        <div class="item">
+          <div class="itemTop">
+            <div style="min-width:0">
+              <p class="prod">
+                ${escapeHtml(prod)}
+                ${ref ? `<span class="ref">Ref: ${escapeHtml(ref)}</span>` : ``}
+              </p>
+            </div>
+            <span class="badge">Qté: ${Math.round(qty*100)/100}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // ✅ DÉTAILS : Désignation + Ref + Qté + DATE CDE
+    const details = matches
+      .map(r => ({ r, d: parseExcelDate(r[COL_DATEC]) })) // tri sur DATE CDE
+      .sort((a,b) => (b.d?.getTime() ?? 0) - (a.d?.getTime() ?? 0))
+      .slice(0, MAX_DETAIL);
+
+    $("results").innerHTML = details.map(({r, d}) => {
+      const prod = (r[COL_PROD] ?? "").toString().trim();
+      const ref  = (r[COL_REF] ?? "").toString().trim();
+      const qty  = toNumber(r[COL_QTE]);
+
+      const dateC = formatDate(d);
+
+      const idTxt = (r[COL_ID] ?? "").toString().trim();
+      const nameTxt = (r[COL_NAME] ?? "").toString().trim() || bestClient;
+
+      return `
+        <div class="item">
+          <div class="itemTop">
+            <div style="min-width:0">
+              <p class="prod">
+                ${escapeHtml(prod || "—")}
+                ${ref ? `<span class="ref">Ref: ${escapeHtml(ref)}</span>` : ``}
+              </p>
+            </div>
+            <span class="badge">Qté: ${Math.round(qty*100)/100}</span>
+          </div>
+          <div class="sub">
+            <span>DATE CDE: <b>${escapeHtml(dateC)}</b></span>
+            <span>Client: <b>${escapeHtml(nameTxt)}</b></span>
+            ${idTxt ? `<span>N° interne: <b>${escapeHtml(idTxt)}</b></span>` : ""}
+          </div>
+        </div>
+      `;
+    }).join("") + (matches.length>MAX_DETAIL ? `<div class="empty">Affiché ${MAX_DETAIL} lignes sur ${matches.length}.</div>` : "");
+  }
+
+  // UX
+  let t = null;
+  $("searchInput").addEventListener("input", () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      renderSuggestions($("searchInput").value);
+      runSearch();
+    }, 120);
+  });
+
+  document.addEventListener("click", (e) => {
+    const box = $("suggestBox");
+    const input = $("searchInput");
+    if (!box.contains(e.target) && e.target !== input) closeSuggest();
+  });
+
+  $("searchInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      closeSuggest();
+      runSearch();
+    }
+  });
+
+  $("reloadBtn").addEventListener("click", async () => {
+    await loadExcel();
+    closeSuggest();
+    runSearch();
+  });
+
+  /* ✅ Navigation vers la page "Recherche produit" (discret, sans side effects) */
+  $("goProductSearch").addEventListener("click", () => {
+    window.location.href = "./explorer-psa.html";
+  });
+
+  loadExcel();
+</script>
+
+</body>
+</html>

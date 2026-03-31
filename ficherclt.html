@@ -1,0 +1,1879 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fiche Client Terrain - Supabase</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#07111a;
+      --bg-soft:#0b1722;
+      --panel:rgba(10,20,34,.8);
+      --panel-border:rgba(255,255,255,.08);
+      --panel-border-strong:rgba(255,255,255,.12);
+      --text:#eef4ff;
+      --muted:#9fb1c6;
+      --muted-2:#6f859d;
+      --accent:#38bdf8;
+      --accent-strong:#2563eb;
+      --success:#22c55e;
+      --warning:#f59e0b;
+      --danger:#ef4444;
+      --shadow:0 28px 70px rgba(2,6,23,.44);
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:16px;
+    }
+    *::-webkit-scrollbar{width:10px;height:10px}
+    *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px}
+    body{
+      min-height:100vh;
+      font-family:"Aptos","Segoe UI",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left,rgba(56,189,248,.2),transparent 28%),
+        radial-gradient(circle at top right,rgba(37,99,235,.18),transparent 26%),
+        radial-gradient(circle at bottom left,rgba(245,158,11,.14),transparent 28%),
+        linear-gradient(140deg,var(--bg),var(--bg-soft));
+      padding:26px;
+      position:relative;
+      overflow-x:hidden;
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+      background-size:120px 120px;
+      mask-image:radial-gradient(circle at center,rgba(0,0,0,.85),transparent 80%);
+      pointer-events:none;
+      opacity:.32;
+    }
+    .app-shell{max-width:1560px;margin:0 auto;position:relative;z-index:1}
+    .glass-card{
+      background:var(--panel);
+      border:1px solid var(--panel-border);
+      border-radius:var(--radius-lg);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      box-shadow:var(--shadow);
+    }
+    .hero-card{
+      display:grid;
+      grid-template-columns:minmax(0,1.7fr) minmax(280px,.95fr);
+      gap:18px;
+      padding:24px;
+      margin-bottom:18px;
+      overflow:hidden;
+      position:relative;
+      background:
+        linear-gradient(135deg,rgba(14,25,40,.9),rgba(7,15,27,.88)),
+        radial-gradient(circle at top right,rgba(56,189,248,.14),transparent 42%);
+    }
+    .hero-card::after{
+      content:"";
+      position:absolute;
+      width:240px;height:240px;
+      right:-70px;top:-90px;border-radius:50%;
+      background:radial-gradient(circle,rgba(56,189,248,.22),transparent 66%);
+      pointer-events:none;
+    }
+    .hero-eyebrow{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      color:#d9ecff;font-size:.76rem;
+      text-transform:uppercase;letter-spacing:.12em;
+      margin-bottom:14px;
+    }
+    .hero-title h1{
+      font-size:clamp(2rem,4vw,3rem);
+      line-height:1;letter-spacing:-.04em;margin-bottom:10px;
+    }
+    .hero-title p{max-width:780px;color:var(--muted);font-size:1rem;line-height:1.6}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+    .sync-card{
+      display:flex;flex-direction:column;justify-content:space-between;gap:18px;
+      padding:18px;border-radius:var(--radius-md);
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      position:relative;z-index:1;
+    }
+    .sync-label,.section-kicker{
+      color:var(--muted-2);
+      font-size:.74rem;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+    }
+    .status-banner{
+      padding:14px 16px;border-radius:16px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      color:#dce8ff;line-height:1.5;min-height:70px;
+      display:flex;align-items:center;
+    }
+    .status-banner[data-tone="success"]{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.25);color:#d1fae5}
+    .status-banner[data-tone="warning"]{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.25);color:#fde68a}
+    .status-banner[data-tone="error"]{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25);color:#fecaca}
+    .sync-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .sync-meta-box,.meta-card,.highlight-card,.stat-card,.note-card,.visit-line,.top-product-item{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .sync-meta-box{padding:12px 14px;border-radius:14px}
+    .sync-meta-box span{display:block;color:var(--muted-2);font-size:.74rem;margin-bottom:4px}
+    .sync-meta-box strong{font-size:1rem;color:var(--text)}
+    .control-layout{
+      display:grid;
+      grid-template-columns:minmax(0,1.2fr) minmax(340px,.95fr);
+      gap:18px;margin-bottom:18px;
+    }
+    .control-card,.client-card,.stats-card,.section-card{padding:20px}
+    .section-kicker{margin-bottom:10px}
+    .section-title,.panel-toolbar,.visit-card-head,.visit-card-foot,.modal-header,.products-toolbar,.modal-actions{
+      display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;
+    }
+    .section-title{margin-bottom:18px}
+    .section-title h2{font-size:1.22rem;letter-spacing:-.02em}
+    .section-title p{color:var(--muted);font-size:.92rem;line-height:1.5;max-width:620px}
+    .filter-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.85fr);gap:14px}
+    .field-group{display:flex;flex-direction:column;gap:8px}
+    label{color:var(--muted);font-size:.85rem;font-weight:600}
+    input,select,textarea{
+      width:100%;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;color:var(--text);
+      padding:12px 14px;outline:none;font-size:.94rem;
+      transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;
+    }
+    input:focus,select:focus,textarea:focus{
+      border-color:rgba(56,189,248,.6);
+      box-shadow:0 0 0 4px rgba(56,189,248,.16);
+      transform:translateY(-1px);
+    }
+    select option,datalist option{color:#0f172a;background:#fff}
+    textarea{min-height:120px;resize:vertical;line-height:1.55}
+    .selected-client-pill{
+      display:inline-flex;align-items:center;gap:10px;
+      padding:10px 14px;border-radius:999px;
+      background:rgba(56,189,248,.12);
+      border:1px solid rgba(56,189,248,.18);
+      color:#d8f3ff;font-weight:700;font-size:.92rem;min-height:46px;
+    }
+    .selected-client-pill::before{
+      content:"";width:10px;height:10px;border-radius:50%;
+      background:var(--accent);box-shadow:0 0 0 5px rgba(56,189,248,.16);
+    }
+    .client-card{
+      background:
+        linear-gradient(160deg,rgba(9,21,34,.92),rgba(7,14,25,.84)),
+        radial-gradient(circle at top right,rgba(245,158,11,.12),transparent 38%);
+      position:relative;overflow:hidden;
+    }
+    .client-card::after{
+      content:"";
+      position:absolute;inset:auto -60px -90px auto;
+      width:220px;height:220px;border-radius:50%;
+      background:radial-gradient(circle,rgba(37,99,235,.2),transparent 65%);
+      pointer-events:none;
+    }
+    .client-card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;position:relative;z-index:1}
+    .client-card-name{font-size:1.38rem;letter-spacing:-.02em}
+    .plaque-pill,.mini-badge,.metric-chip{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
+      color:var(--muted);font-size:.8rem;
+    }
+    .plaque-pill strong,.metric-chip strong{color:var(--text)}
+    .meta-grid,.highlight-grid,.stats-grid{display:grid;gap:12px}
+    .meta-grid,.highlight-grid{grid-template-columns:repeat(2,minmax(0,1fr));position:relative;z-index:1}
+    .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .meta-card,.highlight-card,.stat-card{padding:14px;border-radius:16px}
+    .highlight-card{background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.14)}
+    .meta-card span,.highlight-card span,.stat-card span{
+      display:block;
+      color:var(--muted-2);
+      font-size:.76rem;
+      margin-bottom:8px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+    .highlight-card span{color:#b6e8ff}
+    .meta-card strong,.highlight-card strong,.stat-card strong{
+      display:block;color:var(--text);line-height:1.4;word-break:break-word;
+    }
+    .stat-card{padding:16px;border-radius:18px;min-height:104px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+    .stat-card strong{font-size:1.35rem;letter-spacing:-.03em}
+    .panel-toolbar{margin-bottom:18px}
+    .view-switch{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px;border-radius:999px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .switch-btn{
+      border:none;border-radius:999px;padding:11px 16px;cursor:pointer;
+      background:transparent;color:var(--muted);font-weight:700;font-size:.82rem;transition:.2s ease;
+    }
+    .switch-btn.active{
+      background:linear-gradient(135deg,var(--accent),var(--accent-strong));
+      color:#fff;box-shadow:0 12px 25px rgba(37,99,235,.28);
+    }
+    .view-panel{display:none}
+    .view-panel.active{display:block;animation:rise-in .3s ease}
+    .timeline-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+    .visit-card{
+      display:flex;flex-direction:column;gap:16px;padding:18px;border-radius:22px;
+      background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.07);min-height:100%;position:relative;overflow:hidden;
+    }
+    .visit-card::before{
+      content:"";position:absolute;width:180px;height:180px;right:-80px;top:-80px;
+      background:radial-gradient(circle,rgba(56,189,248,.14),transparent 70%);pointer-events:none;
+    }
+    .visit-card-head,.visit-card-foot{position:relative;z-index:1}
+    .visit-date-label{
+      color:var(--muted-2);font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px
+    }
+    .visit-date-value{font-size:1.14rem;font-weight:700;letter-spacing:-.02em}
+    .visit-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .visit-total-box{
+      min-width:138px;padding:14px 16px;border-radius:18px;
+      background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.16);text-align:right;
+    }
+    .visit-total-box span{display:block;color:#b6e8ff;font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+    .visit-total-box strong{font-size:1.25rem;letter-spacing:-.03em}
+    .note-card{padding:14px;border-radius:16px;position:relative;z-index:1}
+    .note-card span{display:block;color:var(--muted-2);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+    .note-card p{color:var(--text);font-size:.9rem;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+    .visit-lines{display:flex;flex-direction:column;gap:10px;position:relative;z-index:1}
+    .visit-line{
+      padding:14px;border-radius:16px;
+      display:flex;flex-direction:column;align-items:stretch;gap:12px;
+    }
+    .visit-line-main{display:flex;align-items:flex-start;gap:12px;min-width:0;width:100%}
+    .visit-line-name{flex:1 1 auto;min-width:0}
+    .visit-line-name strong{
+      display:block;
+      font-size:.96rem;
+      line-height:1.35;
+      word-break:normal;
+      overflow-wrap:break-word;
+    }
+    .visit-line-name span{
+      display:block;
+      color:var(--muted-2);
+      font-size:.76rem;
+      margin-top:4px;
+      word-break:normal;
+      overflow-wrap:anywhere;
+    }
+    .visit-line-metrics{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;width:100%}
+    .metric-chip{font-size:.77rem;white-space:nowrap}
+    .table-shell{
+      overflow-x:auto;border-radius:18px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.02);
+    }
+    table{width:100%;border-collapse:collapse;min-width:1100px}
+    th,td{padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.07);text-align:center;vertical-align:middle;font-size:.82rem}
+    th{
+      color:#dbe7f9;background:rgba(8,15,26,.96);
+      position:sticky;top:0;z-index:1;
+      font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;
+    }
+    td.note-cell,th.note-cell{text-align:left}
+    .sticky-col{position:sticky;background:rgba(8,15,26,.98);z-index:2}
+    th.sticky-col{z-index:3}
+    .sticky-col-1{left:0;min-width:112px;width:112px}
+    .sticky-col-2{left:112px;min-width:120px;width:120px}
+    .note-col{min-width:260px}
+    .actions-col{min-width:130px;width:130px}
+    .product-col{min-width:92px;width:92px}
+    .table-product-head{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;line-height:1.18}
+    .table-product-head strong{font-size:.73rem;text-transform:none;letter-spacing:0}
+    .table-product-head span{color:var(--muted-2);font-size:.66rem;text-transform:none;letter-spacing:0}
+    .table-product-cell{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;min-height:58px}
+    .table-product-cell strong{color:#d8f3ff;font-size:.83rem}
+    .table-product-cell span{color:var(--muted);font-size:.72rem}
+    .table-total{color:#d7efff;font-weight:700;white-space:nowrap}
+    .note-text{color:var(--text);font-size:.82rem;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+    .empty-cell{color:rgba(255,255,255,.22)}
+    .empty-state{
+      padding:34px 20px;text-align:center;color:var(--muted);line-height:1.7;
+      border-radius:18px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.08);
+    }
+    .btn{
+      border:none;cursor:pointer;border-radius:14px;padding:12px 16px;
+      font-weight:700;font-size:.9rem;transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;white-space:nowrap;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .btn-primary{
+      color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-strong));
+      box-shadow:0 14px 28px rgba(37,99,235,.25);
+    }
+    .btn-secondary{color:var(--text);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+    .btn-info{color:#d8f3ff;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.16)}
+    .btn-danger{color:#fecaca;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.18)}
+    .btn-warning{color:#fde68a;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.18)}
+    .btn-sm{padding:9px 12px;border-radius:12px;font-size:.79rem}
+    .actions-inline{display:flex;gap:8px;flex-wrap:wrap}
+    .color-dot,.color-choice{
+      width:16px;height:16px;border-radius:999px;
+      border:2px solid rgba(255,255,255,.2);flex-shrink:0;
+    }
+    .color-choice{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+    .color-choice:hover{transform:scale(1.08)}
+    .color-choice.active{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.1);transform:scale(1.08)}
+    .red{background:#ef4444}.yellow{background:#f59e0b}.green{background:#22c55e}.blue{background:#3b82f6}
+    .modal-overlay{
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+      padding:22px;background:rgba(2,8,18,.68);backdrop-filter:blur(8px);z-index:1000;
+    }
+    .modal-overlay.active{display:flex}
+    .modal{
+      width:min(1180px,100%);max-height:92vh;overflow:auto;padding:24px;
+      border-radius:var(--radius-xl);
+      background:linear-gradient(180deg,rgba(9,17,29,.96),rgba(6,12,22,.95));
+      border:1px solid var(--panel-border-strong);box-shadow:0 36px 90px rgba(0,0,0,.45);
+    }
+    .modal-header{margin-bottom:22px}
+    .modal-header h3{font-size:1.4rem;letter-spacing:-.02em}
+    .modal-header p{color:var(--muted);line-height:1.55;margin-top:6px;max-width:720px}
+    .close-btn{
+      width:42px;height:42px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);
+      color:#fff;font-size:1rem;cursor:pointer;flex-shrink:0;
+    }
+    .modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:22px}
+    .full-width{grid-column:1/-1}
+    .products-toolbar{margin-bottom:14px;align-items:center}
+    .products-toolbar h4{font-size:1rem}
+    .products-toolbar p{color:var(--muted);font-size:.86rem;line-height:1.45;margin-top:4px}
+    .products-form-list{display:flex;flex-direction:column;gap:14px}
+    .product-row{
+      display:grid;
+      grid-template-columns:minmax(0,2.2fr) .75fr .8fr .95fr .95fr 1fr auto;
+      gap:10px;align-items:end;padding:16px;border-radius:18px;
+      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+    }
+    .product-selected-hint{min-height:18px;margin-top:6px;color:var(--muted-2);font-size:.75rem;line-height:1.35}
+    .price-box{
+      min-height:46px;display:flex;align-items:center;padding:11px 12px;border-radius:14px;
+      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+      color:var(--text);font-weight:700;font-size:.86rem;
+    }
+    .color-picker{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:46px}
+    .form-total-box{
+      margin-top:18px;padding:16px 18px;border-radius:18px;
+      background:rgba(56,189,248,.11);border:1px solid rgba(56,189,248,.18);
+      display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+    }
+    .form-total-box span{color:#cfefff;font-size:.88rem}
+    .form-total-value{color:#f8fbff;font-size:1.3rem;font-weight:800;letter-spacing:-.03em}
+    .modal-actions{align-items:center;margin-top:22px}
+    .helper-text{color:var(--muted);font-size:.88rem;line-height:1.55;max-width:720px}
+    .top-products-list{display:flex;flex-direction:column;gap:12px}
+    .top-product-item{padding:16px;border-radius:18px}
+    .top-product-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;margin-bottom:12px}
+    .rank-badge{
+      width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;
+      border-radius:14px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.16);
+      color:#d8f3ff;font-weight:800;
+    }
+    .top-product-main strong{display:block;font-size:.94rem;line-height:1.35}
+    .top-product-main span{display:block;margin-top:4px;color:var(--muted-2);font-size:.78rem}
+    .top-product-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .progress-track{width:100%;height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+    .progress-track span{display:block;height:100%;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent-strong))}
+    .toast-container{
+      position:fixed;right:20px;bottom:20px;z-index:1400;
+      display:flex;flex-direction:column;gap:10px;pointer-events:none;
+    }
+    .toast{
+      min-width:260px;max-width:420px;padding:13px 16px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.08);background:rgba(8,15,26,.96);color:var(--text);
+      box-shadow:0 24px 50px rgba(2,6,23,.35);transform:translateY(10px);opacity:0;
+      transition:opacity .2s ease,transform .2s ease;
+    }
+    .toast.visible{opacity:1;transform:translateY(0)}
+    .toast.success{border-color:rgba(34,197,94,.24);background:rgba(9,30,18,.96)}
+    .toast.warning{border-color:rgba(245,158,11,.24);background:rgba(40,25,6,.96)}
+    .toast.error{border-color:rgba(239,68,68,.24);background:rgba(39,10,10,.96)}
+    .fab{
+      position:fixed;right:18px;bottom:18px;z-index:900;display:none;align-items:center;gap:10px;
+      padding:14px 18px;border-radius:999px;border:none;cursor:pointer;color:#fff;font-weight:800;
+      background:linear-gradient(135deg,var(--accent),var(--accent-strong));
+      box-shadow:0 18px 34px rgba(37,99,235,.28);
+    }
+    @keyframes rise-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    @media (max-width:1240px){
+      .hero-card,.control-layout{grid-template-columns:1fr}
+      .product-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .product-row .field-group:last-child{grid-column:1/-1}
+    }
+    @media (max-width:980px){
+      .filter-grid,.modal-grid,.stats-grid,.meta-grid,.highlight-grid{grid-template-columns:1fr}
+      .timeline-list{grid-template-columns:1fr}
+      .visit-line{grid-template-columns:1fr}
+      .visit-line-metrics{justify-content:flex-start}
+    }
+    @media (max-width:720px){
+      body{padding:16px}
+      .hero-card,.control-card,.client-card,.stats-card,.section-card,.modal{padding:18px}
+      .hero-actions{width:100%}
+      .hero-actions .btn{flex:1 1 calc(50% - 6px)}
+      .panel-toolbar{align-items:stretch}
+      .view-switch{width:100%;justify-content:space-between}
+      .switch-btn{flex:1 1 50%}
+      .product-row{grid-template-columns:1fr}
+      .modal-actions{flex-direction:column;align-items:stretch}
+      .actions-inline{width:100%}
+      .actions-inline .btn{flex:1 1 auto}
+      .fab{display:inline-flex}
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="glass-card hero-card">
+      <div>
+        <div class="hero-eyebrow">Fiche client terrain</div>
+        <div class="hero-title">
+          <h1>Fiche client</h1>
+          <p>Puissance fonctionnelle, une lecture plus rapide, une saisie plus fluide et une présentation premium.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn btn-info" id="openTopProductsBtn" type="button">Top produits</button>
+          <button class="btn btn-primary" id="openVisitModalBtn" type="button">+ Nouvelle visite</button>
+        </div>
+      </div>
+
+      <div class="sync-card">
+        <div>
+          <div class="sync-label">Etat de synchronisation</div>
+          <div id="statusBar" class="status-banner" data-tone="info">Connexion à Supabase en cours...</div>
+        </div>
+        <div class="sync-meta">
+          <div class="sync-meta-box">
+            <span>Vue active</span>
+            <strong id="activeViewLabel">Terrain</strong>
+          </div>
+          <div class="sync-meta-box">
+            <span>Client sélectionné</span>
+            <strong id="selectedClientSyncLabel">Aucun client</strong>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="control-layout">
+      <div class="glass-card control-card">
+        <div class="section-kicker">Pilotage rapide</div>
+        <div class="section-title">
+          <div>
+            <h2>Sélection client</h2>
+            <p>Recherche immédiate, sélection directe et ouverture rapide d’une fiche terrain exploitable en rendez-vous.</p>
+          </div>
+        </div>
+
+        <div class="filter-grid">
+          <div class="field-group">
+            <label for="clientSearch">Recherche</label>
+            <input type="text" id="clientSearch" placeholder="Nom, compte, téléphone ou adresse..." />
+          </div>
+
+          <div class="field-group">
+            <label for="clientSelect">Client</label>
+            <select id="clientSelect"></select>
+          </div>
+
+          <div class="field-group full-width">
+            <label>Client actif</label>
+            <div id="selectedClientInfo" class="selected-client-pill">Aucun client</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="glass-card client-card">
+        <div class="client-card-top">
+          <div>
+            <div class="section-kicker">Client en cours</div>
+            <div class="client-card-name" id="clientNameCard">Aucun client</div>
+          </div>
+          <div class="plaque-pill">Plaque <strong id="clientPlaque">—</strong></div>
+        </div>
+
+        <div class="meta-grid">
+          <div class="meta-card">
+            <span>Compte</span>
+            <strong id="clientNumeroCompte">—</strong>
+          </div>
+          <div class="meta-card">
+            <span>Téléphone</span>
+            <strong id="clientTelephone">—</strong>
+          </div>
+          <div class="meta-card">
+            <span>Adresse</span>
+            <strong id="clientAdresse">—</strong>
+          </div>
+          <div class="meta-card">
+            <span>Statut terrain</span>
+            <strong id="clientTerrainStatus">Client prêt à consulter</strong>
+          </div>
+        </div>
+
+        <div class="highlight-grid">
+          <div class="highlight-card">
+            <span>Dernière visite</span>
+            <strong id="clientLastVisit">—</strong>
+          </div>
+          <div class="highlight-card">
+            <span>Produit top</span>
+            <strong id="clientTopProduct">—</strong>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="glass-card stats-card" style="margin-bottom:18px;">
+      <div class="section-kicker">Indicateurs</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span>Nombre de visites</span>
+          <strong id="statNbVisites">0</strong>
+        </div>
+        <div class="stat-card">
+          <span>CA cumulé</span>
+          <strong id="statCaCumule">0,00 €</strong>
+        </div>
+        <div class="stat-card">
+          <span>Panier moyen</span>
+          <strong id="statPanierMoyen">0,00 €</strong>
+        </div>
+        <div class="stat-card">
+          <span>Articles distincts</span>
+          <strong id="statNbProduits">0</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="glass-card section-card">
+      <div class="panel-toolbar">
+        <div>
+          <div class="section-kicker">Historique client</div>
+          <h2 style="font-size:1.3rem;letter-spacing:-.02em;">Vue terrain + vue synthèse</h2>
+          <p style="color:var(--muted);margin-top:8px;line-height:1.55;"></p>
+        </div>
+
+        <div class="view-switch" aria-label="Changer de vue">
+          <button class="switch-btn active" type="button" data-view="timeline">Terrain</button>
+          <button class="switch-btn" type="button" data-view="matrix">Synthèse produit</button>
+        </div>
+      </div>
+
+      <div id="timelineView" class="view-panel active">
+        <div id="timelineList" class="timeline-list"></div>
+      </div>
+
+      <div id="matrixView" class="view-panel">
+        <div class="table-shell">
+          <table>
+            <thead id="visitesTableHead"></thead>
+            <tbody id="visitesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="visitModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h3 id="visitModalTitle">Nouvelle visite</h3>
+          <p id="visitModalSubtitle">Saisie rapide terrain: date, note, produits, stock client et total calculé automatiquement.</p>
+        </div>
+        <button class="close-btn" id="closeVisitModalBtn" type="button">✕</button>
+      </div>
+
+      <form id="visitForm">
+        <div class="modal-grid">
+          <div class="field-group">
+            <label for="popupDate">Date de visite</label>
+            <input type="date" id="popupDate" />
+          </div>
+
+          <div class="field-group">
+            <label for="popupClient">Client</label>
+            <select id="popupClient"></select>
+          </div>
+
+          <div class="field-group full-width">
+            <label for="popupNote">Note terrain</label>
+            <textarea id="popupNote" placeholder="Compte rendu, remontée, point de vente, blocage, opportunité, etc."></textarea>
+          </div>
+        </div>
+
+        <div class="products-toolbar">
+          <div>
+            <h4>Produits de la visite</h4>
+            <p>Recherche par nom ou référence, couleurs d’alerte, stock client et total ligne en direct.</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="addProductRowBtn" type="button">+ Ajouter une ligne</button>
+        </div>
+
+        <div id="productsFormList" class="products-form-list"></div>
+
+        <div class="form-total-box">
+          <span>Total estimé de la visite</span>
+          <div class="form-total-value" id="popupTotalCommande">0,00 €</div>
+        </div>
+
+        <div class="modal-actions">
+          <div class="helper-text" id="popupPricingHint">Le prix affiché dépend de la plaque du client, puis il est figé au moment de l’enregistrement.</div>
+          <div class="actions-inline">
+            <button class="btn btn-secondary" id="cancelVisitBtn" type="button">Annuler</button>
+            <button class="btn btn-primary" id="saveVisitBtn" type="submit">Enregistrer</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="topProduitsOverlay">
+    <div class="modal" style="max-width:920px;">
+      <div class="modal-header">
+        <div>
+          <h3>Top produits du client</h3>
+          <p>Lecture simple des habitudes d’achat du client, utile en préparation de visite et en rebond commercial.</p>
+        </div>
+        <button class="close-btn" id="closeTopProduitsBtn" type="button">✕</button>
+      </div>
+      <div id="topProduitsList" class="top-products-list"></div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <datalist id="produitsDatalist"></datalist>
+  <button class="fab" id="mobileAddVisitBtn" type="button">+ Visite</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const state = {
+      clients: [],
+      produits: [],
+      produitsActifs: [],
+      visites: [],
+      tarifsPlaques: [],
+      currentView: "timeline",
+      activeVisitId: null
+    };
+
+    const dom = {};
+
+    function cacheDom() {
+      dom.clientSearch = document.getElementById("clientSearch");
+      dom.clientSelect = document.getElementById("clientSelect");
+      dom.selectedClientInfo = document.getElementById("selectedClientInfo");
+      dom.clientNameCard = document.getElementById("clientNameCard");
+      dom.clientNumeroCompte = document.getElementById("clientNumeroCompte");
+      dom.clientTelephone = document.getElementById("clientTelephone");
+      dom.clientAdresse = document.getElementById("clientAdresse");
+      dom.clientPlaque = document.getElementById("clientPlaque");
+      dom.clientTerrainStatus = document.getElementById("clientTerrainStatus");
+      dom.clientLastVisit = document.getElementById("clientLastVisit");
+      dom.clientTopProduct = document.getElementById("clientTopProduct");
+      dom.statusBar = document.getElementById("statusBar");
+      dom.activeViewLabel = document.getElementById("activeViewLabel");
+      dom.selectedClientSyncLabel = document.getElementById("selectedClientSyncLabel");
+      dom.statNbVisites = document.getElementById("statNbVisites");
+      dom.statCaCumule = document.getElementById("statCaCumule");
+      dom.statPanierMoyen = document.getElementById("statPanierMoyen");
+      dom.statNbProduits = document.getElementById("statNbProduits");
+      dom.timelineView = document.getElementById("timelineView");
+      dom.timelineList = document.getElementById("timelineList");
+      dom.matrixView = document.getElementById("matrixView");
+      dom.visitesTableHead = document.getElementById("visitesTableHead");
+      dom.visitesTableBody = document.getElementById("visitesTableBody");
+      dom.viewButtons = [...document.querySelectorAll(".view-switch [data-view]")];
+      dom.openTopProductsBtn = document.getElementById("openTopProductsBtn");
+      dom.openVisitModalBtn = document.getElementById("openVisitModalBtn");
+      dom.mobileAddVisitBtn = document.getElementById("mobileAddVisitBtn");
+      dom.visitModalOverlay = document.getElementById("visitModalOverlay");
+      dom.visitModalTitle = document.getElementById("visitModalTitle");
+      dom.visitModalSubtitle = document.getElementById("visitModalSubtitle");
+      dom.closeVisitModalBtn = document.getElementById("closeVisitModalBtn");
+      dom.cancelVisitBtn = document.getElementById("cancelVisitBtn");
+      dom.visitForm = document.getElementById("visitForm");
+      dom.popupDate = document.getElementById("popupDate");
+      dom.popupClient = document.getElementById("popupClient");
+      dom.popupNote = document.getElementById("popupNote");
+      dom.productsFormList = document.getElementById("productsFormList");
+      dom.popupTotalCommande = document.getElementById("popupTotalCommande");
+      dom.popupPricingHint = document.getElementById("popupPricingHint");
+      dom.addProductRowBtn = document.getElementById("addProductRowBtn");
+      dom.saveVisitBtn = document.getElementById("saveVisitBtn");
+      dom.topProduitsOverlay = document.getElementById("topProduitsOverlay");
+      dom.topProduitsList = document.getElementById("topProduitsList");
+      dom.closeTopProduitsBtn = document.getElementById("closeTopProduitsBtn");
+      dom.toastContainer = document.getElementById("toastContainer");
+      dom.produitsDatalist = document.getElementById("produitsDatalist");
+    }
+
+    function setStatus(message, tone = "info") {
+      dom.statusBar.textContent = message;
+      dom.statusBar.dataset.tone = tone;
+    }
+
+    function showToast(message, tone = "info") {
+      const toast = document.createElement("div");
+      toast.className = `toast ${tone}`;
+      toast.textContent = message;
+      dom.toastContainer.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add("visible"));
+      setTimeout(() => {
+        toast.classList.remove("visible");
+        setTimeout(() => toast.remove(), 220);
+      }, 3200);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeText(value) {
+      return String(value ?? "").trim().toLowerCase();
+    }
+
+    function parseLocalDate(dateStr) {
+      if (!dateStr) return null;
+      const [year, month, day] = String(dateStr).split("-").map(Number);
+      if (!year || !month || !day) return null;
+      return new Date(year, month - 1, day);
+    }
+
+    function formatDate(dateStr) {
+      const parsed = parseLocalDate(dateStr);
+      return parsed ? parsed.toLocaleDateString("fr-FR") : "—";
+    }
+
+    function formatDateLong(dateStr) {
+      const parsed = parseLocalDate(dateStr);
+      return parsed
+        ? parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+        : "—";
+    }
+
+    function formatCurrency(value) {
+      return Number(value || 0).toLocaleString("fr-FR", {
+        style: "currency",
+        currency: "EUR"
+      });
+    }
+
+    function getTodayIsoLocal() {
+      const now = new Date();
+      const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+      return local.toISOString().split("T")[0];
+    }
+
+    function getClientById(id) {
+      return state.clients.find(client => String(client.id) === String(id));
+    }
+
+    function getProduitById(id) {
+      return state.produits.find(produit => String(produit.id) === String(id));
+    }
+
+    function getProduitDisplay(id) {
+      return getProduitById(id) || { id, nom: "Produit archivé", reference_produit: "" };
+    }
+
+    function getClientPlaqueLabel(client) {
+      return client?.plaques?.nom || "—";
+    }
+
+    function getProductLabel(produit) {
+      if (!produit) return "";
+      return produit.reference_produit ? `${produit.reference_produit} - ${produit.nom || ""}` : (produit.nom || "");
+    }
+
+    function getClientIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("client_id");
+    }
+
+    function getSelectedClientId() {
+      return dom.clientSelect.value;
+    }
+
+    function getPopupSelectedClientId() {
+      return dom.popupClient.value;
+    }
+
+    function getColorDotHtml(color = "green") {
+      return `<span class="color-dot ${escapeHtml(color)}"></span>`;
+    }
+
+    async function fetchClients() {
+      const { data, error } = await supabaseClient
+        .from("clients")
+        .select(`
+          id,
+          nom,
+          numero_compte,
+          adresse,
+          telephone,
+          plaque_id,
+          plaques ( id, nom )
+        `)
+        .order("nom", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchProduits() {
+      const { data, error } = await supabaseClient
+        .from("produits")
+        .select("id, nom, actif, reference_produit, prix_vente")
+        .order("nom", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchTarifsPlaques() {
+      const { data, error } = await supabaseClient
+        .from("tarifs_plaques")
+        .select("plaque_id, produit_id, prix_vente");
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchVisitesByClient(clientId) {
+      const { data, error } = await supabaseClient
+        .from("visites")
+        .select(`
+          id,
+          client_id,
+          date_visite,
+          note,
+          total_commande,
+          visite_commandes (
+            id,
+            produit_id,
+            quantite,
+            stock_client,
+            couleur,
+            prix_unitaire
+          )
+        `)
+        .eq("client_id", clientId)
+        .order("date_visite", { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(visite => ({
+        ...visite,
+        commandes: visite.visite_commandes || []
+      }));
+    }
+
+    function getTarifPlaque(clientId, produitId) {
+      const client = getClientById(clientId);
+      const produit = getProduitById(produitId);
+      if (!produit) return 0;
+
+      const fallbackPrix = Number(produit.prix_vente || 0);
+      const plaqueId = client?.plaque_id;
+      if (!plaqueId) return fallbackPrix;
+
+      const tarif = state.tarifsPlaques.find(item =>
+        String(item.plaque_id) === String(plaqueId) &&
+        String(item.produit_id) === String(produitId)
+      );
+
+      return tarif ? Number(tarif.prix_vente || 0) : fallbackPrix;
+    }
+
+    function clearClientContext() {
+      dom.selectedClientInfo.textContent = "Aucun client";
+      dom.clientNameCard.textContent = "Aucun client";
+      dom.selectedClientSyncLabel.textContent = "Aucun client";
+      dom.clientNumeroCompte.textContent = "—";
+      dom.clientTelephone.textContent = "—";
+      dom.clientAdresse.textContent = "—";
+      dom.clientPlaque.textContent = "—";
+      dom.clientTerrainStatus.textContent = "Sélectionne un client pour démarrer";
+      dom.clientLastVisit.textContent = "—";
+      dom.clientTopProduct.textContent = "—";
+    }
+
+    function updateClientHeader() {
+      const client = getClientById(getSelectedClientId());
+      if (!client) return clearClientContext();
+
+      const clientName = client.nom || "Client sans nom";
+      dom.selectedClientInfo.textContent = clientName;
+      dom.clientNameCard.textContent = clientName;
+      dom.selectedClientSyncLabel.textContent = clientName;
+      dom.clientNumeroCompte.textContent = client.numero_compte || "—";
+      dom.clientTelephone.textContent = client.telephone || "—";
+      dom.clientAdresse.textContent = client.adresse || "—";
+      dom.clientPlaque.textContent = getClientPlaqueLabel(client);
+      dom.clientTerrainStatus.textContent = "Fiche client prête pour le rendez-vous";
+    }
+
+    function updateStats(currentVisites) {
+      const nbVisites = currentVisites.length;
+      const caCumule = currentVisites.reduce((sum, visite) => sum + Number(visite.total_commande || 0), 0);
+      const panierMoyen = nbVisites ? caCumule / nbVisites : 0;
+      const produitIds = new Set();
+
+      currentVisites.forEach(visite => {
+        (visite.commandes || []).forEach(commande => {
+          if (commande.produit_id) produitIds.add(commande.produit_id);
+        });
+      });
+
+      dom.statNbVisites.textContent = String(nbVisites);
+      dom.statCaCumule.textContent = formatCurrency(caCumule);
+      dom.statPanierMoyen.textContent = formatCurrency(panierMoyen);
+      dom.statNbProduits.textContent = String(produitIds.size);
+    }
+
+    function updateClientInsights(currentVisites) {
+      if (!currentVisites.length) {
+        dom.clientLastVisit.textContent = "Aucune visite";
+        dom.clientTopProduct.textContent = "Aucun historique";
+        return;
+      }
+
+      dom.clientLastVisit.textContent = formatDateLong(currentVisites[0].date_visite);
+
+      const aggregation = {};
+      currentVisites.forEach(visite => {
+        (visite.commandes || []).forEach(commande => {
+          const produit = getProduitDisplay(commande.produit_id);
+          if (!aggregation[commande.produit_id]) {
+            aggregation[commande.produit_id] = { nom: produit.nom || "Produit", quantite: 0 };
+          }
+          aggregation[commande.produit_id].quantite += Number(commande.quantite || 0);
+        });
+      });
+
+      const topProduct = Object.values(aggregation).sort((a, b) => {
+        if (b.quantite !== a.quantite) return b.quantite - a.quantite;
+        return (a.nom || "").localeCompare(b.nom || "", "fr");
+      })[0];
+
+      dom.clientTopProduct.textContent = topProduct ? `${topProduct.nom} (${topProduct.quantite})` : "Aucun historique";
+    }
+
+    function getFilteredClients() {
+      const query = normalizeText(dom.clientSearch.value);
+      if (!query) return [...state.clients];
+
+      return state.clients.filter(client =>
+        [client.nom, client.numero_compte, client.telephone, client.adresse]
+          .some(value => normalizeText(value).includes(query))
+      );
+    }
+
+    function renderTimelineEmpty(message) {
+      dom.timelineList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+    }
+
+    function renderMatrixEmpty(message) {
+      dom.visitesTableHead.innerHTML = `
+        <tr>
+          <th class="sticky-col sticky-col-1">Date</th>
+          <th class="sticky-col sticky-col-2">Total</th>
+          <th class="note-cell note-col">Note</th>
+          <th class="actions-col">Actions</th>
+        </tr>
+      `;
+      dom.visitesTableBody.innerHTML = `
+        <tr>
+          <td colspan="4">
+            <div class="empty-state">${escapeHtml(message)}</div>
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderClientOptions(preferredClientId = null) {
+      const filteredClients = getFilteredClients();
+      const currentValue = preferredClientId ?? dom.clientSelect.value;
+      dom.clientSelect.innerHTML = "";
+
+      if (!filteredClients.length) {
+        dom.clientSelect.innerHTML = '<option value="">Aucun client trouvé</option>';
+        state.visites = [];
+        clearClientContext();
+        updateStats([]);
+        renderTimelineEmpty("Aucun client trouvé avec cette recherche.");
+        renderMatrixEmpty("Aucun client trouvé avec cette recherche.");
+        setStatus("Aucun client ne correspond à la recherche.", "warning");
+        return false;
+      }
+
+      filteredClients.forEach(client => {
+        const option = document.createElement("option");
+        option.value = client.id;
+        option.textContent = client.nom;
+        dom.clientSelect.appendChild(option);
+      });
+
+      const nextValue = filteredClients.some(client => String(client.id) === String(currentValue))
+        ? String(currentValue)
+        : String(filteredClients[0].id);
+
+      dom.clientSelect.value = nextValue;
+      updateClientHeader();
+      return true;
+    }
+
+    function applyClientSelectionFromUrl() {
+      const clientIdFromUrl = getClientIdFromUrl();
+      if (!clientIdFromUrl) return false;
+      const exists = state.clients.some(client => String(client.id) === String(clientIdFromUrl));
+      if (!exists) return false;
+
+      dom.clientSearch.value = "";
+      renderClientOptions(clientIdFromUrl);
+      return true;
+    }
+
+    function getDynamicProducts() {
+      const productIds = new Set();
+      state.visites.forEach(visite => {
+        (visite.commandes || []).forEach(commande => {
+          if (commande.produit_id) productIds.add(commande.produit_id);
+        });
+      });
+
+      return [...productIds]
+        .map(id => getProduitDisplay(id))
+        .sort((a, b) => (a.nom || "").localeCompare(b.nom || "", "fr"));
+    }
+
+    function renderTimelineCard(visite) {
+      const commandes = [...(visite.commandes || [])].sort((a, b) => {
+        const produitA = getProduitDisplay(a.produit_id);
+        const produitB = getProduitDisplay(b.produit_id);
+        return (produitA.nom || "").localeCompare(produitB.nom || "", "fr");
+      });
+
+      const totalUnites = commandes.reduce((sum, commande) => sum + Number(commande.quantite || 0), 0);
+      const note = visite.note?.trim() || "Aucune note renseignée pour cette visite.";
+
+      const linesHtml = commandes.map(commande => {
+        const produit = getProduitDisplay(commande.produit_id);
+        const lineTotal = Number(commande.quantite || 0) * Number(commande.prix_unitaire || 0);
+
+        return `
+          <div class="visit-line">
+            <div class="visit-line-main">
+              ${getColorDotHtml(commande.couleur || "green")}
+              <div class="visit-line-name">
+                <strong>${escapeHtml(produit.nom || "Produit")}</strong>
+                <span>${escapeHtml(produit.reference_produit || "Sans référence")}</span>
+              </div>
+            </div>
+            <div class="visit-line-metrics">
+              <div class="metric-chip">Qté <strong>${Number(commande.quantite || 0)}</strong></div>
+              <div class="metric-chip">Stock <strong>${Number(commande.stock_client || 0)}</strong></div>
+              <div class="metric-chip">PU <strong>${formatCurrency(commande.prix_unitaire || 0)}</strong></div>
+              <div class="metric-chip">Ligne <strong>${formatCurrency(lineTotal)}</strong></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      return `
+        <article class="visit-card">
+          <div class="visit-card-head">
+            <div>
+              <div class="visit-date-label">Visite</div>
+              <div class="visit-date-value">${escapeHtml(formatDateLong(visite.date_visite))}</div>
+              <div class="visit-badges">
+                <div class="mini-badge">${commandes.length} produit(s)</div>
+                <div class="mini-badge">${totalUnites} unité(s)</div>
+              </div>
+            </div>
+            <div class="visit-total-box">
+              <span>Total commande</span>
+              <strong>${formatCurrency(visite.total_commande || 0)}</strong>
+            </div>
+          </div>
+
+          <div class="note-card">
+            <span>Note terrain</span>
+            <p>${escapeHtml(note)}</p>
+          </div>
+
+          <div class="visit-lines">${linesHtml}</div>
+
+          <div class="visit-card-foot">
+            <div class="mini-badge">ID visite ${escapeHtml(visite.id)}</div>
+            <div class="actions-inline">
+              <button class="btn btn-warning btn-sm" type="button" data-action="edit" data-visite-id="${escapeHtml(visite.id)}">Modifier</button>
+              <button class="btn btn-danger btn-sm" type="button" data-action="delete" data-visite-id="${escapeHtml(visite.id)}">Supprimer</button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderTimelineView() {
+      if (!getSelectedClientId()) return renderTimelineEmpty("Sélectionne un client pour afficher l’historique terrain.");
+      if (!state.visites.length) return renderTimelineEmpty("Aucune visite enregistrée pour ce client.");
+      dom.timelineList.innerHTML = state.visites.map(renderTimelineCard).join("");
+    }
+
+    function renderMatrixView() {
+      if (!getSelectedClientId()) return renderMatrixEmpty("Sélectionne un client pour afficher la synthèse produit.");
+
+      const produitsDynamiques = getDynamicProducts();
+      let headHtml = `
+        <tr>
+          <th class="sticky-col sticky-col-1">Date</th>
+          <th class="sticky-col sticky-col-2">Total</th>
+      `;
+
+      produitsDynamiques.forEach(produit => {
+        headHtml += `
+          <th class="product-col">
+            <div class="table-product-head">
+              <strong>${escapeHtml(produit.nom || "Produit")}</strong>
+              <span>${escapeHtml(produit.reference_produit || "") || "&nbsp;"}</span>
+            </div>
+          </th>
+        `;
+      });
+
+      headHtml += `
+          <th class="note-cell note-col">Note</th>
+          <th class="actions-col">Actions</th>
+        </tr>
+      `;
+
+      dom.visitesTableHead.innerHTML = headHtml;
+
+      if (!state.visites.length) {
+        dom.visitesTableBody.innerHTML = `
+          <tr>
+            <td colspan="${produitsDynamiques.length + 4}">
+              <div class="empty-state">Aucune visite enregistrée pour ce client.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      dom.visitesTableBody.innerHTML = state.visites.map(visite => {
+        let rowHtml = `
+          <tr>
+            <td class="sticky-col sticky-col-1">${escapeHtml(formatDate(visite.date_visite))}</td>
+            <td class="sticky-col sticky-col-2 table-total">${formatCurrency(visite.total_commande || 0)}</td>
+        `;
+
+        produitsDynamiques.forEach(produit => {
+          const commande = (visite.commandes || []).find(item => String(item.produit_id) === String(produit.id));
+
+          if (!commande) {
+            rowHtml += `<td class="empty-cell">—</td>`;
+          } else {
+            rowHtml += `
+              <td>
+                <div class="table-product-cell">
+                  <div>${getColorDotHtml(commande.couleur || "green")}</div>
+                  <strong>Q ${Number(commande.quantite || 0)}</strong>
+                  <span>Stock ${Number(commande.stock_client || 0)}</span>
+                </div>
+              </td>
+            `;
+          }
+        });
+
+        rowHtml += `
+            <td class="note-cell note-text">${escapeHtml(visite.note || "—")}</td>
+            <td>
+              <div class="actions-inline">
+                <button class="btn btn-warning btn-sm" type="button" data-action="edit" data-visite-id="${escapeHtml(visite.id)}">Modifier</button>
+                <button class="btn btn-danger btn-sm" type="button" data-action="delete" data-visite-id="${escapeHtml(visite.id)}">Supprimer</button>
+              </div>
+            </td>
+          </tr>
+        `;
+        return rowHtml;
+      }).join("");
+    }
+
+    function renderAllViews() {
+      renderTimelineView();
+      renderMatrixView();
+    }
+
+    function setView(viewName) {
+      state.currentView = viewName === "matrix" ? "matrix" : "timeline";
+      dom.timelineView.classList.toggle("active", state.currentView === "timeline");
+      dom.matrixView.classList.toggle("active", state.currentView === "matrix");
+      dom.activeViewLabel.textContent = state.currentView === "matrix" ? "Synthèse produit" : "Terrain";
+
+      dom.viewButtons.forEach(button => {
+        button.classList.toggle("active", button.dataset.view === state.currentView);
+      });
+    }
+
+    async function loadVisites() {
+      updateClientHeader();
+      const clientId = getSelectedClientId();
+
+      if (!clientId) {
+        state.visites = [];
+        updateStats([]);
+        updateClientInsights([]);
+        renderTimelineEmpty("Sélectionne un client pour afficher l’historique terrain.");
+        renderMatrixEmpty("Sélectionne un client pour afficher la synthèse produit.");
+        return;
+      }
+
+      try {
+        setStatus("Chargement des visites...", "info");
+        state.visites = await fetchVisitesByClient(clientId);
+        updateStats(state.visites);
+        updateClientInsights(state.visites);
+        renderAllViews();
+        setStatus(`${state.visites.length} visite(s) chargée(s) pour ce client.`, "success");
+      } catch (error) {
+        console.error("Erreur loadVisites:", error);
+        state.visites = [];
+        updateStats([]);
+        updateClientInsights([]);
+        renderTimelineEmpty("Erreur de chargement des visites.");
+        renderMatrixEmpty("Erreur de chargement des visites.");
+        setStatus("Erreur lors du chargement Supabase.", "error");
+        showToast("Impossible de charger les visites du client.", "error");
+      }
+    }
+
+    function buildProductDatalistOptions() {
+      const pool = state.produitsActifs.length ? state.produitsActifs : state.produits;
+      return pool.map(produit => `<option value="${escapeHtml(getProductLabel(produit))}"></option>`).join("");
+    }
+
+    function findProduitFromSearch(value) {
+      const query = normalizeText(value);
+      if (!query) return null;
+
+      return state.produits.find(produit => {
+        const reference = produit.reference_produit || "";
+        const nom = produit.nom || "";
+        const label = getProductLabel(produit);
+
+        return normalizeText(reference) === query ||
+          normalizeText(nom) === query ||
+          normalizeText(label) === query ||
+          normalizeText(reference).includes(query) ||
+          normalizeText(nom).includes(query) ||
+          normalizeText(label).includes(query);
+      }) || null;
+    }
+
+    function createColorPicker(defaultColor = "green") {
+      return `
+        <div class="color-picker" data-selected="${escapeHtml(defaultColor)}">
+          <span class="color-choice red ${defaultColor === "red" ? "active" : ""}" data-color="red" title="Rouge"></span>
+          <span class="color-choice yellow ${defaultColor === "yellow" ? "active" : ""}" data-color="yellow" title="Jaune"></span>
+          <span class="color-choice green ${defaultColor === "green" ? "active" : ""}" data-color="green" title="Vert"></span>
+          <span class="color-choice blue ${defaultColor === "blue" ? "active" : ""}" data-color="blue" title="Bleu"></span>
+        </div>
+      `;
+    }
+
+    function bindColorPicker(row) {
+      const picker = row.querySelector(".color-picker");
+      if (!picker) return;
+
+      picker.querySelectorAll(".color-choice").forEach(choice => {
+        choice.addEventListener("click", () => {
+          picker.dataset.selected = choice.dataset.color;
+          picker.querySelectorAll(".color-choice").forEach(item => item.classList.remove("active"));
+          choice.classList.add("active");
+        });
+      });
+    }
+
+    function updatePopupPricingHint() {
+      const client = getClientById(getPopupSelectedClientId());
+      const plaqueLabel = getClientPlaqueLabel(client);
+
+      if (state.activeVisitId) {
+        dom.popupPricingHint.textContent = "Les prix déjà présents restent figés. Si tu remplaces un produit, le tarif du client actuel sera repris.";
+      } else {
+        dom.popupPricingHint.textContent = plaqueLabel === "—"
+          ? "Aucune plaque client détectée: tarif standard produit appliqué."
+          : `Tarification active: plaque ${plaqueLabel}. Le prix sera figé à l'enregistrement.`;
+      }
+    }
+
+    function updateRowLineTotal(row) {
+      const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
+      const prixUnitaire = Number(row.querySelector(".prix-unitaire-input").value || 0);
+      row.querySelector(".line-total-box").textContent = formatCurrency(quantite * prixUnitaire);
+    }
+
+    function syncProductRow(row) {
+      const searchInput = row.querySelector(".produit-search-input");
+      const hiddenInput = row.querySelector(".produit-id-input");
+      const priceInput = row.querySelector(".prix-unitaire-input");
+      const hint = row.querySelector(".product-selected-hint");
+      const unitPriceBox = row.querySelector(".unit-price-box");
+      const currentProduct = hiddenInput.value ? getProduitById(hiddenInput.value) : null;
+      const typedValue = searchInput.value.trim();
+      const matchedProduct = findProduitFromSearch(typedValue);
+
+      let produit = matchedProduct;
+      if (!produit && currentProduct) {
+        const currentMatches = [currentProduct.nom, currentProduct.reference_produit, getProductLabel(currentProduct)]
+          .some(value => normalizeText(value) === normalizeText(typedValue));
+        if (currentMatches || !typedValue) produit = currentProduct;
+      }
+
+      if (!produit) {
+        hiddenInput.value = "";
+        priceInput.value = "";
+        hint.textContent = typedValue ? "Produit non reconnu" : "Choisis un produit actif ou déjà utilisé";
+        unitPriceBox.textContent = formatCurrency(0);
+        updateRowLineTotal(row);
+        return;
+      }
+
+      hiddenInput.value = produit.id;
+
+      const keepsFrozenPrice =
+        row.dataset.frozenPrice === "true" &&
+        String(row.dataset.originalProductId) === String(produit.id) &&
+        priceInput.value !== "";
+
+      const prixUnitaire = keepsFrozenPrice
+        ? Number(priceInput.value || 0)
+        : getTarifPlaque(getPopupSelectedClientId(), produit.id);
+
+      if (!keepsFrozenPrice) {
+        priceInput.value = String(prixUnitaire);
+        row.dataset.frozenPrice = "false";
+        row.dataset.originalProductId = String(produit.id);
+      }
+
+      const client = getClientById(getPopupSelectedClientId());
+      const plaqueLabel = getClientPlaqueLabel(client);
+      const pricingSource = keepsFrozenPrice
+        ? "Prix figé de la visite"
+        : (plaqueLabel === "—" ? "Tarif standard" : `Plaque ${plaqueLabel}`);
+
+      hint.textContent = `${produit.nom || "Produit"}${produit.reference_produit ? " • " + produit.reference_produit : ""} • ${pricingSource}`;
+      unitPriceBox.textContent = formatCurrency(prixUnitaire);
+      updateRowLineTotal(row);
+    }
+
+    function updatePopupTotalCommande() {
+      const rows = [...dom.productsFormList.querySelectorAll(".product-row")];
+      const total = rows.reduce((sum, row) => {
+        const produitId = row.querySelector(".produit-id-input").value;
+        const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
+        const prixUnitaire = Number(row.querySelector(".prix-unitaire-input").value || 0);
+        return produitId ? sum + quantite * prixUnitaire : sum;
+      }, 0);
+
+      dom.popupTotalCommande.textContent = formatCurrency(total);
+    }
+
+    function refreshAllPopupPrices() {
+      [...dom.productsFormList.querySelectorAll(".product-row")].forEach(syncProductRow);
+      updatePopupTotalCommande();
+      updatePopupPricingHint();
+    }
+
+    function addProductRow(prefill = null) {
+      const produit = prefill?.produit_id ? getProduitDisplay(prefill.produit_id) : null;
+      const label = produit ? getProductLabel(produit) : "";
+      const initialPrice = prefill?.prix_unitaire != null
+        ? Number(prefill.prix_unitaire || 0)
+        : (produit ? getTarifPlaque(getPopupSelectedClientId(), produit.id) : 0);
+      const frozenPrice = prefill?.prix_unitaire != null;
+
+      const row = document.createElement("div");
+      row.className = "product-row";
+      row.dataset.frozenPrice = frozenPrice ? "true" : "false";
+      row.dataset.originalProductId = produit ? String(produit.id) : "";
+
+      row.innerHTML = `
+        <div class="field-group">
+          <label>Produit</label>
+          <input type="text" class="produit-search-input" list="produitsDatalist" placeholder="Tape une référence ou un nom..." autocomplete="off" value="${escapeHtml(label)}" />
+          <input type="hidden" class="produit-id-input" value="${escapeHtml(produit?.id || "")}" />
+          <input type="hidden" class="prix-unitaire-input" value="${escapeHtml(initialPrice)}" />
+          <div class="product-selected-hint">Choisis un produit actif ou déjà utilisé</div>
+        </div>
+
+        <div class="field-group">
+          <label>Quantité</label>
+          <input type="number" class="quantite-input" min="0" value="${Number(prefill?.quantite || 0)}" />
+        </div>
+
+        <div class="field-group">
+          <label>Stock client</label>
+          <input type="number" class="stock-input" min="0" value="${Number(prefill?.stock_client || 0)}" />
+        </div>
+
+        <div class="field-group">
+          <label>Prix unit.</label>
+          <div class="price-box unit-price-box">${formatCurrency(initialPrice)}</div>
+        </div>
+
+        <div class="field-group">
+          <label>Total ligne</label>
+          <div class="price-box line-total-box">${formatCurrency(Number(prefill?.quantite || 0) * initialPrice)}</div>
+        </div>
+
+        <div class="field-group">
+          <label>Couleur</label>
+          ${createColorPicker(prefill?.couleur || "green")}
+        </div>
+
+        <div class="field-group">
+          <button class="btn btn-danger btn-sm remove-product-row-btn" type="button">Supprimer</button>
+        </div>
+      `;
+
+      bindColorPicker(row);
+
+      row.querySelector(".produit-search-input").addEventListener("input", () => {
+        syncProductRow(row);
+        updatePopupTotalCommande();
+      });
+
+      row.querySelector(".produit-search-input").addEventListener("change", () => {
+        syncProductRow(row);
+        updatePopupTotalCommande();
+      });
+
+      row.querySelector(".quantite-input").addEventListener("input", () => {
+        updateRowLineTotal(row);
+        updatePopupTotalCommande();
+      });
+
+      row.querySelector(".stock-input").addEventListener("input", () => {
+        updateRowLineTotal(row);
+        updatePopupTotalCommande();
+      });
+
+      row.querySelector(".remove-product-row-btn").addEventListener("click", () => {
+        row.remove();
+        if (!dom.productsFormList.querySelector(".product-row")) addProductRow();
+        updatePopupTotalCommande();
+      });
+
+      dom.productsFormList.appendChild(row);
+      syncProductRow(row);
+      updatePopupTotalCommande();
+    }
+
+    function updatePopupClientOptions() {
+      dom.popupClient.innerHTML = state.clients.map(client =>
+        `<option value="${escapeHtml(client.id)}">${escapeHtml(client.nom || "Client")}</option>`
+      ).join("");
+    }
+
+    function openVisitModal(visiteId = null) {
+      updatePopupClientOptions();
+      dom.productsFormList.innerHTML = "";
+      dom.popupTotalCommande.textContent = formatCurrency(0);
+
+      if (visiteId) {
+        const visite = state.visites.find(item => String(item.id) === String(visiteId));
+        if (!visite) {
+          showToast("Visite introuvable.", "warning");
+          return;
+        }
+
+        state.activeVisitId = visite.id;
+        dom.visitModalTitle.textContent = "Modifier la visite";
+        dom.visitModalSubtitle.textContent = "Même simplicité de saisie, avec conservation des prix déjà figés dans la visite.";
+        dom.saveVisitBtn.textContent = "Mettre à jour";
+        dom.popupClient.value = String(visite.client_id);
+        dom.popupClient.disabled = true;
+        dom.popupDate.value = visite.date_visite || getTodayIsoLocal();
+        dom.popupNote.value = visite.note || "";
+
+        if ((visite.commandes || []).length) {
+          visite.commandes.forEach(addProductRow);
+        } else {
+          addProductRow();
+        }
+      } else {
+        state.activeVisitId = null;
+        dom.visitModalTitle.textContent = "Nouvelle visite";
+        dom.visitModalSubtitle.textContent = "Saisie rapide terrain: note, produits, stock client et total calculé immédiatement.";
+        dom.saveVisitBtn.textContent = "Enregistrer";
+        dom.popupClient.disabled = false;
+        dom.popupClient.value = getSelectedClientId() || (state.clients[0]?.id ? String(state.clients[0].id) : "");
+        dom.popupDate.value = getTodayIsoLocal();
+        dom.popupNote.value = "";
+        addProductRow();
+      }
+
+      updatePopupPricingHint();
+      updatePopupTotalCommande();
+      dom.visitModalOverlay.classList.add("active");
+
+      setTimeout(() => {
+        const firstInput = dom.productsFormList.querySelector(".produit-search-input");
+        if (firstInput) firstInput.focus();
+      }, 30);
+    }
+
+    function closeVisitModal() {
+      dom.visitModalOverlay.classList.remove("active");
+      dom.popupClient.disabled = false;
+      state.activeVisitId = null;
+    }
+
+    function collectCommandesFromForm() {
+      const rows = [...dom.productsFormList.querySelectorAll(".product-row")];
+      const commandes = [];
+      let invalidFilledRow = false;
+
+      rows.forEach(row => {
+        const produitId = row.querySelector(".produit-id-input").value;
+        const typedValue = row.querySelector(".produit-search-input").value.trim();
+        const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
+        const stockClient = parseInt(row.querySelector(".stock-input").value, 10) || 0;
+        const couleur = row.querySelector(".color-picker")?.dataset.selected || "green";
+        const prixUnitaire = Number(row.querySelector(".prix-unitaire-input").value || 0);
+        const rowHasData = typedValue || quantite > 0 || stockClient > 0;
+
+        if (rowHasData && !produitId) {
+          invalidFilledRow = true;
+          return;
+        }
+
+        if (produitId && (quantite > 0 || stockClient > 0)) {
+          commandes.push({
+            produit_id: produitId,
+            quantite,
+            stock_client: stockClient,
+            couleur,
+            prix_unitaire: prixUnitaire
+          });
+        }
+      });
+
+      return { commandes, invalidFilledRow };
+    }
+
+    async function saveVisit(event) {
+      event.preventDefault();
+
+      const clientId = dom.popupClient.value;
+      const dateVisite = dom.popupDate.value;
+      const note = dom.popupNote.value.trim();
+      const { commandes, invalidFilledRow } = collectCommandesFromForm();
+
+      if (!clientId) return showToast("Sélectionne un client avant d’enregistrer.", "warning");
+      if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
+      if (invalidFilledRow) return showToast("Une ligne produit est renseignée mais le produit n’est pas reconnu.", "warning");
+      if (!commandes.length) return showToast("Ajoute au moins un produit valide avec quantité ou stock.", "warning");
+
+      const totalCommande = commandes.reduce((sum, commande) => {
+        return sum + Number(commande.quantite || 0) * Number(commande.prix_unitaire || 0);
+      }, 0);
+
+      try {
+        setStatus(state.activeVisitId ? "Mise à jour de la visite..." : "Enregistrement de la visite...", "info");
+
+        if (state.activeVisitId) {
+          const visiteId = state.activeVisitId;
+
+          const { error: updateVisiteError } = await supabaseClient
+            .from("visites")
+            .update({ date_visite: dateVisite, note, total_commande: totalCommande })
+            .eq("id", visiteId);
+          if (updateVisiteError) throw updateVisiteError;
+
+          const { error: deleteCommandesError } = await supabaseClient
+            .from("visite_commandes")
+            .delete()
+            .eq("visite_id", visiteId);
+          if (deleteCommandesError) throw deleteCommandesError;
+
+          const lignes = commandes.map(commande => ({
+            visite_id: visiteId,
+            produit_id: commande.produit_id,
+            quantite: commande.quantite,
+            stock_client: commande.stock_client,
+            couleur: commande.couleur,
+            prix_unitaire: commande.prix_unitaire
+          }));
+
+          const { error: insertCommandesError } = await supabaseClient
+            .from("visite_commandes")
+            .insert(lignes);
+          if (insertCommandesError) throw insertCommandesError;
+
+          showToast("Visite mise à jour avec succès.", "success");
+        } else {
+          const { data: visiteData, error: visiteError } = await supabaseClient
+            .from("visites")
+            .insert({ client_id: clientId, date_visite: dateVisite, note, total_commande: totalCommande })
+            .select()
+            .single();
+          if (visiteError) throw visiteError;
+
+          const lignes = commandes.map(commande => ({
+            visite_id: visiteData.id,
+            produit_id: commande.produit_id,
+            quantite: commande.quantite,
+            stock_client: commande.stock_client,
+            couleur: commande.couleur,
+            prix_unitaire: commande.prix_unitaire
+          }));
+
+          const { error: insertCommandesError } = await supabaseClient
+            .from("visite_commandes")
+            .insert(lignes);
+          if (insertCommandesError) throw insertCommandesError;
+
+          showToast("Visite enregistrée avec succès.", "success");
+        }
+
+        dom.clientSearch.value = "";
+        renderClientOptions(clientId);
+        dom.clientSelect.value = String(clientId);
+        closeVisitModal();
+        await loadVisites();
+      } catch (error) {
+        console.error("Erreur saveVisit:", error);
+        setStatus("Erreur lors de l’enregistrement de la visite.", "error");
+        showToast("Impossible d’enregistrer la visite.", "error");
+      }
+    }
+
+    async function deleteVisit(visiteId) {
+      if (!window.confirm("Supprimer cette visite ?")) return;
+
+      try {
+        setStatus("Suppression de la visite...", "info");
+        const { error } = await supabaseClient.from("visites").delete().eq("id", visiteId);
+        if (error) throw error;
+        await loadVisites();
+        setStatus("Visite supprimée.", "success");
+        showToast("Visite supprimée.", "success");
+      } catch (error) {
+        console.error("Erreur deleteVisit:", error);
+        setStatus("Erreur lors de la suppression.", "error");
+        showToast("Impossible de supprimer la visite.", "error");
+      }
+    }
+
+    function renderTopProduits() {
+      if (!state.visites.length) {
+        dom.topProduitsList.innerHTML = `<div class="empty-state">Aucune donnée disponible pour ce client.</div>`;
+        return;
+      }
+
+      const aggregation = {};
+      state.visites.forEach(visite => {
+        (visite.commandes || []).forEach(commande => {
+          const produit = getProduitDisplay(commande.produit_id);
+
+          if (!aggregation[commande.produit_id]) {
+            aggregation[commande.produit_id] = {
+              produit_id: commande.produit_id,
+              nom: produit.nom || "Produit",
+              reference_produit: produit.reference_produit || "Sans référence",
+              quantite: 0,
+              visites: 0,
+              chiffreAffaires: 0
+            };
+          }
+
+          aggregation[commande.produit_id].quantite += Number(commande.quantite || 0);
+          aggregation[commande.produit_id].visites += 1;
+          aggregation[commande.produit_id].chiffreAffaires += Number(commande.quantite || 0) * Number(commande.prix_unitaire || 0);
+        });
+      });
+
+      const topProduits = Object.values(aggregation).sort((a, b) => {
+        if (b.quantite !== a.quantite) return b.quantite - a.quantite;
+        return (a.nom || "").localeCompare(b.nom || "", "fr");
+      });
+
+      if (!topProduits.length) {
+        dom.topProduitsList.innerHTML = `<div class="empty-state">Aucun produit commandé pour ce client.</div>`;
+        return;
+      }
+
+      const maxQuantity = topProduits[0].quantite || 1;
+
+      dom.topProduitsList.innerHTML = topProduits.map((item, index) => {
+        const ratio = Math.max(10, Math.round((item.quantite / maxQuantity) * 100));
+        return `
+          <div class="top-product-item">
+            <div class="top-product-head">
+              <div class="rank-badge">#${index + 1}</div>
+              <div class="top-product-main">
+                <strong>${escapeHtml(item.nom)}</strong>
+                <span>${escapeHtml(item.reference_produit)}</span>
+              </div>
+            </div>
+            <div class="top-product-stats">
+              <div class="metric-chip">Qté <strong>${item.quantite}</strong></div>
+              <div class="metric-chip">Visites <strong>${item.visites}</strong></div>
+              <div class="metric-chip">CA <strong>${formatCurrency(item.chiffreAffaires)}</strong></div>
+            </div>
+            <div class="progress-track"><span style="width:${ratio}%"></span></div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function openTopProduits() {
+      renderTopProduits();
+      dom.topProduitsOverlay.classList.add("active");
+    }
+
+    function closeTopProduits() {
+      dom.topProduitsOverlay.classList.remove("active");
+    }
+
+    async function handleClientChange() {
+      updateClientHeader();
+      await loadVisites();
+    }
+
+    function handleVisitActionClick(event) {
+      const actionButton = event.target.closest("[data-action][data-visite-id]");
+      if (!actionButton) return;
+
+      const visiteId = actionButton.dataset.visiteId;
+      if (actionButton.dataset.action === "edit") openVisitModal(visiteId);
+      if (actionButton.dataset.action === "delete") deleteVisit(visiteId);
+    }
+
+    function attachEvents() {
+      dom.clientSearch.addEventListener("input", () => {
+        if (renderClientOptions()) loadVisites();
+      });
+
+      dom.clientSelect.addEventListener("change", handleClientChange);
+
+      dom.viewButtons.forEach(button => {
+        button.addEventListener("click", () => setView(button.dataset.view));
+      });
+
+      dom.openTopProductsBtn.addEventListener("click", openTopProduits);
+      dom.openVisitModalBtn.addEventListener("click", () => openVisitModal());
+      dom.mobileAddVisitBtn.addEventListener("click", () => openVisitModal());
+      dom.closeVisitModalBtn.addEventListener("click", closeVisitModal);
+      dom.cancelVisitBtn.addEventListener("click", closeVisitModal);
+      dom.addProductRowBtn.addEventListener("click", () => addProductRow());
+      dom.visitForm.addEventListener("submit", saveVisit);
+      dom.popupClient.addEventListener("change", refreshAllPopupPrices);
+      dom.closeTopProduitsBtn.addEventListener("click", closeTopProduits);
+      dom.timelineList.addEventListener("click", handleVisitActionClick);
+      dom.visitesTableBody.addEventListener("click", handleVisitActionClick);
+
+      dom.visitModalOverlay.addEventListener("click", event => {
+        if (event.target === dom.visitModalOverlay) closeVisitModal();
+      });
+
+      dom.topProduitsOverlay.addEventListener("click", event => {
+        if (event.target === dom.topProduitsOverlay) closeTopProduits();
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeVisitModal();
+          closeTopProduits();
+        }
+      });
+    }
+
+    async function initApp() {
+      cacheDom();
+      attachEvents();
+      setView("timeline");
+      renderTimelineEmpty("Chargement des données client...");
+      renderMatrixEmpty("Chargement des données client...");
+
+      try {
+        setStatus("Connexion à Supabase...", "info");
+
+        const [clients, produits, tarifsPlaques] = await Promise.all([
+          fetchClients(),
+          fetchProduits(),
+          fetchTarifsPlaques()
+        ]);
+
+        state.clients = clients;
+        state.produits = produits;
+        state.produitsActifs = produits.filter(produit => Boolean(produit.actif));
+        state.tarifsPlaques = tarifsPlaques;
+
+        dom.produitsDatalist.innerHTML = buildProductDatalistOptions();
+
+        const selectionFromUrl = applyClientSelectionFromUrl();
+        if (!selectionFromUrl) renderClientOptions();
+
+        if (getSelectedClientId()) {
+          await loadVisites();
+        } else {
+          clearClientContext();
+          updateStats([]);
+          updateClientInsights([]);
+          renderTimelineEmpty("Aucun client disponible.");
+          renderMatrixEmpty("Aucun client disponible.");
+          setStatus("Aucun client disponible dans Supabase.", "warning");
+        }
+
+        showToast("Fiche client prête.", "success");
+      } catch (error) {
+        console.error("Erreur initApp:", error);
+        clearClientContext();
+        updateStats([]);
+        updateClientInsights([]);
+        renderTimelineEmpty("Impossible de charger les données Supabase.");
+        renderMatrixEmpty("Impossible de charger les données Supabase.");
+        setStatus("Erreur de connexion à Supabase.", "error");
+        showToast("Impossible de charger les données depuis Supabase.", "error");
+      }
+    }
+
+    initApp();
+  </script>
+</body>
+</html>

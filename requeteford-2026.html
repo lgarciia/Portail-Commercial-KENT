@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Page en cours de développement</title>
+
+<style>
+:root{
+  --bg:#0b0f17;
+  --panel:rgba(255,255,255,0.06);
+  --stroke:rgba(255,255,255,0.12);
+  --text:rgba(255,255,255,0.92);
+  --muted:rgba(255,255,255,0.6);
+  --shadow:0 20px 60px rgba(0,0,0,0.45);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Segoe UI,Roboto,sans-serif;
+  background:
+    radial-gradient(900px 600px at 20% -10%, rgba(90,140,255,0.15), transparent 60%),
+    radial-gradient(900px 600px at 100% 20%, rgba(255,120,200,0.10), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+}
+
+/* BLUR BACKGROUND */
+.blurBg{
+  position:absolute;
+  inset:0;
+  backdrop-filter: blur(14px);
+}
+
+/* CENTER */
+.center{
+  position:relative;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+/* CARD */
+.card{
+  text-align:center;
+  padding:50px 60px;
+  border-radius:22px;
+
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.14);
+
+  box-shadow:var(--shadow);
+  backdrop-filter: blur(12px);
+
+  animation:fadeUp .6s ease;
+}
+
+@keyframes fadeUp{
+  from{
+    opacity:0;
+    transform:translateY(30px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+/* ICON */
+.icon{
+  font-size:52px;
+  margin-bottom:16px;
+}
+
+/* TITLE */
+.title{
+  font-size:28px;
+  font-weight:900;
+  margin-bottom:10px;
+}
+
+/* TEXT */
+.text{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:28px;
+}
+
+/* BUTTON */
+.btn{
+  height:40px;
+  padding:0 18px;
+  border-radius:999px;
+
+  border:1px solid rgba(255,255,255,0.14);
+  background:rgba(255,255,255,0.08);
+  color:white;
+
+  font-weight:800;
+  font-size:13px;
+  cursor:pointer;
+
+  transition:.15s;
+}
+
+.btn:hover{
+  background:rgba(255,255,255,0.14);
+  transform:translateY(-2px);
+}
+</style>
+</head>
+
+<body>
+
+<div class="blurBg"></div>
+
+<div class="center">
+
+  <div class="card">
+
+    <div class="icon">🚧</div>
+
+    <div class="title">
+      Page en cours de développement
+    </div>
+
+    <div class="text">
+      Cette section du dashboard est actuellement en cours de création.<br>
+      Elle sera disponible prochainement.
+    </div>
+
+    <button class="btn" onclick="history.back()">
+      ← Retour
+    </button>
+
+  </div>
+
+</div>
+
+</body>
+</html>

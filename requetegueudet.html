@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Requête Gueudet - Année antérieure</title>
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --stroke:rgba(255,255,255,0.12);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.62);
+      --shadow:0 20px 60px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:Segoe UI,Roboto,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(900px 600px at 20% -10%, rgba(34,197,94,.16), transparent 60%),
+        radial-gradient(900px 600px at 100% 20%, rgba(124,58,237,.12), transparent 55%),
+        var(--bg);
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+    .card{
+      width:min(760px,100%);
+      padding:32px;
+      border-radius:22px;
+      background:var(--panel);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(14px);
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      padding:6px 12px;
+      border-radius:999px;
+      background:rgba(34,197,94,.14);
+      border:1px solid rgba(34,197,94,.28);
+      color:#bbf7d0;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+    h1{margin:18px 0 10px;font-size:34px;line-height:1.05}
+    p{margin:0 0 22px;color:var(--muted);line-height:1.55}
+    .actions{display:flex;gap:12px;flex-wrap:wrap}
+    .btn{
+      min-height:42px;
+      padding:0 16px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.08);
+      color:var(--text);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      font-weight:800;
+    }
+    .btn.primary{
+      background:linear-gradient(135deg, rgba(34,197,94,.35), rgba(124,58,237,.25));
+      border-color:rgba(34,197,94,.3);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="eyebrow">En cours de création</span>
+    <h1>Requête Gueudet - année antérieure</h1>
+    <p>La version historique de la requête Gueudet n'est pas encore disponible. L'accès reste publié avec un écran de transition pour conserver la cohérence du portail partagé.</p>
+    <div class="actions">
+      <a class="btn primary" href="accrequeteant.html">Retour aux requêtes antérieures</a>
+      <a class="btn" href="index.html">Retour au hub</a>
+    </div>
+  </main>
+</body>
+</html>

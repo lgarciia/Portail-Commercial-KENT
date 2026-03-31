@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Requête PSA (type TCD)</title>
+
+<style>
+  :root{
+    --bg:#0b0f17;
+    --panel:rgba(255,255,255,.06);
+    --line:rgba(255,255,255,.12);
+    --text:rgba(255,255,255,.92);
+    --muted:rgba(255,255,255,.62);
+    --accent:#7c3aed;
+    --ok:#22c55e;
+    --warn:#f59e0b;
+    --shadow:0 18px 40px rgba(0,0,0,.45);
+    --r:16px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    background:
+      radial-gradient(1200px 800px at 20% 0%, rgba(124,58,237,.20), transparent 55%),
+      radial-gradient(900px 700px at 85% 10%, rgba(34,197,94,.10), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    padding:18px;
+  }
+  .wrap{max-width:1400px;margin:0 auto;}
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{
+    width:40px;height:40px;border-radius:14px;
+    background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(34,197,94,.70));
+    box-shadow: 0 10px 26px rgba(124,58,237,.25);
+  }
+  .title{line-height:1.1}
+  .title b{display:block;font-size:16px;letter-spacing:.2px}
+  .title span{display:block;font-size:12px;color:var(--muted)}
+  .btn{
+    border:1px solid var(--line);
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    padding:10px 12px;border-radius:14px;font-weight:900;
+    cursor:pointer;
+  }
+  .btn:hover{background: rgba(255,255,255,0.09)}
+  .btn.primary{
+    background: rgba(124,58,237,.22);
+    border-color: rgba(124,58,237,.45);
+  }
+  .btn.green{
+    background: rgba(34,197,94,.16);
+    border-color: rgba(34,197,94,.34);
+  }
+
+  .card{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    padding:14px;
+    backdrop-filter: blur(10px);
+    margin-top:12px;
+  }
+
+  .meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .chip{
+    display:inline-flex;gap:8px;align-items:center;
+    padding:6px 10px;border-radius:999px;border:1px solid var(--line);
+    background: rgba(0,0,0,.20);
+    font-size:12px;color:var(--muted);
+  }
+  .dot{width:9px;height:9px;border-radius:99px;background:var(--accent)}
+  .dot.ok{background:var(--ok)}
+  .dot.warn{background:var(--warn)}
+  .small{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.35}
+
+  .filters{
+    display:grid;
+    grid-template-columns: repeat(6, minmax(180px, 1fr));
+    gap:12px;
+    align-items:start;
+  }
+  @media (max-width: 1200px){
+    .filters{grid-template-columns: repeat(3, minmax(180px, 1fr));}
+  }
+  @media (max-width: 820px){
+    .filters{grid-template-columns: 1fr;}
+  }
+
+  .fbox{
+    border:1px solid var(--line);
+    background: rgba(0,0,0,.18);
+    border-radius: 14px;
+    padding:10px;
+  }
+
+  .fhead{
+    display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;
+    font-size:12px;font-weight:950;color:var(--muted);text-transform:uppercase;letter-spacing:.2px;
+  }
+  .headLeft{display:flex;align-items:center;gap:8px;min-width:0}
+  .badge{
+    padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    color: rgba(255,255,255,.75);
+    font-weight:950;
+    font-size:12px;
+    white-space:nowrap;
+  }
+
+  .headBtns{
+    display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;
+  }
+  .miniBtn{
+    padding:6px 8px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.05);
+    color: rgba(255,255,255,.86);
+    font-weight:950;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .miniBtn:hover{background: rgba(255,255,255,.09)}
+
+  select[multiple]{
+    width:100%;
+    height:220px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.22);
+    color: var(--text);
+    padding:8px;
+    outline:none;
+    font-weight:800;
+  }
+  option{padding:4px}
+
+  .cumulRow{
+    margin-top:8px;
+    display:flex;align-items:center;gap:8px;
+    color:var(--muted);
+    font-weight:900;
+    font-size:12px;
+  }
+  .cumulRow input{transform:scale(1.05)}
+  .genRow{
+    display:flex;justify-content:center;margin-top:14px;
+  }
+
+  .tableWrap{
+    overflow:auto;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background: rgba(0,0,0,.18);
+  }
+  table{border-collapse:collapse;width:100%;min-width:900px}
+  th,td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
+  th{
+    color:var(--muted);
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.2px;
+    user-select:none;
+  }
+  td{font-weight:900;font-size:13px}
+  .right{text-align:right}
+  th.sortable{cursor:pointer}
+  th.sortable:hover{color:rgba(255,255,255,.85)}
+  .sortIcon{opacity:.65;margin-left:6px}
+
+  .kpis{
+    display:flex;gap:10px;flex-wrap:wrap;margin-top:12px
+  }
+  .kpi{
+    flex:1;min-width:240px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background: rgba(0,0,0,.18);
+    padding:12px;
+  }
+  .kpi .k{color:var(--muted);font-size:12px;font-weight:950}
+  .kpi .v{font-size:18px;font-weight:990;margin-top:4px}
+
+
+
+/* ================================
+   ✅ Compactage zone critères + scroll
+   ================================ */
+
+/* La grille des filtres prend moins de place + scroll si besoin */
+.filters{
+  /* garde ton grid, mais limite la hauteur visible */
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 6px; /* pour éviter que la scrollbar mange le contenu */
+}
+
+/* Cartes filtres un peu plus compactes */
+.fbox{
+  padding: 8px;              /* avant: 10px */
+  border-radius: 12px;       /* léger */
+}
+
+/* En-tête moins haut */
+.fhead{
+  margin-bottom: 6px;        /* avant: 8px */
+  font-size: 11px;
+}
+
+/* Boutons mini plus compacts */
+.miniBtn{
+  padding: 5px 7px;          /* avant: 6px 8px */
+  border-radius: 9px;
+  font-size: 11px;
+}
+
+/* Select multiple : beaucoup moins haut + scrollbar interne */
+select[multiple]{
+  height: 140px;             /* avant: 220px */
+  padding: 6px;              /* avant: 8px */
+  border-radius: 12px;
+  overflow: auto;
+}
+
+/* Ligne cumul plus compacte */
+.cumulRow{
+  margin-top: 6px;           /* avant: 8px */
+  gap: 8px;
+  font-size: 11px;
+}
+
+/* ================================
+   ✅ Surbrillance sélection plus premium
+   ================================ */
+
+/* Focus plus joli (glow léger) */
+select[multiple]:focus{
+  border-color: rgba(124,58,237,.55);
+  box-shadow: 0 0 0 3px rgba(124,58,237,.18);
+}
+
+/* Hover option (quand tu survoles) */
+select[multiple] option:hover{
+  background: rgba(255,255,255,.08);
+}
+
+/* Sélection (plus propre que le bleu agressif) */
+select[multiple] option:checked{
+  background: rgba(124,58,237,.42);
+  color: rgba(255,255,255,.95);
+}
+
+/* ================================
+   ✅ Scrollbars dark premium (filters + selects)
+   ================================ */
+.filters::-webkit-scrollbar,
+select[multiple]::-webkit-scrollbar{
+  width: 10px;
+  height: 10px;
+}
+.filters::-webkit-scrollbar-track,
+select[multiple]::-webkit-scrollbar-track{
+  background: rgba(255,255,255,.05);
+  border-radius: 999px;
+}
+.filters::-webkit-scrollbar-thumb,
+select[multiple]::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.18);
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,.25);
+}
+.filters::-webkit-scrollbar-thumb:hover,
+select[multiple]::-webkit-scrollbar-thumb:hover{
+  background: rgba(255,255,255,.28);
+}
+
+/* ================================
+   UNIFORMISATION DES ZONES SELECT
+   ================================ */
+
+/* Toutes les cartes filtres même hauteur */
+.fbox{
+  height: 220px;          /* hauteur fixe identique */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Le select prend toute la place disponible */
+.fbox select[multiple]{
+  flex: 1;
+  height: auto;           /* on laisse flex gérer */
+  min-height: 0;          /* important pour scroll interne */
+}
+
+/* Scroll interne propre */
+.fbox select[multiple]{
+  overflow: auto;
+}
+
+
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <b>Requête PSA (style TCD)</b>
+        <span>Sélection en colonnes + Cumul + Générer • Tri CA cliquable</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="reloadBtn">Recharger Excel</button>
+      <button class="btn green" id="exportBtn" disabled>Exporter CSV</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="meta">
+      <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargement…</span></span>
+      <span class="chip"><span class="dot ok"></span><span>Fichier : <b>data.xlsx</b></span></span>
+      <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes détectées : —</span></span>
+    </div>
+    <div class="small">
+    
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <div class="fbox" id="boxYear"></div>
+      <div class="fbox" id="boxMonth"></div>
+      <div class="fbox" id="boxSeller"></div>
+      <div class="fbox" id="boxClient"></div>
+      <div class="fbox" id="boxRef"></div>
+      <div class="fbox" id="boxDes"></div>
+    </div>
+
+    <div class="genRow">
+      <button class="btn primary" id="genBtn">Générer</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tableWrap">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"><tr><td style="color:var(--muted)">—</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Lignes résultat</div>
+        <div class="v" id="kpiRows">—</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Quantité totale</div>
+        <div class="v" id="kpiQty">—</div>
+      </div>
+      <div class="kpi">
+        <div class="k">CA total</div>
+        <div class="v" id="kpiCA">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+const EXCEL_URL = "./data.xlsx";
+
+const TARGETS = {
+  YEAR:  ["Année","Annee","année","annee"],
+  MONTH: ["Mois","mois","Mois2","mois2"],
+  SELLER:["Vendeur","VENDEUR","Vendeur KENT","Vendeur PSA"],
+  CLIENT:["Nom LR","NOM LR","Nom du client","Client","Clients"],
+  REF:   ["Reference Produits","Référence Produits","Reference Produit","Référence Produit","Ref Produits","Réf Produits"],
+  DES:   ["Désignations","Designations","Désignation","Designation"],
+  QTY:   ["Quantité Payante servie","Quantite Payante servie","Quantité","Quantite"],
+  CA:    ["Montant prix achat KENT","Montant prix d'achat KENT","Montant achat KENT","Montant KENT","CA"]
+};
+
+const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR" });
+
+const $ = (id) => document.getElementById(id);
+const normalize = (s) =>
+  (s ?? "").toString().trim().toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+function toNumber(v){
+  if (v === null || v === undefined) return 0;
+  const s = v.toString().replace(",", ".").replace(/\s/g, "");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+function setStatus(type, text){
+  const dot = $("dotStatus");
+  dot.classList.remove("ok","warn");
+  if (type === "ok") dot.classList.add("ok");
+  if (type === "warn") dot.classList.add("warn");
+  $("status").textContent = text;
+}
+function uniq(arr){
+  return [...new Set(arr.filter(v => v !== "" && v !== null && v !== undefined))];
+}
+function sortNumIfPossible(a,b){
+  const na = Number(a), nb = Number(b);
+  if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+  return a.toString().localeCompare(b.toString(), "fr", {numeric:true, sensitivity:"base"});
+}
+function monthLabel(v){
+  const s = (v ?? "").toString().trim();
+  const n = Number(s);
+  if (Number.isFinite(n) && n>=1 && n<=12) return MONTHS_FR[n-1];
+  const mm = s.match(/^0?(\d{1,2})$/);
+  if (mm){
+    const m = Number(mm[1]);
+    if (m>=1 && m<=12) return MONTHS_FR[m-1];
+  }
+  return s;
+}
+function detectColumn(headers, candidates){
+  const normHeaders = headers.map(h => ({raw:h, n: normalize(h)}));
+  for (const c of candidates){
+    const nc = normalize(c);
+    const found = normHeaders.find(h => h.n === nc);
+    if (found) return found.raw;
+  }
+  for (const c of candidates){
+    const nc = normalize(c);
+    const found = normHeaders.find(h => h.n.includes(nc) || nc.includes(h.n));
+    if (found) return found.raw;
+  }
+  return null;
+}
+
+/******** UI with per-column Tout/Aucun ********/
+function buildListBox(mountId, title){
+  const mount = $(mountId);
+  mount.innerHTML = `
+    <div class="fhead">
+      <div class="headLeft">
+        <div>${title}</div>
+        <div class="badge" id="${mountId}_badge">—</div>
+      </div>
+      <div class="headBtns">
+        <button class="miniBtn" type="button" id="${mountId}_all">Tout</button>
+        <button class="miniBtn" type="button" id="${mountId}_none">Aucun</button>
+      </div>
+    </div>
+    <select id="${mountId}_sel" multiple></select>
+    <div class="cumulRow">
+      <input type="checkbox" id="${mountId}_cumul">
+      <label for="${mountId}_cumul">Cumul</label>
+    </div>
+  `;
+
+  const sel = $(`${mountId}_sel`);
+  const cumul = $(`${mountId}_cumul`);
+  const badge = $(`${mountId}_badge`);
+  const btnAll = $(`${mountId}_all`);
+  const btnNone = $(`${mountId}_none`);
+
+  function updateBadge(){
+    const total = sel.options.length;
+    const selected = sel.selectedOptions.length;
+    badge.textContent = total ? `${selected}/${total}` : "0/0";
+  }
+  function selectAll(){
+    [...sel.options].forEach(o => o.selected = true);
+    updateBadge();
+  }
+  function selectNone(){
+    [...sel.options].forEach(o => o.selected = false);
+    updateBadge();
+  }
+
+  function setOptions(values, {labelFn=null, preserve=true, sortFn=null} = {}){
+    const prev = preserve ? new Set(getSelected()) : null;
+
+    let v = uniq(values.map(x => (x ?? "").toString().trim()).filter(Boolean));
+    if (sortFn) v.sort(sortFn);
+    else v.sort(sortNumIfPossible);
+
+    sel.innerHTML = v.map(val => {
+      const lbl = labelFn ? labelFn(val) : val;
+      const safeVal = val.replaceAll('"','&quot;');
+      return `<option value="${safeVal}">${(lbl ?? "").toString()}</option>`;
+    }).join("");
+
+    // default: all
+    selectAll();
+
+    // restore intersection
+    if (prev && prev.size){
+      const allSet = new Set(v);
+      const inter = [...prev].filter(x => allSet.has(x));
+      if (inter.length){
+        setSelected(inter);
+      }
+    }
+    updateBadge();
+  }
+
+  function getSelected(){
+    return [...sel.selectedOptions].map(o => o.value);
+  }
+
+  function setSelected(values){
+    const set = new Set(values);
+    [...sel.options].forEach(o => o.selected = set.has(o.value));
+    updateBadge();
+  }
+
+  sel.addEventListener("change", () => {
+    updateBadge();
+    cascadeFrom(mountId);
+  });
+
+  btnAll.addEventListener("click", () => {
+    selectAll();
+    cascadeFrom(mountId);
+  });
+
+  btnNone.addEventListener("click", () => {
+    selectNone();
+    cascadeFrom(mountId);
+  });
+
+  return {
+    id: mountId,
+    setOptions, getSelected, setSelected,
+    selectAll, selectNone,
+    getCumul: () => cumul.checked,
+    setCumul: (b) => cumul.checked = !!b,
+  };
+}
+
+/******** STATE ********/
+let rows = [];
+let cols = {};
+let lastResult = [];
+let lastHeaders = [];
+let sortCAAsc = false;
+
+const boxYear   = buildListBox("boxYear",   "Année *");
+const boxMonth  = buildListBox("boxMonth",  "Mois *");
+const boxSeller = buildListBox("boxSeller", "Vendeur");
+const boxClient = buildListBox("boxClient", "Clients");
+const boxRef    = buildListBox("boxRef",    "Reference Produits");
+const boxDes    = buildListBox("boxDes",    "Désignations");
+
+const chain = [
+  { box: boxYear,   key: "YEAR",   labelFn: null,       sortFn: (a,b)=>Number(a)-Number(b) },
+  { box: boxMonth,  key: "MONTH",  labelFn: monthLabel, sortFn: (a,b)=>Number(a)-Number(b) },
+  { box: boxSeller, key: "SELLER", labelFn: null,       sortFn: null },
+  { box: boxClient, key: "CLIENT", labelFn: null,       sortFn: null },
+  { box: boxRef,    key: "REF",    labelFn: null,       sortFn: null },
+  { box: boxDes,    key: "DES",    labelFn: null,       sortFn: null },
+];
+
+/******** CASCADE ********/
+function filterRowsUpTo(idx){
+  let r = rows;
+  for (let i=0; i<=idx; i++){
+    const colName = cols[chain[i].key];
+    const selected = new Set(chain[i].box.getSelected());
+    if (!colName || selected.size === 0) return [];
+    r = r.filter(x => selected.has((x[colName] ?? "").toString().trim()));
+  }
+  return r;
+}
+
+function cascadeFrom(changedBoxId){
+  const idx = chain.findIndex(x => x.box.id === changedBoxId);
+  if (idx < 0) return;
+
+  for (let j = idx + 1; j < chain.length; j++){
+    const base = filterRowsUpTo(j - 1);
+    const colName = cols[chain[j].key];
+    const values = colName ? base.map(x => x[colName]) : [];
+    chain[j].box.setOptions(values, { labelFn: chain[j].labelFn, preserve:true, sortFn: chain[j].sortFn });
+  }
+}
+
+/******** RESULT ********/
+function buildKey(obj, colsList){
+  return colsList.map(c => `${c}=${obj[c] ?? ""}`).join("||");
+}
+function prettyHeader(h){
+  const m = new Map([
+    [cols.YEAR, "Année"],
+    [cols.MONTH, "Mois"],
+    [cols.SELLER, "Vendeur"],
+    [cols.CLIENT, "Clients"],
+    [cols.REF, "Reference Produits"],
+    [cols.DES, "Désignations"],
+    [cols.QTY, "Quantité Payante servie"],
+    [cols.CA, "Montant prix achat KENT"],
+  ]);
+  return m.get(h) ?? h;
+}
+
+function generate(){
+  if (!rows.length) return;
+
+  let f = rows;
+  for (let i=0; i<chain.length; i++){
+    const colName = cols[chain[i].key];
+    const selected = new Set(chain[i].box.getSelected());
+    if (!colName || selected.size === 0){
+      renderEmpty("Sélection vide sur une colonne.");
+      return;
+    }
+    f = f.filter(x => selected.has((x[colName] ?? "").toString().trim()));
+  }
+
+  if (!f.length){
+    renderEmpty("Aucune donnée pour cette requête.");
+    return;
+  }
+
+  const groupCols = chain
+    .filter(x => !x.box.getCumul())
+    .map(x => cols[x.key])
+    .filter(Boolean);
+
+  const colQ = cols.QTY;
+  const colCA = cols.CA;
+
+  const map = new Map();
+  let totalQty = 0;
+  let totalCA  = 0;
+
+  for (const r of f){
+    const qty = toNumber(r[colQ]);
+    const ca  = toNumber(r[colCA]);
+    totalQty += qty;
+    totalCA  += ca;
+
+    const keyObj = {};
+    for (const c of groupCols) keyObj[c] = (r[c] ?? "").toString().trim();
+    const k = buildKey(keyObj, groupCols);
+
+    if (!map.has(k)){
+      const row = {};
+      for (const c of groupCols) row[c] = (r[c] ?? "").toString().trim();
+      row[colQ] = 0;
+      row[colCA] = 0;
+      map.set(k, row);
+    }
+    const agg = map.get(k);
+    agg[colQ] += qty;
+    agg[colCA] += ca;
+  }
+
+  let result = [...map.values()];
+  result.sort((a,b) => (b[colCA] - a[colCA]) || (b[colQ] - a[colQ]));
+  sortCAAsc = false;
+
+  lastResult = result;
+  lastHeaders = [...groupCols, colQ, colCA];
+
+  renderTable(groupCols, colQ, colCA, result, totalQty, totalCA);
+  $("exportBtn").disabled = result.length === 0;
+}
+
+function renderEmpty(msg){
+  $("thead").innerHTML = "";
+  $("tbody").innerHTML = `<tr><td style="color:rgba(255,255,255,.6)">${msg}</td></tr>`;
+  $("kpiRows").textContent = "—";
+  $("kpiQty").textContent  = "—";
+  $("kpiCA").textContent   = "—";
+  $("exportBtn").disabled = true;
+  lastResult = [];
+  lastHeaders = [];
+}
+
+function renderTable(groupCols, colQ, colCA, result, totalQty, totalCA){
+  const headers = [
+    ...groupCols.map(c => ({label: prettyHeader(c), col:c, right:false, kind:"text"})),
+    {label: prettyHeader(colQ), col:colQ, right:true, kind:"num"},
+    {label: prettyHeader(colCA), col:colCA, right:true, kind:"eur", sortable:true},
+  ];
+  const icon = sortCAAsc ? "▲" : "▼";
+
+  $("thead").innerHTML = `
+    <tr>
+      ${headers.map(h => {
+        const cls = h.sortable ? "sortable" : "";
+        const ico = h.sortable ? `<span class="sortIcon">${icon}</span>` : "";
+        return `<th class="${cls} ${h.right ? "right":""}" data-sort="${h.sortable ? "ca":""}">${h.label}${ico}</th>`;
+      }).join("")}
+    </tr>
+  `;
+
+  $("tbody").innerHTML = result.map(r => `
+    <tr>
+      ${headers.map(h => {
+        let v = r[h.col];
+        if (h.col === cols.MONTH) v = monthLabel(v);
+        if (h.kind === "num") return `<td class="right">${(Math.round((v ?? 0)*100)/100)}</td>`;
+        if (h.kind === "eur") return `<td class="right">${eur.format(v ?? 0)}</td>`;
+        return `<td>${(v ?? "")}</td>`;
+      }).join("")}
+    </tr>
+  `).join("");
+
+  $("kpiRows").textContent = String(result.length);
+  $("kpiQty").textContent  = String(Math.round(totalQty*100)/100);
+  $("kpiCA").textContent   = eur.format(totalCA);
+
+  const th = $("thead").querySelector("th[data-sort='ca']");
+  if (th){
+    th.onclick = () => toggleSortCA(colCA, colQ, groupCols);
+  }
+}
+
+function toggleSortCA(colCA, colQ, groupCols){
+  if (!lastResult.length) return;
+  sortCAAsc = !sortCAAsc;
+  const sorted = [...lastResult].sort((a,b) => sortCAAsc ? (a[colCA]-b[colCA]) : (b[colCA]-a[colCA]));
+  const totalQty = sorted.reduce((s,r)=>s+(r[colQ]??0),0);
+  const totalCA  = sorted.reduce((s,r)=>s+(r[colCA]??0),0);
+  lastResult = sorted;
+  renderTable(groupCols, colQ, colCA, sorted, totalQty, totalCA);
+}
+
+/******** EXPORT ********/
+function exportCSV(){
+  if (!lastResult.length) return;
+  const headers = lastHeaders;
+
+  const lines = [];
+  lines.push(headers.map(h => `"${String(prettyHeader(h)).replaceAll('"','""')}"`).join(";"));
+
+  for (const r of lastResult){
+    const row = headers.map(h => {
+      let v = r[h] ?? "";
+      if (h === cols.MONTH) v = monthLabel(v);
+      return `"${String(v).replaceAll('"','""')}"`;
+    }).join(";");
+    lines.push(row);
+  }
+
+  const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `resultats_${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/******** LOAD ********/
+async function loadExcel(){
+  setStatus("warn", "Chargement de la base…");
+  renderEmpty("—");
+
+  try{
+    const res = await fetch(EXCEL_URL, { cache:"no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const buf = await res.arrayBuffer();
+    const wb = XLSX.read(buf, { type:"array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
+
+    if (!rows.length){
+      setStatus("warn", "Fichier chargé mais vide.");
+      renderEmpty("Aucune ligne détectée dans la feuille.");
+      return;
+    }
+
+    const headers = Object.keys(rows[0] || {});
+    cols = {
+      YEAR:   detectColumn(headers, TARGETS.YEAR),
+      MONTH:  detectColumn(headers, TARGETS.MONTH),
+      SELLER: detectColumn(headers, TARGETS.SELLER),
+      CLIENT: detectColumn(headers, TARGETS.CLIENT),
+      REF:    detectColumn(headers, TARGETS.REF),
+      DES:    detectColumn(headers, TARGETS.DES),
+      QTY:    detectColumn(headers, TARGETS.QTY),
+      CA:     detectColumn(headers, TARGETS.CA),
+    };
+
+    $("colsDebug").textContent =
+      `Colonnes détectées : Année=${cols.YEAR || "❌"} | Mois=${cols.MONTH || "❌"} | Vendeur=${cols.SELLER || "❌"} | Client=${cols.CLIENT || "❌"} | Ref=${cols.REF || "❌"} | Désignation=${cols.DES || "❌"} | Qte=${cols.QTY || "❌"} | CA=${cols.CA || "❌"}`;
+
+    if (!cols.YEAR || !cols.MONTH){
+      setStatus("warn", "Colonnes Année/Mois introuvables (noms différents).");
+      renderEmpty("⚠️ Je ne trouve pas les colonnes Année/Mois. Regarde la ligne “Colonnes détectées”.");
+      return;
+    }
+    if (!cols.QTY || !cols.CA){
+      setStatus("warn", "Colonnes Quantité/CA introuvables (noms différents).");
+      renderEmpty("⚠️ Je ne trouve pas les colonnes Quantité/CA. Regarde la ligne “Colonnes détectées”.");
+      return;
+    }
+
+    rows = rows.map(r => {
+      const rr = {...r};
+      for (const k of Object.values(cols)){
+        if (k) rr[k] = (rr[k] ?? "").toString().trim();
+      }
+      return rr;
+    });
+
+    // init options
+    const years = rows.map(r => r[cols.YEAR]);
+    boxYear.setOptions(years, {preserve:false, sortFn:(a,b)=>Number(a)-Number(b)});
+    const base1 = filterRowsUpTo(0);
+
+    const months = base1.map(r => r[cols.MONTH]);
+    boxMonth.setOptions(months, {labelFn: monthLabel, preserve:false, sortFn:(a,b)=>Number(a)-Number(b)});
+    const base2 = filterRowsUpTo(1);
+
+    boxSeller.setOptions(cols.SELLER ? base2.map(r => r[cols.SELLER]) : [], {preserve:false});
+    const base3 = filterRowsUpTo(2);
+
+    boxClient.setOptions(cols.CLIENT ? base3.map(r => r[cols.CLIENT]) : [], {preserve:false});
+    const base4 = filterRowsUpTo(3);
+
+    boxRef.setOptions(cols.REF ? base4.map(r => r[cols.REF]) : [], {preserve:false});
+    const base5 = filterRowsUpTo(4);
+
+    boxDes.setOptions(cols.DES ? base5.map(r => r[cols.DES]) : [], {preserve:false});
+
+    // default cumul
+    boxYear.setCumul(false);
+    boxMonth.setCumul(false);
+    boxSeller.setCumul(false);
+    boxClient.setCumul(true);
+    boxRef.setCumul(false);
+    boxDes.setCumul(false);
+
+    setStatus("ok", `Base chargée : ${rows.length} lignes`);
+    renderEmpty("Prêt : sélectionne puis clique Générer.");
+  }catch(e){
+    console.error(e);
+    setStatus("warn", "Impossible de charger data.xlsx");
+    renderEmpty("⚠️ Excel introuvable/bloqué. Vérifie data.xlsx dans le même dossier que index.html.");
+  }
+}
+
+/******** EVENTS ********/
+$("reloadBtn").addEventListener("click", loadExcel);
+$("genBtn").addEventListener("click", generate);
+$("exportBtn").addEventListener("click", exportCSV);
+
+/******** INIT ********/
+loadExcel();
+</script>
+</body>
+</html>

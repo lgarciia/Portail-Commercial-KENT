@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Import clients</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0b1020;
+      --bg2: #11162a;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --muted: #b8bfd3;
+      --muted-2: #94a3b8;
+      --accent: #7c3aed;
+      --accent-hover: #8b5cf6;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --info: #3b82f6;
+      --input: rgba(255, 255, 255, 0.06);
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      --radius: 16px;
+    }
+
+    *::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.12);
+      border-radius: 999px;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124, 58, 237, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 25%),
+        radial-gradient(circle at bottom, rgba(236, 72, 153, 0.12), transparent 30%),
+        linear-gradient(135deg, var(--bg), var(--bg2));
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1550px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .page-title h1 {
+      font-size: 1.9rem;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .page-title p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 900px;
+      line-height: 1.4;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .glass-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr auto;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.86rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    input,
+    select {
+      width: 100%;
+      background: var(--input);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      padding: 11px 13px;
+      border-radius: 12px;
+      outline: none;
+      transition: 0.2s ease;
+      font-size: 0.92rem;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      transition: 0.2s ease;
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #5b21b6);
+      color: white;
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.28);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-success {
+      background: rgba(34, 197, 94, 0.16);
+      color: #dcfce7;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.14);
+      color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.18);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status-bar {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .helper-box {
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.18);
+      color: #dbeafe;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .helper-box code {
+      background: rgba(255,255,255,0.08);
+      padding: 2px 7px;
+      border-radius: 8px;
+      color: #fff;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat-box {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      min-height: 88px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .stat-label {
+      color: var(--muted-2);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .table-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .table-topbar h2 {
+      font-size: 1.02rem;
+    }
+
+    .table-wrapper {
+      overflow: auto;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      vertical-align: middle;
+      font-size: 0.84rem;
+    }
+
+    th {
+      color: #d1d5db;
+      background: rgba(255, 255, 255, 0.03);
+      white-space: nowrap;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-ok {
+      background: rgba(34, 197, 94, 0.14);
+      color: #bbf7d0;
+      border: 1px solid rgba(34, 197, 94, 0.18);
+    }
+
+    .badge-warn {
+      background: rgba(245, 158, 11, 0.14);
+      color: #fde68a;
+      border: 1px solid rgba(245, 158, 11, 0.18);
+    }
+
+    .badge-error {
+      background: rgba(239, 68, 68, 0.14);
+      color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.18);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 34px 20px;
+    }
+
+    @media (max-width: 1050px) {
+      .top-grid,
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 16px;
+      }
+
+      .top-grid,
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <div class="page-title">
+        <h1>Import clients</h1>
+        <p>
+          Charge un fichier Excel ou CSV pour créer ou mettre à jour les clients.
+          La logique métier utilisée est : <strong>numero_compte + plaque</strong>.
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-secondary" type="button" onclick="resetImport()">Réinitialiser</button>
+        <button class="btn btn-success" id="importBtn" type="button" onclick="importClients()" disabled>Importer les clients</button>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="top-grid">
+        <div class="field-group">
+          <label for="fileInput">Fichier Excel / CSV</label>
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        </div>
+
+        <div class="field-group">
+          <label>Colonnes attendues</label>
+          <input type="text" value="nom | numero_compte | adresse | telephone | plaque" disabled />
+        </div>
+
+        <div class="field-group">
+          <label>Lancer l’analyse</label>
+          <button class="btn btn-primary" type="button" onclick="handleFile()">Lire le fichier</button>
+        </div>
+
+        <div class="field-group">
+          <label>Télécharger un modèle</label>
+          <button class="btn btn-secondary" type="button" onclick="downloadTemplate()">Modèle CSV</button>
+        </div>
+      </div>
+
+      <div class="status-bar" id="statusBar">En attente d’un fichier.</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="helper-box">
+        Format attendu : <code>nom</code>, <code>numero_compte</code>, <code>adresse</code>, <code>telephone</code>, <code>plaque</code>.<br />
+        La plaque doit exister dans la table <code>plaques</code>.  
+        Si une ligne existe déjà avec le même <code>numero_compte</code> et la même <code>plaque</code>, elle sera mise à jour.
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">Lignes lues</div>
+          <div class="stat-value" id="statRows">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Lignes valides</div>
+          <div class="stat-value" id="statValid">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Créations prévues</div>
+          <div class="stat-value" id="statCreate">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Mises à jour prévues</div>
+          <div class="stat-value" id="statUpdate">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="table-topbar">
+        <h2>Prévisualisation import clients</h2>
+        <div class="muted" id="previewInfo">Aucune donnée chargée.</div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nom</th>
+              <th>Numéro compte</th>
+              <th>Adresse</th>
+              <th>Téléphone</th>
+              <th>Plaque</th>
+              <th>Statut</th>
+              <th>Détail</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody">
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">Charge un fichier pour voir la prévisualisation.</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script>
+    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let plaques = [];
+    let existingClients = [];
+    let preparedRows = [];
+
+    function setStatus(message) {
+      document.getElementById("statusBar").textContent = message;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeText(value) {
+      return String(value ?? "").trim();
+    }
+
+    function normalizeUpper(value) {
+      return normalizeText(value).toUpperCase();
+    }
+
+    function normalizePhone(value) {
+      return normalizeText(value);
+    }
+
+    function updateStats() {
+      const total = preparedRows.length;
+      const valid = preparedRows.filter(row => row.isValid).length;
+      const createCount = preparedRows.filter(row => row.isValid && row.action === "create").length;
+      const updateCount = preparedRows.filter(row => row.isValid && row.action === "update").length;
+
+      document.getElementById("statRows").textContent = total;
+      document.getElementById("statValid").textContent = valid;
+      document.getElementById("statCreate").textContent = createCount;
+      document.getElementById("statUpdate").textContent = updateCount;
+
+      document.getElementById("previewInfo").textContent =
+        total ? `${valid} ligne(s) valide(s) sur ${total}` : "Aucune donnée chargée.";
+
+      document.getElementById("importBtn").disabled = valid === 0;
+    }
+
+    async function fetchPlaques() {
+      const { data, error } = await supabaseClient
+        .from("plaques")
+        .select("id, nom")
+        .order("nom", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchClients() {
+      const { data, error } = await supabaseClient
+        .from("clients")
+        .select("id, nom, numero_compte, adresse, telephone, plaque_id");
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    function getPlaqueByName(plaqueName) {
+      const needle = normalizeUpper(plaqueName);
+      return plaques.find(p => normalizeUpper(p.nom) === needle) || null;
+    }
+
+    function findExistingClient(numeroCompte, plaqueId) {
+      return existingClients.find(client =>
+        normalizeText(client.numero_compte) === normalizeText(numeroCompte) &&
+        String(client.plaque_id) === String(plaqueId)
+      ) || null;
+    }
+
+    function parseRows(rawRows) {
+      preparedRows = rawRows.map((row, index) => {
+        const nom = normalizeText(row.nom);
+        const numero_compte = normalizeText(row.numero_compte);
+        const adresse = normalizeText(row.adresse);
+        const telephone = normalizePhone(row.telephone);
+        const plaque = normalizeUpper(row.plaque);
+
+        let isValid = true;
+        let detail = "";
+        let action = "";
+        let plaque_id = null;
+        let existingId = null;
+
+        if (!nom) {
+          isValid = false;
+          detail = "Nom manquant";
+        } else if (!numero_compte) {
+          isValid = false;
+          detail = "Numéro de compte manquant";
+        } else if (!plaque) {
+          isValid = false;
+          detail = "Plaque manquante";
+        } else {
+          const foundPlaque = getPlaqueByName(plaque);
+
+          if (!foundPlaque) {
+            isValid = false;
+            detail = `Plaque introuvable : ${plaque}`;
+          } else {
+            plaque_id = foundPlaque.id;
+
+            const existingClient = findExistingClient(numero_compte, plaque_id);
+
+            if (existingClient) {
+              action = "update";
+              existingId = existingClient.id;
+              detail = "Client existant trouvé : mise à jour";
+            } else {
+              action = "create";
+              detail = "Nouveau client : création";
+            }
+          }
+        }
+
+        return {
+          lineNumber: index + 1,
+          nom,
+          numero_compte,
+          adresse,
+          telephone,
+          plaque,
+          plaque_id,
+          isValid,
+          detail,
+          action,
+          existingId
+        };
+      });
+
+      renderPreview();
+      updateStats();
+    }
+
+    function renderPreview() {
+      const tbody = document.getElementById("previewBody");
+
+      if (!preparedRows.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">Charge un fichier pour voir la prévisualisation.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = preparedRows.map(row => {
+        let badgeClass = "badge-error";
+        let badgeText = "Erreur";
+
+        if (row.isValid && row.action === "create") {
+          badgeClass = "badge-ok";
+          badgeText = "Création";
+        } else if (row.isValid && row.action === "update") {
+          badgeClass = "badge-warn";
+          badgeText = "Mise à jour";
+        }
+
+        return `
+          <tr>
+            <td>${row.lineNumber}</td>
+            <td>${escapeHtml(row.nom || "—")}</td>
+            <td>${escapeHtml(row.numero_compte || "—")}</td>
+            <td>${escapeHtml(row.adresse || "—")}</td>
+            <td>${escapeHtml(row.telephone || "—")}</td>
+            <td>${escapeHtml(row.plaque || "—")}</td>
+            <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+            <td>${escapeHtml(row.detail || "")}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function normalizeHeaders(row) {
+      const normalized = {};
+      Object.keys(row || {}).forEach(key => {
+        normalized[String(key).trim().toLowerCase()] = row[key];
+      });
+      return normalized;
+    }
+
+    async function handleFile() {
+      const input = document.getElementById("fileInput");
+      const file = input.files?.[0];
+
+      if (!file) {
+        alert("Sélectionne un fichier.");
+        return;
+      }
+
+      try {
+        setStatus("Lecture du fichier...");
+
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+        const cleanedRows = jsonRows.map(normalizeHeaders).map(row => ({
+          nom: row.nom,
+          numero_compte: row.numero_compte,
+          adresse: row.adresse,
+          telephone: row.telephone,
+          plaque: row.plaque
+        }));
+
+        if (!cleanedRows.length) {
+          preparedRows = [];
+          renderPreview();
+          updateStats();
+          setStatus("Le fichier est vide.");
+          return;
+        }
+
+        parseRows(cleanedRows);
+        setStatus(`${cleanedRows.length} ligne(s) analysée(s).`);
+      } catch (error) {
+        console.error("Erreur lecture fichier:", error);
+        setStatus("Erreur pendant la lecture du fichier.");
+        alert("Impossible de lire le fichier.");
+      }
+    }
+
+    async function importClients() {
+      const validRows = preparedRows.filter(row => row.isValid);
+
+      if (!validRows.length) {
+        alert("Aucune ligne valide à importer.");
+        return;
+      }
+
+      const importBtn = document.getElementById("importBtn");
+      importBtn.disabled = true;
+
+      try {
+        setStatus("Import des clients en cours...");
+
+        let created = 0;
+        let updated = 0;
+        let failed = 0;
+
+        for (const row of validRows) {
+          const payload = {
+            nom: row.nom,
+            numero_compte: row.numero_compte,
+            adresse: row.adresse || null,
+            telephone: row.telephone || null,
+            plaque_id: row.plaque_id
+          };
+
+          try {
+            if (row.action === "update" && row.existingId) {
+              const { error } = await supabaseClient
+                .from("clients")
+                .update(payload)
+                .eq("id", row.existingId);
+
+              if (error) throw error;
+              updated++;
+            } else {
+              const { error } = await supabaseClient
+                .from("clients")
+                .insert(payload);
+
+              if (error) throw error;
+              created++;
+            }
+          } catch (rowError) {
+            console.error("Erreur ligne import client:", row, rowError);
+            failed++;
+          }
+        }
+
+        existingClients = await fetchClients();
+        parseRows(preparedRows);
+
+        setStatus(`Import terminé • ${created} création(s) • ${updated} mise(s) à jour • ${failed} erreur(s).`);
+        alert(`Import terminé.\n\nCréations : ${created}\nMises à jour : ${updated}\nErreurs : ${failed}`);
+      } catch (error) {
+        console.error("Erreur import clients:", error);
+        setStatus("Erreur pendant l'import.");
+        alert("Erreur pendant l'import des clients.");
+      } finally {
+        importBtn.disabled = preparedRows.filter(row => row.isValid).length === 0;
+      }
+    }
+
+    function resetImport() {
+      preparedRows = [];
+      document.getElementById("fileInput").value = "";
+      renderPreview();
+      updateStats();
+      setStatus("Réinitialisation effectuée.");
+    }
+
+    function downloadTemplate() {
+      const csv = [
+        "nom,numero_compte,adresse,telephone,plaque",
+        "A.R AUTOMOBILES,3659,12 rue de Paris,0600000000,MRA",
+        "A.R AUTOMOBILES,3659,12 rue de Paris,0600000000,AGENT"
+      ].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "modele_import_clients.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function initApp() {
+      try {
+        setStatus("Connexion à Supabase...");
+        plaques = await fetchPlaques();
+        existingClients = await fetchClients();
+        setStatus(`Connexion OK • ${plaques.length} plaque(s) • ${existingClients.length} client(s) chargés.`);
+      } catch (error) {
+        console.error("Erreur init:", error);
+        setStatus("Erreur de connexion à Supabase.");
+        alert("Impossible de charger les plaques ou les clients. Vérifie la clé, l'URL et les policies.");
+      }
+    }
+
+    initApp();
+  </script>
+</body>
+</html>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accueil - Pilotage commercial</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0b1020;
+      --bg2: #11162a;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --muted: #b8bfd3;
+      --muted-2: #94a3b8;
+      --accent: #7c3aed;
+      --accent-2: #3b82f6;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --info: #38bdf8;
+      --input: rgba(255, 255, 255, 0.06);
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
+    }
+
+    *::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.12);
+      border-radius: 999px;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124, 58, 237, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 25%),
+        radial-gradient(circle at bottom, rgba(236, 72, 153, 0.12), transparent 30%),
+        linear-gradient(135deg, var(--bg), var(--bg2));
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1480px;
+      margin: 0 auto;
+    }
+
+    .glass {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn,
+    .menu-btn,
+    .card-link {
+      border: none;
+      text-decoration: none;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-weight: 600;
+      transition: 0.2s ease;
+      font-size: 0.88rem;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn:hover,
+    .menu-btn:hover,
+    .card-link:hover,
+    .quick-link:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, var(--accent), #5b21b6);
+      border: none;
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.28);
+    }
+
+    .nav-right {
+      position: relative;
+    }
+
+    .menu-btn svg {
+      flex-shrink: 0;
+    }
+
+    .dropdown {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      min-width: 240px;
+      padding: 10px;
+      display: none;
+      z-index: 100;
+    }
+
+    .dropdown.open {
+      display: block;
+    }
+
+    .dropdown-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .dropdown a {
+      text-decoration: none;
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: 0.18s ease;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .dropdown a:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .hero {
+      padding: 28px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: auto -80px -80px auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.28), transparent 65%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .hero h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      color: var(--muted);
+      max-width: 900px;
+      line-height: 1.6;
+      font-size: 0.96rem;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.14);
+      border: 1px solid rgba(124, 58, 237, 0.22);
+      color: #ddd6fe;
+      font-size: 0.82rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .quick-links {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .quick-link {
+      text-decoration: none;
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.86rem;
+      font-weight: 600;
+      transition: 0.2s ease;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .section-head h2 {
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .section-head p {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 220px;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .card-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+
+    .card-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #e5e7eb;
+    }
+
+    .card-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .card h3 {
+      font-size: 1.02rem;
+      letter-spacing: -0.01em;
+    }
+
+    .card p {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.9rem;
+      flex: 1;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    .card-link.primary {
+      background: linear-gradient(135deg, var(--accent), #5b21b6);
+      border: none;
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.24);
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .mini-card {
+      padding: 18px;
+    }
+
+    .mini-card h3 {
+      font-size: 0.98rem;
+      margin-bottom: 8px;
+    }
+
+    .mini-card p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+
+    .mini-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .footer-note {
+      margin-top: 8px;
+      color: var(--muted-2);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    @media (max-width: 1100px) {
+      .cards-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .cards-grid,
+      .mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .navbar {
+        align-items: flex-start;
+      }
+
+      .nav-left {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .nav-right {
+        width: 100%;
+      }
+
+      .menu-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .dropdown {
+        left: 0;
+        right: 0;
+        min-width: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 16px;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .hero h1 {
+        font-size: 1.65rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav class="glass navbar">
+      <div class="nav-left">
+        <div class="brand">
+          <div class="brand-title">Pilotage commercial</div>
+          <div class="brand-subtitle">Accueil de l’application Commerce</div>
+        </div>
+
+        <div class="nav-links">
+
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <button class="menu-btn" id="paramBtn" type="button" aria-expanded="false" aria-haspopup="true">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
+            <path d="M480-120q-151 0-255.5-46.5T120-280v-400q0-66 105.5-113T480-840q149 0 254.5 47T840-680v400q0 67-104.5 113.5T480-120Zm0-479q89 0 179-25.5T760-679q-11-29-100.5-55T480-760q-91 0-178.5 25.5T200-679q14 30 101.5 55T480-599Zm0 199q42 0 81-4t74.5-11.5q35.5-7.5 67-18.5t57.5-25v-120q-26 14-57.5 25t-67 18.5Q600-528 561-524t-81 4q-42 0-82-4t-75.5-11.5Q287-543 256-554t-56-25v120q25 14 56 25t66.5 18.5Q358-408 398-404t82 4Zm0 200q46 0 93.5-7t87.5-18.5q40-11.5 67-26t32-29.5v-98q-26 14-57.5 25t-67 18.5Q600-328 561-324t-81 4q-42 0-82-4t-75.5-11.5Q287-343 256-354t-56-25v99q5 15 31.5 29t66.5 25.5q40 11.5 88 18.5t94 7Z"/>
+          </svg>
+          Paramétrage
+        </button>
+
+        <div class="glass dropdown" id="paramDropdown">
+          <div class="dropdown-list">
+            <a href="gestiontarif.html">Gestion tarif</a>
+            <a href="gestionimportclients.html">Import clients</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <section class="glass hero">
+      <div class="hero-top">
+        <div>
+          <h1>Bienvenue</h1>
+          <p>
+            Retrouve ici les accès rapides vers les pages les plus utiles du commercial :
+            suivi d’activité, rapport de journée, rappels clients et outils de paramétrage.
+          </p>
+        </div>
+
+        <div class="hero-badge">Garcia Guillaume</div>
+      </div>
+
+      <div class="quick-links">
+        <a class="quick-link" href="tdbactivite.html">Ouvrir le tableau de bord</a>
+        <a class="quick-link" href="rapportjournalier.html">Préparer le rapport du jour</a>
+        <a class="quick-link" href="rappelclt.html">Voir les lignes rouges</a>
+        <a class="quick-link" href="gestiontarif.html">Gérer les tarifs</a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Accès principaux</h2>
+          <p>Les pages métier les plus utilisées au quotidien.</p>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M280-600v-80h400v80H280Zm0 160v-80h240v80H280Zm-80 320q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Analyse</div>
+          </div>
+          <h3>Tableau de bord activité</h3>
+          <p>
+            Visualise les indicateurs clés, les tendances d’activité, les clients à suivre
+            et les zones à fort enjeu commercial.
+          </p>
+          <div class="card-actions">
+            <a class="card-link primary" href="tdbactivite.html">Ouvrir</a>
+          </div>
+        </article>
+
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80Zm-80 360q-33 0-56.5-23.5T160-120v-720l160 120 160-120 160 120 160-120v720q0 33-23.5 56.5T720-40H240Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Compte rendu</div>
+          </div>
+          <h3>Rapport journalier</h3>
+          <p>
+            Prépare rapidement le récap de fin de journée avec les visites, les notes
+            et les commandes pour diffusion propre et rapide.
+          </p>
+          <div class="card-actions">
+            <a class="card-link primary" href="rapportjournalier.html">Ouvrir</a>
+          </div>
+        </article>
+
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M480-80 280-280l56-56 104 104v-248h80v248l104-104 56 56L480-80Zm-280-520v-200q0-33 23.5-56.5T280-880h400q33 0 56.5 23.5T760-800v200h-80v-200H280v200h-80Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Relances</div>
+          </div>
+          <h3>Rappels clients</h3>
+          <p>
+            Remonte les lignes rouges à traiter pour ne rien oublier :
+            client, numéro, produit, date, note et lien direct vers la fiche.
+          </p>
+          <div class="card-actions">
+            <a class="card-link primary" href="rappelclt.html">Ouvrir</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+   
+    <div class="footer-note">
+      Application commerciale.
+    </div>
+  </div>
+
+  <script>
+    const paramBtn = document.getElementById("paramBtn");
+    const paramDropdown = document.getElementById("paramDropdown");
+
+    paramBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      const isOpen = paramDropdown.classList.toggle("open");
+      paramBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!paramDropdown.contains(e.target) && !paramBtn.contains(e.target)) {
+        paramDropdown.classList.remove("open");
+        paramBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        paramDropdown.classList.remove("open");
+        paramBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+  </script>
+</body>
+</html>

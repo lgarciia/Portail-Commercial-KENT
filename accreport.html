@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Espace reporting</title>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(255,255,255,0.06);
+      --stroke:rgba(255,255,255,0.12);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.6);
+      --shadow:0 18px 45px rgba(0,0,0,0.35);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Segoe UI,Roboto,sans-serif;
+      background:
+        radial-gradient(900px 600px at 20% -10%, rgba(90,140,255,0.15), transparent 60%),
+        radial-gradient(900px 600px at 100% 20%, rgba(255,120,200,0.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      overflow:hidden;
+    }
+
+    /* NAVBAR */
+    .navbar{
+      height:64px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 18px;
+      border-bottom:1px solid var(--stroke);
+      background:rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    .logo{
+      font-weight:900;
+      letter-spacing:.3px;
+      user-select:none;
+      white-space:nowrap;
+    }
+
+    .navBtns{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    /* Dropdown */
+    .dd{ position:relative; display:inline-flex; align-items:center; }
+    .ddBtn{
+      appearance:none;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      color:var(--text);
+      height:38px;
+      padding:0 14px 0 16px;
+      border-radius:999px;
+      font-weight:800;
+      font-size:13px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      transition:.15s;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .ddBtn:hover{
+      background:rgba(255,255,255,0.12);
+      transform:translateY(-1px);
+    }
+
+    .chev{
+      width:9px;height:9px;
+      display:inline-block;
+      border-right:2px solid rgba(255,255,255,0.75);
+      border-bottom:2px solid rgba(255,255,255,0.75);
+      transform: rotate(45deg);
+      margin-top:-2px;
+    }
+
+    .menu{
+      position:absolute;
+      top:46px;
+      right:0;
+      width:260px;
+      background:rgba(12,16,26,0.96);
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:14px;
+      box-shadow:0 18px 45px rgba(0,0,0,0.55);
+      padding:8px;
+      display:none;
+      z-index:50;
+    }
+    .menu.show{ display:block; }
+
+    .menu a{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      height:38px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid transparent;
+      background:rgba(255,255,255,0.04);
+      color:rgba(255,255,255,0.90);
+      text-decoration:none;
+      font-weight:850;
+      font-size:13px;
+      transition:.15s;
+      user-select:none;
+    }
+    .menu a:hover{
+      background:rgba(255,255,255,0.10);
+      border-color:rgba(255,255,255,0.10);
+      transform:translateY(-1px);
+    }
+    .menu small{
+      color:rgba(255,255,255,0.55);
+      font-weight:900;
+    }
+
+    /* CENTER (image only) */
+    .center{
+      height:calc(100vh - 64px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+
+    .imageCard{
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      max-width:min(920px, 92vw);
+    }
+
+    .imageCard img{
+      width:100%;
+      height:auto;
+      display:block;
+      max-height:72vh;
+      object-fit:contain;
+    }
+
+    @media (max-width:900px){
+      body{overflow:auto;}
+      .center{height:auto;padding:16px;}
+      .imageCard img{max-height:none;}
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="logo">Mes Reporting</div>
+
+    <div class="navBtns">
+
+      <!-- ✅ Activité réelle (dropdown) -->
+      <div class="dd" id="ddReel">
+        <button class="ddBtn" id="btnReel" type="button">
+          Activité réelle <span class="chev"></span>
+        </button>
+
+        <div class="menu" id="menuReel" aria-hidden="true">
+          <a href="activitereelpsa.html">PSA <small>→</small></a>
+          <a href="activitereelgueudet.html">Gueudet <small>→</small></a>
+          <a href="activitereelford.html">Ford <small>→</small></a>
+          <a href="activitereeldirect.html">Direct <small>→</small></a>
+        </div>
+      </div>
+
+      <!-- ✅ Reporting annuel vs Budget -->
+      <div class="dd" id="ddAnnuel">
+        <button class="ddBtn" id="btnAnnuel" type="button">
+          Reporting annuel vs Budget <span class="chev"></span>
+        </button>
+
+        <div class="menu" id="menuAnnuel" aria-hidden="true">
+          <a href="reporting-annuelpsa.html">PSA <small>→</small></a>
+          <a href="reporting-annuelgueudet.html">Gueudet <small>→</small></a>
+          <a href="reporting-annuelford.html">Ford <small>→</small></a>
+          <a href="reporting-annueldirect.html">Direct <small>→</small></a>
+        </div>
+      </div>
+
+      <!-- ✅ Evol Reporting -->
+      <div class="dd" id="ddEvol">
+        <button class="ddBtn" id="btnEvol" type="button">
+          Évol Reporting <span class="chev"></span>
+        </button>
+
+        <div class="menu" id="menuEvol" aria-hidden="true">
+          <a href="evol-reporting-psa.html">PSA <small>→</small></a>
+          <a href="evol-reporting-gueudet.html">Gueudet <small>→</small></a>
+          <a href="evol-reporting-ford.html">Ford <small>→</small></a>
+          <a href="evol-reporting-direct.html">Direct <small>→</small></a>
+        </div>
+      </div>
+
+      <!-- ✅ Evol Analyse -->
+      <div class="dd" id="ddEvolAnalyse">
+        <button class="ddBtn" id="btnEvolAnalyse" type="button">
+          Evol Analyse <span class="chev"></span>
+        </button>
+
+        <div class="menu" id="menuEvolAnalyse" aria-hidden="true">
+          <a href="evol-analyse-psa.html">Evol PSA <small>→</small></a>
+          <a href="evol-analyse-gueudet.html">Evol GUEUDET <small>→</small></a>
+          <a href="evol-analyse-ford.html">Evol FORD <small>→</small></a>
+          <a href="evol-analyse-direct.html">Evol DIRECT <small>→</small></a>
+          <a href="evol-cumule.html">Evol Cumul <small>→</small></a>
+        </div>
+      </div>
+
+      <!-- ✅ Réel vs N-1 -->
+      <div class="dd" id="ddReelN1">
+        <button class="ddBtn" id="btnReelN1" type="button">
+          Réel vs N-1 <span class="chev"></span>
+        </button>
+
+        <div class="menu" id="menuReelN1" aria-hidden="true">
+          <a href="reel-n1-psa.html">PSA <small>→</small></a>
+          <a href="encours.html">Gueudet <small>→</small></a>
+          <a href="encours.html">Ford <small>→</small></a>
+          <a href="encours.html">Direct <small>→</small></a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CENTER CONTENT (image only, comme ta home budget) -->
+  <div class="center">
+    <div class="imageCard">
+      <!-- ✅ Mets ton image au milieu -->
+      <img src="accreporting.png" alt="Accueil Reporting">
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const dds = [
+      { btn: document.getElementById("btnReel"),        menu: document.getElementById("menuReel") },
+      { btn: document.getElementById("btnAnnuel"),      menu: document.getElementById("menuAnnuel") },
+      { btn: document.getElementById("btnEvol"),        menu: document.getElementById("menuEvol") },
+      { btn: document.getElementById("btnEvolAnalyse"), menu: document.getElementById("menuEvolAnalyse") },
+      { btn: document.getElementById("btnReelN1"),      menu: document.getElementById("menuReelN1") },
+    ].filter(x => x.btn && x.menu);
+
+    function open(menu){
+      menu.classList.add("show");
+      menu.setAttribute("aria-hidden","false");
+    }
+
+    function close(menu){
+      menu.classList.remove("show");
+      menu.setAttribute("aria-hidden","true");
+    }
+
+    function closeAll(exceptMenu){
+      dds.forEach(x => { if (x.menu !== exceptMenu) close(x.menu); });
+    }
+
+    function toggle(menu){
+      const isOpen = menu.classList.contains("show");
+      closeAll();
+      if (!isOpen) open(menu);
+    }
+
+    dds.forEach(({btn, menu}) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggle(menu);
+      });
+
+      menu.addEventListener("click", (e) => e.stopPropagation());
+
+      menu.querySelectorAll("a").forEach(a => {
+        a.addEventListener("click", () => closeAll());
+      });
+    });
+
+    window.addEventListener("click", () => closeAll());
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
+    window.addEventListener("pageshow", () => closeAll());
+    window.addEventListener("blur", () => closeAll());
+  })();
+  </script>
+
+</body>
+</html>

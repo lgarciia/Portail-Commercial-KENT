@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rapport journalier</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0b1020;
+      --bg2: #11162a;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --muted: #b8bfd3;
+      --muted-2: #94a3b8;
+      --accent: #7c3aed;
+      --accent-hover: #8b5cf6;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --info: #3b82f6;
+      --input: rgba(255, 255, 255, 0.06);
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      --radius: 16px;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124, 58, 237, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 25%),
+        radial-gradient(circle at bottom, rgba(236, 72, 153, 0.12), transparent 30%),
+        linear-gradient(135deg, var(--bg), var(--bg2));
+      padding: 32px;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .page-title h1 {
+      font-size: 2rem;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .page-title p {
+      color: var(--muted);
+    }
+
+    .glass-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .toolbar,
+    .summary-card,
+    .preview-card {
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .toolbar-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1fr auto auto;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.92rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      background: var(--input);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 12px;
+      outline: none;
+      transition: 0.2s ease;
+      font-size: 0.95rem;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 600;
+      transition: 0.2s ease;
+      font-size: 0.92rem;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #5b21b6);
+      color: white;
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.28);
+    }
+
+    .btn-primary:hover { transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white;
+      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.2);
+    }
+
+    .status-bar {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .summary-chip {
+      padding: 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 94px;
+    }
+
+    .summary-chip-label {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted-2);
+    }
+
+    .summary-chip-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-title h2 {
+      font-size: 1.15rem;
+    }
+
+    .preview-list {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .visit-card {
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .visit-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .visit-client h3 {
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+    }
+
+    .visit-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .visit-note {
+      margin: 14px 0 16px;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #e5e7eb;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: #d1d5db;
+      background: rgba(255,255,255,0.03);
+      font-size: 0.88rem;
+    }
+
+    td {
+      font-size: 0.92rem;
+      color: var(--text);
+    }
+
+    .ref-text {
+      display: block;
+      color: var(--muted-2);
+      font-size: 0.78rem;
+      margin-top: 4px;
+    }
+
+    .color-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.82rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .dot.red { background: #ef4444; }
+    .dot.yellow { background: #f59e0b; }
+    .dot.green { background: #22c55e; }
+    .dot.blue { background: #3b82f6; }
+    .dot.gray { background: #94a3b8; }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 48px 18px;
+    }
+
+    #pdfReport {
+      display: none;
+    }
+
+    .pdf-report {
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      color: #111827;
+      padding: 12mm 10mm;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+    }
+
+    .pdf-header {
+      border-bottom: 2px solid #7c3aed;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+
+    .pdf-header h1 {
+      font-size: 18px;
+      margin-bottom: 4px;
+      color: #111827;
+    }
+
+    .pdf-subtitle {
+      font-size: 10px;
+      color: #4b5563;
+      line-height: 1.35;
+    }
+
+    .pdf-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .pdf-chip {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 7px 8px;
+      background: #f9fafb;
+    }
+
+    .pdf-chip-label {
+      font-size: 8px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 2px;
+    }
+
+    .pdf-chip-value {
+      font-size: 13px;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .pdf-visit {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 8px;
+      margin-bottom: 10px;
+      page-break-inside: avoid;
+    }
+
+    .pdf-visit-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .pdf-visit-client {
+      font-size: 13px;
+      font-weight: bold;
+      color: #111827;
+      margin-bottom: 2px;
+    }
+
+    .pdf-visit-meta {
+      font-size: 9px;
+      color: #4b5563;
+      line-height: 1.3;
+    }
+
+    .pdf-note {
+      margin: 6px 0 8px;
+      padding: 7px 8px;
+      background: #f9fafb;
+      border-left: 3px solid #7c3aed;
+      font-size: 10px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+
+    .pdf-products {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pdf-product-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 7px 8px;
+      background: #fcfcfd;
+    }
+
+    .pdf-product-top {
+      margin-bottom: 4px;
+    }
+
+    .pdf-product-name {
+      font-size: 10px;
+      font-weight: bold;
+      color: #111827;
+      line-height: 1.25;
+    }
+
+    .pdf-product-ref {
+      font-size: 8px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .pdf-product-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pdf-product-badge {
+      display: inline-block;
+      font-size: 8px;
+      color: #374151;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      padding: 3px 7px;
+      line-height: 1.2;
+    }
+
+    .pdf-footer-note {
+      margin-top: 12px;
+      font-size: 9px;
+      color: #6b7280;
+      text-align: center;
+    }
+
+    @media (max-width: 1100px) {
+      .toolbar-grid,
+      .summary-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body { padding: 18px; }
+      .toolbar-grid,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <div class="page-title">
+        <h1>Rapport journalier</h1>
+        <p>Génération rapide d’un PDF récapitulatif des visites terrain de la journée</p>
+      </div>
+    </div>
+
+    <div class="glass-card toolbar">
+      <div class="toolbar-grid">
+        <div class="field-group">
+          <label for="reportDate">Date du rapport</label>
+          <input type="date" id="reportDate" />
+        </div>
+
+        <div class="field-group">
+          <label for="commercialName">Commercial</label>
+          <input type="text" id="commercialName" placeholder="Nom du commercial" />
+        </div>
+
+        <div class="field-group">
+          <label for="reportTitle">Titre du rapport</label>
+          <input type="text" id="reportTitle" value="Rapport journalier des visites" />
+        </div>
+
+        <button class="btn btn-secondary" type="button" onclick="chargerRapportJournalier()">Charger les visites</button>
+        <button class="btn btn-success" type="button" onclick="exporterPDF()">Exporter PDF</button>
+      </div>
+
+      <div class="field-group" style="margin-top:16px;">
+        <label for="globalComment">Commentaire global</label>
+        <textarea id="globalComment" placeholder="Résumé global de la journée, faits marquants, points d’attention, actions à suivre..."></textarea>
+      </div>
+
+      <div id="statusBar" class="status-bar">Connexion en cours...</div>
+    </div>
+
+    <div class="glass-card summary-card">
+      <div class="section-title">
+        <h2>Résumé de la journée</h2>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-chip">
+          <div class="summary-chip-label">Nombre de visites</div>
+          <div class="summary-chip-value" id="summaryVisites">0</div>
+        </div>
+        <div class="summary-chip">
+          <div class="summary-chip-label">Clients visités</div>
+          <div class="summary-chip-value" id="summaryClients">0</div>
+        </div>
+        <div class="summary-chip">
+          <div class="summary-chip-label">Lignes produits</div>
+          <div class="summary-chip-value" id="summaryLignes">0</div>
+        </div>
+        <div class="summary-chip">
+          <div class="summary-chip-label">Produits marqués vert</div>
+          <div class="summary-chip-value" id="summaryVerts">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card preview-card">
+      <div class="section-title">
+        <h2>Aperçu du rapport</h2>
+      </div>
+      <div id="previewList" class="preview-list">
+        <div class="empty-state">Choisis une date puis clique sur “Charger les visites”.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pdfReport"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let rapportVisites = [];
+    let reportStats = {
+      nbVisites: 0,
+      nbClients: 0,
+      nbLignes: 0,
+      nbVerts: 0
+    };
+
+    function setStatus(message) {
+      document.getElementById("statusBar").textContent = message;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return "-";
+      return new Date(dateStr).toLocaleDateString("fr-FR");
+    }
+
+    function formatDateLong(dateStr) {
+      if (!dateStr) return "-";
+      return new Date(dateStr).toLocaleDateString("fr-FR", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    }
+
+    function getColorLabel(color) {
+      const map = {
+        red: "Rouge",
+        yellow: "Jaune",
+        green: "Vert",
+        blue: "Bleu"
+      };
+      return map[color] || "Non défini";
+    }
+
+    function getColorDotClass(color) {
+      return ["red", "yellow", "green", "blue"].includes(color) ? color : "gray";
+    }
+
+    async function fetchRapportVisitesByDate(reportDate) {
+      const { data, error } = await supabaseClient
+        .from("visites")
+        .select(`
+          id,
+          client_id,
+          date_visite,
+          note,
+          clients (
+            id,
+            nom,
+            numero_compte,
+            adresse,
+            telephone
+          ),
+          visite_commandes (
+            id,
+            produit_id,
+            quantite,
+            stock_client,
+            couleur,
+            produits (
+              id,
+              nom,
+              reference_produit
+            )
+          )
+        `)
+        .eq("date_visite", reportDate)
+        .order("date_visite", { ascending: true });
+
+      if (error) {
+        console.error("Erreur fetchRapportVisitesByDate:", error);
+        throw error;
+      }
+
+      return (data || []).map(visite => ({
+        ...visite,
+        client: visite.clients || null,
+        commandes: (visite.visite_commandes || []).map(cmd => ({
+          ...cmd,
+          produit: cmd.produits || null
+        }))
+      }));
+    }
+
+    function calculateStats(visites) {
+      const uniqueClients = new Set();
+      let nbLignes = 0;
+      let nbVerts = 0;
+
+      visites.forEach(visite => {
+        if (visite.client?.id) uniqueClients.add(visite.client.id);
+        (visite.commandes || []).forEach(cmd => {
+          nbLignes += 1;
+          if ((cmd.couleur || "") === "green") nbVerts += 1;
+        });
+      });
+
+      return {
+        nbVisites: visites.length,
+        nbClients: uniqueClients.size,
+        nbLignes,
+        nbVerts
+      };
+    }
+
+    function renderSummary(stats) {
+      document.getElementById("summaryVisites").textContent = stats.nbVisites;
+      document.getElementById("summaryClients").textContent = stats.nbClients;
+      document.getElementById("summaryLignes").textContent = stats.nbLignes;
+      document.getElementById("summaryVerts").textContent = stats.nbVerts;
+    }
+
+    function renderPreview(visites) {
+      const container = document.getElementById("previewList");
+
+      if (!visites.length) {
+        container.innerHTML = `<div class="empty-state">Aucune visite trouvée pour cette date.</div>`;
+        return;
+      }
+
+      container.innerHTML = visites.map(visite => {
+        const clientNom = visite.client?.nom || "Client inconnu";
+        const compte = visite.client?.numero_compte || "—";
+        const tel = visite.client?.telephone || "—";
+        const adresse = visite.client?.adresse || "—";
+        const note = visite.note?.trim() || "Aucune note";
+
+        const lignesHtml = (visite.commandes || []).length
+          ? `
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Produit</th>
+                    <th>Quantité</th>
+                    <th>Stock client</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${(visite.commandes || []).map(cmd => `
+                    <tr>
+                      <td>
+                        ${escapeHtml(cmd.produit?.nom || "Produit inconnu")}
+                        <span class="ref-text">Réf : ${escapeHtml(cmd.produit?.reference_produit || "-")}</span>
+                      </td>
+                      <td>${cmd.quantite ?? 0}</td>
+                      <td>${cmd.stock_client ?? 0}</td>
+                      <td>
+                        <span class="color-badge">
+                          <span class="dot ${getColorDotClass(cmd.couleur)}"></span>
+                          ${escapeHtml(getColorLabel(cmd.couleur))}
+                        </span>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          `
+          : `<div class="empty-state" style="padding:20px 0 0;">Aucune ligne produit sur cette visite.</div>`;
+
+        return `
+          <div class="visit-card">
+            <div class="visit-header">
+              <div class="visit-client">
+                <h3>${escapeHtml(clientNom)}</h3>
+                <div class="visit-meta">
+                  Compte : ${escapeHtml(compte)}<br>
+                  Téléphone : ${escapeHtml(tel)}<br>
+                  Adresse : ${escapeHtml(adresse)}
+                </div>
+              </div>
+              <div class="visit-meta">
+                <strong>Date :</strong> ${escapeHtml(formatDate(visite.date_visite))}
+              </div>
+            </div>
+            <div class="visit-note">${escapeHtml(note)}</div>
+            ${lignesHtml}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function buildPdfHtml() {
+      const reportDate = document.getElementById("reportDate").value;
+      const commercialName = document.getElementById("commercialName").value.trim() || "Non renseigné";
+      const reportTitle = document.getElementById("reportTitle").value.trim() || "Rapport journalier des visites";
+      const globalComment = document.getElementById("globalComment").value.trim();
+
+      const visitsHtml = rapportVisites.map(visite => {
+        const clientNom = visite.client?.nom || "Client inconnu";
+        const compte = visite.client?.numero_compte || "—";
+        const tel = visite.client?.telephone || "—";
+        const adresse = visite.client?.adresse || "—";
+        const note = visite.note?.trim() || "Aucune note";
+        const commandes = visite.commandes || [];
+
+        const rows = commandes.length
+          ? `
+            <div class="pdf-products">
+              ${commandes.map(cmd => `
+                <div class="pdf-product-item">
+                  <div class="pdf-product-top">
+                    <div class="pdf-product-name">${escapeHtml(cmd.produit?.nom || "Produit inconnu")}</div>
+                    <div class="pdf-product-ref">Réf : ${escapeHtml(cmd.produit?.reference_produit || "-")}</div>
+                  </div>
+                  <div class="pdf-product-meta">
+                    <span class="pdf-product-badge">Qté : ${cmd.quantite ?? 0}</span>
+                    <span class="pdf-product-badge">Stock client : ${cmd.stock_client ?? 0}</span>
+                    <span class="pdf-product-badge">Statut : ${escapeHtml(getColorLabel(cmd.couleur))}</span>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          `
+          : `<div class="pdf-note">Aucune ligne produit</div>`;
+
+        return `
+          <div class="pdf-visit">
+            <div class="pdf-visit-header">
+              <div>
+                <div class="pdf-visit-client">${escapeHtml(clientNom)}</div>
+                <div class="pdf-visit-meta">
+                  Compte : ${escapeHtml(compte)}<br>
+                  Téléphone : ${escapeHtml(tel)}<br>
+                  Adresse : ${escapeHtml(adresse)}
+                </div>
+              </div>
+              <div class="pdf-visit-meta">
+                Date : ${escapeHtml(formatDate(visite.date_visite))}
+              </div>
+            </div>
+            <div class="pdf-note">${escapeHtml(note)}</div>
+            ${rows}
+          </div>
+        `;
+      }).join("");
+
+      return `
+        <div class="pdf-report">
+          <div class="pdf-header">
+            <h1>${escapeHtml(reportTitle)}</h1>
+            <div class="pdf-subtitle">
+              Date du rapport : ${escapeHtml(formatDateLong(reportDate))}<br>
+              Commercial : ${escapeHtml(commercialName)}
+            </div>
+          </div>
+
+          <div class="pdf-summary">
+            <div class="pdf-chip">
+              <div class="pdf-chip-label">Visites</div>
+              <div class="pdf-chip-value">${reportStats.nbVisites}</div>
+            </div>
+            <div class="pdf-chip">
+              <div class="pdf-chip-label">Clients</div>
+              <div class="pdf-chip-value">${reportStats.nbClients}</div>
+            </div>
+            <div class="pdf-chip">
+              <div class="pdf-chip-label">Lignes produits</div>
+              <div class="pdf-chip-value">${reportStats.nbLignes}</div>
+            </div>
+            <div class="pdf-chip">
+              <div class="pdf-chip-label">Nouveaux produits</div>
+              <div class="pdf-chip-value">${reportStats.nbVerts}</div>
+            </div>
+          </div>
+
+          ${globalComment ? `<div class="pdf-note"><strong>Commentaire global :</strong><br>${escapeHtml(globalComment)}</div>` : ""}
+
+          ${visitsHtml || `<div class="pdf-note">Aucune visite trouvée pour cette date.</div>`}
+
+          <div class="pdf-footer-note">
+            Rapport généré automatiquement depuis l’application de suivi commercial.
+          </div>
+        </div>
+      `;
+    }
+
+    async function chargerRapportJournalier() {
+      const reportDate = document.getElementById("reportDate").value;
+
+      if (!reportDate) {
+        alert("Veuillez choisir une date.");
+        return;
+      }
+
+      try {
+        setStatus("Chargement des visites du jour...");
+        rapportVisites = await fetchRapportVisitesByDate(reportDate);
+        reportStats = calculateStats(rapportVisites);
+        renderSummary(reportStats);
+        renderPreview(rapportVisites);
+        setStatus(`${reportStats.nbVisites} visite(s) chargée(s) pour le ${formatDate(reportDate)}.`);
+      } catch (error) {
+        console.error(error);
+        rapportVisites = [];
+        reportStats = calculateStats([]);
+        renderSummary(reportStats);
+        renderPreview([]);
+        setStatus("Erreur de chargement du rapport journalier.");
+        alert("Impossible de charger les visites depuis Supabase.");
+      }
+    }
+
+    async function exporterPDF() {
+      const reportDate = document.getElementById("reportDate").value;
+
+      if (!reportDate) {
+        alert("Veuillez choisir une date avant d’exporter le PDF.");
+        return;
+      }
+
+      if (!rapportVisites.length) {
+        alert("Aucune visite chargée pour cette date.");
+        return;
+      }
+
+      try {
+        setStatus("Génération du PDF en cours...");
+
+        const pdfContainer = document.getElementById("pdfReport");
+        pdfContainer.innerHTML = buildPdfHtml();
+        pdfContainer.style.display = "block";
+
+        const element = pdfContainer.firstElementChild;
+        const safeDate = reportDate.replaceAll("-", "_");
+        const filename = `rapport_journalier_${safeDate}.pdf`;
+
+        const options = {
+          margin: 0,
+          filename,
+          image: { type: "jpeg", quality: 0.95 },
+          html2canvas: { scale: 1.6, useCORS: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["css", "legacy"] }
+        };
+
+        await html2pdf().set(options).from(element).save();
+
+        pdfContainer.style.display = "none";
+        setStatus("PDF généré avec succès.");
+      } catch (error) {
+        console.error("Erreur export PDF:", error);
+        document.getElementById("pdfReport").style.display = "none";
+        setStatus("Erreur pendant la génération du PDF.");
+        alert("Impossible de générer le PDF.");
+      }
+    }
+
+    function initPage() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+      document.getElementById("reportDate").value = `${yyyy}-${mm}-${dd}`;
+      setStatus("Prêt. Choisis une date puis charge les visites.");
+    }
+
+    initPage();
+  </script>
+</body>
+</html>
