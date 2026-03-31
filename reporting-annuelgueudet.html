@@ -408,7 +408,7 @@
           </div>
 
           <div class="mutedNote">
-            ✅ Réel Gueudet auto = fetch depuis <code>activitereelgueudet.xlsx</code> (GitHub-safe). Aucune saisie manuelle.
+            ✅ Budget auto = fetch depuis <code>budgetgueudet.xlsx</code>. Réel Gueudet auto = fetch depuis <code>activitereelgueudet.xlsx</code> (GitHub-safe). L'import manuel reste disponible.
           </div>
         </div>
       </div>
@@ -438,8 +438,9 @@
     real: "BUDGET2026_REAL_GUEUDET_V1",
   };
 
-  // ✅ SOURCE RÉEL (fetch)
+  // ✅ sources fichiers
   const REAL_FILE = "activitereelgueudet.xlsx";
+  const BUDGET_FILE = "budgetgueudet.xlsx";
 
   let budgetData = null;  // { clients: [{id,name,nclient,budget:{jan..dec}}] }
   let realData = loadJSON(STORAGE.real, {}); // sera écrasé par le fetch
@@ -478,6 +479,7 @@
     renderEmpty();
     updateReelStatus("non chargé (budget absent)");
     syncBottomScrollbar();
+    await tryAutoFetchBudget();
   }
 
   el.btnImport.addEventListener("click", () => el.fileBudget.click());
@@ -545,51 +547,7 @@
   async function importBudgetFile(file){
     try{
       const arrayBuffer = await file.arrayBuffer();
-      const wb = XLSX.read(arrayBuffer, { type: "array" });
-
-      const firstSheetName = wb.SheetNames[0];
-      const ws = wb.Sheets[firstSheetName];
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-
-      const headerMap = buildHeaderMap(rows[0] || {});
-      const colClient = findCol(headerMap, ["client", "clients"]);
-      if (!colClient) throw new Error("Colonne CLIENT introuvable dans le fichier.");
-
-      const colNClient = findCol(headerMap, ["n client","n° client","no client","numero client","num client","nclient"]);
-
-      const monthCols = {};
-      for (const m of MONTHS){
-        const col = findCol(headerMap, [normalizeKey(m.excel)]);
-        if (!col) throw new Error(`Colonne "${m.excel}" introuvable dans le fichier.`);
-        monthCols[m.key] = col;
-      }
-
-      const clients = [];
-      for (const r of rows){
-        const rawName = String(r[colClient] ?? "").trim();
-        if (!rawName) continue;
-
-        const nclient = colNClient ? String(r[colNClient] ?? "").trim() : "";
-        const id = makeClientKey(rawName, nclient);
-
-        const budget = {};
-        for (const m of MONTHS){
-          budget[m.key] = Math.round(toNumber(r[monthCols[m.key]]));
-        }
-
-        clients.push({ id, name: rawName, nclient, budget });
-      }
-
-      budgetData = { clients };
-
-      saveJSON(STORAGE.budget, budgetData);
-      const meta = {
-        filename: file.name || "budgetgueudet.xlsx",
-        updatedAt: new Date().toISOString(),
-        sheet: firstSheetName
-      };
-      saveJSON(STORAGE.budgetMeta, meta);
-      applyMeta(meta);
+      parseBudget(arrayBuffer, file.name || BUDGET_FILE);
 
       await loadRealFromFetch();
       render();
@@ -599,13 +557,74 @@
     }
   }
 
+  function parseBudget(arrayBuffer, fileLabel){
+    const wb = XLSX.read(arrayBuffer, { type: "array" });
+
+    const firstSheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[firstSheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+    if (!rows.length) throw new Error("Budget vide");
+
+    const headerMap = buildHeaderMap(rows[0] || {});
+    const colClient = findCol(headerMap, ["client", "clients"]);
+    if (!colClient) throw new Error("Colonne CLIENT introuvable dans le fichier.");
+
+    const colNClient = findCol(headerMap, ["n client","n° client","no client","numero client","num client","nclient"]);
+
+    const monthCols = {};
+    for (const m of MONTHS){
+      const col = findCol(headerMap, [normalizeKey(m.excel)]);
+      if (!col) throw new Error(`Colonne "${m.excel}" introuvable dans le fichier.`);
+      monthCols[m.key] = col;
+    }
+
+    const clients = [];
+    for (const r of rows){
+      const rawName = String(r[colClient] ?? "").trim();
+      if (!rawName) continue;
+
+      const nclient = colNClient ? String(r[colNClient] ?? "").trim() : "";
+      const id = makeClientKey(rawName, nclient);
+
+      const budget = {};
+      for (const m of MONTHS){
+        budget[m.key] = Math.round(toNumber(r[monthCols[m.key]]));
+      }
+
+      clients.push({ id, name: rawName, nclient, budget });
+    }
+
+    budgetData = { clients };
+
+    saveJSON(STORAGE.budget, budgetData);
+    const meta = {
+      filename: fileLabel,
+      updatedAt: new Date().toISOString(),
+      sheet: firstSheetName
+    };
+    saveJSON(STORAGE.budgetMeta, meta);
+    applyMeta(meta);
+  }
+
+  async function tryAutoFetchBudget(){
+    try{
+      const { buffer } = await fetchXlsxWithFallback(BUDGET_FILE);
+      parseBudget(buffer, BUDGET_FILE);
+      await loadRealFromFetch();
+      render();
+    }catch{
+      // silencieux : on laisse l'import manuel
+    }
+  }
+
   function applyMeta(meta){
     if (!meta) {
       el.budgetFileLabel.textContent = "non chargé";
       el.lastUpdate.textContent = "—";
       return;
     }
-    el.budgetFileLabel.textContent = meta.filename || "budgetgueudet.xlsx";
+    el.budgetFileLabel.textContent = meta.filename || BUDGET_FILE;
     el.lastUpdate.textContent = formatDateTime(meta.updatedAt);
   }
 
