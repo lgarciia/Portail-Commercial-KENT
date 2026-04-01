@@ -453,11 +453,14 @@
       <div class="nav-left">
         <div class="brand">
           <div class="brand-title">Pilotage commercial</div>
-          <div class="brand-subtitle">Accueil de l’application Commerce</div>
+          <div class="brand-subtitle">Hub des outils Commerce</div>
         </div>
 
         <div class="nav-links">
-
+          <a class="nav-btn primary" href="ficherclt.html">Fiches client</a>
+          <a class="nav-btn" href="tdbactivite.html">Tableau de bord</a>
+          <a class="nav-btn" href="rappelclt.html">Rappels</a>
+          <a class="nav-btn" href="rapportjournalier.html">Rapport du jour</a>
         </div>
       </div>
 
@@ -466,11 +469,15 @@
           <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
             <path d="M480-120q-151 0-255.5-46.5T120-280v-400q0-66 105.5-113T480-840q149 0 254.5 47T840-680v400q0 67-104.5 113.5T480-120Zm0-479q89 0 179-25.5T760-679q-11-29-100.5-55T480-760q-91 0-178.5 25.5T200-679q14 30 101.5 55T480-599Zm0 199q42 0 81-4t74.5-11.5q35.5-7.5 67-18.5t57.5-25v-120q-26 14-57.5 25t-67 18.5Q600-528 561-524t-81 4q-42 0-82-4t-75.5-11.5Q287-543 256-554t-56-25v120q25 14 56 25t66.5 18.5Q358-408 398-404t82 4Zm0 200q46 0 93.5-7t87.5-18.5q40-11.5 67-26t32-29.5v-98q-26 14-57.5 25t-67 18.5Q600-328 561-324t-81 4q-42 0-82-4t-75.5-11.5Q287-343 256-354t-56-25v99q5 15 31.5 29t66.5 25.5q40 11.5 88 18.5t94 7Z"/>
           </svg>
-          Paramétrage
+          Outils
         </button>
 
         <div class="glass dropdown" id="paramDropdown">
           <div class="dropdown-list">
+            <a href="ficherclt.html">Fiches client</a>
+            <a href="tdbactivite.html">Tableau de bord activité</a>
+            <a href="rapportjournalier.html">Rapport journalier</a>
+            <a href="rappelclt.html">Rappels clients</a>
             <a href="gestiontarif.html">Gestion tarif</a>
             <a href="gestionimportclients.html">Import clients</a>
           </div>
@@ -481,29 +488,33 @@
     <section class="glass hero">
       <div class="hero-top">
         <div>
-          <h1>Bienvenue</h1>
+          <h1>Accueil Commerce</h1>
           <p>
-            Retrouve ici les accès rapides vers les pages les plus utiles du commercial :
-            suivi d’activité, rapport de journée, rappels clients et outils de paramétrage.
+            Cette page regroupe les accès utiles du quotidien commercial :
+            fiches client, suivi d'activité, rapport du jour, rappels, gestion des tarifs
+            et import de la base clients. L'objectif est que tu puisses tout ouvrir d'ici
+            sans passer par plusieurs menus.
           </p>
         </div>
 
-        <div class="hero-badge">Garcia Guillaume</div>
+        <div class="hero-badge">Hub métier</div>
       </div>
 
       <div class="quick-links">
-        <a class="quick-link" href="tdbactivite.html">Ouvrir le tableau de bord</a>
+        <a class="quick-link" href="ficherclt.html">Ouvrir les fiches client</a>
+        <a class="quick-link" href="tdbactivite.html">Suivre l'activité</a>
         <a class="quick-link" href="rapportjournalier.html">Préparer le rapport du jour</a>
-        <a class="quick-link" href="rappelclt.html">Voir les lignes rouges</a>
+        <a class="quick-link" href="rappelclt.html">Voir les rappels</a>
         <a class="quick-link" href="gestiontarif.html">Gérer les tarifs</a>
+        <a class="quick-link" href="gestionimportclients.html">Importer des clients</a>
       </div>
     </section>
 
     <section class="section">
       <div class="section-head">
         <div>
-          <h2>Accès principaux</h2>
-          <p>Les pages métier les plus utilisées au quotidien.</p>
+          <h2>Applications Commerce</h2>
+          <p>Les écrans principaux du quotidien et les outils d'administration.</p>
         </div>
       </div>
 
@@ -512,15 +523,34 @@
           <div class="card-top">
             <div class="card-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M234-276q51-39 114-61.5T480-360q69 0 132 22.5T726-276q43-54 66.5-120.5T816-540q0-146-95-241t-241-95q-146 0-241 95t-95 241q0 77 23.5 143.5T234-276Zm246-204q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0 480q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Client</div>
+          </div>
+          <h3>Fiches client</h3>
+          <p>
+            Accède aux fiches complètes pour consulter l'historique, les visites,
+            les produits, les tarifs et les éléments de suivi terrain.
+          </p>
+          <div class="card-actions">
+            <a class="card-link primary" href="ficherclt.html">Ouvrir</a>
+          </div>
+        </article>
+
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
                 <path d="M280-600v-80h400v80H280Zm0 160v-80h240v80H280Zm-80 320q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Z"/>
               </svg>
             </div>
-            <div class="card-tag">Analyse</div>
+            <div class="card-tag">Pilotage</div>
           </div>
           <h3>Tableau de bord activité</h3>
           <p>
             Visualise les indicateurs clés, les tendances d’activité, les clients à suivre
-            et les zones à fort enjeu commercial.
+            et les zones à fort enjeu commercial pour piloter la semaine.
           </p>
           <div class="card-actions">
             <a class="card-link primary" href="tdbactivite.html">Ouvrir</a>
@@ -564,12 +594,86 @@
             <a class="card-link primary" href="rappelclt.html">Ouvrir</a>
           </div>
         </article>
+
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M120-120v-170h80v90h90v80H120Zm640 0v-80h90v-90h80v170H760ZM120-670v-170h170v80h-90v90h-80Zm730 0v-90h-90v-80h170v170h-80ZM280-280h400v-80H280v80Zm-80-160h560v-80H200v80Zm-80 160v-400h720v400H120Zm80-80h560v-240H200v240Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Administration</div>
+          </div>
+          <h3>Gestion tarif</h3>
+          <p>
+            Mets à jour les plaques, les produits et les tarifs pour garder
+            une base commerciale propre et cohérente.
+          </p>
+          <div class="card-actions">
+            <a class="card-link primary" href="gestiontarif.html">Ouvrir</a>
+          </div>
+        </article>
+
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Base</div>
+          </div>
+          <h3>Import clients</h3>
+          <p>
+            Importe ou mets à jour la base clients pour que les outils Commerce
+            s'appuient sur des données propres et à jour.
+          </p>
+          <div class="card-actions">
+            <a class="card-link primary" href="gestionimportclients.html">Ouvrir</a>
+          </div>
+        </article>
       </div>
     </section>
 
-   
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Parcours rapide</h2>
+          <p>Deux entrées simples selon ton besoin du moment.</p>
+        </div>
+      </div>
+
+      <div class="mini-grid">
+        <article class="glass mini-card">
+          <h3>Suivi quotidien</h3>
+          <p>
+            Commence par le tableau de bord pour voir la situation, ouvre ensuite les fiches client
+            pour creuser un dossier, puis termine par le rapport journalier.
+          </p>
+          <div class="mini-links">
+            <a class="card-link" href="tdbactivite.html">Tableau de bord</a>
+            <a class="card-link" href="ficherclt.html">Fiches client</a>
+            <a class="card-link" href="rapportjournalier.html">Rapport</a>
+          </div>
+        </article>
+
+        <article class="glass mini-card">
+          <h3>Administration commerciale</h3>
+          <p>
+            Utilise ces accès si tu dois corriger la base, gérer les tarifs ou suivre les rappels
+            opérationnels avant une relance client.
+          </p>
+          <div class="mini-links">
+            <a class="card-link" href="gestionimportclients.html">Import clients</a>
+            <a class="card-link" href="gestiontarif.html">Gestion tarif</a>
+            <a class="card-link" href="rappelclt.html">Rappels</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <div class="footer-note">
-      Application commerciale.
+      Hub Commerce - accès central vers les outils terrain, clients et administration.
     </div>
   </div>
 
