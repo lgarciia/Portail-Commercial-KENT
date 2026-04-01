@@ -6,6 +6,40 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Espace PSA</title>
   <script src="./shared-ui.js"></script>
+  <script>
+  window.ENTITY_SPACE_CONFIG = {
+    title: "Espace PSA",
+    eyebrow: "PSA",
+    description: "Accède rapidement aux outils PSA pour retrouver un client, ouvrir son lookup ou lancer une recherche produit sans repasser par le hub principal.",
+    supportNote: "Les deux accès PSA principaux sont regroupés ici.",
+    image: "accpsa.png",
+    imageAlt: "Espace PSA",
+    sectionTitle: "Outils disponibles",
+    sectionSubtitle: "Un accès direct aux deux modules PSA du portail.",
+    topActions: [
+      { label: "Lookup client", href: "client-psa.html", primary: true },
+      { label: "Recherche produit", href: "explorer-psa.html" }
+    ],
+    cards: [
+      {
+        kind: "lookup",
+        tag: "Lookup",
+        title: "Lookup client PSA",
+        description: "Recherche rapidement un client PSA à partir de sa base dédiée pour accéder aux informations utiles sans passer par un écran plus lourd.",
+        href: "client-psa.html",
+        primary: true
+      },
+      {
+        kind: "product",
+        tag: "Produit",
+        title: "Recherche produit PSA",
+        description: "Explore la base PSA côté produits pour retrouver rapidement les références, les lignes utiles et les associations client / produit.",
+        href: "explorer-psa.html"
+      }
+    ]
+  };
+  </script>
+  <script src="./entity-space.js"></script>
 
 <script>
 (function(){

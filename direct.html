@@ -6,6 +6,40 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Espace Client Direct</title>
   <script src="./shared-ui.js"></script>
+  <script>
+  window.ENTITY_SPACE_CONFIG = {
+    title: "Espace Client Direct",
+    eyebrow: "Direct",
+    description: "Accède rapidement aux outils Client Direct avec la même structure que les autres entités pour garder une navigation simple, propre et cohérente.",
+    supportNote: "L'espace Direct reprend le même standard visuel que les autres pages entité.",
+    image: "accdirect.png",
+    imageAlt: "Espace Client Direct",
+    sectionTitle: "Outils disponibles",
+    sectionSubtitle: "Les deux accès Direct sont regroupés ici.",
+    topActions: [
+      { label: "Lookup client", href: "client-direct.html", primary: true },
+      { label: "Recherche produit", href: "explorer-direct.html" }
+    ],
+    cards: [
+      {
+        kind: "lookup",
+        tag: "Lookup",
+        title: "Lookup client Direct",
+        description: "Ouvre le module Direct pour retrouver rapidement un client dans la même logique que les autres espaces du portail.",
+        href: "client-direct.html",
+        primary: true
+      },
+      {
+        kind: "product",
+        tag: "Produit",
+        title: "Recherche produit Direct",
+        description: "Accède à la recherche produit Direct depuis un écran uniforme, clair et cohérent avec le reste du portail.",
+        href: "explorer-direct.html"
+      }
+    ]
+  };
+  </script>
+  <script src="./entity-space.js"></script>
 
 <!-- (Même CSS que Ford ci-dessus, tu peux copier exactement le même bloc style) -->
 

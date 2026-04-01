@@ -6,6 +6,40 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Espace Gueudet</title>
   <script src="./shared-ui.js"></script>
+  <script>
+  window.ENTITY_SPACE_CONFIG = {
+    title: "Espace Gueudet",
+    eyebrow: "Gueudet",
+    description: "Accède rapidement aux outils Gueudet pour retrouver un client ou lancer une recherche produit dans le même cadre que les autres espaces du portail.",
+    supportNote: "Les deux accès Gueudet sont disponibles depuis cet écran.",
+    image: "accgueudet.png",
+    imageAlt: "Espace Gueudet",
+    sectionTitle: "Outils disponibles",
+    sectionSubtitle: "Un accès direct aux deux modules Gueudet du portail.",
+    topActions: [
+      { label: "Lookup client", href: "client-gueudet.html", primary: true },
+      { label: "Recherche produit", href: "explorer-gueudet.html" }
+    ],
+    cards: [
+      {
+        kind: "lookup",
+        tag: "Lookup",
+        title: "Lookup client Gueudet",
+        description: "Retrouve rapidement un client Gueudet et les informations associées depuis l'outil de lookup dédié.",
+        href: "client-gueudet.html",
+        primary: true
+      },
+      {
+        kind: "product",
+        tag: "Produit",
+        title: "Recherche produit Gueudet",
+        description: "Explore la base produit Gueudet pour identifier rapidement les lignes utiles, les références et les correspondances client / produit.",
+        href: "explorer-gueudet.html"
+      }
+    ]
+  };
+  </script>
+  <script src="./entity-space.js"></script>
 
 <script>
 (function(){

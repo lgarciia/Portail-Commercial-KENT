@@ -6,6 +6,40 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Espace Ford</title>
   <script src="./shared-ui.js"></script>
+  <script>
+  window.ENTITY_SPACE_CONFIG = {
+    title: "Espace Ford",
+    eyebrow: "Ford",
+    description: "Accède rapidement aux outils Ford dans le même format que les autres espaces du portail pour garder une navigation claire et homogène.",
+    supportNote: "L'espace Ford garde les mêmes repères visuels que PSA, Gueudet et Direct.",
+    image: "accford.png",
+    imageAlt: "Espace Ford",
+    sectionTitle: "Outils disponibles",
+    sectionSubtitle: "Les deux accès Ford sont centralisés ici.",
+    topActions: [
+      { label: "Lookup client", href: "client-ford.html", primary: true },
+      { label: "Recherche produit", href: "explorer-ford.html" }
+    ],
+    cards: [
+      {
+        kind: "lookup",
+        tag: "Lookup",
+        title: "Lookup client Ford",
+        description: "Ouvre le module Ford dédié pour accéder rapidement à la recherche client depuis cet espace homogène.",
+        href: "client-ford.html",
+        primary: true
+      },
+      {
+        kind: "product",
+        tag: "Produit",
+        title: "Recherche produit Ford",
+        description: "Accède à la recherche produit Ford depuis le même hub visuel que les autres entités du portail.",
+        href: "explorer-ford.html"
+      }
+    ]
+  };
+  </script>
+  <script src="./entity-space.js"></script>
 
 <script>
 (function(){
