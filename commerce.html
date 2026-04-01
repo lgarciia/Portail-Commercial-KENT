@@ -148,18 +148,44 @@
       position: relative;
     }
 
+    .menu-btn.is-open {
+      background: rgba(124, 58, 237, 0.18);
+      border-color: rgba(124, 58, 237, 0.32);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+    }
+
     .menu-btn svg {
       flex-shrink: 0;
+    }
+
+    .dropdown-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 8, 18, 0.42);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      z-index: 40;
+    }
+
+    .dropdown-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     .dropdown {
       position: absolute;
       right: 0;
       top: calc(100% + 10px);
-      min-width: 240px;
-      padding: 10px;
+      min-width: 280px;
+      padding: 12px;
       display: none;
-      z-index: 100;
+      z-index: 90;
+      background: rgba(11, 16, 32, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.4);
     }
 
     .dropdown.open {
@@ -237,25 +263,6 @@
       font-size: 0.82rem;
       font-weight: 700;
       white-space: nowrap;
-    }
-
-    .quick-links {
-      margin-top: 20px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .quick-link {
-      text-decoration: none;
-      color: var(--text);
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      font-size: 0.86rem;
-      font-weight: 600;
-      transition: 0.2s ease;
     }
 
     .section {
@@ -358,34 +365,6 @@
       box-shadow: 0 10px 25px rgba(124, 58, 237, 0.24);
     }
 
-    .mini-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .mini-card {
-      padding: 18px;
-    }
-
-    .mini-card h3 {
-      font-size: 0.98rem;
-      margin-bottom: 8px;
-    }
-
-    .mini-card p {
-      color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.55;
-      margin-bottom: 14px;
-    }
-
-    .mini-links {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
     .footer-note {
       margin-top: 8px;
       color: var(--muted-2);
@@ -400,8 +379,7 @@
     }
 
     @media (max-width: 780px) {
-      .cards-grid,
-      .mini-grid {
+      .cards-grid {
         grid-template-columns: 1fr;
       }
 
@@ -459,7 +437,6 @@
         <div class="nav-links">
           <a class="nav-btn primary" href="ficherclt.html">Fiches client</a>
           <a class="nav-btn" href="tdbactivite.html">Tableau de bord</a>
-          <a class="nav-btn" href="rappelclt.html">Rappels</a>
           <a class="nav-btn" href="rapportjournalier.html">Rapport du jour</a>
         </div>
       </div>
@@ -474,16 +451,14 @@
 
         <div class="glass dropdown" id="paramDropdown">
           <div class="dropdown-list">
-            <a href="ficherclt.html">Fiches client</a>
-            <a href="tdbactivite.html">Tableau de bord activité</a>
-            <a href="rapportjournalier.html">Rapport journalier</a>
-            <a href="rappelclt.html">Rappels clients</a>
             <a href="gestiontarif.html">Gestion tarif</a>
             <a href="gestionimportclients.html">Import clients</a>
           </div>
         </div>
       </div>
     </nav>
+
+    <div class="dropdown-backdrop" id="dropdownBackdrop" aria-hidden="true"></div>
 
     <section class="glass hero">
       <div class="hero-top">
@@ -500,14 +475,6 @@
         <div class="hero-badge">Hub métier</div>
       </div>
 
-      <div class="quick-links">
-        <a class="quick-link" href="ficherclt.html">Ouvrir les fiches client</a>
-        <a class="quick-link" href="tdbactivite.html">Suivre l'activité</a>
-        <a class="quick-link" href="rapportjournalier.html">Préparer le rapport du jour</a>
-        <a class="quick-link" href="rappelclt.html">Voir les rappels</a>
-        <a class="quick-link" href="gestiontarif.html">Gérer les tarifs</a>
-        <a class="quick-link" href="gestionimportclients.html">Importer des clients</a>
-      </div>
     </section>
 
     <section class="section">
@@ -635,43 +602,6 @@
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <div>
-          <h2>Parcours rapide</h2>
-          <p>Deux entrées simples selon ton besoin du moment.</p>
-        </div>
-      </div>
-
-      <div class="mini-grid">
-        <article class="glass mini-card">
-          <h3>Suivi quotidien</h3>
-          <p>
-            Commence par le tableau de bord pour voir la situation, ouvre ensuite les fiches client
-            pour creuser un dossier, puis termine par le rapport journalier.
-          </p>
-          <div class="mini-links">
-            <a class="card-link" href="tdbactivite.html">Tableau de bord</a>
-            <a class="card-link" href="ficherclt.html">Fiches client</a>
-            <a class="card-link" href="rapportjournalier.html">Rapport</a>
-          </div>
-        </article>
-
-        <article class="glass mini-card">
-          <h3>Administration commerciale</h3>
-          <p>
-            Utilise ces accès si tu dois corriger la base, gérer les tarifs ou suivre les rappels
-            opérationnels avant une relance client.
-          </p>
-          <div class="mini-links">
-            <a class="card-link" href="gestionimportclients.html">Import clients</a>
-            <a class="card-link" href="gestiontarif.html">Gestion tarif</a>
-            <a class="card-link" href="rappelclt.html">Rappels</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
     <div class="footer-note">
       Hub Commerce - accès central vers les outils terrain, clients et administration.
     </div>
@@ -680,24 +610,45 @@
   <script>
     const paramBtn = document.getElementById("paramBtn");
     const paramDropdown = document.getElementById("paramDropdown");
+    const dropdownBackdrop = document.getElementById("dropdownBackdrop");
+
+    function closeDropdown() {
+      paramDropdown.classList.remove("open");
+      paramBtn.classList.remove("is-open");
+      dropdownBackdrop.classList.remove("open");
+      paramBtn.setAttribute("aria-expanded", "false");
+    }
+
+    function openDropdown() {
+      paramDropdown.classList.add("open");
+      paramBtn.classList.add("is-open");
+      dropdownBackdrop.classList.add("open");
+      paramBtn.setAttribute("aria-expanded", "true");
+    }
 
     paramBtn.addEventListener("click", function (e) {
       e.stopPropagation();
-      const isOpen = paramDropdown.classList.toggle("open");
-      paramBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      const isOpen = paramDropdown.classList.contains("open");
+      if (isOpen) {
+        closeDropdown();
+      } else {
+        openDropdown();
+      }
     });
 
     document.addEventListener("click", function (e) {
       if (!paramDropdown.contains(e.target) && !paramBtn.contains(e.target)) {
-        paramDropdown.classList.remove("open");
-        paramBtn.setAttribute("aria-expanded", "false");
+        closeDropdown();
       }
+    });
+
+    dropdownBackdrop.addEventListener("click", function () {
+      closeDropdown();
     });
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
-        paramDropdown.classList.remove("open");
-        paramBtn.setAttribute("aria-expanded", "false");
+        closeDropdown();
       }
     });
   </script>
