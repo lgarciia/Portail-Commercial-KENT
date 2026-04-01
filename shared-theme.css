@@ -99,3 +99,193 @@ html[data-theme="light"] td {
 html[data-theme="light"] code {
   color: var(--text);
 }
+
+html[data-theme="light"] body {
+  background:
+    radial-gradient(1200px 900px at 15% 5%, rgba(124, 58, 237, 0.14), transparent 58%),
+    radial-gradient(900px 700px at 85% 10%, rgba(34, 197, 94, 0.08), transparent 55%),
+    radial-gradient(900px 700px at 60% 110%, rgba(245, 158, 11, 0.06), transparent 55%),
+    var(--bg, #f6f7fb) !important;
+}
+
+html[data-theme="light"] .dropdown,
+html[data-theme="light"] .dropdown.open,
+html[data-theme="light"] .tableWrap,
+html[data-theme="light"] .tableScroller,
+html[data-theme="light"] .tableCard,
+html[data-theme="light"] .gridWrap,
+html[data-theme="light"] .list,
+html[data-theme="light"] .fcol,
+html[data-theme="light"] .field,
+html[data-theme="light"] .kpi,
+html[data-theme="light"] .modalCard,
+html[data-theme="light"] .modalTop,
+html[data-theme="light"] .sync-meta-box,
+html[data-theme="light"] .status-banner,
+html[data-theme="light"] .metric-chip,
+html[data-theme="light"] .plaque-pill,
+html[data-theme="light"] .highlight-card,
+html[data-theme="light"] .hero-badge,
+html[data-theme="light"] .tool-card,
+html[data-theme="light"] .entity-visual,
+html[data-theme="light"] .app {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(15, 23, 42, 0.10) !important;
+  color: var(--text) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+html[data-theme="light"] .dropdown a,
+html[data-theme="light"] .item,
+html[data-theme="light"] .status-banner,
+html[data-theme="light"] .metric-chip,
+html[data-theme="light"] .plaque-pill,
+html[data-theme="light"] .sync-meta-box,
+html[data-theme="light"] .highlight-card {
+  color: var(--text) !important;
+}
+
+html[data-theme="light"] .nav-btn:not(.primary),
+html[data-theme="light"] .menu-btn,
+html[data-theme="light"] .card-link:not(.primary),
+html[data-theme="light"] .card-btn:not(.primary),
+html[data-theme="light"] .cta:not(.primary),
+html[data-theme="light"] .btnSm,
+html[data-theme="light"] .iconBtn,
+html[data-theme="light"] .toolBtn:not(.primary) {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(15, 23, 42, 0.10) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme="light"] .btn.primary,
+html[data-theme="light"] .nav-btn.primary,
+html[data-theme="light"] .card-link.primary,
+html[data-theme="light"] .card-btn.primary,
+html[data-theme="light"] .cta.primary,
+html[data-theme="light"] .pill.primary {
+  color: #ffffff !important;
+}
+
+html[data-theme="light"] .title,
+html[data-theme="light"] .brand-title,
+html[data-theme="light"] .section-head h2,
+html[data-theme="light"] .section-title h2,
+html[data-theme="light"] .sectionTitle,
+html[data-theme="light"] .sumTitle,
+html[data-theme="light"] .hero h1,
+html[data-theme="light"] .hero h2,
+html[data-theme="light"] .hero-title h1,
+html[data-theme="light"] .tool-card h3,
+html[data-theme="light"] .mini-card h3,
+html[data-theme="light"] .titleWrap b,
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4,
+html[data-theme="light"] h5,
+html[data-theme="light"] h6,
+html[data-theme="light"] strong,
+html[data-theme="light"] b,
+html[data-theme="light"] label,
+html[data-theme="light"] legend,
+html[data-theme="light"] summary,
+html[data-theme="light"] .item .l,
+html[data-theme="light"] .chip b,
+html[data-theme="light"] .badge b,
+html[data-theme="light"] .hero-badge,
+html[data-theme="light"] .v,
+html[data-theme="light"] .value {
+  color: var(--text) !important;
+}
+
+html[data-theme="light"] .subtitle,
+html[data-theme="light"] .brand-subtitle,
+html[data-theme="light"] .section-head p,
+html[data-theme="light"] .section-title p,
+html[data-theme="light"] .sumSub,
+html[data-theme="light"] .hero p,
+html[data-theme="light"] .hero-title p,
+html[data-theme="light"] .footer-note,
+html[data-theme="light"] .muted,
+html[data-theme="light"] .muted2,
+html[data-theme="light"] .muted-2,
+html[data-theme="light"] .hint,
+html[data-theme="light"] .empty,
+html[data-theme="light"] .dropHint,
+html[data-theme="light"] .mutedNote,
+html[data-theme="light"] .miniHelp,
+html[data-theme="light"] .lab,
+html[data-theme="light"] .k,
+html[data-theme="light"] .ftitle,
+html[data-theme="light"] .item .r,
+html[data-theme="light"] .titleWrap span,
+html[data-theme="light"] p,
+html[data-theme="light"] small {
+  color: var(--muted) !important;
+}
+
+html[data-theme="light"] .dropdown a,
+html[data-theme="light"] .quick-link,
+html[data-theme="light"] .card-link,
+html[data-theme="light"] .link,
+html[data-theme="light"] a:not(.btn):not(.nav-btn):not(.menu-btn):not(.card-btn):not(.cta):not(.pill):not(.card-link) {
+  color: var(--text);
+}
+
+html[data-theme="light"] .dropdown a:hover,
+html[data-theme="light"] .item:hover,
+html[data-theme="light"] tr:hover td {
+  background: rgba(15, 23, 42, 0.05) !important;
+}
+
+html[data-theme="light"] .dropdown-backdrop.open {
+  background: rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .search,
+html[data-theme="light"] .input {
+  color: var(--text) !important;
+}
+
+html[data-theme="light"] .search::placeholder {
+  color: rgba(15, 23, 42, 0.42) !important;
+}
+
+html[data-theme="light"] svg,
+html[data-theme="light"] .material-symbols-outlined {
+  color: currentColor !important;
+}
+
+html[data-theme="light"] .nav-btn svg,
+html[data-theme="light"] .menu-btn svg,
+html[data-theme="light"] .card-icon svg,
+html[data-theme="light"] .tool-icon svg,
+html[data-theme="light"] .icon,
+html[data-theme="light"] svg path {
+  fill: currentColor !important;
+}
+
+html[data-theme="light"] .status-banner[data-tone="success"],
+html[data-theme="light"] .ok,
+html[data-theme="light"] .good,
+html[data-theme="light"] .success {
+  color: #166534 !important;
+}
+
+html[data-theme="light"] .status-banner[data-tone="warning"],
+html[data-theme="light"] .warn,
+html[data-theme="light"] .warning {
+  color: #b45309 !important;
+}
+
+html[data-theme="light"] .status-banner[data-tone="error"],
+html[data-theme="light"] .bad,
+html[data-theme="light"] .danger,
+html[data-theme="light"] .error {
+  color: #b91c1c !important;
+}
+
+html[data-theme="light"] .info {
+  color: #1d4ed8 !important;
+}
