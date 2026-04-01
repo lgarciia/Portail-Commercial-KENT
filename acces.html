@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <title>Acces securise - Portail Commercial KENT</title>
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem("APP_THEME") || "dark";
+        document.documentElement.setAttribute(
+          "data-theme",
+          theme === "light" ? "light" : "dark"
+        );
+      } catch (error) {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg-soft: rgba(255, 255, 255, 0.06);
+      --card: rgba(10, 18, 34, 0.78);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: rgba(255, 255, 255, 0.96);
+      --muted: rgba(255, 255, 255, 0.68);
+      --accent: #0f8bff;
+      --accent-2: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    html[data-theme="light"] {
+      --bg: #f4f7fb;
+      --bg-soft: rgba(255, 255, 255, 0.82);
+      --card: rgba(255, 255, 255, 0.92);
+      --line: rgba(9, 18, 32, 0.12);
+      --text: #0d1726;
+      --muted: rgba(13, 23, 38, 0.62);
+      --shadow: 0 24px 56px rgba(13, 23, 38, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(15, 139, 255, 0.22), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.16), transparent 28%),
+        linear-gradient(160deg, rgba(5, 12, 24, 0.96), rgba(9, 19, 35, 0.88)),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    html[data-theme="light"] body {
+      background:
+        radial-gradient(circle at top left, rgba(15, 139, 255, 0.14), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 247, 251, 0.96)),
+        var(--bg);
+    }
+
+    .shell {
+      width: min(1040px, 100%);
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(340px, 420px);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .panel,
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .panel {
+      padding: 34px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 560px;
+    }
+
+    html[data-theme="light"] .panel {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.82));
+    }
+
+    .card {
+      padding: 30px;
+      background: var(--card);
+      align-self: center;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--bg-soft);
+      width: fit-content;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 16px 28px rgba(15, 139, 255, 0.28);
+    }
+
+    h1 {
+      margin: 24px 0 12px;
+      font-size: clamp(2rem, 3vw, 3.3rem);
+      line-height: 1.03;
+      letter-spacing: -0.03em;
+    }
+
+    .lead {
+      max-width: 560px;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.7;
+    }
+
+    .pills {
+      margin-top: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .pill {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--bg-soft);
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .helper {
+      margin-top: auto;
+      padding-top: 28px;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.6;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+    }
+
+    .card p {
+      margin: 0 0 22px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    form {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    input[type="password"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 15px 16px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    html[data-theme="light"] input[type="password"] {
+      background: rgba(244, 247, 251, 0.82);
+    }
+
+    input[type="password"]:focus {
+      border-color: rgba(15, 139, 255, 0.7);
+      box-shadow: 0 0 0 4px rgba(15, 139, 255, 0.16);
+    }
+
+    .message {
+      display: none;
+      border-radius: 16px;
+      padding: 14px 15px;
+      border: 1px solid transparent;
+      font-size: 0.94rem;
+      line-height: 1.55;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      color: #fee2e2;
+      background: rgba(239, 68, 68, 0.14);
+      border-color: rgba(239, 68, 68, 0.24);
+    }
+
+    .message.info {
+      color: #dbeafe;
+      background: rgba(15, 139, 255, 0.14);
+      border-color: rgba(15, 139, 255, 0.24);
+    }
+
+    .message.warn {
+      color: #fef3c7;
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.24);
+    }
+
+    html[data-theme="light"] .message.error {
+      color: #991b1b;
+      background: rgba(239, 68, 68, 0.10);
+    }
+
+    html[data-theme="light"] .message.info {
+      color: #1d4ed8;
+      background: rgba(15, 139, 255, 0.10);
+    }
+
+    html[data-theme="light"] .message.warn {
+      color: #92400e;
+      background: rgba(245, 158, 11, 0.10);
+    }
+
+    .submit {
+      border: none;
+      border-radius: 18px;
+      padding: 15px 18px;
+      background: linear-gradient(135deg, var(--accent), #1d4ed8);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+      box-shadow: 0 16px 28px rgba(15, 139, 255, 0.28);
+    }
+
+    .submit:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    .submit:active {
+      transform: translateY(0);
+    }
+
+    .meta {
+      margin-top: 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      flex-wrap: wrap;
+    }
+
+    .meta a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+    }
+
+    @media (max-width: 900px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        min-height: auto;
+      }
+
+      body {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="panel">
+      <div>
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>Portail Commercial KENT</span>
+        </div>
+        <h1>Acces securise au portail commercial</h1>
+        <p class="lead">
+          L'application demande maintenant un code d'acces quotidien avant d'ouvrir le portail.
+          Une fois valide, le commercial garde l'acces pour la journee et navigue ensuite normalement.
+        </p>
+        <div class="pills">
+          <span class="pill">Acces requis avant chaque premiere utilisation du jour</span>
+          <span class="pill">Session protegee cote serveur</span>
+          <span class="pill">Redirection automatique vers l'ecran demande</span>
+        </div>
+      </div>
+      <div class="helper">
+        Si la session expire, le portail renvoie automatiquement ici avant d'ouvrir de nouveau les pages,
+        les outils Commerce, les rapports et les fichiers de donnees.
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="eyebrow">Connexion quotidienne</p>
+      <h2>Entrer le code</h2>
+      <p>
+        Saisis le code d'acces pour ouvrir le portail. La session reste active pour la journee en cours.
+      </p>
+
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+
+      <form method="post" action="/acces.html" autocomplete="off">
+        <input id="next-field" type="hidden" name="next" value="/">
+
+        <label for="code">Code d'acces</label>
+        <input
+          id="code"
+          name="code"
+          type="password"
+          inputmode="text"
+          placeholder="Entrer le code"
+          required
+          autofocus
+        >
+
+        <button class="submit" type="submit">Ouvrir le portail</button>
+      </form>
+
+      <div class="meta">
+        <span id="meta-copy">Portail protege - session valable sur la journee</span>
+        <a href="/deconnexion">Forcer la deconnexion</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const message = document.getElementById("message");
+      const nextField = document.getElementById("next-field");
+
+      const nextPath = params.get("next");
+      if (nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")) {
+        nextField.value = nextPath;
+      }
+
+      const states = {
+        invalid: {
+          tone: "error",
+          text: "Le code est incorrect. Verifie la saisie puis reessaie."
+        },
+        config: {
+          tone: "warn",
+          text: "Le code d'acces n'est pas encore configure sur Vercel. Ajoute ACCESS_DAILY_CODE avant de tester."
+        }
+      };
+
+      const error = params.get("error");
+      if (error && states[error]) {
+        message.className = "message show " + states[error].tone;
+        message.textContent = states[error].text;
+      } else if (params.get("logout") === "1") {
+        message.className = "message show info";
+        message.textContent = "La session a ete fermee. Tu peux te reconnecter quand tu veux.";
+      }
+    })();
+  </script>
+</body>
+</html>
