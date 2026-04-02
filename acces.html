@@ -77,7 +77,7 @@
         radial-gradient(circle at 82% 16%, rgba(34, 197, 94, 0.16), transparent 22%),
         radial-gradient(circle at 78% 88%, rgba(245, 158, 11, 0.1), transparent 26%),
         linear-gradient(160deg, #08111e 0%, #0d1c31 52%, #07111d 100%);
-      padding: 24px;
+      padding: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -92,10 +92,10 @@
     }
 
     .shell {
-      width: min(1180px, 100%);
+      width: min(1140px, 100%);
       display: grid;
       grid-template-columns: minmax(0, 1.1fr) minmax(360px, 430px);
-      gap: 24px;
+      gap: 18px;
       align-items: stretch;
     }
 
@@ -110,11 +110,11 @@
     }
 
     .showcase {
-      min-height: 700px;
+      min-height: 620px;
       background:
         linear-gradient(145deg, rgba(7, 18, 33, 0.94), rgba(9, 23, 42, 0.78)),
         var(--surface);
-      padding: 36px;
+      padding: 28px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -210,9 +210,9 @@
 
     .hero {
       display: grid;
-      gap: 22px;
+      gap: 16px;
       max-width: 620px;
-      margin-top: 40px;
+      margin-top: 22px;
     }
 
     .eyebrow {
@@ -226,28 +226,28 @@
 
     h1 {
       margin: 0;
-      font-size: clamp(2.8rem, 4vw, 4.45rem);
+      font-size: clamp(2.3rem, 3.5vw, 3.6rem);
       line-height: 0.95;
       letter-spacing: -0.05em;
-      max-width: 10ch;
+      max-width: 11ch;
     }
 
     .hero p {
       margin: 0;
-      font-size: 1.04rem;
-      line-height: 1.8;
+      font-size: 0.96rem;
+      line-height: 1.62;
       color: var(--muted);
-      max-width: 58ch;
+      max-width: 54ch;
     }
 
     .feature-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
+      gap: 10px;
     }
 
     .feature {
-      padding: 18px;
+      padding: 14px;
       border-radius: var(--radius-md);
       border: 1px solid var(--line);
       background: var(--surface-soft);
@@ -256,24 +256,24 @@
 
     .feature strong {
       display: block;
-      font-size: 0.96rem;
-      margin-bottom: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
     }
 
     .feature span {
       display: block;
       color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.55;
+      font-size: 0.84rem;
+      line-height: 1.45;
     }
 
     .visual-card {
       display: grid;
-      gap: 18px;
+      gap: 12px;
       align-items: end;
-      grid-template-columns: minmax(0, 1fr) 180px;
-      margin-top: 34px;
-      padding: 20px;
+      grid-template-columns: minmax(0, 1fr) 156px;
+      margin-top: 18px;
+      padding: 14px;
       border-radius: var(--radius-lg);
       border: 1px solid var(--line-strong);
       background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
@@ -286,7 +286,7 @@
 
     .visual-preview {
       position: relative;
-      min-height: 250px;
+      min-height: 170px;
       border-radius: 22px;
       overflow: hidden;
       border: 1px solid var(--line);
@@ -312,15 +312,15 @@
 
     .visual-badge {
       position: absolute;
-      left: 18px;
-      bottom: 16px;
+      left: 14px;
+      bottom: 14px;
       z-index: 1;
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-radius: 999px;
       background: rgba(6, 17, 29, 0.76);
       border: 1px solid rgba(255, 255, 255, 0.14);
       color: #fff;
-      font-size: 0.82rem;
+      font-size: 0.74rem;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -328,11 +328,11 @@
 
     .visual-notes {
       display: grid;
-      gap: 14px;
+      gap: 8px;
     }
 
     .visual-note {
-      padding: 16px;
+      padding: 12px;
       border-radius: var(--radius-md);
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--line);
@@ -344,25 +344,25 @@
 
     .visual-note strong {
       display: block;
-      margin-bottom: 6px;
-      font-size: 0.95rem;
+      margin-bottom: 4px;
+      font-size: 0.86rem;
     }
 
     .visual-note span {
       color: var(--muted);
-      font-size: 0.9rem;
-      line-height: 1.55;
+      font-size: 0.8rem;
+      line-height: 1.4;
     }
 
     .login-card {
-      padding: 34px 32px;
+      padding: 26px 24px;
       background:
         linear-gradient(180deg, rgba(10, 20, 36, 0.96), rgba(8, 16, 30, 0.92)),
         var(--surface);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 700px;
+      min-height: 620px;
     }
 
     html[data-theme="light"] .login-card {
@@ -373,20 +373,20 @@
 
     .login-top {
       display: grid;
-      gap: 16px;
+      gap: 12px;
     }
 
     .login-top h2 {
       margin: 0;
-      font-size: 2rem;
+      font-size: 1.68rem;
       letter-spacing: -0.03em;
     }
 
     .login-top p {
       margin: 0;
       color: var(--muted);
-      line-height: 1.7;
-      font-size: 0.98rem;
+      line-height: 1.6;
+      font-size: 0.92rem;
     }
 
     .message {
@@ -437,8 +437,8 @@
 
     form {
       display: grid;
-      gap: 14px;
-      margin-top: 8px;
+      gap: 12px;
+      margin-top: 2px;
     }
 
     label {
@@ -458,7 +458,7 @@
       border-radius: 18px;
       background: rgba(255, 255, 255, 0.04);
       color: var(--text);
-      padding: 16px 18px;
+      padding: 14px 16px;
       font-size: 1rem;
       outline: none;
       transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, transform 0.18s ease;
@@ -477,18 +477,18 @@
 
     .field-help {
       color: var(--muted-soft);
-      font-size: 0.84rem;
+      font-size: 0.78rem;
       line-height: 1.45;
     }
 
     .submit {
-      margin-top: 4px;
+      margin-top: 2px;
       border: none;
       border-radius: 18px;
-      padding: 16px 18px;
+      padding: 14px 16px;
       background: linear-gradient(135deg, var(--accent), var(--accent-strong));
       color: #fff;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 800;
       cursor: pointer;
       transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
@@ -506,13 +506,13 @@
 
     .login-bottom {
       display: grid;
-      gap: 16px;
-      margin-top: 24px;
+      gap: 10px;
+      margin-top: 12px;
     }
 
     .trust-row {
       display: grid;
-      gap: 10px;
+      gap: 8px;
     }
 
     .trust-item {
@@ -520,17 +520,17 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 13px 15px;
+      padding: 10px 12px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--line);
       background: var(--surface-soft);
       color: var(--muted);
-      font-size: 0.92rem;
+      font-size: 0.84rem;
     }
 
     .trust-item strong {
       color: var(--text);
-      font-size: 0.94rem;
+      font-size: 0.86rem;
     }
 
     .meta {
@@ -540,8 +540,82 @@
       gap: 12px;
       flex-wrap: wrap;
       color: var(--muted-soft);
-      font-size: 0.88rem;
+      font-size: 0.8rem;
       padding-top: 4px;
+    }
+
+    @media (min-width: 1081px) {
+      body {
+        min-height: 100vh;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .shell {
+        height: calc(100vh - 36px);
+        max-height: 620px;
+      }
+
+      .showcase,
+      .login-card {
+        min-height: 0;
+        height: 100%;
+      }
+    }
+
+    @media (max-height: 820px) and (min-width: 1081px) {
+      body {
+        padding: 14px;
+      }
+
+      .shell {
+        gap: 14px;
+        height: calc(100vh - 28px);
+        max-height: 580px;
+      }
+
+      .showcase,
+      .login-card {
+        padding: 22px 20px;
+      }
+
+      h1 {
+        font-size: 2.05rem;
+      }
+
+      .hero {
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .hero p {
+        font-size: 0.88rem;
+      }
+
+      .feature {
+        padding: 12px;
+      }
+
+      .feature span,
+      .visual-note span {
+        font-size: 0.76rem;
+      }
+
+      .visual-card {
+        grid-template-columns: minmax(0, 1fr) 140px;
+      }
+
+      .visual-preview {
+        min-height: 145px;
+      }
+
+      .login-top h2 {
+        font-size: 1.52rem;
+      }
+
+      .login-top p {
+        font-size: 0.86rem;
+      }
     }
 
     .meta a {
@@ -605,22 +679,22 @@
           <p class="eyebrow">Espace commercial KENT</p>
           <h1>Pilotage commercial centralise</h1>
           <p>
-            Un acces unique pour ouvrir l'ensemble des outils de suivi, de reporting, de budget et de pilotage client.
+            Un acces unique pour ouvrir les espaces metier, les reportings, les budgets et les outils Commerce.
           </p>
         </div>
 
         <div class="feature-grid">
           <article class="feature">
             <strong>Reporting et budgets</strong>
-            <span>Acces direct aux analyses, aux historiques et aux comparaisons annuelles.</span>
+            <span>Analyses, historiques et comparaisons annuelles.</span>
           </article>
           <article class="feature">
             <strong>Fiches client</strong>
-            <span>Consultation rapide du portefeuille, du suivi et des informations commerciales utiles.</span>
+            <span>Consultation rapide du portefeuille et du suivi commercial.</span>
           </article>
           <article class="feature">
             <strong>Applications metier</strong>
-            <span>Navigation unifiee entre PSA, Gueudet, Ford, Direct et les outils Commerce.</span>
+            <span>Navigation unifiee entre les espaces KENT.</span>
           </article>
         </div>
       </div>
@@ -633,11 +707,11 @@
         <div class="visual-notes">
           <div class="visual-note">
             <strong>Acces quotidien</strong>
-            <span>Connexion simple a l'ouverture, puis navigation continue sur la journee.</span>
+            <span>Connexion simple puis navigation continue sur la journee.</span>
           </div>
           <div class="visual-note">
             <strong>Experience unifiee</strong>
-            <span>Le portail conserve son mode clair ou sombre et ouvre directement le bon espace.</span>
+            <span>Le portail conserve le theme et ouvre directement le bon espace.</span>
           </div>
         </div>
       </div>
@@ -648,7 +722,7 @@
         <p class="eyebrow">Connexion</p>
         <h2>Ouvrir votre espace</h2>
         <p>
-          Entrez votre code d'acces pour ouvrir l'application et retrouver votre environnement de travail.
+          Entrez votre code d'acces pour ouvrir directement votre environnement de travail.
         </p>
 
         <div id="message" class="message" role="status" aria-live="polite"></div>
@@ -667,7 +741,7 @@
               required
               autofocus
             >
-            <div class="field-help">Le portail vous reconnectera automatiquement a la prochaine ouverture si la session est encore valide.</div>
+            <div class="field-help">La session reste active sur la journee en cours.</div>
           </div>
 
           <button class="submit" type="submit">Se connecter</button>
@@ -682,7 +756,7 @@
           </div>
           <div class="trust-item">
             <strong>Acces</strong>
-            <span>Protection appliquee a l'ensemble du portail</span>
+            <span>Protection appliquee a tout le portail</span>
           </div>
         </div>
 
