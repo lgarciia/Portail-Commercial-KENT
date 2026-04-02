@@ -117,7 +117,8 @@
       padding: 28px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-start;
+      gap: 16px;
       isolation: isolate;
     }
 
@@ -136,6 +137,12 @@
         linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 48%);
       pointer-events: none;
       z-index: -1;
+    }
+
+    .showcase > div:first-child {
+      display: grid;
+      gap: 16px;
+      align-content: start;
     }
 
     .brand-row {
@@ -212,7 +219,7 @@
       display: grid;
       gap: 16px;
       max-width: 620px;
-      margin-top: 22px;
+      margin-top: 8px;
     }
 
     .eyebrow {
@@ -272,7 +279,7 @@
       gap: 12px;
       align-items: end;
       grid-template-columns: minmax(0, 1fr) 156px;
-      margin-top: 18px;
+      margin-top: 0;
       padding: 14px;
       border-radius: var(--radius-lg);
       border: 1px solid var(--line-strong);
@@ -553,7 +560,7 @@
 
       .shell {
         height: calc(100vh - 36px);
-        max-height: 620px;
+        max-height: 660px;
       }
 
       .showcase,
@@ -571,7 +578,7 @@
       .shell {
         gap: 14px;
         height: calc(100vh - 28px);
-        max-height: 580px;
+        max-height: 640px;
       }
 
       .showcase,
@@ -602,11 +609,11 @@
       }
 
       .visual-card {
-        grid-template-columns: minmax(0, 1fr) 140px;
+        grid-template-columns: minmax(0, 1fr) 132px;
       }
 
       .visual-preview {
-        min-height: 145px;
+        min-height: 138px;
       }
 
       .login-top h2 {
