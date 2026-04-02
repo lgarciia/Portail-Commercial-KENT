@@ -5,7 +5,8 @@ const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 36;
 const PARIS_TIMEZONE = "Europe/Paris";
 const PUBLIC_PATHS = new Set([
   ACCESS_PAGE,
-  "/kent-logo.svg"
+  "/kent-logo.svg",
+  "/reporting-hero.png"
 ]);
 
 export const config = {
