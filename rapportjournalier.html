@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr" data-theme="dark">
 <head>
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
@@ -75,6 +75,7 @@
 
     .toolbar,
     .summary-card,
+    .analysis-card,
     .preview-card {
       padding: 20px;
       margin-bottom: 24px;
@@ -200,6 +201,90 @@
       color: var(--text);
     }
 
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    .analysis-panel {
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 220px;
+    }
+
+    .analysis-block-title {
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted-2);
+      font-weight: 700;
+    }
+
+    .analysis-list,
+    .ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .analysis-item,
+    .ranking-row {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .analysis-item {
+      color: var(--text);
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    .ranking-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .ranking-main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .ranking-name {
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+    }
+
+    .ranking-meta {
+      font-size: 0.84rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .ranking-value {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.14);
+      border: 1px solid rgba(124, 58, 237, 0.24);
+      color: #ddd6fe;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
     .section-title {
       display: flex;
       justify-content: space-between;
@@ -255,6 +340,26 @@
       color: #e5e7eb;
       line-height: 1.55;
       white-space: pre-wrap;
+    }
+
+    .visit-stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .visit-stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
     }
 
     .table-wrapper {
@@ -332,40 +437,75 @@
       min-height: 297mm;
       background: white;
       color: #111827;
-      padding: 12mm 10mm;
+      padding: 12mm 10mm 10mm;
       font-family: Arial, Helvetica, sans-serif;
-      font-size: 11px;
+      font-size: 10px;
     }
 
     .pdf-header {
-      border-bottom: 2px solid #7c3aed;
-      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      border-bottom: 2px solid #0f8bff;
+      padding-bottom: 10px;
       margin-bottom: 12px;
     }
 
+    .pdf-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pdf-logo-box {
+      width: 16mm;
+      height: 16mm;
+      border-radius: 5mm;
+      border: 1px solid #dbe4f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .pdf-logo-box img {
+      width: 11mm;
+      height: 11mm;
+      display: block;
+    }
+
     .pdf-header h1 {
-      font-size: 18px;
+      font-size: 19px;
       margin-bottom: 4px;
       color: #111827;
     }
 
     .pdf-subtitle {
-      font-size: 10px;
+      font-size: 9px;
       color: #4b5563;
       line-height: 1.35;
+    }
+
+    .pdf-meta-box {
+      text-align: right;
+      font-size: 9px;
+      color: #4b5563;
+      line-height: 1.45;
     }
 
     .pdf-summary {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
+      gap: 7px;
       margin-bottom: 12px;
     }
 
     .pdf-chip {
       border: 1px solid #e5e7eb;
       border-radius: 8px;
-      padding: 7px 8px;
+      padding: 8px 8px;
       background: #f9fafb;
     }
 
@@ -378,9 +518,93 @@
     }
 
     .pdf-chip-value {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: bold;
       color: #111827;
+    }
+
+    .pdf-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .pdf-panel {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 8px;
+      background: #ffffff;
+    }
+
+    .pdf-section-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #0f172a;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .pdf-bullet-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .pdf-bullet {
+      font-size: 9px;
+      line-height: 1.45;
+      color: #374151;
+      padding-left: 10px;
+      position: relative;
+    }
+
+    .pdf-bullet::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 5px;
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: #0f8bff;
+    }
+
+    .pdf-mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8px;
+    }
+
+    .pdf-mini-table th,
+    .pdf-mini-table td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 5px 4px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .pdf-mini-table th {
+      color: #6b7280;
+      background: #f8fafc;
+      font-weight: bold;
+    }
+
+    .pdf-mini-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .pdf-callout {
+      margin-bottom: 12px;
+      padding: 9px 10px;
+      border: 1px solid #dbe4f0;
+      border-left: 4px solid #0f8bff;
+      border-radius: 10px;
+      background: #f8fbff;
+      font-size: 9px;
+      line-height: 1.5;
+      color: #334155;
     }
 
     .pdf-visit {
@@ -411,62 +635,62 @@
       line-height: 1.3;
     }
 
+    .pdf-visit-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin: 6px 0 8px;
+    }
+
+    .pdf-visit-badge {
+      display: inline-block;
+      font-size: 8px;
+      color: #334155;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      padding: 3px 7px;
+      line-height: 1.2;
+    }
+
     .pdf-note {
       margin: 6px 0 8px;
       padding: 7px 8px;
       background: #f9fafb;
-      border-left: 3px solid #7c3aed;
-      font-size: 10px;
+      border-left: 3px solid #0f8bff;
+      font-size: 9px;
       line-height: 1.35;
       white-space: pre-wrap;
     }
 
     .pdf-products {
       margin-top: 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
     }
 
-    .pdf-product-item {
+    .pdf-product-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8px;
+    }
+
+    .pdf-product-table th,
+    .pdf-product-table td {
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 7px 8px;
-      background: #fcfcfd;
+      padding: 4px 5px;
+      text-align: left;
+      vertical-align: top;
     }
 
-    .pdf-product-top {
-      margin-bottom: 4px;
-    }
-
-    .pdf-product-name {
-      font-size: 10px;
+    .pdf-product-table th {
+      background: #f8fafc;
+      color: #6b7280;
       font-weight: bold;
-      color: #111827;
-      line-height: 1.25;
     }
 
     .pdf-product-ref {
-      font-size: 8px;
+      font-size: 7px;
       color: #6b7280;
       margin-top: 2px;
-    }
-
-    .pdf-product-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .pdf-product-badge {
-      display: inline-block;
-      font-size: 8px;
-      color: #374151;
-      background: #f3f4f6;
-      border: 1px solid #e5e7eb;
-      border-radius: 999px;
-      padding: 3px 7px;
-      line-height: 1.2;
     }
 
     .pdf-footer-note {
@@ -478,7 +702,8 @@
 
     @media (max-width: 1100px) {
       .toolbar-grid,
-      .summary-grid {
+      .summary-grid,
+      .analysis-grid {
         grid-template-columns: 1fr 1fr;
       }
     }
@@ -486,7 +711,8 @@
     @media (max-width: 760px) {
       body { padding: 18px; }
       .toolbar-grid,
-      .summary-grid {
+      .summary-grid,
+      .analysis-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -498,7 +724,7 @@
     <div class="page-header">
       <div class="page-title">
         <h1>Rapport journalier</h1>
-        <p>Génération rapide d’un PDF récapitulatif des visites terrain de la journée</p>
+        <p>Generation rapide d'un PDF recapitulatif des visites terrain de la journee</p>
       </div>
     </div>
 
@@ -525,7 +751,7 @@
 
       <div class="field-group" style="margin-top:16px;">
         <label for="globalComment">Commentaire global</label>
-        <textarea id="globalComment" placeholder="Résumé global de la journée, faits marquants, points d’attention, actions à suivre..."></textarea>
+        <textarea id="globalComment" placeholder="Resume global de la journee, faits marquants, points d'attention, actions a suivre..."></textarea>
       </div>
 
       <div id="statusBar" class="status-bar">Connexion en cours...</div>
@@ -533,7 +759,7 @@
 
     <div class="glass-card summary-card">
       <div class="section-title">
-        <h2>Résumé de la journée</h2>
+        <h2>Resume de la journee</h2>
       </div>
       <div class="summary-grid">
         <div class="summary-chip">
@@ -541,7 +767,7 @@
           <div class="summary-chip-value" id="summaryVisites">0</div>
         </div>
         <div class="summary-chip">
-          <div class="summary-chip-label">Clients visités</div>
+          <div class="summary-chip-label">Clients visites</div>
           <div class="summary-chip-value" id="summaryClients">0</div>
         </div>
         <div class="summary-chip">
@@ -549,18 +775,60 @@
           <div class="summary-chip-value" id="summaryLignes">0</div>
         </div>
         <div class="summary-chip">
-          <div class="summary-chip-label">Produits marqués vert</div>
+          <div class="summary-chip-label">Opportunites vertes</div>
           <div class="summary-chip-value" id="summaryVerts">0</div>
+        </div>
+        <div class="summary-chip">
+          <div class="summary-chip-label">Quantite totale</div>
+          <div class="summary-chip-value" id="summaryQuantite">0</div>
+        </div>
+        <div class="summary-chip">
+          <div class="summary-chip-label">Stock client observe</div>
+          <div class="summary-chip-value" id="summaryStock">0</div>
+        </div>
+        <div class="summary-chip">
+          <div class="summary-chip-label">Alertes rouges</div>
+          <div class="summary-chip-value" id="summaryRouges">0</div>
+        </div>
+        <div class="summary-chip">
+          <div class="summary-chip-label">Vigilances jaunes</div>
+          <div class="summary-chip-value" id="summaryJaunes">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card analysis-card">
+      <div class="section-title">
+        <h2>Lecture commerciale KENT</h2>
+      </div>
+      <div class="analysis-grid">
+        <div class="analysis-panel">
+          <div class="analysis-block-title">Synthese executive</div>
+          <div id="executiveSummary" class="analysis-list">
+            <div class="analysis-item">Charge une date pour generer une synthese automatique de la journee.</div>
+          </div>
+        </div>
+        <div class="analysis-panel">
+          <div class="analysis-block-title">Top clients du jour</div>
+          <div id="topClientsList" class="ranking-list">
+            <div class="analysis-item">Les clients les plus actifs apparaitront ici apres chargement.</div>
+          </div>
+        </div>
+        <div class="analysis-panel">
+          <div class="analysis-block-title">Top produits du jour</div>
+          <div id="topProductsList" class="ranking-list">
+            <div class="analysis-item">Les produits les plus travailles apparaitront ici apres chargement.</div>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="glass-card preview-card">
       <div class="section-title">
-        <h2>Aperçu du rapport</h2>
+        <h2>Apercu du rapport</h2>
       </div>
       <div id="previewList" class="preview-list">
-        <div class="empty-state">Choisis une date puis clique sur “Charger les visites”.</div>
+        <div class="empty-state">Choisis une date puis clique sur "Charger les visites".</div>
       </div>
     </div>
   </div>
@@ -618,7 +886,7 @@
         green: "Vert",
         blue: "Bleu"
       };
-      return map[color] || "Non défini";
+      return map[color] || "Non dÃ©fini";
     }
 
     function getColorDotClass(color) {
@@ -703,15 +971,15 @@
       const container = document.getElementById("previewList");
 
       if (!visites.length) {
-        container.innerHTML = `<div class="empty-state">Aucune visite trouvée pour cette date.</div>`;
+        container.innerHTML = `<div class="empty-state">Aucune visite trouvÃ©e pour cette date.</div>`;
         return;
       }
 
       container.innerHTML = visites.map(visite => {
         const clientNom = visite.client?.nom || "Client inconnu";
-        const compte = visite.client?.numero_compte || "—";
-        const tel = visite.client?.telephone || "—";
-        const adresse = visite.client?.adresse || "—";
+        const compte = visite.client?.numero_compte || "â€”";
+        const tel = visite.client?.telephone || "â€”";
+        const adresse = visite.client?.adresse || "â€”";
         const note = visite.note?.trim() || "Aucune note";
 
         const lignesHtml = (visite.commandes || []).length
@@ -721,7 +989,7 @@
                 <thead>
                   <tr>
                     <th>Produit</th>
-                    <th>Quantité</th>
+                    <th>QuantitÃ©</th>
                     <th>Stock client</th>
                     <th>Statut</th>
                   </tr>
@@ -731,7 +999,7 @@
                     <tr>
                       <td>
                         ${escapeHtml(cmd.produit?.nom || "Produit inconnu")}
-                        <span class="ref-text">Réf : ${escapeHtml(cmd.produit?.reference_produit || "-")}</span>
+                        <span class="ref-text">RÃ©f : ${escapeHtml(cmd.produit?.reference_produit || "-")}</span>
                       </td>
                       <td>${cmd.quantite ?? 0}</td>
                       <td>${cmd.stock_client ?? 0}</td>
@@ -756,7 +1024,7 @@
                 <h3>${escapeHtml(clientNom)}</h3>
                 <div class="visit-meta">
                   Compte : ${escapeHtml(compte)}<br>
-                  Téléphone : ${escapeHtml(tel)}<br>
+                  TÃ©lÃ©phone : ${escapeHtml(tel)}<br>
                   Adresse : ${escapeHtml(adresse)}
                 </div>
               </div>
@@ -773,15 +1041,15 @@
 
     function buildPdfHtml() {
       const reportDate = document.getElementById("reportDate").value;
-      const commercialName = document.getElementById("commercialName").value.trim() || "Non renseigné";
+      const commercialName = document.getElementById("commercialName").value.trim() || "Non renseignÃ©";
       const reportTitle = document.getElementById("reportTitle").value.trim() || "Rapport journalier des visites";
       const globalComment = document.getElementById("globalComment").value.trim();
 
       const visitsHtml = rapportVisites.map(visite => {
         const clientNom = visite.client?.nom || "Client inconnu";
-        const compte = visite.client?.numero_compte || "—";
-        const tel = visite.client?.telephone || "—";
-        const adresse = visite.client?.adresse || "—";
+        const compte = visite.client?.numero_compte || "â€”";
+        const tel = visite.client?.telephone || "â€”";
+        const adresse = visite.client?.adresse || "â€”";
         const note = visite.note?.trim() || "Aucune note";
         const commandes = visite.commandes || [];
 
@@ -792,10 +1060,10 @@
                 <div class="pdf-product-item">
                   <div class="pdf-product-top">
                     <div class="pdf-product-name">${escapeHtml(cmd.produit?.nom || "Produit inconnu")}</div>
-                    <div class="pdf-product-ref">Réf : ${escapeHtml(cmd.produit?.reference_produit || "-")}</div>
+                    <div class="pdf-product-ref">RÃ©f : ${escapeHtml(cmd.produit?.reference_produit || "-")}</div>
                   </div>
                   <div class="pdf-product-meta">
-                    <span class="pdf-product-badge">Qté : ${cmd.quantite ?? 0}</span>
+                    <span class="pdf-product-badge">QtÃ© : ${cmd.quantite ?? 0}</span>
                     <span class="pdf-product-badge">Stock client : ${cmd.stock_client ?? 0}</span>
                     <span class="pdf-product-badge">Statut : ${escapeHtml(getColorLabel(cmd.couleur))}</span>
                   </div>
@@ -812,7 +1080,7 @@
                 <div class="pdf-visit-client">${escapeHtml(clientNom)}</div>
                 <div class="pdf-visit-meta">
                   Compte : ${escapeHtml(compte)}<br>
-                  Téléphone : ${escapeHtml(tel)}<br>
+                  TÃ©lÃ©phone : ${escapeHtml(tel)}<br>
                   Adresse : ${escapeHtml(adresse)}
                 </div>
               </div>
@@ -857,10 +1125,10 @@
 
           ${globalComment ? `<div class="pdf-note"><strong>Commentaire global :</strong><br>${escapeHtml(globalComment)}</div>` : ""}
 
-          ${visitsHtml || `<div class="pdf-note">Aucune visite trouvée pour cette date.</div>`}
+          ${visitsHtml || `<div class="pdf-note">Aucune visite trouvÃ©e pour cette date.</div>`}
 
           <div class="pdf-footer-note">
-            Rapport généré automatiquement depuis l’application de suivi commercial.
+            Rapport gÃ©nÃ©rÃ© automatiquement depuis lâ€™application de suivi commercial.
           </div>
         </div>
       `;
@@ -880,7 +1148,7 @@
         reportStats = calculateStats(rapportVisites);
         renderSummary(reportStats);
         renderPreview(rapportVisites);
-        setStatus(`${reportStats.nbVisites} visite(s) chargée(s) pour le ${formatDate(reportDate)}.`);
+        setStatus(`${reportStats.nbVisites} visite(s) chargÃ©e(s) pour le ${formatDate(reportDate)}.`);
       } catch (error) {
         console.error(error);
         rapportVisites = [];
@@ -896,17 +1164,17 @@
       const reportDate = document.getElementById("reportDate").value;
 
       if (!reportDate) {
-        alert("Veuillez choisir une date avant d’exporter le PDF.");
+        alert("Veuillez choisir une date avant dâ€™exporter le PDF.");
         return;
       }
 
       if (!rapportVisites.length) {
-        alert("Aucune visite chargée pour cette date.");
+        alert("Aucune visite chargÃ©e pour cette date.");
         return;
       }
 
       try {
-        setStatus("Génération du PDF en cours...");
+        setStatus("GÃ©nÃ©ration du PDF en cours...");
 
         const pdfContainer = document.getElementById("pdfReport");
         pdfContainer.innerHTML = buildPdfHtml();
@@ -928,12 +1196,12 @@
         await html2pdf().set(options).from(element).save();
 
         pdfContainer.style.display = "none";
-        setStatus("PDF généré avec succès.");
+        setStatus("PDF gÃ©nÃ©rÃ© avec succÃ¨s.");
       } catch (error) {
         console.error("Erreur export PDF:", error);
         document.getElementById("pdfReport").style.display = "none";
-        setStatus("Erreur pendant la génération du PDF.");
-        alert("Impossible de générer le PDF.");
+        setStatus("Erreur pendant la gÃ©nÃ©ration du PDF.");
+        alert("Impossible de gÃ©nÃ©rer le PDF.");
       }
     }
 
@@ -943,10 +1211,12 @@
       const mm = String(today.getMonth() + 1).padStart(2, "0");
       const dd = String(today.getDate()).padStart(2, "0");
       document.getElementById("reportDate").value = `${yyyy}-${mm}-${dd}`;
-      setStatus("Prêt. Choisis une date puis charge les visites.");
+      setStatus("PrÃªt. Choisis une date puis charge les visites.");
     }
 
     initPage();
   </script>
+  <script src="./rapportjournalier-app.js"></script>
 </body>
 </html>
+
