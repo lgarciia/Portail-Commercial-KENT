@@ -976,9 +976,56 @@
           })
           .join("")
       : "<li>Aucune synthese disponible.</li>";
-    var clientsHtml = groupedClients.length
-      ? groupedClients.map(buildPreviewWindowClientHtml).join("")
-      : '<div class="preview-empty big">Aucune visite chargee pour cette date.</div>';
+    var clientRowsHtml = groupedClients.length
+      ? groupedClients
+          .map(function (client) {
+            return (
+              "<tr>" +
+              "<td><strong>" +
+              escapeHtml(client.name) +
+              "</strong><br><span class=\"muted\">Compte : " +
+              escapeHtml(client.account || "-") +
+              "</span></td>" +
+              "<td class=\"num\">" +
+              formatNumber(client.visits) +
+              "</td>" +
+              "<td class=\"num\">" +
+              formatNumber(client.lines) +
+              "</td>" +
+              "<td class=\"num\">" +
+              formatNumber(client.quantity) +
+              "</td>" +
+              "<td class=\"num\">" +
+              formatNumber(client.stock) +
+              "</td>" +
+              "<td class=\"num\">" +
+              escapeHtml(formatCurrency(client.ca)) +
+              "</td>" +
+              "</tr>"
+            );
+          })
+          .join("")
+      : '<tr><td colspan="6">Aucune visite chargee pour cette date.</td></tr>';
+    var notesHtml = groupedClients
+      .filter(function (client) {
+        return client.notes && client.notes.length;
+      })
+      .map(function (client) {
+        return client.notes
+          .map(function (note) {
+            return (
+              '<div class="note-item"><strong>' +
+              escapeHtml(client.name) +
+              " - " +
+              escapeHtml(formatDate(note.date)) +
+              " :</strong> " +
+              escapeHtml(note.note) +
+              "</div>"
+            );
+          })
+          .join("");
+      })
+      .join("");
 
     return (
       "<!DOCTYPE html>" +
@@ -987,110 +1034,91 @@
       escapeHtml(inputs.reportTitle) +
       "</title>" +
       "<style>" +
-      "body{margin:0;background:#0b1020;color:#e5edf8;font-family:'Segoe UI',Roboto,sans-serif;}" +
-      ".preview-shell{max-width:1380px;margin:0 auto;padding:28px 24px 48px;}" +
-      ".preview-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:24px;padding:22px 24px;border-radius:24px;background:linear-gradient(135deg,#10203d,#0f172a 62%,#081120);border:1px solid rgba(148,163,184,.18);box-shadow:0 28px 60px rgba(0,0,0,.35);}" +
-      ".preview-brand{display:flex;gap:16px;align-items:center;}" +
-      ".preview-logo{width:62px;height:62px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 16px 34px rgba(15,139,255,.18);}" +
-      ".preview-logo img{width:40px;height:40px;display:block;}" +
-      ".preview-kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;font-weight:700;margin-bottom:6px;}" +
-      ".preview-title{font-size:32px;font-weight:800;line-height:1.05;margin:0 0 10px;letter-spacing:-.03em;color:#f8fafc;}" +
-      ".preview-subtext{margin:0;color:#cbd5e1;line-height:1.6;font-size:15px;max-width:760px;}" +
-      ".preview-meta{color:#cbd5e1;font-size:14px;line-height:1.7;text-align:right;}" +
-      ".preview-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end;margin-top:14px;}" +
-      ".preview-action{border:none;border-radius:14px;padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;transition:.2s ease;background:linear-gradient(135deg,#1d4ed8,#0f8bff);color:#fff;box-shadow:0 12px 30px rgba(15,139,255,.25);}" +
-      ".preview-action.secondary{background:rgba(255,255,255,.08);color:#e5edf8;box-shadow:none;border:1px solid rgba(148,163,184,.2);}" +
-      ".preview-copy-status{min-height:20px;color:#93c5fd;font-size:13px;font-weight:600;}" +
-      ".preview-section{margin-bottom:22px;padding:22px;border-radius:22px;background:rgba(15,23,42,.88);border:1px solid rgba(148,163,184,.14);box-shadow:0 22px 50px rgba(0,0,0,.22);}" +
-      ".preview-section-title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;font-weight:800;margin-bottom:14px;}" +
-      ".preview-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}" +
-      ".preview-chip{padding:16px 18px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.16);}" +
-      ".preview-chip-label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;font-weight:700;margin-bottom:8px;}" +
-      ".preview-chip-value{font-size:22px;font-weight:800;color:#f8fafc;}" +
-      ".preview-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;}" +
-      ".preview-list-card,.preview-ranking-card{padding:18px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.14);}" +
-      ".preview-bullets{margin:0;padding-left:18px;color:#dbe7f3;line-height:1.7;}" +
-      ".preview-bullets li+li{margin-top:8px;}" +
-      ".preview-ranking-list{display:flex;flex-direction:column;gap:10px;}" +
-      ".preview-ranking-row{display:flex;justify-content:space-between;gap:14px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.12);}" +
-      ".preview-ranking-name{font-weight:700;color:#f8fafc;margin-bottom:4px;}" +
-      ".preview-ranking-meta{font-size:13px;color:#94a3b8;line-height:1.5;}" +
-      ".preview-ranking-value{color:#f8fafc;font-weight:800;white-space:nowrap;}" +
-      ".preview-client-card{padding:24px;border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03));border:1px solid rgba(148,163,184,.16);}" +
-      ".preview-client-card + .preview-client-card{margin-top:18px;}" +
-      ".preview-client-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px;}" +
-      ".preview-client-name{font-size:24px;font-weight:800;color:#f8fafc;margin-bottom:6px;}" +
-      ".preview-client-meta{font-size:14px;color:#cbd5e1;line-height:1.65;}" +
-      ".preview-client-ca{text-align:right;}" +
-      ".preview-client-ca-value{font-size:30px;font-weight:800;color:#f8fafc;letter-spacing:-.03em;}" +
-      ".preview-client-ca-label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd;font-weight:700;}" +
-      ".preview-stat-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;}" +
-      ".preview-stat{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(148,163,184,.16);}" +
-      ".preview-stat-label{color:#94a3b8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}" +
-      ".preview-stat-value{color:#f8fafc;font-size:13px;font-weight:800;}" +
-      ".preview-subtitle{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd;font-weight:800;margin-bottom:12px;}" +
-      ".preview-table-wrap{overflow-x:auto;}" +
-      ".preview-table{width:100%;border-collapse:collapse;min-width:760px;background:rgba(255,255,255,.03);border-radius:18px;overflow:hidden;}" +
-      ".preview-table th,.preview-table td{padding:14px 16px;border-bottom:1px solid rgba(148,163,184,.14);vertical-align:top;text-align:left;}" +
-      ".preview-table th{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#93c5fd;background:rgba(15,139,255,.08);}" +
-      ".preview-table td{font-size:14px;color:#e5edf8;}" +
-      ".preview-table .num-cell{text-align:right;white-space:nowrap;font-weight:700;}" +
-      ".preview-product-name{font-weight:700;color:#f8fafc;margin-bottom:4px;}" +
-      ".preview-product-meta{font-size:12px;color:#94a3b8;line-height:1.5;}" +
-      ".preview-note-list{display:flex;flex-direction:column;gap:10px;}" +
-      ".preview-note-item,.preview-empty{padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.14);color:#dbe7f3;line-height:1.65;}" +
-      ".preview-empty.big{text-align:center;padding:32px;}" +
-      ".preview-callout{margin-top:18px;padding:16px 18px;border-radius:18px;background:rgba(15,139,255,.1);border:1px solid rgba(96,165,250,.2);color:#dbe7f3;line-height:1.7;}" +
-      "@media (max-width:980px){.preview-grid{grid-template-columns:1fr;}.preview-client-ca{text-align:left;}.preview-meta{text-align:left;}.preview-actions{justify-content:flex-start;}}" +
-      "@media (max-width:760px){.preview-shell{padding:20px 16px 38px;}.preview-title{font-size:26px;}.preview-client-name{font-size:20px;}.preview-client-ca-value{font-size:24px;}.preview-table{min-width:640px;}}" +
+      "body{margin:0;background:#f8fafc;color:#0f172a;font-family:'Segoe UI',Roboto,sans-serif;}" +
+      ".shell{max-width:1200px;margin:0 auto;padding:28px 24px 48px;}" +
+      ".header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:24px;padding:24px;border-radius:20px;background:#ffffff;border:1px solid #dbe4f0;box-shadow:0 18px 40px rgba(15,23,42,.08);}" +
+      ".brand{display:flex;gap:16px;align-items:center;}" +
+      ".logo{width:60px;height:60px;border-radius:18px;background:#ffffff;border:1px solid #dbe4f0;display:flex;align-items:center;justify-content:center;overflow:hidden;}" +
+      ".logo img{width:40px;height:40px;display:block;}" +
+      ".kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#2563eb;font-weight:800;margin-bottom:6px;}" +
+      ".title{font-size:30px;font-weight:800;line-height:1.05;margin:0 0 8px;color:#0f172a;}" +
+      ".subtext{margin:0;color:#475569;line-height:1.6;font-size:15px;}" +
+      ".meta{color:#334155;font-size:14px;line-height:1.7;text-align:right;}" +
+      ".actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end;margin-top:14px;}" +
+      ".action{border:none;border-radius:14px;padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;background:#0f8bff;color:#fff;}" +
+      ".action.secondary{background:#ffffff;color:#0f172a;border:1px solid #cbd5e1;}" +
+      ".copy-status{min-height:20px;color:#2563eb;font-size:13px;font-weight:700;}" +
+      ".section{margin-bottom:20px;padding:22px;border-radius:20px;background:#ffffff;border:1px solid #dbe4f0;box-shadow:0 12px 30px rgba(15,23,42,.05);}" +
+      ".section-title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#2563eb;font-weight:800;margin-bottom:14px;}" +
+      ".summary-table,.client-table{width:100%;border-collapse:collapse;}" +
+      ".summary-table th,.summary-table td,.client-table th,.client-table td{padding:12px 14px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;}" +
+      ".summary-table th,.client-table th{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#475569;background:#f8fafc;}" +
+      ".summary-table td,.client-table td{font-size:14px;color:#0f172a;}" +
+      ".client-table .num{text-align:right;white-space:nowrap;font-weight:700;}" +
+      ".bullets{margin:0;padding-left:18px;color:#334155;line-height:1.7;}" +
+      ".bullets li+li{margin-top:8px;}" +
+      ".muted{color:#64748b;font-size:12px;}" +
+      ".note-item{padding:12px 14px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;line-height:1.65;}" +
+      ".note-item + .note-item{margin-top:10px;}" +
+      "@media (max-width:760px){.shell{padding:20px 14px 34px;}.title{font-size:24px;}.meta{text-align:left;}.actions{justify-content:flex-start;}.client-table .num{text-align:left;}}" +
       "</style></head><body>" +
-      '<div class="preview-shell">' +
-      '<header class="preview-header">' +
-      '<div class="preview-brand">' +
-      '<div class="preview-logo"><img src="' +
+      '<div class="shell">' +
+      '<header class="header">' +
+      '<div class="brand">' +
+      '<div class="logo"><img src="' +
       logoUrl +
       '" alt="KENT"></div>' +
       "<div>" +
-      '<div class="preview-kicker">Portail commercial KENT</div>' +
-      '<h1 class="preview-title">' +
+      '<div class="kicker">Portail commercial KENT</div>' +
+      '<h1 class="title">' +
       escapeHtml(inputs.reportTitle) +
       "</h1>" +
-      "<p class=\"preview-subtext\">Rapport journalier structure par client avec detail des produits, quantites et chiffre d'affaires. Cette page est pensee pour la lecture rapide et le copier-coller vers un autre support.</p>" +
+      '<p class="subtext">Vue de synthese du rapport journalier avec chiffres globaux et recapitulatif par client.</p>' +
       "</div></div>" +
       "<div>" +
-      '<div class="preview-meta">Date : ' +
+      '<div class="meta">Date : ' +
       escapeHtml(formatDateLong(inputs.reportDate)) +
       "<br>Commercial : " +
       escapeHtml(inputs.commercialName) +
       "<br>Visites consolidees : " +
       escapeHtml(formatNumber(reportStats.nbVisites)) +
       "</div>" +
-      '<div class="preview-actions">' +
-      '<button id="copyReportButton" class="preview-action" type="button">Copier le rapport</button>' +
-      '<button class="preview-action secondary" type="button" onclick="window.print()">Imprimer</button>' +
+      '<div class="actions">' +
+      '<button id="copyReportButton" class="action" type="button">Copier le rapport</button>' +
+      '<button class="action secondary" type="button" onclick="window.print()">Imprimer</button>' +
       "</div>" +
-      '<div id="copyStatus" class="preview-copy-status"></div>' +
+      '<div id="copyStatus" class="copy-status"></div>' +
       "</div></header>" +
-      '<section class="preview-section">' +
-      '<div class="preview-section-title">Synthese du jour</div>' +
-      buildPreviewSummaryHtml() +
+      '<section class="section">' +
+      '<div class="section-title">Synthese du jour</div>' +
+      '<table class="summary-table"><tbody>' +
+      "<tr><th>Nombre de visites</th><td>" + escapeHtml(formatNumber(reportStats.nbVisites)) + "</td></tr>" +
+      "<tr><th>Clients visites</th><td>" + escapeHtml(formatNumber(reportStats.nbClients)) + "</td></tr>" +
+      "<tr><th>Lignes produits</th><td>" + escapeHtml(formatNumber(reportStats.nbLignes)) + "</td></tr>" +
+      "<tr><th>Quantite totale</th><td>" + escapeHtml(formatNumber(reportStats.totalQuantite)) + "</td></tr>" +
+      "<tr><th>Stock observe</th><td>" + escapeHtml(formatNumber(reportStats.totalStock)) + "</td></tr>" +
+      "<tr><th>CA du jour</th><td>" + escapeHtml(formatCurrency(reportStats.totalCA)) + "</td></tr>" +
+      "<tr><th>Alertes rouges</th><td>" + escapeHtml(formatNumber(reportStats.nbRouges)) + "</td></tr>" +
+      "<tr><th>Vigilances jaunes</th><td>" + escapeHtml(formatNumber(reportStats.nbJaunes)) + "</td></tr>" +
+      "<tr><th>Opportunites vertes</th><td>" + escapeHtml(formatNumber(reportStats.nbVerts)) + "</td></tr>" +
+      "</tbody></table>" +
       (inputs.globalComment
-        ? '<div class="preview-callout"><strong>Commentaire global</strong><br>' + escapeHtml(inputs.globalComment) + "</div>"
+        ? '<div class="note-item" style="margin-top:14px;"><strong>Commentaire global :</strong> ' + escapeHtml(inputs.globalComment) + "</div>"
         : "") +
       "</section>" +
-      '<section class="preview-section preview-grid">' +
-      '<div class="preview-list-card"><div class="preview-section-title">Lecture commerciale</div><ul class="preview-bullets">' +
+      '<section class="section">' +
+      '<div class="section-title">Lecture commerciale</div><ul class="bullets">' +
       executiveHtml +
-      "</ul></div>" +
-      '<div class="preview-ranking-card"><div class="preview-section-title">Top clients et top produits</div>' +
-      '<div class="preview-ranking-list">' +
-      buildPreviewRanking(reportStats.topClients, "client") +
-      buildPreviewRanking(reportStats.topProducts, "product") +
-      "</div></div>" +
+      "</ul>" +
       "</section>" +
-      '<section class="preview-section"><div class="preview-section-title">Rapport detaille</div>' +
-      clientsHtml +
+      '<section class="section"><div class="section-title">Recapitulatif par client</div>' +
+      '<table class="client-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantite</th><th>Stock</th><th>CA</th></tr></thead><tbody>' +
+      clientRowsHtml +
+      "</tbody></table>" +
       "</section>" +
+      (notesHtml
+        ? '<section class="section"><div class="section-title">Notes terrain</div>' + notesHtml + "</section>"
+        : "") +
       "</div>" +
       "<script>" +
       "var reportText = " +
@@ -1114,50 +1142,24 @@
       "<style>" +
       ".pdf-root,.pdf-root *{box-sizing:border-box;color:#0f172a;font-family:Arial,Helvetica,sans-serif;}" +
       ".pdf-root{width:190mm;padding:10mm 9mm 10mm;background:#ffffff;}" +
-      ".pdf-header{display:flex;justify-content:space-between;gap:10mm;align-items:flex-start;padding-bottom:7mm;margin-bottom:7mm;border-bottom:2px solid #0f8bff;}" +
+      ".pdf-header{display:flex;justify-content:space-between;gap:8mm;align-items:flex-start;padding-bottom:5mm;margin-bottom:6mm;border-bottom:2px solid #0f8bff;}" +
       ".pdf-brand{display:flex;gap:4mm;align-items:center;}" +
-      ".pdf-logo{width:17mm;height:17mm;border-radius:4mm;border:1px solid #d7e3f2;background:#ffffff;display:flex;align-items:center;justify-content:center;overflow:hidden;}" +
-      ".pdf-logo img{width:11mm;height:11mm;display:block;}" +
-      ".pdf-kicker{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:#2563eb;font-weight:700;margin-bottom:2mm;}" +
-      ".pdf-title{font-size:19px;line-height:1.05;font-weight:700;margin:0 0 1.5mm;color:#0b2540;}" +
+      ".pdf-logo{width:16mm;height:16mm;border:1px solid #d7e3f2;border-radius:4mm;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;}" +
+      ".pdf-logo img{width:10mm;height:10mm;display:block;}" +
+      ".pdf-kicker{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#2563eb;font-weight:700;margin-bottom:1.5mm;}" +
+      ".pdf-title{font-size:18px;line-height:1.05;font-weight:700;margin:0 0 1.5mm;color:#0b2540;}" +
       ".pdf-subtitle{font-size:9px;line-height:1.5;color:#475569;}" +
-      ".pdf-meta{font-size:9px;line-height:1.6;text-align:right;color:#334155;min-width:52mm;}" +
-      ".pdf-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:3.2mm;margin-bottom:6mm;}" +
-      ".pdf-chip{padding:3.5mm;border-radius:3.5mm;border:1px solid #dbeafe;background:#f8fbff;min-height:15mm;}" +
-      ".pdf-chip-label{font-size:7px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:1.2mm;}" +
-      ".pdf-chip-value{font-size:12px;font-weight:700;color:#0b2540;}" +
-      ".pdf-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:4mm;margin-bottom:5mm;}" +
-      ".pdf-panel{padding:4mm;border:1px solid #dbe4f0;border-radius:3.5mm;background:#ffffff;}" +
-      ".pdf-section-title{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#2563eb;font-weight:700;margin-bottom:2.5mm;}" +
+      ".pdf-meta{font-size:9px;line-height:1.6;text-align:right;color:#334155;min-width:50mm;}" +
+      ".pdf-section{margin-bottom:5mm;}" +
+      ".pdf-section-title{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#2563eb;font-weight:700;margin-bottom:2mm;}" +
+      ".pdf-table{width:100%;border-collapse:collapse;}" +
+      ".pdf-table th,.pdf-table td{border:1px solid #e2e8f0;padding:2.5mm 2.2mm;text-align:left;vertical-align:top;font-size:8.5px;color:#334155;}" +
+      ".pdf-table th{background:#f8fafc;color:#475569;font-weight:700;}" +
+      ".pdf-table .num{text-align:right;white-space:nowrap;}" +
       ".pdf-bullets{margin:0;padding-left:4mm;}" +
-      ".pdf-bullets li{font-size:9px;line-height:1.55;color:#334155;}" +
-      ".pdf-bullets li+li{margin-top:1.4mm;}" +
-      ".pdf-mini-table{width:100%;border-collapse:collapse;}" +
-      ".pdf-mini-table th,.pdf-mini-table td{border-bottom:1px solid #e2e8f0;padding:2.4mm 2.2mm;text-align:left;vertical-align:top;font-size:8px;color:#334155;}" +
-      ".pdf-mini-table th{background:#f8fafc;color:#475569;font-weight:700;}" +
-      ".pdf-mini-table tr:last-child td{border-bottom:none;}" +
-      ".pdf-callout{margin-bottom:5mm;padding:3.4mm 3.8mm;border-radius:3.5mm;border:1px solid #dbeafe;background:#f8fbff;color:#334155;font-size:9px;line-height:1.6;}" +
-      ".pdf-client{page-break-inside:avoid;break-inside:avoid;margin-bottom:4mm;padding:4mm;border:1px solid #dbe4f0;border-radius:4mm;background:#ffffff;}" +
-      ".pdf-client-head{display:flex;justify-content:space-between;gap:4mm;align-items:flex-start;flex-wrap:wrap;margin-bottom:3mm;}" +
-      ".pdf-client-name{font-size:13px;font-weight:700;color:#0b2540;margin-bottom:1mm;}" +
-      ".pdf-client-meta{font-size:8.5px;line-height:1.55;color:#475569;}" +
-      ".pdf-client-ca{text-align:right;}" +
-      ".pdf-client-ca-value{font-size:14px;font-weight:700;color:#0b2540;}" +
-      ".pdf-client-ca-label{font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:#64748b;font-weight:700;}" +
-      ".pdf-client-stats{display:flex;flex-wrap:wrap;gap:2mm;margin-bottom:3mm;}" +
-      ".pdf-stat{display:inline-block;padding:1.6mm 2.4mm;border-radius:99px;border:1px solid #e2e8f0;background:#f8fafc;font-size:7.5px;color:#334155;font-weight:700;}" +
-      ".pdf-subsection{font-size:7.5px;letter-spacing:.08em;text-transform:uppercase;color:#2563eb;font-weight:700;margin-bottom:2mm;}" +
-      ".pdf-product-table{width:100%;border-collapse:collapse;table-layout:fixed;}" +
-      ".pdf-product-table th,.pdf-product-table td{border-bottom:1px solid #e2e8f0;padding:2.2mm 2mm;text-align:left;vertical-align:top;font-size:8px;color:#334155;}" +
-      ".pdf-product-table th{background:#f8fafc;color:#475569;font-weight:700;}" +
-      ".pdf-product-table tr:last-child td{border-bottom:none;}" +
-      ".pdf-product-table th.qty,.pdf-product-table td.qty{width:18mm;text-align:right;}" +
-      ".pdf-product-table th.stock,.pdf-product-table td.stock{width:18mm;text-align:right;}" +
-      ".pdf-product-table th.ca,.pdf-product-table td.ca{width:24mm;text-align:right;}" +
-      ".pdf-product-name{font-weight:700;color:#0f172a;margin-bottom:1mm;}" +
-      ".pdf-product-meta{font-size:7px;line-height:1.45;color:#64748b;}" +
-      ".pdf-note-list{margin-top:3mm;}" +
-      ".pdf-note{padding:2.6mm 3mm;border-radius:3mm;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;font-size:8px;line-height:1.55;}" +
+      ".pdf-bullets li{font-size:8.5px;line-height:1.55;color:#334155;}" +
+      ".pdf-bullets li+li{margin-top:1.2mm;}" +
+      ".pdf-note{padding:3mm;border:1px solid #e2e8f0;background:#f8fafc;font-size:8.5px;line-height:1.55;color:#334155;margin-top:2mm;}" +
       ".pdf-note + .pdf-note{margin-top:2mm;}" +
       ".pdf-footer{margin-top:6mm;font-size:7.5px;line-height:1.55;text-align:center;color:#64748b;}" +
       "</style>"
@@ -1319,6 +1321,58 @@
           .join("")
       : "<li>Aucune synthese disponible.</li>";
 
+    var clientRowsHtml = groupedClients.length
+      ? groupedClients
+          .map(function (client) {
+            return (
+              "<tr>" +
+              "<td><strong>" +
+              escapeHtml(client.name) +
+              "</strong><br>Compte : " +
+              escapeHtml(client.account || "-") +
+              "</td>" +
+              '<td class="num">' +
+              formatNumber(client.visits) +
+              "</td>" +
+              '<td class="num">' +
+              formatNumber(client.lines) +
+              "</td>" +
+              '<td class="num">' +
+              formatNumber(client.quantity) +
+              "</td>" +
+              '<td class="num">' +
+              formatNumber(client.stock) +
+              "</td>" +
+              '<td class="num">' +
+              escapeHtml(formatCurrency(client.ca)) +
+              "</td>" +
+              "</tr>"
+            );
+          })
+          .join("")
+      : '<tr><td colspan="6">Aucune visite trouvee pour cette date.</td></tr>';
+
+    var notesHtml = groupedClients
+      .filter(function (client) {
+        return client.notes && client.notes.length;
+      })
+      .map(function (client) {
+        return client.notes
+          .map(function (note) {
+            return (
+              '<div class="pdf-note"><strong>' +
+              escapeHtml(client.name) +
+              " - " +
+              escapeHtml(formatDate(note.date)) +
+              " :</strong> " +
+              escapeHtml(note.note) +
+              "</div>"
+            );
+          })
+          .join("");
+      })
+      .join("");
+
     return (
       '<div class="pdf-root">' +
       buildPdfStyles() +
@@ -1332,7 +1386,7 @@
       '<h1 class="pdf-title">' +
       escapeHtml(inputs.reportTitle) +
       "</h1>" +
-      "<div class=\"pdf-subtitle\">Rapport journalier structure par client avec detail des produits, quantites et chiffre d'affaires.</div>" +
+      '<div class="pdf-subtitle">Rapport journalier de synthese avec les indicateurs globaux et le recapitulatif par client.</div>' +
       "</div>" +
       "</div>" +
       '<div class="pdf-meta">Date : ' +
@@ -1343,48 +1397,40 @@
       escapeHtml(formatNumber(reportStats.nbVisites)) +
       "</div>" +
       "</div>" +
-      '<div class="pdf-summary">' +
-      '<div class="pdf-chip"><div class="pdf-chip-label">Visites</div><div class="pdf-chip-value">' +
-      formatNumber(reportStats.nbVisites) +
-      "</div></div>" +
-      '<div class="pdf-chip"><div class="pdf-chip-label">Clients</div><div class="pdf-chip-value">' +
-      formatNumber(reportStats.nbClients) +
-      "</div></div>" +
-      '<div class="pdf-chip"><div class="pdf-chip-label">Lignes produits</div><div class="pdf-chip-value">' +
-      formatNumber(reportStats.nbLignes) +
-      "</div></div>" +
-      '<div class="pdf-chip"><div class="pdf-chip-label">Quantite totale</div><div class="pdf-chip-value">' +
-      formatNumber(reportStats.totalQuantite) +
-      "</div></div>" +
-      '<div class="pdf-chip"><div class="pdf-chip-label">Stock observe</div><div class="pdf-chip-value">' +
-      formatNumber(reportStats.totalStock) +
-      "</div></div>" +
-      '<div class="pdf-chip"><div class="pdf-chip-label">CA du jour</div><div class="pdf-chip-value">' +
-      escapeHtml(formatCurrency(reportStats.totalCA)) +
-      "</div></div>" +
+      '<div class="pdf-section"><div class="pdf-section-title">Synthese du jour</div><table class="pdf-table"><tbody>' +
+      buildPdfMetricRows() +
+      "</tbody></table>" +
+      (inputs.globalComment
+        ? '<div class="pdf-note"><strong>Commentaire global :</strong> ' + escapeHtml(inputs.globalComment) + "</div>"
+        : "") +
       "</div>" +
-      '<div class="pdf-grid">' +
-      '<div class="pdf-panel"><div class="pdf-section-title">Lecture commerciale</div><ul class="pdf-bullets">' +
+      '<div class="pdf-section"><div class="pdf-section-title">Lecture commerciale</div><ul class="pdf-bullets">' +
       executiveHtml +
       "</ul></div>" +
-      '<div class="pdf-panel"><div class="pdf-section-title">Indicateurs cles</div><table class="pdf-mini-table"><tbody>' +
-      buildPdfMetricRows() +
+      '<div class="pdf-section"><div class="pdf-section-title">Recapitulatif par client</div><table class="pdf-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantite</th><th>Stock</th><th>CA</th></tr></thead><tbody>' +
+      clientRowsHtml +
       "</tbody></table></div>" +
-      "</div>" +
-      (inputs.globalComment
-        ? '<div class="pdf-callout"><strong>Commentaire global</strong><br>' + escapeHtml(inputs.globalComment) + "</div>"
+      (notesHtml
+        ? '<div class="pdf-section"><div class="pdf-section-title">Notes terrain</div>' + notesHtml + "</div>"
         : "") +
-      '<div class="pdf-grid">' +
-      '<div class="pdf-panel"><div class="pdf-section-title">Top clients du jour</div><table class="pdf-mini-table"><thead><tr><th>Client</th><th>Compte</th><th>CA</th></tr></thead><tbody>' +
-      buildPdfRankingRows(reportStats.topClients, "client") +
-      "</tbody></table></div>" +
-      '<div class="pdf-panel"><div class="pdf-section-title">Top produits du jour</div><table class="pdf-mini-table"><thead><tr><th>Produit</th><th>Reference</th><th>CA</th></tr></thead><tbody>' +
-      buildPdfRankingRows(reportStats.topProducts, "product") +
-      "</tbody></table></div>" +
-      "</div>" +
-      buildPdfClientBlocks() +
-      '<div class="pdf-footer">Document KENT genere automatiquement depuis le portail commercial. Le CA global reprend le total de commande remonte sur la visite, avec un detail produit base sur les prix unitaires saisis.</div>' +
+      '<div class="pdf-footer">Document KENT genere automatiquement depuis le portail commercial.</div>' +
       "</div>"
+    );
+  }
+
+  function buildPreviewLoadingHtml() {
+    return (
+      "<!DOCTYPE html>" +
+      '<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+      "<title>Chargement du rapport</title>" +
+      "<style>" +
+      "body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8fafc;color:#0f172a;font-family:'Segoe UI',Roboto,sans-serif;}" +
+      ".loading{padding:28px 32px;border-radius:20px;background:#ffffff;border:1px solid #dbe4f0;box-shadow:0 18px 40px rgba(15,23,42,.08);text-align:center;}" +
+      ".loading strong{display:block;font-size:18px;margin-bottom:10px;}" +
+      ".loading span{color:#475569;line-height:1.6;}" +
+      "</style></head><body>" +
+      '<div class="loading"><strong>Chargement du rapport...</strong><span>Preparation de la visualisation KENT en cours.</span></div>' +
+      "</body></html>"
     );
   }
 
@@ -1454,12 +1500,19 @@
   }
 
   async function visualiserRapport() {
-    var ready = await ensureReportLoaded();
-    if (!ready) return;
-
-    var previewWindow = window.open("", "_blank", "noopener,noreferrer,width=1480,height=960");
+    var previewWindow = window.open("", "_blank", "width=1480,height=960");
     if (!previewWindow) {
       alert("Impossible d'ouvrir la fenetre de visualisation. Verifie le bloqueur de pop-up.");
+      return;
+    }
+
+    previewWindow.document.open();
+    previewWindow.document.write(buildPreviewLoadingHtml());
+    previewWindow.document.close();
+
+    var ready = await ensureReportLoaded();
+    if (!ready) {
+      previewWindow.close();
       return;
     }
 
