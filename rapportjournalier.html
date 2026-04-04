@@ -83,7 +83,7 @@
 
     .toolbar-grid {
       display: grid;
-      grid-template-columns: 1.1fr 1fr 1fr auto auto;
+      grid-template-columns: 1.1fr 1fr 1fr auto auto auto;
       gap: 14px;
       align-items: end;
     }
@@ -173,7 +173,7 @@
 
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 14px;
     }
 
@@ -426,6 +426,157 @@
       text-align: center;
       color: var(--muted);
       padding: 48px 18px;
+    }
+
+    .client-report-card {
+      padding: 20px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .client-report-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .client-report-name {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .client-report-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .client-report-totals {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      text-align: right;
+    }
+
+    .client-report-amount {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+    }
+
+    .client-report-caption {
+      font-size: 0.8rem;
+      color: var(--muted-2);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .client-report-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .client-report-products {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .client-products-title,
+    .client-notes-title {
+      font-size: 0.82rem;
+      color: var(--muted-2);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 700;
+    }
+
+    .client-product-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) 110px 110px 140px;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .client-product-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .client-product-name {
+      color: var(--text);
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .client-product-meta {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+
+    .client-product-value {
+      text-align: right;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .client-product-value small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted-2);
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .client-note-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .client-note-item {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      color: var(--text);
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .client-note-date {
+      display: inline-block;
+      margin-bottom: 6px;
+      color: var(--muted-2);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
 
     #pdfReport {
@@ -706,6 +857,10 @@
       .analysis-grid {
         grid-template-columns: 1fr 1fr;
       }
+
+      .client-product-row {
+        grid-template-columns: minmax(0, 1fr) repeat(3, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 760px) {
@@ -714,6 +869,19 @@
       .summary-grid,
       .analysis-grid {
         grid-template-columns: 1fr;
+      }
+
+      .client-report-totals {
+        align-items: flex-start;
+        text-align: left;
+      }
+
+      .client-product-row {
+        grid-template-columns: 1fr;
+      }
+
+      .client-product-value {
+        text-align: left;
       }
     }
   </style>
@@ -746,6 +914,7 @@
         </div>
 
         <button class="btn btn-secondary" type="button" onclick="chargerRapportJournalier()">Charger les visites</button>
+        <button class="btn btn-primary" type="button" onclick="visualiserRapport()">Visualiser le rapport</button>
         <button class="btn btn-success" type="button" onclick="exporterPDF()">Exporter PDF</button>
       </div>
 
@@ -781,6 +950,10 @@
         <div class="summary-chip">
           <div class="summary-chip-label">Quantite totale</div>
           <div class="summary-chip-value" id="summaryQuantite">0</div>
+        </div>
+        <div class="summary-chip">
+          <div class="summary-chip-label">CA du jour</div>
+          <div class="summary-chip-value" id="summaryCA">0 €</div>
         </div>
         <div class="summary-chip">
           <div class="summary-chip-label">Stock client observe</div>
