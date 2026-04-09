@@ -1018,21 +1018,15 @@
     if (!raw.length) return { clients: [] };
 
     const headerMap = buildHeaderMap(raw[0]);
+    const colClientInt = findCol(headerMap, [
+      "code livré","code livre","code",
+      "n° client interne","no client interne","n client interne","numero client interne","n° client"
+    ]);
+    const colClientName = findCol(headerMap, ["nom client","nom du client","client"]);
+    const colAmt = findCol(headerMap, ["ca total","ca","chiffre d'affaires","chiffre daffaires","montant prix achat kent","montant"]);
+    const colMonth = findCol(headerMap, ["mois2","mois","month"]);
 
-    const colName = findCol(headerMap, ["CLIENT","Client","Nom client","NOM CLIENT","Raison sociale","RAISON SOCIALE","name"]);
-    const colNClient = findCol(headerMap, ["N CLIENT","NCLIENT","N° CLIENT","N°CLIENT","No Client","NO CLIENT","nclient"]);
-
-    const colDate = findCol(headerMap, ["Date vente","date vente","DATE VENTE","Date","date","Date commande","date commande"]);
-    const colMonth = findCol(headerMap, [
-  "mois2",        // ✅ ton nom exact
-  "MOIS2",
-  "Mois2",
-  "MOIS","Mois","mois",
-  "month","Month"
-]);
-const colAmt = findCol(headerMap, [ "Montant prix achat KENT","Montant prix achat kent","MONTANT PRIX ACHAT KENT","CA Total","CA TOTAL","CA","Montant","montant"]);
-
-    if (!colAmt || (!colDate && !colMonth)) return { clients: [] };
+    if (!colAmt || !colMonth) return { clients: [] };
 
     const byKey = new Map();
 
@@ -1040,17 +1034,9 @@ const colAmt = findCol(headerMap, [ "Montant prix achat KENT","Montant prix acha
       const amt = toNumber(r[colAmt]);
       if (!amt) continue;
 
-      const name = colName ? String(r[colName]||"").trim() : "";
-      const nclient = colNClient ? String(r[colNClient]||"").trim() : "";
-
-      let mi = -1;
-      if (colDate){
-        const dt = parseAnyDate(r[colDate]);
-        if (dt) mi = dt.getMonth();
-      }
-      if (mi < 0 && colMonth){
-        mi = monthToIndex(String(r[colMonth]||"").trim());
-      }
+      const name = colClientName ? String(r[colClientName]||"").trim() : "";
+      const nclient = colClientInt ? String(r[colClientInt]||"").trim() : "";
+      const mi = monthToIndex(String(r[colMonth]||"").trim());
       if (mi < 0) continue;
 
       const mk = MONTHS[mi].key;
