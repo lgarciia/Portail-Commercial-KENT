@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Evol Reporting</title>
   <script src="./shared-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root{
@@ -477,7 +478,7 @@
 <script>
 
 
-// ✅ CONFIG VUE SEMAINE (à changer pour Ford/Gueudet/Direct)
+// ✅ CONFIG VUE SEMAINE
 const WEEK_VIEW_PAGE = "vue_semaine.html";
 const ENTITY_KEY     = "PSA";
 const REAL_XLSX_FILE = "activitereelpsa.xlsx";
@@ -507,14 +508,6 @@ const REAL_DATE_COL  = "Date vente";
   ];
 
   const nf0 = new Intl.NumberFormat("fr-FR", { minimumFractionDigits:0, maximumFractionDigits:0 });
-// ===========================
-// CONFIG VUE SEMAINE (COPY/PASTE FRIENDLY)
-// ===========================
-// 👉 pour dupliquer sur Ford/Gueudet/Direct : tu changes ces 4 lignes
-const WEEK_VIEW_PAGE = "vue_semaine.html";     // nom du fichier de la page semaine
-const REAL_XLSX_FILE = "activitereelpsa.xlsx"; // ⚠️ mets ici TON fichier réel de l'entité (ex: activitereelford.xlsx)
-const ENTITY_KEY = "PSA";                      // "PSA" / "FORD" / "GUEUDET" / "DIRECT"
-const REAL_DATE_COL = "Date vente";            // nom colonne date dans le réel (tolérance accents/casse)
   // ---------------------------
   // DOM
   // ---------------------------
@@ -560,6 +553,13 @@ const REAL_DATE_COL = "Date vente";            // nom colonne date dans le réel
 
     budgetData = parseBudgetWorkbook(budgetWB);
     activite = parseRealWorkbook(reelWB);
+
+    if (!(budgetData?.clients?.length)) {
+      throw new Error("Budget PSA introuvable ou colonnes mois non reconnues");
+    }
+    if (!(activite?.clients?.length)) {
+      throw new Error("Réel PSA introuvable ou colonnes Mois/CA non reconnues");
+    }
 
     if (activite?.clients?.length){
       for (const c of activite.clients){
@@ -1126,7 +1126,7 @@ ${selectedMonths.map((m,idx)=>`
 
     const monthCols = {};
     for (const m of MONTHS){
-      const col = findCol(headerMap, [m.label]);
+      const col = findCol(headerMap, monthColumnCandidates(m.key));
       if (!col) return { clients: [] };
       monthCols[m.key] = col;
     }
@@ -1242,6 +1242,24 @@ ${selectedMonths.map((m,idx)=>`
       "decembre":11,"décembre":11,"dec":11,"12":11
     };
     return map[normKey(m)] ?? -1;
+  }
+
+  function monthColumnCandidates(monthKey){
+    const map = {
+      jan: ["janvier", "jan", "1"],
+      feb: ["fevrier", "février", "fev", "fév", "2"],
+      mar: ["mars", "3"],
+      apr: ["avril", "4"],
+      may: ["mai", "5"],
+      jun: ["juin", "6"],
+      jul: ["juillet", "7"],
+      aug: ["aout", "août", "8"],
+      sep: ["septembre", "sep", "9"],
+      oct: ["octobre", "oct", "10"],
+      nov: ["novembre", "nov", "11"],
+      dec: ["decembre", "décembre", "dec", "déc", "12"],
+    };
+    return map[monthKey] || [];
   }
 
   function stamp(){
