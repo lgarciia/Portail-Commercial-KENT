@@ -332,12 +332,8 @@
 <script>
 (async function(){
   // ---------------------------
-  // CONFIG (fichiers en fetch + override localStorage inchangé)
+  // CONFIG (fichiers en fetch direct)
   // ---------------------------
-  const STORAGE = {
-    realOverride: "BUDGET2026_REAL_GUEUDET_V1" // optionnel
-  };
-
   const FILES = {
     budget: "budgetgueudet.xlsx",
     reel: "activitereelgueudet.xlsx",
@@ -387,9 +383,6 @@
   // ---------------------------
   let budgetData = null;     // {clients:[{id,name,nclient,budget:{jan..}}]}
   let activite = null;       // {clients:[{nclient,name,months:{jan..}}]}
-
-  let override = loadJSON(STORAGE.realOverride, {});
-  if (!override || typeof override !== "object") override = {};
 
   const actByExact = new Map();
   const actByNClient = new Map();
@@ -652,12 +645,9 @@
   }
 
   // ---------------------------
-  // REAL: override > activite (match nclient puis name)
+  // REAL: activite fetchée (match nclient puis name)
   // ---------------------------
   function getRealForClientMonth(bc, mk){
-    const ov = override?.[bc.id]?.[mk];
-    if (ov !== undefined && ov !== null) return toInt(ov);
-
     const src =
       actByExact.get(makeClientMatchKey(bc.name, bc.nclient)) ||
       getUniqueLookupCandidate(actByNClient, compactClientCode(bc.nclient)) ||
@@ -792,14 +782,6 @@
     if (n > 0) return "ecart pos";
     if (n < 0) return "ecart neg";
     return "ecart zero";
-  }
-
-  function loadJSON(key, fallback){
-    try{
-      const raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      return JSON.parse(raw);
-    }catch{ return fallback; }
   }
 
   function toNumber(v){

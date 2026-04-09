@@ -579,6 +579,7 @@
 
         let dt = null;
         if (colDate) dt = parseAnyDate(r[colDate]);
+        if (dt && dt.getFullYear() !== year) continue;
 
         let mi = -1;
         if (dt) mi = dt.getMonth(); // 0..11
