@@ -1,12 +1,8 @@
 ﻿
 (async function(){
   // ---------------------------
-  // CONFIG (fichiers en fetch + override localStorage inchangÃ©)
+  // CONFIG (fichiers en fetch direct)
   // ---------------------------
-  const STORAGE = {
-    realOverride: "BUDGET2026_REAL_GUEUDET_V1" // optionnel
-  };
-
   const FILES = {
     budget: "budgetgueudet.xlsx",
     reel: "activitereelgueudet.xlsx",
@@ -56,9 +52,6 @@
   // ---------------------------
   let budgetData = null;     // {clients:[{id,name,nclient,budget:{jan..}}]}
   let activite = null;       // {clients:[{nclient,name,months:{jan..}}]}
-
-  let override = loadJSON(STORAGE.realOverride, {});
-  if (!override || typeof override !== "object") override = {};
 
   const actByExact = new Map();
   const actByNClient = new Map();
@@ -321,12 +314,9 @@
   }
 
   // ---------------------------
-  // REAL: override > activite (match nclient puis name)
+  // REAL: activite fetchÃ©e (match nclient puis name)
   // ---------------------------
   function getRealForClientMonth(bc, mk){
-    const ov = override?.[bc.id]?.[mk];
-    if (ov !== undefined && ov !== null) return toInt(ov);
-
     const src =
       actByExact.get(makeClientMatchKey(bc.name, bc.nclient)) ||
       getUniqueLookupCandidate(actByNClient, compactClientCode(bc.nclient)) ||
@@ -461,14 +451,6 @@
     if (n > 0) return "ecart pos";
     if (n < 0) return "ecart neg";
     return "ecart zero";
-  }
-
-  function loadJSON(key, fallback){
-    try{
-      const raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      return JSON.parse(raw);
-    }catch{ return fallback; }
   }
 
   function toNumber(v){
@@ -705,21 +687,15 @@
     if (!raw.length) return { clients: [] };
 
     const headerMap = buildHeaderMap(raw[0]);
+    const colClientInt = findCol(headerMap, [
+      "code livrÃ©","code livre","code",
+      "nÂ° client interne","no client interne","n client interne","numero client interne","nÂ° client"
+    ]);
+    const colClientName = findCol(headerMap, ["nom client","nom du client","client"]);
+    const colAmt = findCol(headerMap, ["ca total","ca","chiffre d'affaires","chiffre daffaires","montant prix achat kent","montant"]);
+    const colMonth = findCol(headerMap, ["mois2","mois","month"]);
 
-    const colName = findCol(headerMap, ["CLIENT","Client","Nom client","NOM CLIENT","Raison sociale","RAISON SOCIALE","name"]);
-    const colNClient = findCol(headerMap, ["N CLIENT","NCLIENT","NÂ° CLIENT","NÂ°CLIENT","No Client","NO CLIENT","nclient"]);
-
-    const colDate = findCol(headerMap, ["Date vente","date vente","DATE VENTE","Date","date","Date commande","date commande"]);
-    const colMonth = findCol(headerMap, [
-  "mois2",        // âœ… ton nom exact
-  "MOIS2",
-  "Mois2",
-  "MOIS","Mois","mois",
-  "month","Month"
-]);
-const colAmt = findCol(headerMap, [ "Montant prix achat KENT","Montant prix achat kent","MONTANT PRIX ACHAT KENT","CA Total","CA TOTAL","CA","Montant","montant"]);
-
-    if (!colAmt || (!colDate && !colMonth)) return { clients: [] };
+    if (!colAmt || !colMonth) return { clients: [] };
 
     const byKey = new Map();
 
@@ -727,17 +703,9 @@ const colAmt = findCol(headerMap, [ "Montant prix achat KENT","Montant prix acha
       const amt = toNumber(r[colAmt]);
       if (!amt) continue;
 
-      const name = colName ? String(r[colName]||"").trim() : "";
-      const nclient = colNClient ? String(r[colNClient]||"").trim() : "";
-
-      let mi = -1;
-      if (colDate){
-        const dt = parseAnyDate(r[colDate]);
-        if (dt) mi = dt.getMonth();
-      }
-      if (mi < 0 && colMonth){
-        mi = monthToIndex(String(r[colMonth]||"").trim());
-      }
+      const name = colClientName ? String(r[colClientName]||"").trim() : "";
+      const nclient = colClientInt ? String(r[colClientInt]||"").trim() : "";
+      const mi = monthToIndex(String(r[colMonth]||"").trim());
       if (mi < 0) continue;
 
       const mk = MONTHS[mi].key;

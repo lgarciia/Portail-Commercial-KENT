@@ -26,7 +26,8 @@
   const BUDGET_FILE = "budgetgueudet.xlsx";
 
   let budgetData = null;  // { clients: [{id,name,nclient,budget:{jan..dec}}] }
-  let realData = loadJSON(STORAGE.real, {}); // sera Ã©crasÃ© par le fetch
+  let budgetMeta = null;
+  let realData = {};
   let filterText = "";
 
   const el = {
@@ -50,23 +51,10 @@
     hScrollInner: document.getElementById("hScrollInner"),
   };
 
-  const cachedBudget = loadJSON(STORAGE.budget, null);
-  const cachedMeta = loadJSON(STORAGE.budgetMeta, null);
-
-  if (cachedBudget && cachedBudget.clients?.length) {
-    budgetData = cachedBudget;
-    if (normalizeBudgetClientIds(budgetData.clients)) {
-      saveJSON(STORAGE.budget, budgetData);
-    }
-    applyMeta(cachedMeta);
-    await loadRealFromFetch();
-    render();
-  } else {
-    renderEmpty();
-    updateReelStatus("non chargÃ© (budget absent)");
-    syncBottomScrollbar();
-    await tryAutoFetchBudget();
-  }
+  renderEmpty();
+  updateReelStatus("chargementâ€¦");
+  syncBottomScrollbar();
+  await tryAutoFetchBudget();
 
   el.btnImport.addEventListener("click", () => el.fileBudget.click());
   el.fileBudget.addEventListener("change", async (e) => {
@@ -82,10 +70,8 @@
   });
 
   el.btnResetReal.addEventListener("click", () => {
-    if (!confirm("RÃ©initialiser toutes les valeurs RÃ©el (importÃ©es du fichier rÃ©el) ?")) return;
-    realData = {};
-    saveJSON(STORAGE.real, realData);
-    render();
+    if (!confirm("Recharger toutes les valeurs RÃ©el depuis activitereelgueudet.xlsx ?")) return;
+    loadRealFromFetch().then(render).catch(console.error);
   });
 
   el.btnExportJson.addEventListener("click", () => exportJSON());
@@ -183,13 +169,11 @@
 
     budgetData = { clients };
 
-    saveJSON(STORAGE.budget, budgetData);
     const meta = {
       filename: fileLabel,
       updatedAt: new Date().toISOString(),
       sheet: firstSheetName
     };
-    saveJSON(STORAGE.budgetMeta, meta);
     applyMeta(meta);
   }
 
@@ -205,6 +189,7 @@
   }
 
   function applyMeta(meta){
+    budgetMeta = meta || null;
     if (!meta) {
       el.budgetFileLabel.textContent = "non chargÃ©";
       el.lastUpdate.textContent = "â€”";
@@ -236,7 +221,6 @@
 
       if (!rows.length){
         realData = {};
-        saveJSON(STORAGE.real, realData);
         updateReelStatus("fichier vide");
         return;
       }
@@ -269,7 +253,6 @@
 
       if (!colAmt || !colMonth){
         realData = {};
-        saveJSON(STORAGE.real, realData);
         updateReelStatus("colonnes Mois/CA introuvables");
         return;
       }
@@ -329,8 +312,6 @@
       }
 
       realData = nextReal;
-      saveJSON(STORAGE.real, realData);
-
       const countClients = Object.keys(realData).length;
       updateReelStatus(`OK (${countClients} clients) â€” ${REAL_FILE}`);
     }catch(err){
@@ -554,7 +535,7 @@
 
   function exportJSON(){
     const payload = {
-      meta: loadJSON(STORAGE.budgetMeta, null),
+      meta: budgetMeta,
       budget: budgetData,
       real: realData,
       realSource: REAL_FILE,
@@ -591,19 +572,6 @@
   }
 
   // HELPERS
-  function loadJSON(key, fallback){
-    try{
-      const raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      return JSON.parse(raw);
-    }catch{
-      return fallback;
-    }
-  }
-  function saveJSON(key, val){
-    localStorage.setItem(key, JSON.stringify(val));
-  }
-
   function toNumber(v){
     if (v === null || v === undefined) return 0;
     if (typeof v === "number") return isFinite(v) ? v : 0;
