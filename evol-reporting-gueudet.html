@@ -391,6 +391,7 @@
   let override = loadJSON(STORAGE.realOverride, {});
   if (!override || typeof override !== "object") override = {};
 
+  const actByExact = new Map();
   const actByNClient = new Map();
   const actByName = new Map();
 
@@ -658,21 +659,20 @@
     if (ov !== undefined && ov !== null) return toInt(ov);
 
     const src =
-      (bc.nclient && actByNClient.get(normKey(bc.nclient))) ||
-      actByName.get(normKey(bc.name));
+      actByExact.get(makeClientMatchKey(bc.name, bc.nclient)) ||
+      getUniqueLookupCandidate(actByNClient, compactClientCode(bc.nclient)) ||
+      getUniqueLookupCandidate(actByName, compactClientName(bc.name));
 
     return toInt(src?.months?.[mk]);
   }
 
   function rebuildActiviteIndex(){
+    actByExact.clear();
     actByNClient.clear();
     actByName.clear();
     if (activite?.clients?.length){
       for (const c of activite.clients){
-        const nc = normKey(c.nclient);
-        const nm = normKey(c.name);
-        if (nc) actByNClient.set(nc, c);
-        if (nm) actByName.set(nm, c);
+        indexActiviteClient(c);
       }
     }
   }
@@ -820,6 +820,53 @@
       .toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
       .replace(/\s+/g," ");
+  }
+
+  function compactClientCode(value){
+    return normKey(value).replace(/[^a-z0-9]+/g,"").slice(0, 40);
+  }
+
+  function compactClientName(value){
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .replace(/[^a-z0-9]+/g,"-")
+      .replace(/(^-|-$)/g,"")
+      .slice(0, 60);
+  }
+
+  function makeClientMatchKey(name, nclient){
+    const nc = compactClientCode(nclient);
+    const nm = compactClientName(name);
+    if (nc && nm) return `client_${nc}__${nm}`;
+    if (nc) return `nclient_${nc}`;
+    if (nm) return `name_${nm}`;
+    return "";
+  }
+
+  function addLookupCandidate(map, key, client){
+    if (!key) return;
+    const arr = map.get(key);
+    if (arr) arr.push(client);
+    else map.set(key, [client]);
+  }
+
+  function getUniqueLookupCandidate(map, key){
+    if (!key) return null;
+    const arr = map.get(key);
+    return arr && arr.length === 1 ? arr[0] : null;
+  }
+
+  function getActiviteClientKey(client){
+    const directKey = String(client?.clientKey || "").trim();
+    return directKey || makeClientMatchKey(client?.name, client?.nclient);
+  }
+
+  function indexActiviteClient(client){
+    const exactKey = getActiviteClientKey(client);
+    if (exactKey) actByExact.set(exactKey, client);
+    addLookupCandidate(actByNClient, compactClientCode(client?.nclient), client);
+    addLookupCandidate(actByName, compactClientName(client?.name), client);
   }
 
   function stamp(){
@@ -972,7 +1019,7 @@
         budget[m.key] = toInt(col ? r[col] : 0);
       }
 
-      const id = (normKey(nclient) || normKey(name) || ("row_" + i));
+      const id = makeClientMatchKey(name, nclient) || ("row_" + i);
       clients.push({ id, name, nclient, budget });
     }
 
@@ -1025,13 +1072,13 @@ const colAmt = findCol(headerMap, [ "Montant prix achat KENT","Montant prix acha
       if (mi < 0) continue;
 
       const mk = MONTHS[mi].key;
-      const key = normKey(nclient) || ("name:" + normKey(name));
-      if (!key || key === "name:") continue;
+      const key = makeClientMatchKey(name, nclient);
+      if (!key) continue;
 
       if (!byKey.has(key)){
         const months = {};
         for (const m of MONTHS) months[m.key] = 0;
-        byKey.set(key, { nclient, name, months });
+        byKey.set(key, { clientKey: key, nclient, name, months });
       }
 
       const obj = byKey.get(key);

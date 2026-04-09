@@ -480,6 +480,9 @@
 
   if (cachedBudget && cachedBudget.clients?.length) {
     budgetData = cachedBudget;
+    if (normalizeBudgetClientIds(budgetData.clients)) {
+      saveJSON(STORAGE.budget, budgetData);
+    }
     applyMeta(cachedMeta);
 
     await loadRealFromFetch(); // ✅ fetch réel dès que le budget existe
@@ -685,34 +688,38 @@
       }
 
       // maps budget
+      const budgetByExact = new Map();
       const budgetByCode = new Map();
       const budgetByName = new Map();
       for (const bc of budgetData.clients){
-        const ckey = normKey(bc.nclient);
-        const nkey = normKey(bc.name);
-        if (ckey) budgetByCode.set(ckey, bc);
-        if (nkey) budgetByName.set(nkey, bc);
+        const exactKey = makeClientMatchKey(bc.name, bc.nclient);
+        if (exactKey) budgetByExact.set(exactKey, bc);
+        addLookupCandidate(budgetByCode, compactClientCode(bc.nclient), bc);
+        addLookupCandidate(budgetByName, compactClientName(bc.name), bc);
       }
 
       function ensureBudgetClient(codeLivre, clientName){
-        const ck = normKey(codeLivre);
-        if (!ck) return null;
+        const knownClient = findMatchedClient(budgetByExact, budgetByCode, budgetByName, codeLivre, clientName);
+        if (knownClient) return knownClient;
 
-        let bc = budgetByCode.get(ck);
-        if (bc) return bc;
+        const rawCode = String(codeLivre || "").trim();
+        const rawName = String(clientName || "").trim();
+        if (!rawCode && !rawName) return null;
 
         // client hors budget
-        const name = String(clientName || `Client ${codeLivre}`).trim();
-        const id = makeClientKey(name, codeLivre);
+        const name = rawName || `Client ${rawCode}`;
+        const id = makeClientKey(name, rawCode);
 
         const budget = {};
         for (const m of MONTHS) budget[m.key] = 0;
 
-        bc = { id, name, nclient: String(codeLivre).trim(), budget, isUnbudgeted: true };
+        const bc = { id, name, nclient: rawCode, budget, isUnbudgeted: true };
 
         budgetData.clients.push(bc);
-        budgetByCode.set(ck, bc);
-        budgetByName.set(normKey(name), bc);
+        const exactKey = makeClientMatchKey(name, rawCode);
+        if (exactKey) budgetByExact.set(exactKey, bc);
+        addLookupCandidate(budgetByCode, compactClientCode(rawCode), bc);
+        addLookupCandidate(budgetByName, compactClientName(name), bc);
 
         return bc;
       }
@@ -1073,15 +1080,64 @@
       .replace(/\s+/g," ");
   }
 
-  function makeClientKey(name, nclient){
-    const nc = normKey(nclient).replace(/[^a-z0-9]+/g,"").slice(0, 60);
-    if (nc) return `code_${nc}`;
-    return `name_${String(name||"")
+  function compactClientCode(value){
+    return normKey(value).replace(/[^a-z0-9]+/g,"").slice(0, 60);
+  }
+
+  function compactClientName(value){
+    return String(value || "")
       .toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
       .replace(/[^a-z0-9]+/g,"-")
       .replace(/(^-|-$)/g,"")
-      .slice(0, 80)}`;
+      .slice(0, 80);
+  }
+
+  function makeClientMatchKey(name, nclient){
+    const nc = compactClientCode(nclient);
+    const nm = compactClientName(name);
+    if (nc && nm) return `code_${nc}__${nm}`;
+    if (nc) return `code_${nc}`;
+    if (nm) return `name_${nm}`;
+    return "";
+  }
+
+  function makeClientKey(name, nclient){
+    return makeClientMatchKey(name, nclient);
+  }
+
+  function addLookupCandidate(map, key, client){
+    if (!key) return;
+    const arr = map.get(key);
+    if (arr) arr.push(client);
+    else map.set(key, [client]);
+  }
+
+  function getUniqueLookupCandidate(map, key){
+    if (!key) return null;
+    const arr = map.get(key);
+    return arr && arr.length === 1 ? arr[0] : null;
+  }
+
+  function findMatchedClient(exactMap, byCodeMap, byNameMap, nclient, name){
+    const exactKey = makeClientMatchKey(name, nclient);
+    if (exactKey && exactMap.has(exactKey)) return exactMap.get(exactKey);
+    const byCode = getUniqueLookupCandidate(byCodeMap, compactClientCode(nclient));
+    if (byCode) return byCode;
+    return getUniqueLookupCandidate(byNameMap, compactClientName(name));
+  }
+
+  function normalizeBudgetClientIds(clients){
+    if (!Array.isArray(clients)) return false;
+    let changed = false;
+    for (const client of clients){
+      const nextId = makeClientKey(client?.name, client?.nclient);
+      if (nextId && client.id !== nextId){
+        client.id = nextId;
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   function buildHeaderMap(sampleRow){

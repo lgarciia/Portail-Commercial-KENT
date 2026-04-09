@@ -590,6 +590,7 @@
   function saveActiviteReelGueudetFromPivot(p){
     const nowIso = new Date().toISOString();
     const clients = (p?.clients || []).map(c => ({
+      clientKey: makeReportingClientKey(c.clientInternal, c.clientName),
       nclient: String(c.clientInternal || "").trim(), // ✅ clé stable
       name: String(c.clientName || "").trim(),
       months: {
@@ -821,6 +822,15 @@
     const a = normalizeKey(code);
     const b = normalizeKey(name);
     return (a || b || "client") + "::" + (b || a || "");
+  }
+
+  function makeReportingClientKey(code, name){
+    const a = normalizeKey(code).replace(/[^a-z0-9]+/g,"").slice(0, 40);
+    const b = normalizeKey(name).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0, 60);
+    if (a && b) return `client_${a}__${b}`;
+    if (a) return `nclient_${a}`;
+    if (b) return `name_${b}`;
+    return "";
   }
 
   function toNumber(v){

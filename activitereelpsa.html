@@ -592,6 +592,7 @@
   function saveActiviteReelPSAFromPivot(p){
     const nowIso = new Date().toISOString();
     const clients = (p?.clients || []).map(c => ({
+      clientKey: makeReportingClientKey(c.clientInternal, c.clientName),
       nclient: String(c.clientInternal || "").trim(), // ✅ clé stable
       name: String(c.clientName || "").trim(),
       months: {
@@ -876,6 +877,15 @@ function fmt0(n){
     const a = normalizeKey(clientInternal).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
     const b = normalizeKey(clientName).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
     return (a || "noid") + "__" + (b || "noname");
+  }
+
+  function makeReportingClientKey(clientInternal, clientName){
+    const a = normalizeKey(clientInternal).replace(/[^a-z0-9]+/g,"").slice(0, 40);
+    const b = normalizeKey(clientName).replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0, 60);
+    if (a && b) return `client_${a}__${b}`;
+    if (a) return `nclient_${a}`;
+    if (b) return `name_${b}`;
+    return "";
   }
 
   function formatDateTime(iso){
