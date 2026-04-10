@@ -339,7 +339,10 @@
     budget: "budgetgueudet.xlsx",
     reel: "activitereelgueudet.xlsx",
   };
-  const REPORT_YEAR = 2026;
+  const PAGE_PARAMS = new URLSearchParams(location.search);
+  const REQUESTED_YEAR = Number(PAGE_PARAMS.get("year"));
+  const REQUESTED_MONTH = Number(PAGE_PARAMS.get("month"));
+  const REPORT_YEAR = Number.isFinite(REQUESTED_YEAR) && REQUESTED_YEAR >= 2000 ? REQUESTED_YEAR : 2026;
   const DATA_SOURCE = {
     budget: {
       clientCandidates: ["client", "clients"],
@@ -371,6 +374,11 @@
     { key:"nov", label:"Novembre" },
     { key:"dec", label:"Décembre" },
   ];
+
+  const INITIAL_MONTH_LABEL =
+    Number.isFinite(REQUESTED_MONTH) && REQUESTED_MONTH >= 1 && REQUESTED_MONTH <= MONTHS.length
+      ? MONTHS[REQUESTED_MONTH - 1].label
+      : "";
 
   const nf0 = new Intl.NumberFormat("fr-FR", { minimumFractionDigits:0, maximumFractionDigits:0 });
 
@@ -479,7 +487,7 @@
   ];
 
   const values = {
-    ANNEE: ["2026"],
+    ANNEE: [String(REPORT_YEAR)],
     MOIS: MONTHS.map(m=>m.label),
     CLIENT: (budgetData?.clients || []).map(c => c.name || "").filter(Boolean).sort((a,b)=>a.localeCompare(b, "fr")),
     NCLIENT: (budgetData?.clients || []).map(c => String(c.nclient || "").trim()).filter(Boolean).sort((a,b)=>a.localeCompare(b, "fr")),
@@ -487,7 +495,7 @@
 
   const filters = {
     ANNEE: new Set(values.ANNEE),
-    MOIS: new Set(values.MOIS),
+    MOIS: INITIAL_MONTH_LABEL ? new Set([INITIAL_MONTH_LABEL]) : new Set(values.MOIS),
     CLIENT: new Set(values.CLIENT),
     NCLIENT: new Set(values.NCLIENT),
   };
