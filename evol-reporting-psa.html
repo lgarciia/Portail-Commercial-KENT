@@ -7,7 +7,6 @@
   <title>Evol Reporting</title>
   <script src="./shared-ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="./reporting-data-utils.js"></script>
 
   <style>
     :root{
@@ -572,7 +571,7 @@ const REAL_DATE_COL  = "Date vente";
   el.sBudget.textContent = "chargementâ€¦";
   el.sReel.textContent = "chargementâ€¦";
 
-  if (false) try{
+  try{
     const [budgetWB, reelWB] = await Promise.all([
       fetchWorkbook(FILES.budget),
       fetchWorkbook(FILES.reel),
@@ -601,7 +600,7 @@ const REAL_DATE_COL  = "Date vente";
     el.sReel.textContent = "erreur fetch/parse";
   }
 
-  try{
+  if (false) try{
     const budgetResult = await window.ReportingDataUtils.loadBudgetData({
       fileName: FILES.budget,
       budgetConfig: DATA_SOURCE.budget,
@@ -971,7 +970,12 @@ ${selectedMonths.map((m,idx)=>`
   // REAL READER: activite fetchée
   // ---------------------------
   function getRealForClientMonth(bc, mk){
-    return window.ReportingDataUtils.toInt(realData?.[bc.id]?.[mk]);
+    const exactKey = makeClientMatchKey(bc.name, bc.nclient);
+    const src =
+      (exactKey && actByExact.get(exactKey)) ||
+      getUniqueLookupCandidate(actByNClient, compactClientCode(bc.nclient)) ||
+      getUniqueLookupCandidate(actByName, compactClientName(bc.name));
+    return toInt(src?.months?.[mk]);
   }
 
   // ---------------------------

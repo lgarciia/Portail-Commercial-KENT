@@ -9,7 +9,6 @@
 
   <!-- ✅ SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="./reporting-data-utils.js"></script>
 
   <style>
     :root{
@@ -701,7 +700,12 @@
   // REAL: activite fetchée (match nclient puis name)
   // ---------------------------
   function getRealForClientMonth(bc, mk){
-    return window.ReportingDataUtils.toInt(realData?.[bc.id]?.[mk]);
+    const src =
+      actByExact.get(makeClientMatchKey(bc.name, bc.nclient)) ||
+      getUniqueLookupCandidate(actByNClient, compactClientCode(bc.nclient)) ||
+      getUniqueLookupCandidate(actByName, compactClientName(bc.name));
+
+    return toInt(src?.months?.[mk]);
   }
 
   // ---------------------------
