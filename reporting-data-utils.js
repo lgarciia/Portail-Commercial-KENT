@@ -376,6 +376,7 @@
     const colAmt = findCol(headerMap, realConfig.amountCandidates || ["montant", "ca"]);
     const colMonth = findCol(headerMap, realConfig.monthCandidates || ["mois2", "mois", "month"]);
     const colDate = findCol(headerMap, realConfig.dateCandidates || []);
+    const colYear = findCol(headerMap, realConfig.yearCandidates || ["annee", "année", "year"]);
     const colRef = findCol(headerMap, realConfig.refCandidates || []);
     const colDes = findCol(headerMap, realConfig.desCandidates || []);
     const colQty = findCol(headerMap, realConfig.qtyCandidates || []);
@@ -394,11 +395,16 @@
 
       let date = null;
       if (colDate) date = parseAnyDate(row[colDate]);
-      if (year && date && date.getFullYear() !== year) continue;
+
+      const explicitYear = colYear ? parseYearValue(row[colYear]) : null;
+      if (year){
+        if (explicitYear && explicitYear !== year) continue;
+        if (!explicitYear && date && date.getFullYear() !== year) continue;
+      }
 
       let monthKey = null;
-      if (date) monthKey = MONTHS[date.getMonth()] && MONTHS[date.getMonth()].key;
-      if (!monthKey && colMonth) monthKey = monthNameToKey(String(row[colMonth] || "").trim());
+      if (colMonth) monthKey = monthNameToKey(String(row[colMonth] || "").trim());
+      if (!monthKey && date) monthKey = MONTHS[date.getMonth()] && MONTHS[date.getMonth()].key;
       if (!monthKey) continue;
 
       const rawClientCode = colClientInt ? String(row[colClientInt] || "").trim() : "";
@@ -435,6 +441,7 @@
         sheetName,
         usedDateColumn: colDate,
         usedMonthColumn: colMonth,
+        usedYearColumn: colYear,
       },
     };
   }
@@ -471,6 +478,20 @@
 
     const timestamp = Date.parse(raw);
     return Number.isNaN(timestamp) ? null : new Date(timestamp);
+  }
+
+  function parseYearValue(value){
+    if (value === null || value === undefined) return null;
+    if (typeof value === "number" && Number.isFinite(value)){
+      const rounded = Math.round(value);
+      return rounded >= 1900 && rounded <= 3000 ? rounded : null;
+    }
+
+    const raw = String(value).trim();
+    if (!raw) return null;
+
+    const match = raw.match(/\b(20\d{2}|19\d{2})\b/);
+    return match ? Number(match[1]) : null;
   }
 
   function weekBucket(date){
