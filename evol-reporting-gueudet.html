@@ -9,6 +9,7 @@
 
   <!-- ✅ SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./reporting-data-utils.js"></script>
 
   <style>
     :root{
@@ -338,6 +339,23 @@
     budget: "budgetgueudet.xlsx",
     reel: "activitereelgueudet.xlsx",
   };
+  const REPORT_YEAR = 2026;
+  const DATA_SOURCE = {
+    budget: {
+      clientCandidates: ["client", "clients"],
+      codeCandidates: ["n client", "n client interne", "no client", "numero client", "num client", "nclient"],
+    },
+    real: {
+      clientCodeCandidates: ["code livre", "code", "n client interne", "no client interne", "numero client interne", "n client"],
+      clientNameCandidates: ["nom client", "nom du client", "client"],
+      amountCandidates: ["ca total", "ca", "chiffre d'affaires", "chiffre daffaires", "montant prix achat kent", "montant", "montant ca"],
+      monthCandidates: ["mois2", "mois", "month"],
+      dateCandidates: ["date vente", "date"],
+      refCandidates: ["reference produits", "reference produit", "ref produit", "ref"],
+      desCandidates: ["designation", "design"],
+      qtyCandidates: ["quantite payante servie", "quantite", "qte", "qte payante servie"],
+    },
+  };
 
   const MONTHS = [
     { key:"jan", label:"Janvier" },
@@ -382,6 +400,7 @@
   // DATA
   // ---------------------------
   let budgetData = null;     // {clients:[{id,name,nclient,budget:{jan..}}]}
+  let realData = {};
   let activite = null;       // {clients:[{nclient,name,months:{jan..}}]}
 
   const actByExact = new Map();
@@ -421,6 +440,32 @@
     el.dotReel.className = "dot bad";
     el.sBudget.textContent = "erreur fetch/parse";
     el.sReel.textContent = "erreur fetch/parse";
+  }
+
+  if (false) try{
+    const budgetResult = await window.ReportingDataUtils.loadBudgetData({
+      fileName: FILES.budget,
+      budgetConfig: DATA_SOURCE.budget,
+    });
+    budgetData = budgetResult.budgetData;
+
+    const realResult = await window.ReportingDataUtils.loadRealDataAgainstBudget({
+      fileName: FILES.reel,
+      budgetData,
+      realConfig: DATA_SOURCE.real,
+      year: REPORT_YEAR,
+    });
+    realData = realResult.realData;
+    activite = { clients: realResult.activiteClients };
+  }catch(err){
+    console.error(err);
+    budgetData = null;
+    realData = {};
+    activite = null;
+    el.dotBudget.className = "dot bad";
+    el.dotReel.className = "dot bad";
+    el.sBudget.textContent = "erreur source unique";
+    el.sReel.textContent = "erreur source unique";
   }
 
   // ---------------------------
@@ -648,23 +693,7 @@
   // REAL: activite fetchée (match nclient puis name)
   // ---------------------------
   function getRealForClientMonth(bc, mk){
-    const src =
-      actByExact.get(makeClientMatchKey(bc.name, bc.nclient)) ||
-      getUniqueLookupCandidate(actByNClient, compactClientCode(bc.nclient)) ||
-      getUniqueLookupCandidate(actByName, compactClientName(bc.name));
-
-    return toInt(src?.months?.[mk]);
-  }
-
-  function rebuildActiviteIndex(){
-    actByExact.clear();
-    actByNClient.clear();
-    actByName.clear();
-    if (activite?.clients?.length){
-      for (const c of activite.clients){
-        indexActiviteClient(c);
-      }
-    }
+    return window.ReportingDataUtils.toInt(realData?.[bc.id]?.[mk]);
   }
 
   // ---------------------------

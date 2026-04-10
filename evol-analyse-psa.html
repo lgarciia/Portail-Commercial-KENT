@@ -9,6 +9,7 @@
 
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./reporting-data-utils.js"></script>
 
   <style>
     :root{
@@ -369,6 +370,23 @@
     COMMENT_CACHE_PREFIX: "EVOL_ANALYSE_PSA_COMMENTS_",
   };
 
+  const DATA_SOURCE = {
+    budget: {
+      clientCandidates: ["client", "clients"],
+      codeCandidates: ["n client", "n client interne", "no client", "numero client", "num client", "nclient"],
+    },
+    real: {
+      clientCodeCandidates: ["n client interne", "no client interne", "numero client interne", "n client", "code livre", "code livre", "code"],
+      clientNameCandidates: ["nom du client", "nom client", "client"],
+      amountCandidates: ["montant prix achat kent", "ca total", "ca", "chiffre d'affaire", "chiffre affaire", "montant", "montant ca"],
+      monthCandidates: ["mois2", "mois", "month"],
+      dateCandidates: [CONFIG.REAL_DATE_COL, "date vente", "date"],
+      refCandidates: ["reference produits", "reference produit", "ref produit", "ref"],
+      desCandidates: ["designation", "design"],
+      qtyCandidates: ["quantite payante servie", "quantite", "qte", "qte payante servie"],
+    },
+  };
+
   const MONTHS = [
     "Janvier","Février","Mars","Avril","Mai","Juin",
     "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
@@ -407,6 +425,8 @@
   let selectedYear = (currentYear>=CONFIG.YEAR_MIN && currentYear<=CONFIG.YEAR_MAX) ? currentYear : CONFIG.YEAR_MAX;
   let budgetMonthly = new Array(12).fill(0);
   let realMonthly = new Array(12).fill(0);
+  let budgetDataset = null;
+  let realDataset = null;
 
   // lignes réel pour drilldown (clients/achats + vue semaine)
   // normalized rows: {monthIdx, weekIdx, date, clientInternal, clientName, amount, ref, des, qty}
@@ -460,42 +480,18 @@
     el.urlBudgetText.textContent = `URL budget : —`;
 
     try{
-      const {buffer, usedUrl} = await fetchXlsxWithFallback(file);
-      el.urlBudgetText.textContent = `URL budget : ${usedUrl}`;
+      budgetDataset = await window.ReportingDataUtils.loadBudgetData({
+        fileName: file,
+        budgetConfig: DATA_SOURCE.budget,
+      });
+      budgetMonthly = window.ReportingDataUtils.computeBudgetMonthlyTotals(budgetDataset.budgetData);
+      el.urlBudgetText.textContent = `URL budget : ${budgetDataset.meta.usedUrl}`;
       setDot(el.dotUrlBudget, "ok");
-
-      const wb = XLSX.read(buffer, { type: "array" });
-      const sheetName = pickBestSheet(wb);
-      const ws = wb.Sheets[sheetName];
-      const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
-
-      if (!raw.length){
-        budgetMonthly = new Array(12).fill(0);
-        el.budgetText.textContent = `Budget : fichier vide`;
-        setDot(el.dotBudget, "bad");
-        return;
-      }
-
-      const headerMap = buildHeaderMap(raw[0]);
-      const monthCols = MONTHS.map(m => findCol(headerMap, [m]));
-      const missing = monthCols.map((c,i)=>!c?MONTHS[i]:null).filter(Boolean);
-      if (missing.length){
-        budgetMonthly = new Array(12).fill(0);
-        el.budgetText.textContent = `Budget : colonnes mois manquantes (${missing.join(", ")})`;
-        setDot(el.dotBudget, "bad");
-        return;
-      }
-
-      const sums = new Array(12).fill(0);
-      for (const r of raw){
-        for (let i=0;i<12;i++) sums[i] += toNumber(r[monthCols[i]]);
-      }
-      budgetMonthly = sums;
-
-      el.budgetText.textContent = `Budget : OK (${file}) — sheet: ${sheetName}`;
+      el.budgetText.textContent = `Budget : OK (${file}) — sheet: ${budgetDataset.meta.sheetName}`;
       setDot(el.dotBudget, "ok");
     }catch(err){
       console.error(err);
+      budgetDataset = null;
       budgetMonthly = new Array(12).fill(0);
       el.budgetText.textContent = `Budget : fetch/lecture impossible`;
       setDot(el.dotBudget, "bad");
@@ -516,99 +512,35 @@
     setDot(el.dotUrlReal, "warn");
     el.urlRealText.textContent = `URL réalisé : —`;
 
+    if (!budgetDataset?.budgetData?.clients?.length){
+      realDataset = null;
+      realMonthly = new Array(12).fill(0);
+      realRows = [];
+      el.realText.textContent = `Réalisé : budget absent`;
+      setDot(el.dotReal, "bad");
+      return;
+    }
+
     try{
-      const {buffer, usedUrl} = await fetchXlsxWithFallback(file);
-      el.urlRealText.textContent = `URL réalisé : ${usedUrl}`;
+      realDataset = await window.ReportingDataUtils.loadRealDataAgainstBudget({
+        fileName: file,
+        budgetData: budgetDataset.budgetData,
+        realConfig: DATA_SOURCE.real,
+        year,
+      });
+      realMonthly = window.ReportingDataUtils.computeRealMonthlyTotals(budgetDataset.budgetData, realDataset.realData);
+      realRows = realDataset.realRows;
+      el.urlRealText.textContent = `URL réalisé : ${realDataset.meta.usedUrl}`;
       setDot(el.dotUrlReal, "ok");
 
-      const wb = XLSX.read(buffer, { type: "array" });
-      const sheetName = pickBestSheet(wb);
-      const ws = wb.Sheets[sheetName];
-      const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
-
-      if (!raw.length){
-        realMonthly = new Array(12).fill(0);
-        realRows = [];
-        el.realText.textContent = `Réalisé : fichier vide`;
-        setDot(el.dotReal, "bad");
-        return;
-      }
-
-      const headerMap = buildHeaderMap(raw[0]);
-
-      // ✅ date vente (pour semaines)
-      const colDate = findCol(headerMap, [CONFIG.REAL_DATE_COL, "date vente", "date"]);
-      // mois fallback
-      const colMonth = findCol(headerMap, ["mois","mois2","month"]);
-      // montant
-      const colAmt = findCol(headerMap, [
-        "montant prix achat kent",
-        "ca total",
-        "ca",
-        "chiffre d'affaire",
-        "chiffre affaire",
-        "montant",
-        "montant ca"
-      ]);
-
-      // client
-      const colClientInt = findCol(headerMap, [
-        "n° client interne","no client interne","n client interne","numero client interne","n° client","code livré","code livre","code"
-      ]);
-      const colClientName = findCol(headerMap, ["nom du client","nom client","client"]);
-
-      // détail achats (si dispo)
-      const colRef = findCol(headerMap, ["reference produits","référence produits","reference produit","référence produit","ref produit","ref"]);
-      const colDes = findCol(headerMap, ["désignation","designation","design"]);
-      const colQty = findCol(headerMap, ["quantité payante servie","quantite payante servie","quantité","quantite","qte","qté"]);
-
-      if (!colAmt || (!colDate && !colMonth)){
-        realMonthly = new Array(12).fill(0);
-        realRows = [];
-        el.realText.textContent = `Réalisé : colonnes Date/Mois ou CA introuvables`;
-        setDot(el.dotReal, "bad");
-        return;
-      }
-
-      const sums = new Array(12).fill(0);
-      const rows = [];
-
-      for (const r of raw){
-        const amount = toNumber(r[colAmt]);
-        if (!amount) continue;
-
-        let dt = null;
-        if (colDate) dt = parseAnyDate(r[colDate]);
-        if (dt && dt.getFullYear() !== year) continue;
-
-        let mi = -1;
-        if (dt) mi = dt.getMonth(); // 0..11
-        if (mi < 0 && colMonth) mi = monthToIndex(String(r[colMonth] ?? "").trim());
-        if (mi < 0) continue;
-
-        sums[mi] += amount;
-
-        rows.push({
-          monthIdx: mi,
-          weekIdx: dt ? weekBucket(dt) : -1, // 0..3 si date ok
-          date: dt,
-          clientInternal: colClientInt ? String(r[colClientInt] ?? "").trim() : "",
-          clientName: colClientName ? String(r[colClientName] ?? "").trim() : "",
-          amount,
-          ref: colRef ? String(r[colRef] ?? "").trim() : "",
-          des: colDes ? String(r[colDes] ?? "").trim() : "",
-          qty: colQty ? toNumber(r[colQty]) : 0,
-        });
-      }
-
-      realMonthly = sums;
-      realRows = rows;
-
-      const dateInfo = colDate ? `Date OK (${CONFIG.REAL_DATE_COL})` : `Sans Date vente (mode mois2)`;
-      el.realText.textContent = `Réalisé : OK (${file}) — sheet: ${sheetName} — ${dateInfo}`;
+      const dateInfo = realDataset.meta.usedDateColumn
+        ? `Date OK (${CONFIG.REAL_DATE_COL})`
+        : `Sans Date vente (mode mois)`;
+      el.realText.textContent = `Réalisé : OK (${file}) — sheet: ${realDataset.meta.sheetName} — ${dateInfo}`;
       setDot(el.dotReal, "ok");
     }catch(err){
       console.error(err);
+      realDataset = null;
       realMonthly = new Array(12).fill(0);
       realRows = [];
       el.realText.textContent = `Réalisé : erreur fetch/lecture`;

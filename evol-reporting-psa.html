@@ -7,6 +7,7 @@
   <title>Evol Reporting</title>
   <script src="./shared-ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./reporting-data-utils.js"></script>
 
   <style>
     :root{
@@ -491,6 +492,23 @@ const REAL_DATE_COL  = "Date vente";
     budget: "budgetpsa.xlsx",
     reel: "activitereelpsa.xlsx",
   };
+  const REPORT_YEAR = 2026;
+  const DATA_SOURCE = {
+    budget: {
+      clientCandidates: ["client", "clients"],
+      codeCandidates: ["n client", "n client interne", "no client", "numero client", "num client", "nclient"],
+    },
+    real: {
+      clientCodeCandidates: ["n client interne", "no client interne", "numero client interne", "n client", "code livre", "code"],
+      clientNameCandidates: ["nom du client", "nom client", "client"],
+      amountCandidates: ["montant prix achat kent", "ca total", "ca", "chiffre d'affaire", "chiffre affaire", "montant", "montant ca"],
+      monthCandidates: ["mois2", "mois", "month"],
+      dateCandidates: [REAL_DATE_COL, "date vente", "date"],
+      refCandidates: ["reference produits", "reference produit", "ref produit", "ref"],
+      desCandidates: ["designation", "design"],
+      qtyCandidates: ["quantite payante servie", "quantite", "qte", "qte payante servie"],
+    },
+  };
 
   const MONTHS = [
     { key:"jan", label:"Janvier" },
@@ -534,6 +552,7 @@ const REAL_DATE_COL  = "Date vente";
   // LOAD DATA
   // ---------------------------
   let budgetData = null;     // {clients:[{id,name,nclient,budget:{jan..}}]}
+  let realData = {};
   let activite = null;       // {clients:[{nclient,name,months:{jan..}}]}
 
   // index activité réelle
@@ -545,7 +564,7 @@ const REAL_DATE_COL  = "Date vente";
   el.sBudget.textContent = "chargementâ€¦";
   el.sReel.textContent = "chargementâ€¦";
 
-  try{
+  if (false) try{
     const [budgetWB, reelWB] = await Promise.all([
       fetchWorkbook(FILES.budget),
       fetchWorkbook(FILES.reel),
@@ -572,6 +591,32 @@ const REAL_DATE_COL  = "Date vente";
     el.dotReel.className = "dot bad";
     el.sBudget.textContent = "erreur fetch/parse";
     el.sReel.textContent = "erreur fetch/parse";
+  }
+
+  try{
+    const budgetResult = await window.ReportingDataUtils.loadBudgetData({
+      fileName: FILES.budget,
+      budgetConfig: DATA_SOURCE.budget,
+    });
+    budgetData = budgetResult.budgetData;
+
+    const realResult = await window.ReportingDataUtils.loadRealDataAgainstBudget({
+      fileName: FILES.reel,
+      budgetData,
+      realConfig: DATA_SOURCE.real,
+      year: REPORT_YEAR,
+    });
+    realData = realResult.realData;
+    activite = { clients: realResult.activiteClients };
+  }catch(err){
+    console.error(err);
+    budgetData = null;
+    realData = {};
+    activite = null;
+    el.dotBudget.className = "dot bad";
+    el.dotReel.className = "dot bad";
+    el.sBudget.textContent = "erreur source unique";
+    el.sReel.textContent = "erreur source unique";
   }
 
   paintStatus();
@@ -918,12 +963,7 @@ ${selectedMonths.map((m,idx)=>`
   // REAL READER: activite fetchée
   // ---------------------------
   function getRealForClientMonth(bc, mk){
-    const exactKey = makeClientMatchKey(bc.name, bc.nclient);
-    const src =
-      (exactKey && actByExact.get(exactKey)) ||
-      getUniqueLookupCandidate(actByNClient, compactClientCode(bc.nclient)) ||
-      getUniqueLookupCandidate(actByName, compactClientName(bc.name));
-    return toInt(src?.months?.[mk]);
+    return window.ReportingDataUtils.toInt(realData?.[bc.id]?.[mk]);
   }
 
   // ---------------------------
