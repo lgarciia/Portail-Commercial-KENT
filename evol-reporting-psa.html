@@ -361,8 +361,30 @@
     .ecart.zero{ color:rgba(255,255,255,0.55); }
 
     /* month group separators */
-    .mStart{ border-left:3px solid rgba(255,255,255,0.22) !important; }
+    .mStart{
+      border-left:4px solid rgba(255,255,255,0.30) !important;
+      box-shadow: inset 2px 0 0 rgba(132,182,255,0.40);
+    }
     .subSep{ border-left:2px solid rgba(255,255,255,0.12) !important; }
+    .mEnd{
+      border-right:2px solid rgba(255,255,255,0.12) !important;
+    }
+    .monthBandA{
+      background: rgba(255,255,255,0.015);
+    }
+    .monthBandB{
+      background: rgba(132,182,255,0.055);
+    }
+    tbody td.monthBandA,
+    tbody td.monthBandB{
+      background-clip: padding-box;
+    }
+    thead th.monthBandA{
+      background: rgba(10,15,23,0.96);
+    }
+    thead th.monthBandB{
+      background: rgba(17,28,45,0.96);
+    }
 
     @media (max-width:1200px){
       .filters{grid-template-columns: repeat(2, minmax(240px, 1fr));max-height: 360px;}
@@ -560,12 +582,7 @@ const REAL_DATE_COL  = "Date vente";
   // ---------------------------
   let budgetData = null;     // {clients:[{id,name,nclient,budget:{jan..}}]}
   let realData = {};
-  let activite = null;       // {clients:[{nclient,name,months:{jan..}}]}
-
-  // index activité réelle
-  const actByExact = new Map();
-  const actByNClient = new Map();
-  const actByName = new Map();
+  let activite = null;       // {clients:[{id,name,nclient,months:{jan..}}]}
   el.dotBudget.className = "dot warn";
   el.dotReel.className = "dot warn";
   el.sBudget.textContent = "chargementâ€¦";
@@ -578,52 +595,22 @@ const REAL_DATE_COL  = "Date vente";
     ]);
 
     budgetData = parseBudgetWorkbook(budgetWB);
-    activite = parseRealWorkbook(reelWB);
-
     if (!(budgetData?.clients?.length)) {
       throw new Error("Budget PSA introuvable ou colonnes mois non reconnues");
     }
-    if (!(activite?.clients?.length)) {
-      throw new Error("Réel PSA introuvable ou colonnes Mois/CA non reconnues");
-    }
 
-    if (activite?.clients?.length){
-      for (const c of activite.clients){
-        indexActiviteClient(c);
-      }
+    const realResult = parseRealWorkbook(reelWB, budgetData);
+    if (realResult.error){
+      throw new Error(realResult.error);
     }
+    realData = realResult.realData;
+    activite = { clients: realResult.clients };
   }catch(err){
     console.error(err);
     el.dotBudget.className = "dot bad";
     el.dotReel.className = "dot bad";
     el.sBudget.textContent = "erreur fetch/parse";
     el.sReel.textContent = "erreur fetch/parse";
-  }
-
-  if (false) try{
-    const budgetResult = await window.ReportingDataUtils.loadBudgetData({
-      fileName: FILES.budget,
-      budgetConfig: DATA_SOURCE.budget,
-    });
-    budgetData = budgetResult.budgetData;
-
-    const realResult = await window.ReportingDataUtils.loadRealDataAgainstBudget({
-      fileName: FILES.reel,
-      budgetData,
-      realConfig: DATA_SOURCE.real,
-      year: REPORT_YEAR,
-    });
-    realData = realResult.realData;
-    activite = { clients: realResult.activiteClients };
-  }catch(err){
-    console.error(err);
-    budgetData = null;
-    realData = {};
-    activite = null;
-    el.dotBudget.className = "dot bad";
-    el.dotReel.className = "dot bad";
-    el.sBudget.textContent = "erreur source unique";
-    el.sReel.textContent = "erreur source unique";
   }
 
   paintStatus();
@@ -761,26 +748,26 @@ el.resultTable.addEventListener("click", (e) => {
           <th class="col-client">Client</th>
           <th class="col-nclient">N CLIENT</th>
 ${selectedMonths.map((m,idx)=>`
-  <th class="${idx===0 ? "mStart" : ""}" colspan="3">
+  <th class="${monthHeaderClass(idx)}" colspan="3">
     ${escapeHtml(m.label)}
     <button class="wkBtn" type="button" data-weekbtn="1" data-mkey="${m.key}" data-mlabel="${escapeAttr(m.label)}" title="Vue semaine">
       <span class="ic">↗</span><span class="tx">Sem.</span>
     </button>
   </th>
 `).join("")}
-          <th class="mStart" colspan="3">Cumul</th>
+          <th class="mStart monthBandA" colspan="3">Cumul</th>
         </tr>
         <tr>
           <th class="col-client">—</th>
           <th class="col-nclient">—</th>
           ${selectedMonths.map((m,idx)=>`
-            <th class="${idx===0 ? "mStart" : ""}">Réel</th>
-            <th class="subSep">Budget</th>
-            <th class="subSep">Écart</th>
+            <th class="${monthCellClass(idx, "real")}">Réel</th>
+            <th class="${monthCellClass(idx, "budget")}">Budget</th>
+            <th class="${monthCellClass(idx, "ecart")}">Écart</th>
           `).join("")}
-          <th class="mStart">Réel</th>
-          <th class="subSep">Budget</th>
-          <th class="subSep">Écart</th>
+          <th class="mStart monthBandA">Réel</th>
+          <th class="subSep monthBandA">Budget</th>
+          <th class="subSep mEnd monthBandA">Écart</th>
         </tr>
       </thead>
     `;
@@ -792,14 +779,14 @@ ${selectedMonths.map((m,idx)=>`
         ${selectedMonths.map((m,idx)=>{
           const v = global.per[m.key];
           return `
-            <td class="num ${idx===0 ? "mStart" : ""}">${fmt(v.real)}</td>
-            <td class="num subSep">${fmt(v.budget)}</td>
-            <td class="num subSep ${ecartClass(v.ecart)}">${fmt(v.ecart)}</td>
+            <td class="num ${monthCellClass(idx, "real")}">${fmt(v.real)}</td>
+            <td class="num ${monthCellClass(idx, "budget")}">${fmt(v.budget)}</td>
+            <td class="num ${monthCellClass(idx, "ecart")} ${ecartClass(v.ecart)}">${fmt(v.ecart)}</td>
           `;
         }).join("")}
-        <td class="num mStart">${fmt(global.cum.real)}</td>
-        <td class="num subSep">${fmt(global.cum.budget)}</td>
-        <td class="num subSep ${ecartClass(global.cum.ecart)}">${fmt(global.cum.ecart)}</td>
+        <td class="num mStart monthBandA">${fmt(global.cum.real)}</td>
+        <td class="num subSep monthBandA">${fmt(global.cum.budget)}</td>
+        <td class="num subSep mEnd monthBandA ${ecartClass(global.cum.ecart)}">${fmt(global.cum.ecart)}</td>
       </tr>
     `;
 
@@ -811,14 +798,14 @@ ${selectedMonths.map((m,idx)=>`
           ${selectedMonths.map((m,idx)=>{
             const v = r.per[m.key];
             return `
-              <td class="num ${idx===0 ? "mStart" : ""}">${fmt(v.real)}</td>
-              <td class="num subSep">${fmt(v.budget)}</td>
-              <td class="num subSep ${ecartClass(v.ecart)}">${fmt(v.ecart)}</td>
+              <td class="num ${monthCellClass(idx, "real")}">${fmt(v.real)}</td>
+              <td class="num ${monthCellClass(idx, "budget")}">${fmt(v.budget)}</td>
+              <td class="num ${monthCellClass(idx, "ecart")} ${ecartClass(v.ecart)}">${fmt(v.ecart)}</td>
             `;
           }).join("")}
-          <td class="num mStart">${fmt(r.cum.real)}</td>
-          <td class="num subSep">${fmt(r.cum.budget)}</td>
-          <td class="num subSep ${ecartClass(r.cum.ecart)}">${fmt(r.cum.ecart)}</td>
+          <td class="num mStart monthBandA">${fmt(r.cum.real)}</td>
+          <td class="num subSep monthBandA">${fmt(r.cum.budget)}</td>
+          <td class="num subSep mEnd monthBandA ${ecartClass(r.cum.ecart)}">${fmt(r.cum.ecart)}</td>
         </tr>
       `;
     }).join("");
@@ -970,12 +957,7 @@ ${selectedMonths.map((m,idx)=>`
   // REAL READER: activite fetchée
   // ---------------------------
   function getRealForClientMonth(bc, mk){
-    const exactKey = makeClientMatchKey(bc.name, bc.nclient);
-    const src =
-      (exactKey && actByExact.get(exactKey)) ||
-      getUniqueLookupCandidate(actByNClient, compactClientCode(bc.nclient)) ||
-      getUniqueLookupCandidate(actByName, compactClientName(bc.name));
-    return toInt(src?.months?.[mk]);
+    return toNumber(realData?.[bc.id]?.[mk]);
   }
 
   // ---------------------------
@@ -983,13 +965,30 @@ ${selectedMonths.map((m,idx)=>`
   // ---------------------------
   function paintStatus(){
     const bOk = !!(budgetData?.clients?.length);
-    const rOk = !!(activite?.clients?.length);
+    const realClientsCount = Object.keys(realData || {}).length;
+    const rOk = realClientsCount > 0;
 
     el.dotBudget.className = "dot " + (bOk ? "ok" : "bad");
     el.sBudget.textContent = bOk ? `${budgetData.clients.length} clients` : "introuvable";
 
     el.dotReel.className = "dot " + (rOk ? "ok" : "warn");
-    el.sReel.textContent = rOk ? `${activite.clients.length} clients` : "non trouvé";
+    el.sReel.textContent = rOk ? `${realClientsCount} clients matchés` : "non trouvé";
+  }
+
+  function monthBandClass(idx){
+    return idx % 2 === 0 ? "monthBandA" : "monthBandB";
+  }
+
+  function monthHeaderClass(idx){
+    return `mStart ${monthBandClass(idx)}`.trim();
+  }
+
+  function monthCellClass(idx, slot){
+    const classes = [monthBandClass(idx)];
+    if (idx === 0 || slot === "real") classes.push("mStart");
+    if (slot !== "real") classes.push("subSep");
+    if (slot === "ecart") classes.push("mEnd");
+    return classes.join(" ");
   }
 
   function setKpis(clientsCount, real, budget, ecart){
@@ -1066,18 +1065,6 @@ ${selectedMonths.map((m,idx)=>`
     if (!key) return null;
     const arr = map.get(key);
     return arr && arr.length === 1 ? arr[0] : null;
-  }
-
-  function getActiviteClientKey(client){
-    const directKey = String(client?.clientKey || "").trim();
-    return directKey || makeClientMatchKey(client?.name, client?.nclient);
-  }
-
-  function indexActiviteClient(client){
-    const exactKey = getActiviteClientKey(client);
-    if (exactKey) actByExact.set(exactKey, client);
-    addLookupCandidate(actByNClient, compactClientCode(client?.nclient), client);
-    addLookupCandidate(actByName, compactClientName(client?.name), client);
   }
 
   // ---------------------------
@@ -1201,48 +1188,102 @@ ${selectedMonths.map((m,idx)=>`
     return { clients };
   }
 
-  function parseRealWorkbook(wb){
+  function parseRealWorkbook(wb, currentBudgetData){
     const sheetName = pickBestSheet(wb);
     const ws = wb.Sheets[sheetName];
     const raw = XLSX.utils.sheet_to_json(ws, { defval:"" });
-    if (!raw.length) return { clients: [] };
+    if (!raw.length) return { clients: [], realData: {} };
 
     const headerMap = buildHeaderMap(raw[0] || {});
     const colClientInt = findCol(headerMap, ["n° client interne","no client interne","n client interne","numero client interne","n° client"]);
     const colClientName = findCol(headerMap, ["nom du client","nom client","client"]);
     const colAmt = findCol(headerMap, ["montant prix achat kent","montant","ca","chiffre d'affaire","chiffre affaire"]);
     const colMonth = findCol(headerMap, ["mois2","mois","month"]);
+    const colYear = findCol(headerMap, ["année", "annee", "year"]);
+    const colDate = findCol(headerMap, ["date vente", "date"]);
 
-    if (!colAmt || !colMonth) return { clients: [] };
+    if (!colAmt || !colMonth){
+      return { clients: [], realData: {}, error: "Réel PSA introuvable ou colonnes Mois2/CA non reconnues" };
+    }
 
-    const byKey = new Map();
+    const budgetClients = currentBudgetData?.clients || [];
+    const budgetByExact = new Map();
+    const budgetByNClient = new Map();
+    const budgetByName = new Map();
+
+    for (const bc of budgetClients){
+      const exactKey = makeClientMatchKey(bc.name, bc.nclient);
+      if (exactKey) budgetByExact.set(exactKey, bc);
+      addLookupCandidate(budgetByNClient, compactClientCode(bc.nclient), bc);
+      addLookupCandidate(budgetByName, compactClientName(bc.name), bc);
+    }
+
+    function ensureBudgetClient(nclientInterne, clientName){
+      const matched = findMatchedClient(budgetByExact, budgetByNClient, budgetByName, nclientInterne, clientName);
+      if (matched) return matched;
+
+      const rawNClient = String(nclientInterne || "").trim();
+      const rawName = String(clientName || "").trim();
+      if (!rawNClient && !rawName) return null;
+
+      const name = rawName || `Client ${rawNClient}`;
+      const id = makeClientMatchKey(name, rawNClient);
+      if (!id) return null;
+
+      const budget = {};
+      for (const m of MONTHS) budget[m.key] = 0;
+
+      const nextClient = { id, name, nclient: rawNClient, budget, isUnbudgeted: true };
+      budgetClients.push(nextClient);
+
+      const exactKey = makeClientMatchKey(name, rawNClient);
+      if (exactKey) budgetByExact.set(exactKey, nextClient);
+      addLookupCandidate(budgetByNClient, compactClientCode(rawNClient), nextClient);
+      addLookupCandidate(budgetByName, compactClientName(name), nextClient);
+      return nextClient;
+    }
+
+    const nextReal = {};
     for (const r of raw){
-      const amt = toNumber(r[colAmt]);
-      if (!amt) continue;
-
-      const name = colClientName ? String(r[colClientName] || "").trim() : "";
-      const nclient = colClientInt ? String(r[colClientInt] || "").trim() : "";
-      const mi = monthToIndex(String(r[colMonth] || "").trim());
+      const monthLabel = String(r[colMonth] || "").trim();
+      const mi = monthToIndex(monthLabel);
       if (mi < 0) continue;
 
       const mk = MONTHS[mi]?.key;
       if (!mk) continue;
-      const key = makeClientMatchKey(name, nclient);
-      if (!key) continue;
 
-      if (!byKey.has(key)){
-        const months = {};
-        for (const m of MONTHS) months[m.key] = 0;
-        byKey.set(key, { clientKey: key, nclient, name, months });
-      }
+      const rowYear = extractRealRowYear(r, colYear, colDate);
+      if (rowYear && rowYear !== REPORT_YEAR) continue;
 
-      const obj = byKey.get(key);
-      obj.months[mk] = toInt(obj.months[mk] + amt);
-      if (!obj.nclient && nclient) obj.nclient = nclient;
-      if (!obj.name && name) obj.name = name;
+      const amt = toNumber(r[colAmt]);
+      if (!amt) continue;
+
+      const nclientInterne = colClientInt ? String(r[colClientInt] || "").trim() : "";
+      const clientName = colClientName ? String(r[colClientName] || "").trim() : "";
+      const bc = ensureBudgetClient(nclientInterne, clientName);
+      if (!bc) continue;
+
+      if (!nextReal[bc.id]) nextReal[bc.id] = {};
+      nextReal[bc.id][mk] = toNumber(nextReal[bc.id][mk]) + amt;
     }
 
-    return { clients: Array.from(byKey.values()) };
+    const clients = budgetClients
+      .filter(client => nextReal[client.id])
+      .map(client => ({ id: client.id, name: client.name, nclient: client.nclient, months: nextReal[client.id] }));
+
+    return { clients, realData: nextReal };
+  }
+
+  function extractRealRowYear(row, colYear, colDate){
+    if (colYear){
+      const explicitYear = toInt(row[colYear]);
+      if (explicitYear >= 2000) return explicitYear;
+    }
+    if (colDate){
+      const dt = parseAnyDate(row[colDate]);
+      if (dt && !isNaN(dt.getTime())) return dt.getFullYear();
+    }
+    return null;
   }
 
   function parseAnyDate(v){
