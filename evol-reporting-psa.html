@@ -1032,6 +1032,13 @@ ${selectedMonths.map((m,idx)=>`
       .replace(/\s+/g," ");
   }
 
+  function looseKey(s){
+    return normKey(s)
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function compactClientCode(value){
     return normKey(value).replace(/[^a-z0-9]+/g,"").slice(0, 40);
   }
@@ -1065,6 +1072,14 @@ ${selectedMonths.map((m,idx)=>`
     if (!key) return null;
     const arr = map.get(key);
     return arr && arr.length === 1 ? arr[0] : null;
+  }
+
+  function findMatchedClient(exactMap, byCodeMap, byNameMap, nclient, name){
+    const exactKey = makeClientMatchKey(name, nclient);
+    if (exactKey && exactMap.has(exactKey)) return exactMap.get(exactKey);
+    const byCode = getUniqueLookupCandidate(byCodeMap, compactClientCode(nclient));
+    if (byCode) return byCode;
+    return getUniqueLookupCandidate(byNameMap, compactClientName(name));
   }
 
   // ---------------------------
@@ -1148,6 +1163,14 @@ ${selectedMonths.map((m,idx)=>`
     for (const c of candidates){
       const nk = normKey(c);
       if (headerMap[nk]) return headerMap[nk];
+    }
+    for (const originalKey of Object.keys(headerMap)){
+      const looseHeader = looseKey(originalKey);
+      for (const c of candidates){
+        if (looseHeader && looseHeader === looseKey(c)){
+          return headerMap[originalKey];
+        }
+      }
     }
     return null;
   }
