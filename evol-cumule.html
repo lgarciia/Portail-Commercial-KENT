@@ -608,7 +608,7 @@
     for (const ent of CONFIG.ENTITIES){
       try{
         const b = await loadBudgetEntity(ent, selectedYear);
-        const r = await loadRealEntity(ent);
+        const r = await loadRealEntity(ent, selectedYear);
 
         entityBudget[ent.key] = b.slice();
         entityReal[ent.key] = r.slice();
@@ -1092,7 +1092,7 @@
   /* =========================
      REAL entity -> [12]
   ========================= */
-  async function loadRealEntity(ent){
+  async function loadRealEntity(ent, year){
     const file = ent.realFile;
     if (!file) throw new Error("Real file manquant");
 
@@ -1105,8 +1105,9 @@
     if (!raw.length) return new Array(12).fill(0);
 
     const headerMap = buildHeaderMap(raw[0]);
+    const colYear = findCol(headerMap, ["Année","année","Annee","annee","Year","year"]);
     const colDate = findCol(headerMap, ent.dateCandidates || ["Date vente","Date commande","Date"]);
-    const colMonth = findCol(headerMap, ["mois","mois2","month"]);
+    const colMonth = findCol(headerMap, ["mois2","mois","month"]);
     const colAmt = findCol(headerMap, ent.amtCandidates || ["CA Total","Montant prix achat kent","CA","Montant"]);
 
     if (!colAmt || (!colDate && !colMonth)){
@@ -1119,18 +1120,33 @@
       const amount = toNumber(r[colAmt]);
       if (!amount) continue;
 
+      const rowYear = extractRealRowYear(r, colYear, colDate);
+      if (rowYear && rowYear !== year) continue;
+
       let dt = null;
       if (colDate) dt = parseAnyDate(r[colDate]);
 
       let mi = -1;
-      if (dt) mi = dt.getMonth();
-      if (mi < 0 && colMonth) mi = monthToIndex(String(r[colMonth] ?? "").trim());
+      if (colMonth) mi = monthToIndex(String(r[colMonth] ?? "").trim());
+      if (mi < 0 && dt) mi = dt.getMonth();
       if (mi < 0) continue;
 
       sums[mi] += amount;
     }
 
     return sums;
+  }
+
+  function extractRealRowYear(row, colYear, colDate){
+    if (colYear){
+      const explicitYear = Math.round(toNumber(row[colYear]));
+      if (explicitYear >= 2000) return explicitYear;
+    }
+    if (colDate){
+      const dt = parseAnyDate(row[colDate]);
+      if (dt && !isNaN(dt.getTime())) return dt.getFullYear();
+    }
+    return null;
   }
 
   /* =========================
