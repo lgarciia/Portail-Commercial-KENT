@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Budget 2026 — Activité Réelle (Pivot)</title>
+  <title>Activité Réelle N-1 (Pivot)</title>
   <script src="./shared-ui.js"></script>
 
   <!-- SheetJS -->
@@ -350,14 +350,14 @@
       <div class="brand">
         <div class="logo"></div>
         <div class="titleWrap">
-          <div class="title">Budget 2026 — Activité Réelle (Pivot)</div>
+          <div class="title" id="pageTitle">Activité Réelle N-1 (Pivot)</div>
           <div class="subtitle">Clients en lignes • Mois en colonnes • Montants agrégés • Stockage local pour le reporting</div>
         </div>
       </div>
 
       <div class="actions">
         <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
-        <button class="btn primary" id="btnReload">Charger / Recharger activitereelpsa.xlsx</button>
+        <button class="btn primary" id="btnReload">Charger / Recharger le réel N-1</button>
         <button class="btn ghost" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn ghost" id="btnExportCsv">Exporter CSV</button>
         <button class="btn ghost" id="btnExportJson">Exporter JSON</button>
@@ -380,13 +380,13 @@
         </div>
 
         <div class="gridWrap" id="dropZone">
-          <div class="dropHint" id="dropHint">Dépose activitereelpsa.xlsx pour recharger</div>
+          <div class="dropHint" id="dropHint">Dépose le fichier réel N-1 pour recharger</div>
           <div class="tableScroller">
             <table id="pivotTable"></table>
           </div>
           <div class="mutedNote">
             Colonnes attendues dans l’Excel : <strong>N° client Interne</strong> • <strong>Nom du client</strong> • <strong>Montant prix achat KENT</strong> • <strong>Mois2</strong>.
-            Les montants sont agrégés par client et par mois puis stockés dans <strong>localStorage</strong> (clé : <strong>ACTIVITE_REEL_2026_V1</strong>).
+            Les montants sont agrégés par client et par mois puis stockés localement pour l’année active.
           </div>
         </div>
       </div>
@@ -398,8 +398,11 @@
   // =========================
   // CONFIG
   // =========================
-  const FILE_NAME = "activitereelpsan-1.xlsx";
-  const STORAGE_KEY = "ACTIVITE_REEL_2026_V1";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const PREV_YEAR = KentDataConfig.getPreviousYear(APP_YEAR);
+  const FILE_NAME = KentDataConfig.getEntityFile("psa", "realN1", APP_YEAR);
+  const STORAGE_KEY = `KENT_ACTIVITE_REEL_N1_PSA_${APP_YEAR}_V1`;
+  const EXPORT_STEM = `activite_reelle_${PREV_YEAR}`;
 
   const MONTHS = [
     { key: "jan", label: "Janvier", aliases: ["janvier","jan"] },
@@ -438,6 +441,11 @@
   // =========================
   // STATE
   // =========================
+  document.title = `Activité Réelle ${PREV_YEAR} (Pivot)`;
+  $("pageTitle").textContent = `Activité Réelle ${PREV_YEAR} (Pivot)`;
+  el.btnReload.textContent = `Charger / Recharger ${FILE_NAME}`;
+  el.dropHint.textContent = `Dépose ${FILE_NAME} pour recharger`;
+
   let pivot = loadJSON(STORAGE_KEY, null); // { meta, clients: [{id, clientInternal, clientName, months:{jan:number...}}] }
   let filterText = "";
   let sortTotalDir = null; // null => no sort, "desc" or "asc"
@@ -750,7 +758,7 @@
     if (!pivot?.clients?.length) { alert("Rien à exporter."); return; }
     downloadBlob(
       new Blob([JSON.stringify(pivot, null, 2)], { type: "application/json" }),
-      `activite_reelle_2026_${stamp()}.json`
+      `${EXPORT_STEM}_${stamp()}.json`
     );
   }
 
@@ -770,7 +778,7 @@
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const csv = XLSX.utils.sheet_to_csv(ws, { FS: ";", RS: "\n" });
-    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `activite_reelle_2026_${stamp()}.csv`);
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${EXPORT_STEM}_${stamp()}.csv`);
   }
 
   function exportXLSX(){
@@ -792,7 +800,7 @@
     const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     downloadBlob(
       new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-      `activite_reelle_2026_${stamp()}.xlsx`
+      `${EXPORT_STEM}_${stamp()}.xlsx`
     );
   }
 

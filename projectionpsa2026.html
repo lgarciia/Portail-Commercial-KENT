@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Projection PSA 2026 — Prorata Jours Ouvrés</title>
+  <title>Projection PSA — Prorata Jours Ouvrés</title>
   <script src="./shared-ui.js"></script>
 
   <!-- SheetJS -->
@@ -337,19 +337,19 @@
 
 <body>
   <div class="topbar">
-    <div class="brand">
-      <div class="logo"></div>
-      <div class="titleWrap">
-        <div class="title">Projection PSA 2026</div>
-        <div class="subtitle">Réel 2025 → Budget 2026 • Prorata jours ouvrés (lun–ven) • Export Excel prêt Budget</div>
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="titleWrap">
+        <div class="title" id="pageTitle">Projection PSA</div>
+        <div class="subtitle" id="pageSubtitle">Réel N-1 → Budget année active • Prorata jours ouvrés (lun–ven) • Export Excel prêt Budget</div>
+        </div>
       </div>
-    </div>
 
     <div class="actions">
       <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
-      <button class="btn primary" id="btnReload">Charger / Recharger N-1.xlsx</button>
+      <button class="btn primary" id="btnReload">Charger / Recharger le réel N-1</button>
       <button class="btn ghost" id="btnRecalc">Recalculer projection</button>
-      <button class="btn ghost" id="btnExportXlsx">Exporter BUDGET2026_PSA.xlsx</button>
+      <button class="btn ghost" id="btnExportXlsx">Exporter la projection</button>
       <button class="btn danger" id="btnReset">Reset local</button>
     </div>
   </div>
@@ -416,8 +416,12 @@
   // =========================
   // CONFIG
   // =========================
-  const FILE_NAME = "activitereelpsan-1.xlsx";
-  const LS_KEY = "PROJECTION_PSA_2026_V1";
+  const ENTITY_KEY = "psa";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const PREV_YEAR = KentDataConfig.getPreviousYear(APP_YEAR);
+  const FILE_NAME = KentDataConfig.getEntityFile(ENTITY_KEY, "realN1", APP_YEAR);
+  const EXPORT_FILE = KentDataConfig.getEntityFile(ENTITY_KEY, "projection", APP_YEAR);
+  const LS_KEY = `PROJECTION_PSA_${APP_YEAR}_V1`;
 
   const MONTHS = [
     { key:"jan", label:"Janvier", aliases:["janvier","jan"] },
@@ -462,14 +466,22 @@
     tbl: document.getElementById("tbl"),
   };
 
+  document.title = `Projection PSA ${APP_YEAR} — Prorata jours ouvrés`;
+  el.btnReload.textContent = `Charger / Recharger ${FILE_NAME}`;
+  el.btnExportXlsx.textContent = `Exporter ${EXPORT_FILE}`;
+  el.yearReal.value = String(PREV_YEAR);
+  el.yearBudget.value = String(APP_YEAR);
+  document.getElementById("pageTitle").textContent = `Projection PSA ${APP_YEAR}`;
+  document.getElementById("pageSubtitle").textContent = `Réel ${PREV_YEAR} → Budget ${APP_YEAR} • Prorata jours ouvrés (lun–ven) • Export Excel prêt budget`;
+
   // =========================
   // STATE
   // =========================
   let basePivot = null;     // { meta, clients: [{id, clientInternal, clientName, months:{jan..dec}}] }
   let projected = null;    // same shape but months are projected
   let days = {
-    yearReal: 2025,
-    yearBudget: 2026,
+    yearReal: PREV_YEAR,
+    yearBudget: APP_YEAR,
     real: {},   // jan..dec
     budget: {}, // jan..dec
   };
@@ -484,8 +496,8 @@
   if (saved?.basePivot) basePivot = saved.basePivot;
 
   // set UI values
-  el.yearReal.value = String(days.yearReal || 2025);
-  el.yearBudget.value = String(days.yearBudget || 2026);
+  el.yearReal.value = String(days.yearReal || PREV_YEAR);
+  el.yearBudget.value = String(days.yearBudget || APP_YEAR);
 
   // ensure day defaults computed
   ensureDaysDefaults();
@@ -527,9 +539,9 @@
     localStorage.removeItem(LS_KEY);
     basePivot = null;
     projected = null;
-    days = { yearReal: 2025, yearBudget: 2026, real:{}, budget:{} };
-    el.yearReal.value = "2025";
-    el.yearBudget.value = "2026";
+    days = { yearReal: PREV_YEAR, yearBudget: APP_YEAR, real:{}, budget:{} };
+    el.yearReal.value = String(PREV_YEAR);
+    el.yearBudget.value = String(APP_YEAR);
     el.uplift.value = "0";
     el.rounding.value = "0";
     el.search.value = "";
@@ -546,14 +558,14 @@
   });
 
   el.yearReal.addEventListener("change", () => {
-    days.yearReal = clampYear(el.yearReal.value, 2025);
+    days.yearReal = clampYear(el.yearReal.value, PREV_YEAR);
     ensureDaysDefaults(true);
     renderDaysGrid();
     saveLS();
     renderAll();
   });
   el.yearBudget.addEventListener("change", () => {
-    days.yearBudget = clampYear(el.yearBudget.value, 2026);
+    days.yearBudget = clampYear(el.yearBudget.value, APP_YEAR);
     ensureDaysDefaults(true);
     renderDaysGrid();
     saveLS();
@@ -581,7 +593,7 @@
   }
 
   // =========================
-  // PARSE + PIVOT (réel 2025)
+  // PARSE + PIVOT (réel N-1)
   // colonnes attendues :
   // N° client Interne / Nom du client / Montant prix achat KENT / Mois2
   // =========================
@@ -674,8 +686,8 @@
   // DAYS (lun–ven, modifiable)
   // =========================
   function ensureDaysDefaults(forceRecalc=false){
-    days.yearReal = clampYear(el.yearReal.value, days.yearReal || 2025);
-    days.yearBudget = clampYear(el.yearBudget.value, days.yearBudget || 2026);
+    days.yearReal = clampYear(el.yearReal.value, days.yearReal || PREV_YEAR);
+    days.yearBudget = clampYear(el.yearBudget.value, days.yearBudget || APP_YEAR);
 
     // if empty or forceRecalc: compute defaults for each year
     for (const m of MONTHS){
@@ -938,8 +950,8 @@
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "BUDGET2026_PSA");
-    XLSX.writeFile(wb, `BUDGET2026_PSA_${stamp()}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, `PROJECTION_PSA_${APP_YEAR}`);
+    XLSX.writeFile(wb, `${EXPORT_FILE.replace(/\.xlsx$/i, "")}_${stamp()}.xlsx`);
   }
 
   // =========================

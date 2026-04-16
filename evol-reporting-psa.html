@@ -509,14 +509,17 @@ const REAL_DATE_COL  = "Date vente";
   // ---------------------------
   // CONFIG PSA (fetch direct)
   // ---------------------------
-  const FILES = {
-    budget: "budgetpsa.xlsx",
-    reel: "activitereelpsa.xlsx",
-  };
   const PAGE_PARAMS = new URLSearchParams(location.search);
   const REQUESTED_YEAR = Number(PAGE_PARAMS.get("year"));
   const REQUESTED_MONTH = Number(PAGE_PARAMS.get("month"));
-  const REPORT_YEAR = Number.isFinite(REQUESTED_YEAR) && REQUESTED_YEAR >= 2000 ? REQUESTED_YEAR : 2026;
+  const REPORT_YEAR = Number.isFinite(REQUESTED_YEAR) && REQUESTED_YEAR >= 2000
+    ? REQUESTED_YEAR
+    : KentDataConfig.getActiveYear();
+  KentDataConfig.setActiveYear(REPORT_YEAR);
+  const FILES = {
+    budget: KentDataConfig.getEntityFile("psa", "budget", REPORT_YEAR),
+    reel: KentDataConfig.getEntityFile("psa", "real", REPORT_YEAR),
+  };
   const DATA_SOURCE = {
     budget: {
       clientCandidates: ["client", "clients"],

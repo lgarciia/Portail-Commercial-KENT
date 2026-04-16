@@ -305,7 +305,7 @@
 
       <div class="actions">
         <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
-        <button class="btn primary" id="btnReload">Charger / Recharger activitereelpsa.xlsx</button>
+        <button class="btn primary" id="btnReload">Charger / Recharger le fichier réel</button>
         <button class="btn ghost" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn ghost" id="btnExportCsv">Exporter CSV</button>
         <button class="btn ghost" id="btnExportJson">Exporter JSON</button>
@@ -329,14 +329,14 @@
         </div>
 
         <div class="gridWrap" id="dropZone">
-          <div class="dropHint" id="dropHint">Dépose activitereelpsa.xlsx pour recharger</div>
+          <div class="dropHint" id="dropHint">Dépose le fichier réel pour recharger</div>
           <div class="tableScroller">
             <table id="pivotTable"></table>
           </div>
           <div class="mutedNote">
             Colonnes attendues : <strong>N° client Interne</strong> • <strong>Nom du client</strong> • <strong>Montant prix achat KENT</strong> • <strong>Mois2</strong>.
             <br>
-            ✅ Pivot stocké dans <strong>ACTIVITE_REEL_2026_V1</strong> + export “reporting annuel PSA” stocké dans <strong>ACTIVITEREEL_PSA_V1</strong>.
+            ✅ Le pivot est stocké localement par année et synchronisé pour le reporting annuel PSA.
           </div>
         </div>
       </div>
@@ -350,13 +350,16 @@
   // =========================
   // CONFIG
   // =========================
-  const FILE_NAME = "activitereelpsa.xlsx";
-
-  // Ton pivot historique
-  const STORAGE_KEY_PIVOT = "ACTIVITE_REEL_2026_V1";
-
-  // ✅ Clé attendue par repoting-annuelpsa.html
-  const STORAGE_KEY_REPORTING_PSA = "ACTIVITEREEL_PSA_V1";
+  const ENTITY_KEY = "psa";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const FILE_CANDIDATES = KentDataConfig.getEntityFileCandidates(ENTITY_KEY, "real", APP_YEAR);
+  const FILE_NAME = FILE_CANDIDATES[0];
+  const STORAGE = KentDataConfig.getStorageKeys(ENTITY_KEY, APP_YEAR);
+  const STORAGE_KEY_PIVOT = STORAGE.activityPivot.primary;
+  const STORAGE_KEY_REPORTING_PSA = STORAGE.activityReport.primary;
+  const STORAGE_KEY_PIVOT_CANDIDATES = [STORAGE_KEY_PIVOT].concat(STORAGE.activityPivot.legacy);
+  const STORAGE_KEY_REPORTING_CANDIDATES = [STORAGE_KEY_REPORTING_PSA].concat(STORAGE.activityReport.legacy);
+  const EXPORT_STEM = `activite_reelle_${APP_YEAR}`;
 
   const MONTHS = [
     { key: "jan", label: "Janvier", aliases: ["janvier","jan"] },
@@ -400,7 +403,10 @@
   // =========================
   // STATE
   // =========================
-  let pivot = loadJSON(STORAGE_KEY_PIVOT, null);
+  el.btnReload.textContent = `Charger / Recharger ${FILE_NAME}`;
+  el.dropHint.textContent = `Dépose ${FILE_NAME} pour recharger`;
+
+  let pivot = loadJSONAny(STORAGE_KEY_PIVOT_CANDIDATES, null);
   let filterText = "";
   let sortTotalDir = null;
 
@@ -435,8 +441,8 @@
 
   el.btnReset.addEventListener("click", () => {
     if (!confirm("Supprimer les données Activité Réelle stockées en local ?")) return;
-    localStorage.removeItem(STORAGE_KEY_PIVOT);
-    localStorage.removeItem(STORAGE_KEY_REPORTING_PSA);
+    removeStorageKeys(STORAGE_KEY_PIVOT_CANDIDATES);
+    removeStorageKeys(STORAGE_KEY_REPORTING_CANDIDATES);
     pivot = null;
     sortTotalDir = null;
     renderEmpty("Données locales supprimées. Recharge le fichier.");
@@ -475,13 +481,16 @@
   // AUTO FETCH
   // =========================
   async function autoFetchExcel(){
-    try{
-      const res = await fetch(FILE_NAME, { cache: "no-store" });
-      if (!res.ok) return;
-      const buf = await res.arrayBuffer();
-      parseAndBuildPivot(buf, `auto (${FILE_NAME})`);
-    }catch{
-      // silent
+    for (const candidate of FILE_CANDIDATES){
+      try{
+        const res = await fetch(candidate, { cache: "no-store" });
+        if (!res.ok) continue;
+        const buf = await res.arrayBuffer();
+        parseAndBuildPivot(buf, `auto (${candidate})`);
+        return;
+      }catch{
+        // continue
+      }
     }
   }
 
@@ -619,7 +628,7 @@
   }
 
   function updateSyncLabel(){
-    const payload = loadJSON(STORAGE_KEY_REPORTING_PSA, null);
+    const payload = loadJSONAny(STORAGE_KEY_REPORTING_CANDIDATES, null);
     if (payload?.clients?.length){
       el.syncLabel.textContent = `OK (${payload.clients.length})`;
     } else {
@@ -628,14 +637,14 @@
   }
 
   function exportActiviteReelPSAJson(){
-    const payload = loadJSON(STORAGE_KEY_REPORTING_PSA, null);
+    const payload = loadJSONAny(STORAGE_KEY_REPORTING_CANDIDATES, null);
     if (!payload?.clients?.length){
       alert("Aucune donnée Réel PSA en cache. Recharge d’abord le fichier.");
       return;
     }
     downloadBlob(
       new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" }),
-      `activitereel_psa_${stamp()}.json`
+      `activitereel_psa_${APP_YEAR}_${stamp()}.json`
     );
   }
 
@@ -769,7 +778,7 @@
     if (!pivot?.clients?.length) { alert("Rien à exporter."); return; }
     downloadBlob(
       new Blob([JSON.stringify(pivot, null, 2)], { type: "application/json" }),
-      `activite_reelle_2026_${stamp()}.json`
+      `${EXPORT_STEM}_${stamp()}.json`
     );
   }
 
@@ -788,7 +797,7 @@
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const csv = XLSX.utils.sheet_to_csv(ws, { FS: ";", RS: "\n" });
-    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `activite_reelle_2026_${stamp()}.csv`);
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${EXPORT_STEM}_${stamp()}.csv`);
   }
 
   function exportXLSX(){
@@ -810,7 +819,7 @@
     const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     downloadBlob(
       new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-      `activite_reelle_2026_${stamp()}.xlsx`
+      `${EXPORT_STEM}_${stamp()}.xlsx`
     );
   }
 
@@ -827,8 +836,22 @@
     }
   }
 
+  function loadJSONAny(keys, fallback){
+    for (const key of keys){
+      const value = loadJSON(key, null);
+      if (value) return value;
+    }
+    return fallback;
+  }
+
   function saveJSON(key, val){
     localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  function removeStorageKeys(keys){
+    for (const key of keys){
+      try{ localStorage.removeItem(key); }catch(e){}
+    }
   }
 
   function toNumber(v){

@@ -407,7 +407,7 @@
     drawerActions: document.getElementById("drawerActions"),
   };
 
-  let selectedYear = (currentYear>=CONFIG.YEAR_MIN && currentYear<=CONFIG.YEAR_MAX) ? currentYear : CONFIG.YEAR_MAX;
+  let selectedYear = KentDataConfig.getActiveYear({ fallbackYear: currentYear });
   let budgetMonthly = new Array(12).fill(0);
   let realMonthly = new Array(12).fill(0);
   let budgetDataset = null;
@@ -422,6 +422,7 @@
 
   el.yearSelect.addEventListener("change", async () => {
     selectedYear = Number(el.yearSelect.value);
+    KentDataConfig.setActiveYear(selectedYear);
     loadComments(selectedYear);
     await refreshAll(false);
   });
@@ -448,7 +449,7 @@
   }
 
   async function loadBudgetForYear(year){
-    const file = CONFIG.BUDGET_FILES[year] || "budgetgueudet.xlsx";
+    const file = KentDataConfig.getEntityFile("gueudet", "budget", year);
     el.budgetText.textContent = `Budget : chargement… (${file})`;
     setDot(el.dotBudget, "warn");
     setDot(el.dotUrlBudget, "warn");
@@ -476,7 +477,7 @@
   }
 
   async function loadRealForYear(year){
-    const file = CONFIG.REAL_FILE;
+    const file = KentDataConfig.getEntityFile("gueudet", "real", year);
 
     el.realText.textContent = `Réalisé : chargement… (${file})`;
     setDot(el.dotReal, "warn");
@@ -613,10 +614,10 @@
           entity: CONFIG.LABEL,
           month: mk,
           monthLabel,
-          realFile: CONFIG.REAL_FILE,
+          realFile: KentDataConfig.getEntityFile("gueudet", "real", selectedYear),
           dateCol: CONFIG.REAL_DATE_COL,
           year: String(selectedYear),
-      budgetFile: (CONFIG.BUDGET_FILES[selectedYear] || "budgetgueudet.xlsx")
+      budgetFile: KentDataConfig.getEntityFile("gueudet", "budget", selectedYear)
         });
 
         window.location.href = `${CONFIG.WEEK_VIEW_PAGE}?${qs.toString()}`;

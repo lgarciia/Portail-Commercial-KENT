@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr" data-theme="dark">
 <head>
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
@@ -319,7 +319,7 @@
       margin:0 3px;
     }
 
-    /* séparateur visuel chaque mois (col 3,6,9...) sur 2 lignes d'en-tête + corps */
+    /* sÃ©parateur visuel chaque mois (col 3,6,9...) sur 2 lignes d'en-tÃªte + corps */
     #reportTable th:nth-child(3),
     #reportTable th:nth-child(6),
     #reportTable th:nth-child(9),
@@ -366,17 +366,17 @@
         <div class="logo"></div>
         <div class="titleWrap">
           <div class="title">Reporting annuel (FORD)</div>
-          <div class="subtitle">Budget (Excel) + Réel (fetch Excel) → Écarts mensuels & cumul annuel</div>
+          <div class="subtitle">Budget (Excel) + RÃ©el (fetch Excel) â†’ Ã‰carts mensuels & cumul annuel</div>
         </div>
       </div>
 
       <div class="actions">
         <input id="fileBudget" class="fileInput" type="file" accept=".xlsx,.xls" />
-        <button class="btn primary" id="btnImport">Importer / Recharger budgetford.xlsx</button>
+        <button class="btn primary" id="btnImport">Importer / Recharger le budget</button>
         <button class="btn" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn" id="btnExportCsv">Exporter CSV</button>
         <button class="btn" id="btnExportJson">Exporter JSON</button>
-        <button class="btn danger" id="btnResetReal">Reset Réel</button>
+        <button class="btn danger" id="btnResetReal">Reset RÃ©el</button>
       </div>
     </div>
 
@@ -384,19 +384,19 @@
       <div class="card">
         <div class="meta">
           <div class="metaLeft">
-            <div class="pill">Fichier budget : <strong id="budgetFileLabel">non chargé</strong></div>
+            <div class="pill">Fichier budget : <strong id="budgetFileLabel">non chargÃ©</strong></div>
             <div class="pill">Clients : <strong id="clientsCount">0</strong></div>
-            <div class="pill">Dernière maj : <strong id="lastUpdate">—</strong></div>
-            <div class="pill">Réel FORD : <strong id="reelStatus">chargement…</strong></div>
-            <input class="search" id="search" placeholder="Filtrer client (nom ou code livré)..." />
+            <div class="pill">DerniÃ¨re maj : <strong id="lastUpdate">â€”</strong></div>
+            <div class="pill">RÃ©el FORD : <strong id="reelStatus">chargementâ€¦</strong></div>
+            <input class="search" id="search" placeholder="Filtrer client (nom ou code livrÃ©)..." />
           </div>
           <div class="pill">
-            Astuce : drag&drop le fichier Excel ici • <span class="kbd">Ctrl</span>+<span class="kbd">F</span>
+            Astuce : drag&drop le fichier Excel ici â€¢ <span class="kbd">Ctrl</span>+<span class="kbd">F</span>
           </div>
         </div>
 
         <div class="gridWrap" id="dropZone">
-          <div class="dropHint" id="dropHint">Dépose budgetford.xlsx pour recharger</div>
+          <div class="dropHint" id="dropHint">DÃ©pose le fichier budget pour recharger</div>
 
           <div class="tableScroller" id="tableScroller">
             <table id="reportTable"></table>
@@ -407,7 +407,7 @@
           </div>
 
           <div class="mutedNote">
-            ✅ Budget auto = fetch depuis <code>budgetford.xlsx</code>. Réel FORD auto = fetch depuis <code>activitereelford.xlsx</code> (colonnes : Code livré, Nom client, CA Total, mois2).
+            âœ… Budget auto = fetch depuis <code>budgetford.xlsx</code>. RÃ©el FORD auto = fetch depuis <code>activitereelford.xlsx</code> (colonnes : Code livrÃ©, Nom client, CA Total, mois2).
           </div>
         </div>
       </div>
@@ -421,28 +421,24 @@
   ====================================================== */
   const MONTHS = [
     { key: "jan", label: "Janvier", excel: "Janvier" },
-    { key: "feb", label: "Février", excel: "Février" },
+    { key: "feb", label: "FÃ©vrier", excel: "FÃ©vrier" },
     { key: "mar", label: "Mars", excel: "Mars" },
     { key: "apr", label: "Avril", excel: "Avril" },
     { key: "may", label: "Mai", excel: "Mai" },
     { key: "jun", label: "Juin", excel: "Juin" },
     { key: "jul", label: "Juillet", excel: "Juillet" },
-    { key: "aug", label: "Août", excel: "Août" },
+    { key: "aug", label: "AoÃ»t", excel: "AoÃ»t" },
     { key: "sep", label: "Septembre", excel: "Septembre" },
     { key: "oct", label: "Octobre", excel: "Octobre" },
     { key: "nov", label: "Novembre", excel: "Novembre" },
-    { key: "dec", label: "Décembre", excel: "Décembre" },
+    { key: "dec", label: "DÃ©cembre", excel: "DÃ©cembre" },
   ];
 
-  const STORAGE = {
-    budget: "BUDGET_FORD_DATA_V1",
-    budgetMeta: "BUDGET_FORD_META_V1",
-    real: "BUDGET_FORD_REAL_V1",
-  };
-
-  // ✅ sources fichiers
-  const REAL_FILE = "activitereelford.xlsx";
-  const BUDGET_FILE = "budgetford.xlsx";
+  const ENTITY_KEY = "ford";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const STORAGE = KentDataConfig.getStorageKeys(ENTITY_KEY, APP_YEAR);
+  const REAL_FILE = KentDataConfig.getEntityFile(ENTITY_KEY, "real", APP_YEAR);
+  const BUDGET_FILE = KentDataConfig.getEntityFile(ENTITY_KEY, "budget", APP_YEAR);
 
   let budgetData = null;                // { clients: [{id,name,nclient,budget:{jan..dec}}] }
   let budgetMeta = null;
@@ -473,11 +469,14 @@
     hScrollInner: document.getElementById("hScrollInner"),
   };
 
+  el.btnImport.textContent = `Importer / Recharger ${BUDGET_FILE}`;
+  el.dropHint.textContent = `Dépose ${BUDGET_FILE} pour recharger`;
+
   /* ======================================================
      INIT
   ====================================================== */
   renderEmpty();
-  updateReelStatus("chargement…");
+  updateReelStatus("chargementâ€¦");
   syncBottomScrollbar();
   await tryAutoFetchBudget();
 
@@ -499,7 +498,7 @@
   });
 
   el.btnResetReal.addEventListener("click", () => {
-    if (!confirm("Recharger toutes les valeurs Réel depuis activitereelford.xlsx ?")) return;
+    if (!confirm("Recharger toutes les valeurs RÃ©el depuis activitereelford.xlsx ?")) return;
     loadRealFromFetch().then(render).catch(console.error);
   });
 
@@ -520,13 +519,13 @@
     if (!file) return;
     const name = (file.name || "").toLowerCase();
     if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
-      alert("Veuillez déposer un fichier .xlsx ou .xls");
+      alert("Veuillez dÃ©poser un fichier .xlsx ou .xls");
       return;
     }
     await importBudgetFile(file);
   });
 
-  // ✅ sync scroll horizontal : tableScroller (X hidden) <-> hScroll (X visible)
+  // âœ… sync scroll horizontal : tableScroller (X hidden) <-> hScroll (X visible)
   let syncing = false;
 
   el.tableScroller.addEventListener("scroll", () => {
@@ -553,7 +552,7 @@
       const arrayBuffer = await file.arrayBuffer();
       parseBudget(arrayBuffer, file.name || BUDGET_FILE);
 
-      // ✅ fetch réel après import budget
+      // âœ… fetch rÃ©el aprÃ¨s import budget
       await loadRealFromFetch();
 
       render();
@@ -575,9 +574,9 @@
 
     // Budget Ford : on accepte plusieurs conventions
     const colClient = findCol(headerMap, ["client", "nom client", "nom du client"]);
-    const colCode = findCol(headerMap, ["code livré","code livre","code","n client","n° client","no client","numero client","nclient"]);
+    const colCode = findCol(headerMap, ["code livrÃ©","code livre","code","n client","nÂ° client","no client","numero client","nclient"]);
 
-    if (!colClient && !colCode) throw new Error("Budget : colonnes Client/Code livré introuvables.");
+    if (!colClient && !colCode) throw new Error("Budget : colonnes Client/Code livrÃ© introuvables.");
 
     const monthCols = {};
     for (const m of MONTHS){
@@ -621,8 +620,8 @@
   function applyMeta(meta){
     budgetMeta = meta || null;
     if (!meta) {
-      el.budgetFileLabel.textContent = "non chargé";
-      el.lastUpdate.textContent = "—";
+      el.budgetFileLabel.textContent = "non chargÃ©";
+      el.lastUpdate.textContent = "â€”";
       return;
     }
     el.budgetFileLabel.textContent = meta.filename || BUDGET_FILE;
@@ -630,8 +629,8 @@
   }
 
   /* ======================================================
-     ✅ FETCH RÉEL (activitereelford.xlsx)
-     Colonnes : Code livré | Nom client | CA Total | mois2
+     âœ… FETCH RÃ‰EL (activitereelford.xlsx)
+     Colonnes : Code livrÃ© | Nom client | CA Total | mois2
      Reconstruit realData[clientId][monthKey] = somme CA
   ====================================================== */
   async function loadRealFromFetch(){
@@ -640,7 +639,7 @@
       return;
     }
 
-    updateReelStatus("chargement…");
+    updateReelStatus("chargementâ€¦");
 
     try{
       const { buffer } = await fetchXlsxWithFallback(REAL_FILE);
@@ -657,7 +656,7 @@
       }
 
       const headerMap = buildHeaderMap(rows[0] || {});
-      const colCode = findCol(headerMap, ["code livré","code livre","code"]);
+      const colCode = findCol(headerMap, ["code livrÃ©","code livre","code"]);
       const colName = findCol(headerMap, ["nom client","nom du client","client"]);
       const colAmt  = findCol(headerMap, ["ca total","ca","chiffre d'affaires","chiffre daffaires"]);
       const colMonth= findCol(headerMap, ["mois2","mois","month"]);
@@ -727,7 +726,7 @@
 
       realData = nextReal;
       const countClients = Object.keys(realData).length;
-      updateReelStatus(`OK (${countClients} clients) — ${REAL_FILE}`);
+      updateReelStatus(`OK (${countClients} clients) â€” ${REAL_FILE}`);
     }catch(err){
       console.error(err);
       updateReelStatus("erreur fetch/lecture");
@@ -735,34 +734,34 @@
   }
 
   function monthNameToKey(m){
-    // support numérique 1..12
+    // support numÃ©rique 1..12
     const n = Number(String(m||"").trim());
     if (Number.isFinite(n) && n >= 1 && n <= 12) return MONTHS[n-1].key;
 
     const k = normKey(m);
     const map = {
       "janvier":"jan","jan":"jan",
-      "fevrier":"feb","février":"feb","fev":"feb","fév":"feb",
+      "fevrier":"feb","fÃ©vrier":"feb","fev":"feb","fÃ©v":"feb",
       "mars":"mar",
       "avril":"apr","avr":"apr",
       "mai":"may",
       "juin":"jun",
       "juillet":"jul","juil":"jul",
-      "aout":"aug","août":"aug",
+      "aout":"aug","aoÃ»t":"aug",
       "septembre":"sep","sep":"sep","sept":"sep",
       "octobre":"oct","oct":"oct",
       "novembre":"nov","nov":"nov",
-      "decembre":"dec","décembre":"dec","dec":"dec","déc":"dec"
+      "decembre":"dec","dÃ©cembre":"dec","dec":"dec","dÃ©c":"dec"
     };
     return map[k] || null;
   }
 
   function updateReelStatus(msg){
-    el.reelStatus.textContent = msg || "—";
+    el.reelStatus.textContent = msg || "â€”";
   }
 
   /* ======================================================
-     RENDER (même structure que PSA : Réel/Budget/Écart côte à côte)
+     RENDER (mÃªme structure que PSA : RÃ©el/Budget/Ã‰cart cÃ´te Ã  cÃ´te)
   ====================================================== */
   function renderEmpty(){
     el.clientsCount.textContent = "0";
@@ -770,23 +769,23 @@
       <thead>
         <tr>
           <th class="col-client">Client</th>
-          <th class="col-nclient">Code livré</th>
+          <th class="col-nclient">Code livrÃ©</th>
           ${MONTHS.map(m => `<th colspan="3">${escapeHtml(m.label)}</th>`).join("")}
           <th class="dividerL" colspan="3">Cumul</th>
         </tr>
         <tr>
-          <th class="col-client">—</th>
-          <th class="col-nclient">—</th>
-          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
-          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
+          <th class="col-client">â€”</th>
+          <th class="col-nclient">â€”</th>
+          ${MONTHS.map(() => `<th>RÃ©el</th><th>Budget</th><th>Ã‰cart</th>`).join("")}
+          <th class="dividerL">RÃ©el</th><th>Budget</th><th>Ã‰cart</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td class="col-client">Aucun budget chargé</td>
-          <td class="col-nclient">—</td>
-          ${MONTHS.map(() => `<td class="num">—</td><td class="num">—</td><td class="num">—</td>`).join("")}
-          <td class="num dividerL">—</td><td class="num">—</td><td class="num">—</td>
+          <td class="col-client">Aucun budget chargÃ©</td>
+          <td class="col-nclient">â€”</td>
+          ${MONTHS.map(() => `<td class="num">â€”</td><td class="num">â€”</td><td class="num">â€”</td>`).join("")}
+          <td class="num dividerL">â€”</td><td class="num">â€”</td><td class="num">â€”</td>
         </tr>
       </tbody>
     `;
@@ -812,15 +811,15 @@
       <thead>
         <tr>
           <th class="col-client">Client</th>
-          <th class="col-nclient">Code livré</th>
+          <th class="col-nclient">Code livrÃ©</th>
           ${MONTHS.map(m => `<th colspan="3">${escapeHtml(m.label)}</th>`).join("")}
           <th class="dividerL" colspan="3">Cumul</th>
         </tr>
         <tr>
-          <th class="col-client">—</th>
-          <th class="col-nclient">—</th>
-          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
-          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
+          <th class="col-client">â€”</th>
+          <th class="col-nclient">â€”</th>
+          ${MONTHS.map(() => `<th>RÃ©el</th><th>Budget</th><th>Ã‰cart</th>`).join("")}
+          <th class="dividerL">RÃ©el</th><th>Budget</th><th>Ã‰cart</th>
         </tr>
       </thead>
     `;
@@ -870,7 +869,7 @@
     return `
       <tr class="row-cumul">
         <td class="col-client">Cumul</td>
-        <td class="col-nclient">—</td>
+        <td class="col-nclient">â€”</td>
         ${cells}
         <td class="num dividerL">${fmt(cumul.annual.real)}</td>
         <td class="num budget">${fmt(cumul.annual.budget)}</td>
@@ -899,7 +898,7 @@
     return `
       <tr>
         <td class="col-client">${escapeHtml(client.name)}</td>
-        <td class="col-nclient">${escapeHtml(client.nclient || "—")}</td>
+        <td class="col-nclient">${escapeHtml(client.nclient || "â€”")}</td>
         ${cells}
         <td class="num dividerL">${fmt(annualReal)}</td>
         <td class="num budget">${fmt(annualBudget)}</td>
@@ -915,7 +914,7 @@
   }
 
   /* ======================================================
-     EXPORTS (identique à PSA)
+     EXPORTS (identique Ã  PSA)
   ====================================================== */
   function buildExportRows(){
     if (!budgetData?.clients?.length) return [];
@@ -929,33 +928,33 @@
     return out;
 
     function rowFromCumul(c){
-      const r = { CLIENT: "Cumul", "CODE LIVRÉ": "" };
+      const r = { CLIENT: "Cumul", "CODE LIVRÃ‰": "" };
       for (const m of MONTHS){
         const v = c.perMonth[m.key];
-        r[`${m.label} Réel`] = v.real;
+        r[`${m.label} RÃ©el`] = v.real;
         r[`${m.label} Budget`] = v.budget;
-        r[`${m.label} Écart`] = v.ecart;
+        r[`${m.label} Ã‰cart`] = v.ecart;
       }
-      r["Cumul Réel"] = c.annual.real;
+      r["Cumul RÃ©el"] = c.annual.real;
       r["Cumul Budget"] = c.annual.budget;
-      r["Cumul Écart"] = c.annual.ecart;
+      r["Cumul Ã‰cart"] = c.annual.ecart;
       return r;
     }
 
     function rowFromClient(c){
-      const r = { CLIENT: c.name, "CODE LIVRÉ": c.nclient || "" };
+      const r = { CLIENT: c.name, "CODE LIVRÃ‰": c.nclient || "" };
       let annualB = 0, annualR = 0;
       for (const m of MONTHS){
         const b = Math.round(toNumber(c.budget?.[m.key]));
         const rr = Math.round(toNumber(realData?.[c.id]?.[m.key]));
         annualB += b; annualR += rr;
-        r[`${m.label} Réel`] = rr;
+        r[`${m.label} RÃ©el`] = rr;
         r[`${m.label} Budget`] = b;
-        r[`${m.label} Écart`] = rr - b;
+        r[`${m.label} Ã‰cart`] = rr - b;
       }
-      r["Cumul Réel"] = annualR;
+      r["Cumul RÃ©el"] = annualR;
       r["Cumul Budget"] = annualB;
-      r["Cumul Écart"] = annualR - annualB;
+      r["Cumul Ã‰cart"] = annualR - annualB;
       return r;
     }
   }
@@ -976,7 +975,7 @@
 
   function exportCSV(){
     const rows = buildExportRows();
-    if (!rows.length) { alert("Rien à exporter."); return; }
+    if (!rows.length) { alert("Rien Ã  exporter."); return; }
     const ws = XLSX.utils.json_to_sheet(rows);
     const csv = XLSX.utils.sheet_to_csv(ws, { FS: ";", RS: "\n" });
     downloadBlob(
@@ -987,7 +986,7 @@
 
   function exportXLSX(){
     const rows = buildExportRows();
-    if (!rows.length) { alert("Rien à exporter."); return; }
+    if (!rows.length) { alert("Rien Ã  exporter."); return; }
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, "Reporting annuel FORD");
@@ -1034,7 +1033,7 @@
       const d = new Date(iso);
       return d.toLocaleString("fr-FR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
     }catch{
-      return "—";
+      return "â€”";
     }
   }
 
@@ -1214,3 +1213,4 @@
 </script>
 </body>
 </html>
+

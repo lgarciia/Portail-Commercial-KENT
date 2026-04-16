@@ -272,7 +272,7 @@
 
     <div class="meta">
       <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargement…</span></span>
-      <span class="chip"><span class="dot ok"></span><span>Fichier : <b>psadata.xlsx</b></span></span>
+      <span class="chip"><span class="dot ok"></span><span>Fichier : <b id="fileNameLabel">—</b></span></span>
       <span class="chip"><span class="dot"></span><span>Recherche : <b>Nom du client</b> OU <b>N° client Interne</b></span></span>
     </div>
   </div>
@@ -323,7 +323,10 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <script>
-  const EXCEL_URL = "./psadata.xlsx";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const EXCEL_FILE = KentDataConfig.getEntityFile("psa", "client", APP_YEAR);
+  const EXCEL_URL = `./${EXCEL_FILE}`;
+  document.getElementById("fileNameLabel").textContent = EXCEL_FILE;
 
   const COL_ID    = "N° client Interne";
   const COL_NAME  = "Nom du client";
@@ -490,7 +493,7 @@
       console.error(e);
       setStatus("warn", `Impossible de charger ${EXCEL_URL}`);
       $("agg").innerHTML = `<div class="empty">⚠️ Excel introuvable ou bloqué.</div>`;
-      $("results").innerHTML = `<div class="empty">Vérifie que <b>psadata.xlsx</b> est bien à côté de <b>index.html</b>.</div>`;
+      $("results").innerHTML = `<div class="empty">Vérifie que <b>${EXCEL_FILE}</b> est bien disponible à côté de cette page.</div>`;
     }
   }
 

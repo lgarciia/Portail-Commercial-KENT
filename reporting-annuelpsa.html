@@ -374,7 +374,7 @@
 
       <div class="actions">
         <input id="fileBudget" class="fileInput" type="file" accept=".xlsx,.xls" />
-        <button class="btn primary" id="btnImport">Importer / Recharger budgetpsa.xlsx</button>
+        <button class="btn primary" id="btnImport">Importer / Recharger le budget</button>
         <button class="btn" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn" id="btnExportCsv">Exporter CSV</button>
         <button class="btn" id="btnExportJson">Exporter JSON</button>
@@ -398,7 +398,7 @@
         </div>
 
         <div class="gridWrap" id="dropZone">
-          <div class="dropHint" id="dropHint">Dépose budgetpsa.xlsx pour recharger</div>
+          <div class="dropHint" id="dropHint">Dépose le fichier budget pour recharger</div>
 
           <div class="tableScroller" id="tableScroller">
             <table id="reportTable"></table>
@@ -409,7 +409,7 @@
           </div>
 
           <div class="mutedNote">
-            ✅ Budget auto = fetch depuis <code>budgetpsa.xlsx</code>. Réel PSA auto = fetch depuis <code>activitereelpsa.xlsx</code> (GitHub-safe). L'import manuel reste disponible.
+            ✅ Budget et réel sont relus directement depuis les fichiers de l’année active. L’import manuel reste disponible.
           </div>
         </div>
       </div>
@@ -433,15 +433,11 @@
     { key: "dec", label: "Décembre", excel: "Décembre" },
   ];
 
-  const STORAGE = {
-    budget: "BUDGET2026_DATA_PSA_V1",
-    budgetMeta: "BUDGET2026_META_PSA_V1",
-    real: "BUDGET2026_REAL_PSA_V1",
-  };
-
-  // ✅ sources fichiers
-  const REAL_FILE = "activitereelpsa.xlsx";
-  const BUDGET_FILE = "budgetpsa.xlsx";
+  const ENTITY_KEY = "psa";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const STORAGE = KentDataConfig.getStorageKeys(ENTITY_KEY, APP_YEAR);
+  const REAL_FILE = KentDataConfig.getEntityFile(ENTITY_KEY, "real", APP_YEAR);
+  const BUDGET_FILE = KentDataConfig.getEntityFile(ENTITY_KEY, "budget", APP_YEAR);
 
   let budgetData = null;  // { clients: [{id,name,nclient,budget:{jan..dec}}] }
   let budgetMeta = null;
@@ -469,6 +465,9 @@
     hScrollInner: document.getElementById("hScrollInner"),
   };
 
+  el.btnImport.textContent = `Importer / Recharger ${BUDGET_FILE}`;
+  el.dropHint.textContent = `Dépose ${BUDGET_FILE} pour recharger`;
+
   renderEmpty();
   updateReelStatus("chargement…");
   syncBottomScrollbar();
@@ -488,7 +487,7 @@
   });
 
   el.btnResetReal.addEventListener("click", () => {
-    if (!confirm("Recharger toutes les valeurs Réel depuis activitereelpsa.xlsx ?")) return;
+    if (!confirm(`Recharger toutes les valeurs Réel depuis ${REAL_FILE} ?`)) return;
     loadRealFromFetch().then(render).catch(console.error);
   });
 

@@ -413,6 +413,9 @@
 
       <div class="rightTools">
         <input class="search" id="search" placeholder="Rechercher une app…" />
+        <select class="toolBtn" id="yearSelect" title="Choisir l'année active" style="height:42px;">
+          <option value="2026">2026</option>
+        </select>
 
         <!-- ✅ Paramétrage (Material Symbols) -->
         <a class="toolBtn" href="parametrage.html" title="Ouvrir la page Paramétrage">
@@ -452,7 +455,7 @@
         <div class="links">
           <a class="link app" href="accbudget.html" data-tags="budget atterrissage synthese">
             <div class="left">
-              <div class="name">Budget 2026</div>
+              <div class="name">Budget annuel</div>
               <div class="desc">Etablissement du budget N+1</div>
             </div>
             <div class="chev">›</div>
@@ -535,7 +538,7 @@
 
           <a class="link app" href="accrequete.html" data-tags="requete de l'année">
             <div class="left">
-              <div class="name">Requête 2026</div>
+              <div class="name">Requête annuelle</div>
               <div class="desc">Filtres en colonnes + cumul/détail + tri CA</div>
             </div>
             <div class="chev">›</div>
@@ -597,6 +600,7 @@
 <script>
   // ===== Search filter =====
   const search = document.getElementById("search");
+  const yearSelect = document.getElementById("yearSelect");
   const apps = [...document.querySelectorAll(".app")];
   const cards = [...document.querySelectorAll(".card")];
 
@@ -657,6 +661,16 @@
   // ✅ si tu changes le thème sur une autre page/onglet, celle-ci se met à jour
   window.addEventListener("storage", (e) => {
     if (e.key === THEME_KEY) setTheme(e.newValue || "dark");
+  });
+
+  // ===== Active year =====
+  const activeYear = KentDataConfig.getActiveYear();
+  KentDataConfig.fillYearSelect(yearSelect, { selectedYear: activeYear });
+  KentDataConfig.setActiveYear(activeYear);
+
+  yearSelect.addEventListener("change", () => {
+    const nextYear = KentDataConfig.setActiveYear(Number(yearSelect.value));
+    yearSelect.value = String(nextYear);
   });
 </script>
 

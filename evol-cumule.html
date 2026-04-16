@@ -525,7 +525,7 @@
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonthIdx = now.getMonth();
-  let selectedYear = (currentYear>=CONFIG.YEAR_MIN && currentYear<=CONFIG.YEAR_MAX) ? currentYear : CONFIG.YEAR_MAX;
+  let selectedYear = KentDataConfig.getActiveYear({ fallbackYear: currentYear });
 
   let budgetMonthly = new Array(12).fill(0);
   let realMonthly = new Array(12).fill(0);
@@ -577,6 +577,7 @@
 
   el.yearSelect.addEventListener("change", async () => {
     selectedYear = Number(el.yearSelect.value);
+    KentDataConfig.setActiveYear(selectedYear);
     loadComments(selectedYear);
     await refreshAll();
   });

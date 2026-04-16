@@ -422,7 +422,7 @@
     drawerActions: document.getElementById("drawerActions"),
   };
 
-  let selectedYear = (currentYear>=CONFIG.YEAR_MIN && currentYear<=CONFIG.YEAR_MAX) ? currentYear : CONFIG.YEAR_MAX;
+  let selectedYear = KentDataConfig.getActiveYear({ fallbackYear: currentYear });
   let budgetMonthly = new Array(12).fill(0);
   let realMonthly = new Array(12).fill(0);
   let budgetDataset = null;
@@ -442,6 +442,7 @@
 
   el.yearSelect.addEventListener("change", async () => {
     selectedYear = Number(el.yearSelect.value);
+    KentDataConfig.setActiveYear(selectedYear);
     loadComments(selectedYear);
     await refreshAll(false);
   });
@@ -473,7 +474,7 @@
      BUDGET: fetch + somme mensuelle globale
   ========================= */
   async function loadBudgetForYear(year){
-    const file = CONFIG.BUDGET_FILES[year] || "budgetpsa.xlsx";
+    const file = KentDataConfig.getEntityFile("psa", "budget", year);
     el.budgetText.textContent = `Budget : chargement… (${file})`;
     setDot(el.dotBudget, "warn");
     setDot(el.dotUrlBudget, "warn");
@@ -505,7 +506,7 @@
      ✅ + weekIdx calculé via Date vente si dispo
   ========================= */
   async function loadRealForYear(year){
-    const file = CONFIG.REAL_FILE;
+    const file = KentDataConfig.getEntityFile("psa", "real", year);
 
     el.realText.textContent = `Réalisé : chargement… (${file})`;
     setDot(el.dotReal, "warn");
@@ -651,13 +652,13 @@
           entity: CONFIG.LABEL,
           month: mk,
           monthLabel,
-          realFile: CONFIG.REAL_FILE,
+          realFile: KentDataConfig.getEntityFile("psa", "real", selectedYear),
           dateCol: CONFIG.REAL_DATE_COL,
 
           // budget : on passe le fichier + année (la page semaine refetch si tu veux)
           // 👉 si tu préfères localStorage (comme evol-reporting), dis-moi et je te le câble pareil.
           year: String(selectedYear),
-      budgetFile: (CONFIG.BUDGET_FILES[selectedYear] || "budgetpsa.xlsx")
+      budgetFile: KentDataConfig.getEntityFile("psa", "budget", selectedYear)
         });
 
         window.location.href = `${CONFIG.WEEK_VIEW_PAGE}?${qs.toString()}`;

@@ -332,7 +332,7 @@ select[multiple]::-webkit-scrollbar-thumb:hover{
   <div class="card">
     <div class="meta">
       <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargement…</span></span>
-      <span class="chip"><span class="dot ok"></span><span>Fichier : <b>activitereelpsa.xlsx</b></span></span>
+      <span class="chip"><span class="dot ok"></span><span>Fichier : <b id="fileNameLabel">—</b></span></span>
       <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes détectées : —</span></span>
     </div>
     <div class="small">
@@ -382,7 +382,10 @@ select[multiple]::-webkit-scrollbar-thumb:hover{
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script>
-const EXCEL_URL = "./activitereelpsa.xlsx";
+const APP_YEAR = KentDataConfig.getActiveYear();
+const EXCEL_FILE = KentDataConfig.getEntityFile("psa", "queryCurrent", APP_YEAR);
+const EXCEL_URL = `./${EXCEL_FILE}`;
+document.getElementById("fileNameLabel").textContent = EXCEL_FILE;
 
 const TARGETS = {
   YEAR:  ["Année","Annee","année","annee"],
@@ -857,7 +860,7 @@ async function loadExcel(){
   }catch(e){
     console.error(e);
     setStatus("warn", "Impossible de charger activitereelpsa.xlsx");
-    renderEmpty("⚠️ Excel introuvable/bloqué. Vérifie activitereelpsa.xlsx dans le même dossier que index.html.");
+    renderEmpty(`⚠️ Excel introuvable/bloqué. Vérifie ${EXCEL_FILE} dans le même dossier que cette page.`);
   }
 }
 

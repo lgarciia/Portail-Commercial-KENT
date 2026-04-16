@@ -749,7 +749,7 @@
     <div class="brand">
       <div class="logo"></div>
       <div class="titles">
-        <b>Réel vs N-1 — PSA (Produits)</b>
+        <b id="pageTitle">Réel vs N-1 — PSA (Produits)</b>
         <span>Requête multi-mois → Qté + CA, tri, écart • clic produit = détail clients</span>
       </div>
     </div>
@@ -779,8 +779,8 @@
 
         <div class="hint">
           Sources (fetch GitHub) :
-          <br>• Réel : <code id="srcReal">activitereelpsa.xlsx</code>
-          <br>• N-1 : <code id="srcN1">activitereelpsan-1.xlsx</code>
+          <br>• Réel : <code id="srcReal">—</code>
+          <br>• N-1 : <code id="srcN1">—</code>
           <br><br>Colonnes lues :
           <code>Désignation</code>, <code>Quantité Payante servie</code>, <code>Montant prix achat KENT</code>, <code>Mois2</code>
           <br>(+ clients : <code>N° client Interne</code>, <code>Nom du client</code>)
@@ -908,8 +908,10 @@
   /* ======================================================
      CONFIG — ICI tu changes pour Gueudet/Ford/Direct
   ====================================================== */
-  const FILE_REAL = "activitereelpsa.xlsx";
-  const FILE_N1   = "activitereelpsan-1.xlsx";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const PREV_YEAR = KentDataConfig.getPreviousYear(APP_YEAR);
+  const FILE_REAL = KentDataConfig.getEntityFile("psa", "real", APP_YEAR);
+  const FILE_N1   = KentDataConfig.getEntityFile("psa", "realN1", APP_YEAR);
 
   /* ======================================================
      MOIS (mapping Mois2 -> index)
@@ -985,6 +987,8 @@
     btnDetailExportXlsx: document.getElementById("btnDetailExportXlsx"),
   };
 
+  document.title = `Réel ${APP_YEAR} vs ${PREV_YEAR} — PSA (Produits)`;
+  document.getElementById("pageTitle").textContent = `Réel ${APP_YEAR} vs ${PREV_YEAR} — PSA (Produits)`;
   el.srcReal.textContent = FILE_REAL;
   el.srcN1.textContent = FILE_N1;
 

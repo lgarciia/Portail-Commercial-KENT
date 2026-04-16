@@ -153,7 +153,7 @@ input{display:none}
    🔧 CONFIGURATION — À MODIFIER POUR GUEUDET / FORD
 ===================================================== */
 const CONFIG = {
-  FILE_NAME: "budgetpsa.xlsx",
+  FILE_NAME: KentDataConfig.getEntityFile("psa", "budget", KentDataConfig.getActiveYear()),
   CACHE_KEY: "CONSULT_BUDGET_PSA_V1",
   LABEL: "PSA"
 };

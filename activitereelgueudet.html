@@ -283,7 +283,7 @@
 
       <div class="actions">
         <input id="fileInput" class="fileInput" type="file" accept=".xlsx,xls" />
-        <button class="btn primary" id="btnReload">Charger / Recharger activitereelgueudet.xlsx</button>
+        <button class="btn primary" id="btnReload">Charger / Recharger le fichier réel</button>
         <button class="btn ghost" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn ghost" id="btnExportCsv">Exporter CSV</button>
         <button class="btn ghost" id="btnExportJson">Exporter JSON</button>
@@ -307,14 +307,14 @@
         </div>
 
         <div class="gridWrap" id="dropZone">
-          <div class="dropHint" id="dropHint">Dépose activitereelgueudet.xlsx pour recharger</div>
+          <div class="dropHint" id="dropHint">Dépose le fichier réel pour recharger</div>
           <div class="tableScroller">
             <table id="pivotTable"></table>
           </div>
           <div class="mutedNote">
             Colonnes attendues : <strong>N° client Interne</strong> • <strong>Nom du client</strong> • <strong>Montant prix achat KENT</strong> • <strong>Mois2</strong>.
             <br>
-            ✅ Pivot stocké dans <strong>ACTIVITE_REEL_GUEUDET_2026_V1</strong> + export “reporting annuel Gueudet” stocké dans <strong>ACTIVITEREEL_GUEUDET_V1</strong>.
+            ✅ Le pivot est stocké localement par année et synchronisé pour le reporting annuel Gueudet.
           </div>
         </div>
       </div>
@@ -326,13 +326,15 @@
   // =========================
   // CONFIG
   // =========================
-  const FILE_NAME = "activitereelgueudet.xlsx"; // nom exact sur GitHub Pages
-
-  // Pivot page Activité Réelle
-  const STORAGE_KEY_PIVOT = "ACTIVITE_REEL_GUEUDET_2026_V1";
-
-  // ✅ Clé attendue par ton reporting annuel Gueudet
-  const STORAGE_KEY_REPORTING_GUEUDET = "ACTIVITEREEL_GUEUDET_V1";
+  const ENTITY_KEY = "gueudet";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const FILE_CANDIDATES = KentDataConfig.getEntityFileCandidates(ENTITY_KEY, "real", APP_YEAR);
+  const FILE_NAME = FILE_CANDIDATES[0];
+  const STORAGE = KentDataConfig.getStorageKeys(ENTITY_KEY, APP_YEAR);
+  const STORAGE_KEY_PIVOT = STORAGE.activityPivot.primary;
+  const STORAGE_KEY_REPORTING_GUEUDET = STORAGE.activityReport.primary;
+  const STORAGE_KEY_PIVOT_CANDIDATES = [STORAGE_KEY_PIVOT].concat(STORAGE.activityPivot.legacy);
+  const STORAGE_KEY_REPORTING_CANDIDATES = [STORAGE_KEY_REPORTING_GUEUDET].concat(STORAGE.activityReport.legacy);
 
   const MONTHS = [
     { key: "jan", label: "Janvier", aliases: ["janvier","jan"] },
@@ -374,7 +376,10 @@
   // =========================
   // STATE
   // =========================
-  let pivot = loadJSON(STORAGE_KEY_PIVOT, null);
+  el.btnReload.textContent = `Charger / Recharger ${FILE_NAME}`;
+  el.dropHint.textContent = `Dépose ${FILE_NAME} pour recharger`;
+
+  let pivot = loadJSONAny(STORAGE_KEY_PIVOT_CANDIDATES, null);
   let filterText = "";
   let sortTotalDir = null;
 
@@ -410,8 +415,8 @@
 
   el.btnReset.addEventListener("click", () => {
     if (!confirm("Supprimer les données Activité Réelle Gueudet stockées en local ?")) return;
-    localStorage.removeItem(STORAGE_KEY_PIVOT);
-    localStorage.removeItem(STORAGE_KEY_REPORTING_GUEUDET);
+    removeStorageKeys(STORAGE_KEY_PIVOT_CANDIDATES);
+    removeStorageKeys(STORAGE_KEY_REPORTING_CANDIDATES);
     pivot = null;
     sortTotalDir = null;
     renderEmpty("Données locales supprimées. Recharge le fichier.");
@@ -448,18 +453,18 @@
   // AUTO FETCH (GitHub-safe + anti-cache)
   // =========================
   async function autoFetchExcel(){
-    try{
-      const url = `${FILE_NAME}?v=${Date.now()}`;
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) return;
-      const buf = await res.arrayBuffer();
-
-      // petit check "PK" (zip) pour éviter de parser une 404 html
-      if (!looksLikeZip(buf)) return;
-
-      parseAndBuildPivot(buf, `auto (${FILE_NAME})`);
-    }catch{
-      // silent
+    for (const candidate of FILE_CANDIDATES){
+      try{
+        const url = `${candidate}?v=${Date.now()}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) continue;
+        const buf = await res.arrayBuffer();
+        if (!looksLikeZip(buf)) continue;
+        parseAndBuildPivot(buf, `auto (${candidate})`);
+        return;
+      }catch{
+        // continue
+      }
     }
   }
 
@@ -617,7 +622,7 @@
   }
 
   function updateSyncLabel(){
-    const payload = loadJSON(STORAGE_KEY_REPORTING_GUEUDET, null);
+    const payload = loadJSONAny(STORAGE_KEY_REPORTING_CANDIDATES, null);
     if (payload?.clients?.length){
       el.syncLabel.textContent = `OK (${payload.clients.length})`;
     } else {
@@ -892,6 +897,20 @@
       return JSON.parse(raw);
     }catch{
       return fallback;
+    }
+  }
+
+  function loadJSONAny(keys, fallback){
+    for (const key of keys){
+      const value = loadJSON(key, null);
+      if (value) return value;
+    }
+    return fallback;
+  }
+
+  function removeStorageKeys(keys){
+    for (const key of keys){
+      try{ localStorage.removeItem(key); }catch(e){}
     }
   }
 

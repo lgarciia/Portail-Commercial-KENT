@@ -98,29 +98,35 @@
   }
 
   async function fetchXlsxWithFallback(fileName){
+    const fileNames = Array.isArray(fileName) ? fileName : [fileName];
     const pageDir = location.href.replace(/[#?].*$/, "").replace(/\/[^\/]*$/, "/");
-    const urlSame = new URL(fileName, pageDir).toString();
-    const urlData = new URL("data/" + fileName, pageDir).toString();
-    const candidates = [urlSame, urlData];
+    const candidates = [];
+    for (const currentFileName of fileNames){
+      if (!currentFileName) continue;
+      const urlSame = new URL(currentFileName, pageDir).toString();
+      const urlData = new URL("data/" + currentFileName, pageDir).toString();
+      candidates.push({ fileName: currentFileName, url: urlSame });
+      candidates.push({ fileName: currentFileName, url: urlData });
+    }
     let lastErr = "";
 
     for (const candidate of candidates){
-      const url = candidate + (candidate.includes("?") ? "&" : "?") + "v=" + Date.now();
+      const url = candidate.url + (candidate.url.includes("?") ? "&" : "?") + "v=" + Date.now();
       const response = await fetch(url, { cache: "no-store" });
       const buffer = await response.arrayBuffer();
 
       if (!response.ok){
-        lastErr = `HTTP ${response.status} sur ${candidate}`;
+        lastErr = `HTTP ${response.status} sur ${candidate.url}`;
         continue;
       }
 
       const sniff = sniffBuffer(buffer);
       if (sniff.looksHtml || !sniff.isZip){
-        lastErr = `Contenu invalide sur ${candidate} (HTML/404 ou pas XLSX)`;
+        lastErr = `Contenu invalide sur ${candidate.url} (HTML/404 ou pas XLSX)`;
         continue;
       }
 
-      return { buffer, usedUrl: candidate };
+      return { buffer, usedUrl: candidate.url, usedFileName: candidate.fileName };
     }
 
     throw new Error(lastErr || "fetchXlsxWithFallback failed");
@@ -239,15 +245,15 @@
   }
 
   async function loadBudgetData(options){
-    const fileName = options.fileName;
+    const fileName = options.fileName || options.fileCandidates;
     const budgetConfig = options.budgetConfig || {};
-    const { buffer, usedUrl } = await fetchXlsxWithFallback(fileName);
+    const { buffer, usedUrl, usedFileName } = await fetchXlsxWithFallback(fileName);
     const workbook = XLSX.read(buffer, { type: "array" });
     const parsed = parseBudgetWorkbook(workbook, budgetConfig);
     return {
       budgetData: { clients: parsed.clients },
       meta: {
-        fileName,
+        fileName: usedFileName || (Array.isArray(fileName) ? fileName[0] : fileName),
         usedUrl,
         sheetName: parsed.sheetName,
       },
@@ -346,7 +352,7 @@
   }
 
   async function loadRealDataAgainstBudget(options){
-    const fileName = options.fileName;
+    const fileName = options.fileName || options.fileCandidates;
     const budgetData = options.budgetData;
     const realConfig = options.realConfig || {};
     const year = Number.isFinite(options.year) ? options.year : null;
@@ -355,7 +361,7 @@
       throw new Error("budgetData absent");
     }
 
-    const { buffer, usedUrl } = await fetchXlsxWithFallback(fileName);
+    const { buffer, usedUrl, usedFileName } = await fetchXlsxWithFallback(fileName);
     const workbook = XLSX.read(buffer, { type: "array" });
     const sheetName = pickBestSheet(workbook);
     const ws = workbook.Sheets[sheetName];
@@ -366,7 +372,13 @@
         realData: {},
         realRows: [],
         activiteClients: [],
-        meta: { fileName, usedUrl, sheetName, usedDateColumn: null, usedMonthColumn: null },
+        meta: {
+          fileName: usedFileName || (Array.isArray(fileName) ? fileName[0] : fileName),
+          usedUrl,
+          sheetName,
+          usedDateColumn: null,
+          usedMonthColumn: null
+        },
       };
     }
 
@@ -436,7 +448,7 @@
       realRows,
       activiteClients: buildActivityClients(budgetData, nextReal),
       meta: {
-        fileName,
+        fileName: usedFileName || (Array.isArray(fileName) ? fileName[0] : fileName),
         usedUrl,
         sheetName,
         usedDateColumn: colDate,

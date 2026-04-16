@@ -296,7 +296,8 @@
 
     <!-- Budget -->
      <button class="helpBtn" id="openHelp">?</button>
-<a class="btn primary" href="budget2026.html">Budget 2026</a>
+    <select class="ddBtn" id="yearSelect" title="Choix de l'année active"></select>
+<a class="btn primary" href="budget2026.html">Budget annuel</a>
 
     <!-- Réel N-1 -->
     <div class="dd" id="ddReel">
@@ -327,7 +328,7 @@
     </div>
 
     <!-- Projection -->
-    <a class="btn" href="projectionpsa2026.html">Projection 2026</a>
+    <a class="btn" href="projectionpsa2026.html">Projection PSA</a>
 
   </div>
 </div>
@@ -355,17 +356,17 @@
       <h3>1. Réel N-1</h3>
       <p>Les données sont récupérées dans la page <b>Réel N-1</b>.</p>
 
-      <h3>2. Projection 2026</h3>
-      <p>Ces données sont injectées dans la page <b>Projection 2026</b>.</p>
+      <h3>2. Projection PSA</h3>
+      <p>Ces données sont injectées dans la page <b>Projection PSA</b>.</p>
 
       <ul>
         <li>réel N-1</li>
         <li>nombre de jours ouvrés</li>
-        <li>année cible 2026</li>
+        <li>année cible active</li>
       </ul>
 
       <h3>3. Génération du Budget</h3>
-      <p>La projection est exportée et devient le <b>Budget 2026</b>.</p>
+      <p>La projection est exportée et devient le <b>budget de l'année active</b>.</p>
 
       <h3>4. Ajustement manuel</h3>
 
@@ -457,6 +458,13 @@ document.addEventListener("keydown",(e)=>{
   if(e.key==="Escape"){
     overlay.classList.remove("show")
   }
+})
+
+const yearSelect = document.getElementById("yearSelect")
+KentDataConfig.fillYearSelect(yearSelect, { selectedYear: KentDataConfig.getActiveYear() })
+yearSelect.addEventListener("change", () => {
+  const nextYear = KentDataConfig.setActiveYear(Number(yearSelect.value))
+  yearSelect.value = String(nextYear)
 })
 
 </script>

@@ -153,7 +153,7 @@ input{display:none}
    🔧 CONFIGURATION — À MODIFIER POUR GUEUDET / FORD
 ===================================================== */
 const CONFIG = {
-FILE_NAME: "budgetford.xlsx",
+FILE_NAME: KentDataConfig.getEntityFile("ford", "budget", KentDataConfig.getActiveYear()),
 CACHE_KEY: "CONSULT_BUDGET_FORD_V1",
 LABEL: "FORD"
 

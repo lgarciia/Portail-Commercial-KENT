@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Budget 2026</title>
+  <title>Budget</title>
   <script src="./shared-ui.js"></script>
 
 <style>
@@ -348,7 +348,7 @@
     <div class="brand">
       <div class="logo"></div>
       <div class="title">
-        <b>Budget 2026</b>
+        <b id="pageTitle">Budget</b>
         <span>Import Projection (XLSX) • N CLIENT • Commentaires • Modifiable • Export XLSX/CSV/JSON</span>
       </div>
     </div>
@@ -464,7 +464,8 @@ Client C"></textarea>
 /***********************
  * State
  ***********************/
-const LS_KEY = "budget2026_v4_projection_import";
+const APP_YEAR = KentDataConfig.getActiveYear();
+const LS_KEY = `budget_projection_${APP_YEAR}_v1`;
 
 const MONTHS = [
   { key:"jan", label:"Janvier" },
@@ -483,6 +484,8 @@ const MONTHS = [
 
 const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR" });
 const $ = (id) => document.getElementById(id);
+document.title = `Budget ${APP_YEAR}`;
+$("pageTitle").textContent = `Budget ${APP_YEAR}`;
 
 let state = {
   globalBudget: 0,
@@ -976,7 +979,7 @@ function addDemo(){
   ], { mode:"add" });
 }
 function resetAll(){
-  const ok = confirm("Réinitialiser Budget 2026 (efface tout) ?");
+  const ok = confirm(`Réinitialiser Budget ${APP_YEAR} (efface tout) ?`);
   if (!ok) return;
   localStorage.removeItem(LS_KEY);
   state = { globalBudget: 0, clients: [] };
@@ -992,7 +995,7 @@ function exportJSON(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `budget2026_${Date.now()}.json`;
+  a.download = `budget_${APP_YEAR}_${Date.now()}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1018,7 +1021,7 @@ function exportCSV(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `budget2026_${Date.now()}.csv`;
+  a.download = `budget_${APP_YEAR}_${Date.now()}.csv`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1052,8 +1055,8 @@ function exportXLSX(){
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Budget2026");
-  XLSX.writeFile(wb, `budget2026_${Date.now()}.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, `Budget${APP_YEAR}`);
+  XLSX.writeFile(wb, `budget_${APP_YEAR}_${Date.now()}.xlsx`);
 }
 
 async function importJSON(file){

@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Requêtes — 2026</title>
+  <title>Requêtes annuelles</title>
   <script src="./shared-ui.js"></script>
   <link rel="stylesheet" href="./shared-theme.css">
 
@@ -237,13 +237,14 @@
     <div class="brand">
       <div class="hubSquare" id="goHub" title="Retour au Hub"></div>
       <div class="titleWrap" id="goHub2" title="Retour au Hub">
-        <b>Requêtes — 2026</b>
+        <b>Requêtes annuelles</b>
         <span>PSA • Gueudet • Ford • Direct</span>
       </div>
     </div>
 
     <!-- ✅ boutons requêtes en haut dans la nav bar -->
     <div class="navBtns">
+      <select class="btn" id="yearSelect" title="Choix de l'année active"></select>
       <a class="btn primary" href="requetepsa-2026.html">Requête PSA</a>
       <a class="btn" href="requetegueudet-2026.html">Requête Gueudet</a>
       <a class="btn" href="requeteford-2026.html">Requête Ford</a>
@@ -259,8 +260,8 @@
         <img src="produit-kent2026.png" alt="Produits Kent 2026">
       </div>
 
-      <h1 class="title">Requêtes — 2026</h1>
-      <p class="subtitle">Utilise les boutons en haut pour accéder directement à la requête souhaitée (année 2026).</p>
+      <h1 class="title">Requêtes annuelles</h1>
+      <p class="subtitle">Utilise les boutons en haut pour accéder directement à la requête souhaitée pour l’année active.</p>
 
     </div>
   </div>
@@ -275,6 +276,13 @@
       if(a) a.addEventListener("click", go);
       if(b) b.addEventListener("click", go);
     })();
+
+    const yearSelect = document.getElementById("yearSelect");
+    KentDataConfig.fillYearSelect(yearSelect, { selectedYear: KentDataConfig.getActiveYear() });
+    yearSelect.addEventListener("change", () => {
+      const nextYear = KentDataConfig.setActiveYear(Number(yearSelect.value));
+      yearSelect.value = String(nextYear);
+    });
   </script>
 
 </body>

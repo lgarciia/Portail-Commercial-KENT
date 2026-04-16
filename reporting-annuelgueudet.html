@@ -375,7 +375,7 @@
 
       <div class="actions">
         <input id="fileBudget" class="fileInput" type="file" accept=".xlsx,.xls" />
-        <button class="btn primary" id="btnImport">Importer / Recharger budgetgueudet.xlsx</button>
+        <button class="btn primary" id="btnImport">Importer / Recharger le budget</button>
         <button class="btn" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn" id="btnExportCsv">Exporter CSV</button>
         <button class="btn" id="btnExportJson">Exporter JSON</button>
@@ -399,7 +399,7 @@
         </div>
 
         <div class="gridWrap" id="dropZone">
-          <div class="dropHint" id="dropHint">Dépose budgetgueudet.xlsx pour recharger</div>
+          <div class="dropHint" id="dropHint">Dépose le fichier budget pour recharger</div>
 
           <div class="tableScroller" id="tableScroller">
             <table id="reportTable"></table>
@@ -410,7 +410,7 @@
           </div>
 
           <div class="mutedNote">
-            ✅ Budget auto = fetch depuis <code>budgetgueudet.xlsx</code>. Réel Gueudet auto = fetch depuis <code>activitereelgueudet.xlsx</code> (GitHub-safe). L'import manuel reste disponible.
+            ✅ Budget et réel sont relus directement depuis les fichiers de l’année active. L’import manuel reste disponible.
           </div>
         </div>
       </div>
@@ -434,15 +434,11 @@
     { key: "dec", label: "Décembre", excel: "Décembre" },
   ];
 
-  const STORAGE = {
-    budget: "BUDGET2026_DATA_GUEUDET_V1",
-    budgetMeta: "BUDGET2026_META_GUEUDET_V1",
-    real: "BUDGET2026_REAL_GUEUDET_V1",
-  };
-
-  // ✅ sources fichiers
-  const REAL_FILE = "activitereelgueudet.xlsx";
-  const BUDGET_FILE = "budgetgueudet.xlsx";
+  const ENTITY_KEY = "gueudet";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const STORAGE = KentDataConfig.getStorageKeys(ENTITY_KEY, APP_YEAR);
+  const REAL_FILE = KentDataConfig.getEntityFile(ENTITY_KEY, "real", APP_YEAR);
+  const BUDGET_FILE = KentDataConfig.getEntityFile(ENTITY_KEY, "budget", APP_YEAR);
 
   let budgetData = null;  // { clients: [{id,name,nclient,budget:{jan..dec}}] }
   let budgetMeta = null;
@@ -470,6 +466,9 @@
     hScrollInner: document.getElementById("hScrollInner"),
   };
 
+  el.btnImport.textContent = `Importer / Recharger ${BUDGET_FILE}`;
+  el.dropHint.textContent = `Dépose ${BUDGET_FILE} pour recharger`;
+
   renderEmpty();
   updateReelStatus("chargement…");
   syncBottomScrollbar();
@@ -489,7 +488,7 @@
   });
 
   el.btnResetReal.addEventListener("click", () => {
-    if (!confirm("Recharger toutes les valeurs Réel depuis activitereelgueudet.xlsx ?")) return;
+    if (!confirm(`Recharger toutes les valeurs Réel depuis ${REAL_FILE} ?`)) return;
     loadRealFromFetch().then(render).catch(console.error);
   });
 

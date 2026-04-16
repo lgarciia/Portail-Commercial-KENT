@@ -295,7 +295,7 @@
     <div class="actions">
       <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
       <button class="btn btnMini" id="btnPickFile" title="Charger un fichier">📁</button>
-      <button class="btn primary" id="btnReload">Recharger gueudetdata.xlsx</button>
+      <button class="btn primary" id="btnReload">Recharger la base Gueudet</button>
       <button class="btn ghost" id="btnExportXlsx">XLSX</button>
       <button class="btn ghost" id="btnExportCsv">CSV</button>
       <button class="btn ghost" id="btnReset">Reset</button>
@@ -342,7 +342,7 @@
 
     <div class="meta" style="margin-top:12px;">
       <span class="chip"><span class="dot" id="dotStatus"></span><span id="statusText">En attente du fichier…</span></span>
-      <span class="chip"><span class="dot ok"></span><span>Auto : <b>gueudetdata.xlsx</b></span></span>
+      <span class="chip"><span class="dot ok"></span><span>Auto : <b id="fileNameLabel">—</b></span></span>
       <span class="chip"><span class="dot" id="dotUrl"></span><span id="urlText">URL : <b>—</b></span></span>
       <span class="chip"><span class="dot"></span><span>Cache : <b>localStorage</b></span></span>
     </div>
@@ -393,7 +393,8 @@
   // =========================
   // CONFIG
   // =========================
-  const FILE_NAME = "gueudetdata.xlsx";
+  const APP_YEAR = KentDataConfig.getActiveYear();
+  const FILE_NAME = KentDataConfig.getEntityFile("gueudet", "client", APP_YEAR);
   const CACHE_KEY = "GUEUDET_DATA_CACHE_V1";
 
   // =========================
@@ -439,6 +440,9 @@
   // =========================
   // INIT (cache)
   // =========================
+  document.getElementById("fileNameLabel").textContent = FILE_NAME;
+  el.btnReload.textContent = `Recharger ${FILE_NAME}`;
+
   const cached = loadJSON(CACHE_KEY, null);
   if (cached?.rows?.length){
     baseRows = cached.rows;
