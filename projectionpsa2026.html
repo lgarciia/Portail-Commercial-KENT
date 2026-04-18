@@ -419,7 +419,8 @@
   const ENTITY_KEY = "psa";
   const APP_YEAR = KentDataConfig.getActiveYear();
   const PREV_YEAR = KentDataConfig.getPreviousYear(APP_YEAR);
-  const FILE_NAME = KentDataConfig.getEntityFile(ENTITY_KEY, "realN1", APP_YEAR);
+  const FILE_CANDIDATES = KentDataConfig.getEntityFileCandidates(ENTITY_KEY, "realN1", APP_YEAR);
+  const FILE_NAME = FILE_CANDIDATES[0];
   const EXPORT_FILE = KentDataConfig.getEntityFile(ENTITY_KEY, "projection", APP_YEAR);
   const LS_KEY = `PROJECTION_PSA_${APP_YEAR}_V1`;
 
@@ -509,7 +510,7 @@
     renderAll();
   } else {
     setStatus(false, "En attente du fichier…");
-    renderEmpty("Charge activitereelpsa.xlsx pour générer la projection.");
+    renderEmpty(`Charge ${FILE_NAME} pour générer la projection.`);
   }
 
   autoFetchExcel(); // try from repo
@@ -549,7 +550,7 @@
     ensureDaysDefaults();
     renderDaysGrid();
     setStatus(false, "Reset effectué. Recharge le fichier.");
-    renderEmpty("Charge activitereelpsa.xlsx pour générer la projection.");
+    renderEmpty(`Charge ${FILE_NAME} pour générer la projection.`);
   });
 
   el.search.addEventListener("input", () => {
@@ -579,16 +580,25 @@
   // AUTO FETCH
   // =========================
   async function autoFetchExcel(){
-    try{
-      const res = await fetch(FILE_NAME, { cache: "no-store" });
-      if (!res.ok){
-        if (!basePivot?.clients?.length) setStatus(false, `Fetch auto KO (${res.status}) — mets ${FILE_NAME} au même niveau.`);
+    let lastError = "";
+    for (const candidate of FILE_CANDIDATES){
+      try{
+        const res = await fetch(candidate, { cache: "no-store" });
+        if (!res.ok){
+          lastError = `HTTP ${res.status} sur ${candidate}`;
+          continue;
+        }
+        const buf = await res.arrayBuffer();
+        parseAndBuildPivot(buf, `auto (${candidate})`);
         return;
+      }catch(err){
+        lastError = err?.message || String(err || "");
       }
-      const buf = await res.arrayBuffer();
-      parseAndBuildPivot(buf, `auto (${FILE_NAME})`);
-    }catch{
-      if (!basePivot?.clients?.length) setStatus(false, "Fetch auto impossible (serveur requis en local).");
+    }
+
+    if (!basePivot?.clients?.length){
+      setStatus(false, `Fetch auto KO — vérifie ${FILE_NAME}.`);
+      if (lastError) console.warn(lastError);
     }
   }
 
@@ -809,7 +819,7 @@
   // =========================
   function renderAll(){
     if (!basePivot?.clients?.length){
-      renderEmpty("Charge activitereelpsa.xlsx pour générer la projection.");
+      renderEmpty(`Charge ${FILE_NAME} pour générer la projection.`);
       el.srcLabel.textContent = "—";
       el.clientsLabel.textContent = "0";
       el.updatedLabel.textContent = "—";

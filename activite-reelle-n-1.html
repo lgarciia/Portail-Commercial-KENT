@@ -400,7 +400,8 @@
   // =========================
   const APP_YEAR = KentDataConfig.getActiveYear();
   const PREV_YEAR = KentDataConfig.getPreviousYear(APP_YEAR);
-  const FILE_NAME = KentDataConfig.getEntityFile("psa", "realN1", APP_YEAR);
+  const FILE_CANDIDATES = KentDataConfig.getEntityFileCandidates("psa", "realN1", APP_YEAR);
+  const FILE_NAME = FILE_CANDIDATES[0];
   const STORAGE_KEY = `KENT_ACTIVITE_REEL_N1_PSA_${APP_YEAR}_V1`;
   const EXPORT_STEM = `activite_reelle_${PREV_YEAR}`;
 
@@ -454,7 +455,7 @@
   // INIT
   // =========================
   if (pivot?.clients?.length) render();
-  else renderEmpty("Aucune donnée. Charge le fichier.");
+  else renderEmpty(`Aucune donnée. Charge ${FILE_NAME}.`);
 
   autoFetchExcel(); // best effort
 
@@ -479,7 +480,7 @@
     localStorage.removeItem(STORAGE_KEY);
     pivot = null;
     sortTotalDir = null;
-    renderEmpty("Données locales supprimées. Recharge le fichier.");
+    renderEmpty(`Données locales supprimées. Recharge ${FILE_NAME}.`);
   });
 
   el.btnExportJson.addEventListener("click", () => exportJSON());
@@ -512,13 +513,27 @@
   // AUTO FETCH FROM REPO
   // =========================
   async function autoFetchExcel(){
-    try{
-      const res = await fetch(FILE_NAME, { cache: "no-store" });
-      if (!res.ok) return; // silent
-      const buf = await res.arrayBuffer();
-      parseAndBuildPivot(buf, `auto (${FILE_NAME})`);
-    }catch{
-      // silent
+    let lastError = "";
+    for (const candidate of FILE_CANDIDATES){
+      try{
+        const res = await fetch(candidate, { cache: "no-store" });
+        if (!res.ok){
+          lastError = `HTTP ${res.status} sur ${candidate}`;
+          continue;
+        }
+        const buf = await res.arrayBuffer();
+        parseAndBuildPivot(buf, `auto (${candidate})`);
+        return;
+      }catch(err){
+        lastError = err?.message || String(err || "");
+      }
+    }
+
+    if (!pivot?.clients?.length){
+      el.srcLabel.textContent = FILE_NAME;
+      el.lastUpdate.textContent = "échec auto";
+      renderEmpty(`Aucune donnée. Vérifie ${FILE_NAME}.`);
+      if (lastError) console.warn(lastError);
     }
   }
 

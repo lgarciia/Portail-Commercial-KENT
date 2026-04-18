@@ -395,7 +395,8 @@
   // CONFIG
   // =========================
   const APP_YEAR = KentDataConfig.getActiveYear();
-  const FILE_NAME = KentDataConfig.getEntityFile("psa", "client", APP_YEAR);
+  const FILE_NAME = KentDataConfig.getEntityFile("psa", "cumul", APP_YEAR);
+  const FILE_CANDIDATES = [FILE_NAME].concat(KentDataConfig.getEntityFileCandidates("psa", "client", APP_YEAR));
   const CACHE_KEY = "PSA_DATA_CACHE_V1"; // on garde ton cache original (stable)
 
   // =========================
@@ -457,7 +458,7 @@
   } else {
     setStatus("warn", "En attente du fichier…");
     setUrlChip("—", false);
-    renderEmpty("Mets psadata.xlsx à côté ou charge un fichier.");
+    renderEmpty(`Mets ${FILE_NAME} à côté ou charge un fichier.`);
   }
 
   // auto-fetch
@@ -491,7 +492,7 @@
     el.qtyLabel.textContent = "0";
     setUrlChip("—", false);
     renderEmpty("Cache supprimé. Recharge un fichier.");
-    setStatus("warn", "Cache supprimé. Recharge psadata.xlsx.");
+    setStatus("warn", `Cache supprimé. Recharge ${FILE_NAME}.`);
   });
 
   el.btnSearch.addEventListener("click", runSearch);
@@ -524,40 +525,37 @@
       setStatus("warn", `Chargement auto : ${FILE_NAME}…`);
 
       // IMPORTANT: GitHub Pages = chemin relatif au dossier de la page
-      // Exemple: si la page est /apps/explorer-psa.html, on va chercher /apps/psadata.xlsx
       const pageDir = location.href.replace(/[#?].*$/,"").replace(/\/[^\/]*$/, "/");
-      const urlSameDir = new URL(FILE_NAME, pageDir).toString();
-      const urlDataDir = new URL("data/" + FILE_NAME, pageDir).toString();
-
-      // On tente: même dossier, puis /data
-      const candidates = [ urlSameDir, urlDataDir ];
-
       let lastErr = "";
-      for (const u of candidates){
-        const url = u + (u.includes("?") ? "&" : "?") + "v=" + Date.now();
+      for (const fileName of FILE_CANDIDATES){
+        const urlSameDir = new URL(fileName, pageDir).toString();
+        const urlDataDir = new URL("data/" + fileName, pageDir).toString();
+        const candidates = [ urlSameDir, urlDataDir ];
 
-        setUrlChip(u, false);
+        for (const u of candidates){
+          const url = u + (u.includes("?") ? "&" : "?") + "v=" + Date.now();
 
-        const res = await fetch(url, { cache: "no-store" });
-        const buf = await res.arrayBuffer();
+          setUrlChip(u, false);
 
-        // si HTTP KO => continue
-        if (!res.ok){
-          lastErr = `HTTP ${res.status} sur ${u}`;
-          continue;
+          const res = await fetch(url, { cache: "no-store" });
+          const buf = await res.arrayBuffer();
+
+          if (!res.ok){
+            lastErr = `HTTP ${res.status} sur ${u}`;
+            continue;
+          }
+
+          const sniff = sniffBuffer(buf);
+          if (sniff.looksHtml || !sniff.isZip){
+            lastErr = `Contenu invalide sur ${u} (HTML/404 ou pas un XLSX)`;
+            continue;
+          }
+
+          document.getElementById("fileNameLabel").textContent = fileName;
+          parseExcel(buf, `auto (${fileName})`, u);
+          if (forceToast) pulseStatus("ok", "Rechargé ✅");
+          return;
         }
-
-        // sniff anti-HTML (404) + anti “pas un ZIP”
-        const sniff = sniffBuffer(buf);
-        if (sniff.looksHtml || !sniff.isZip){
-          lastErr = `Contenu invalide sur ${u} (HTML/404 ou pas un XLSX)`;
-          continue;
-        }
-
-        // OK
-        parseExcel(buf, `auto (${FILE_NAME})`, u);
-        if (forceToast) pulseStatus("ok", "Rechargé ✅");
-        return;
       }
 
       // aucune URL OK
@@ -728,7 +726,7 @@
       return;
     }
     if (!baseRows.length){
-      renderEmpty("Base non chargée. Mets psadata.xlsx à côté ou charge un fichier via 📁.");
+      renderEmpty(`Base non chargée. Mets ${FILE_NAME} à côté ou charge un fichier via 📁.`);
       return;
     }
 

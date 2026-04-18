@@ -324,8 +324,8 @@
 
 <script>
   const APP_YEAR = KentDataConfig.getActiveYear();
-  const EXCEL_FILE = KentDataConfig.getEntityFile("psa", "client", APP_YEAR);
-  const EXCEL_URL = `./${EXCEL_FILE}`;
+  const EXCEL_FILE = KentDataConfig.getEntityFile("psa", "cumul", APP_YEAR);
+  const EXCEL_FILES = [EXCEL_FILE].concat(KentDataConfig.getEntityFileCandidates("psa", "client", APP_YEAR));
   document.getElementById("fileNameLabel").textContent = EXCEL_FILE;
 
   const COL_ID    = "N° client Interne";
@@ -395,6 +395,25 @@
     if (type === "ok") dot.classList.add("ok");
     if (type === "warn") dot.classList.add("warn");
     $("status").textContent = text;
+  }
+
+  async function fetchExcelBuffer(){
+    let lastError = "";
+    for (const fileName of EXCEL_FILES){
+      try{
+        const res = await fetch(`./${fileName}`, { cache: "no-store" });
+        if (!res.ok){
+          lastError = `HTTP ${res.status} sur ${fileName}`;
+          continue;
+        }
+        const buf = await res.arrayBuffer();
+        document.getElementById("fileNameLabel").textContent = fileName;
+        return { buf, fileName };
+      }catch(err){
+        lastError = err?.message || String(err || "");
+      }
+    }
+    throw new Error(lastError || `Impossible de charger ${EXCEL_FILE}`);
   }
 
   function openSuggest(){ $("suggestBox").classList.add("show"); }
@@ -472,16 +491,13 @@
     setStatus("warn", "Chargement de la base PSA…");
 
     try{
-      const res = await fetch(EXCEL_URL, { cache: "no-store" });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const buf = await res.arrayBuffer();
+      const { buf, fileName } = await fetchExcelBuffer();
       const wb = XLSX.read(buf, { type:"array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
       rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
 
       buildClientPairs();
-      setStatus("ok", `Base chargée : ${rows.length} lignes — ${clientPairs.length} clients`);
+      setStatus("ok", `Base chargée : ${rows.length} lignes — ${clientPairs.length} clients • ${fileName}`);
 
       $("kpiClient").textContent = "—";
       $("kpiLines").textContent = "—";
@@ -491,9 +507,9 @@
 
     }catch(e){
       console.error(e);
-      setStatus("warn", `Impossible de charger ${EXCEL_URL}`);
+      setStatus("warn", `Impossible de charger ${EXCEL_FILE}`);
       $("agg").innerHTML = `<div class="empty">⚠️ Excel introuvable ou bloqué.</div>`;
-      $("results").innerHTML = `<div class="empty">Vérifie que <b>${EXCEL_FILE}</b> est bien disponible à côté de cette page.</div>`;
+      $("results").innerHTML = `<div class="empty">Vérifie que <b>${EXCEL_FILE}</b> ou un fichier de secours compatible est bien disponible à côté de cette page.</div>`;
     }
   }
 

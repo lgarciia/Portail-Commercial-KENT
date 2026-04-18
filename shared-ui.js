@@ -30,6 +30,79 @@
     document.head.appendChild(link);
   }
 
+  function ensureSharedControlStyles() {
+    if (document.getElementById("kent-shared-control-styles")) return;
+    var style = document.createElement("style");
+    style.id = "kent-shared-control-styles";
+    style.textContent = [
+      'select option {',
+      '  background: #0f172a !important;',
+      '  color: rgba(255,255,255,0.96) !important;',
+      '}',
+      'html[data-theme="light"] select option {',
+      '  background: #ffffff !important;',
+      '  color: #0f172a !important;',
+      '}',
+      'select.kent-year-select,',
+      'select#yearSelect {',
+      '  appearance: none !important;',
+      '  -webkit-appearance: none !important;',
+      '  min-width: 118px;',
+      '  height: 42px;',
+      '  padding: 0 42px 0 14px !important;',
+      '  border-radius: 14px !important;',
+      '  border: 1px solid rgba(255,255,255,0.14) !important;',
+      '  background:',
+      '    linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05)) !important;',
+      '  color: rgba(255,255,255,0.94) !important;',
+      '  font-weight: 800 !important;',
+      '  letter-spacing: 0.01em;',
+      '  box-shadow: 0 14px 34px rgba(0,0,0,0.22);',
+      '  background-image:',
+      '    linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.72) 50%),',
+      '    linear-gradient(135deg, rgba(255,255,255,0.72) 50%, transparent 50%),',
+      '    linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05));',
+      '  background-position:',
+      '    calc(100% - 18px) calc(50% - 3px),',
+      '    calc(100% - 12px) calc(50% - 3px),',
+      '    0 0;',
+      '  background-size: 6px 6px, 6px 6px, 100% 100%;',
+      '  background-repeat: no-repeat;',
+      '}',
+      'select.kent-year-select:hover,',
+      'select#yearSelect:hover {',
+      '  border-color: rgba(124,58,237,0.40) !important;',
+      '  transform: translateY(-1px);',
+      '}',
+      'select.kent-year-select:focus,',
+      'select#yearSelect:focus {',
+      '  outline: none !important;',
+      '  border-color: rgba(124,58,237,0.60) !important;',
+      '  box-shadow: 0 0 0 4px rgba(124,58,237,0.16), 0 18px 38px rgba(0,0,0,0.24) !important;',
+      '}',
+      'html[data-theme="light"] select.kent-year-select,',
+      'html[data-theme="light"] select#yearSelect {',
+      '  border-color: rgba(15,23,42,0.12) !important;',
+      '  background:',
+      '    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241,245,249,0.96)) !important;',
+      '  color: #0f172a !important;',
+      '  box-shadow: 0 16px 34px rgba(15,23,42,0.10) !important;',
+      '  background-image:',
+      '    linear-gradient(45deg, transparent 50%, rgba(15,23,42,0.62) 50%),',
+      '    linear-gradient(135deg, rgba(15,23,42,0.62) 50%, transparent 50%),',
+      '    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241,245,249,0.96));',
+      '}'
+    ].join("\n");
+    document.head.appendChild(style);
+  }
+
+  function enhanceYearSelects() {
+    if (typeof document === "undefined") return;
+    document.querySelectorAll('select#yearSelect').forEach(function(select) {
+      select.classList.add("kent-year-select");
+    });
+  }
+
   try {
     applyTheme(localStorage.getItem(THEME_KEY) || "dark");
   } catch (err) {
@@ -37,6 +110,7 @@
   }
 
   ensureFavicon();
+  ensureSharedControlStyles();
 
   window.getAppTheme = function () {
     return resolveTheme(root.getAttribute("data-theme"));
@@ -150,6 +224,7 @@
   });
 
   document.addEventListener("DOMContentLoaded", function () {
+    enhanceYearSelects();
     document.dispatchEvent(
       new CustomEvent("app-theme-ready", {
         detail: { theme: window.getAppTheme() }

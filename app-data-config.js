@@ -10,6 +10,7 @@
       budgetBase: "budgetpsa",
       realBase: "activitereelpsa",
       clientBase: "psadata",
+      cumulBase: "psacumul",
       projectionBase: "projectionpsa",
       legacyFiles: {
         budget: { 2026: ["budgetpsa.xlsx"] },
@@ -35,6 +36,7 @@
       budgetBase: "budgetgueudet",
       realBase: "activitereelgueudet",
       clientBase: "gueudetdata",
+      cumulBase: "gueudetcumul",
       legacyFiles: {
         budget: { 2026: ["budgetgueudet.xlsx"] },
         real: { 2026: ["activitereelgueudet.xlsx"] },
@@ -53,6 +55,7 @@
       label: "Ford",
       budgetBase: "budgetford",
       realBase: "activitereelford",
+      cumulBase: "fordcumul",
       legacyFiles: {
         budget: { 2026: ["budgetford.xlsx"] },
         real: { 2026: ["activitereelford.xlsx"] },
@@ -70,6 +73,7 @@
       label: "Direct",
       budgetBase: "budgetdirect",
       realBase: "activitereeldirect",
+      cumulBase: "directcumul",
       legacyFiles: {
         budget: { 2026: ["budgetdirect.xlsx"] },
         real: { 2026: ["activitereeldirect.xlsx"] },
@@ -186,6 +190,7 @@
     if (kind === "real") return buildYearFile(config.realBase, y);
     if (kind === "realN1") return buildYearFile(config.realBase, y - 1);
     if (kind === "client" && config.clientBase) return buildYearFile(config.clientBase, y);
+    if (kind === "cumul" && config.cumulBase) return `${config.cumulBase}.xlsx`;
     if (kind === "projection" && config.projectionBase) return buildYearFile(config.projectionBase, y);
     if (kind === "queryCurrent") return getEntityFile(entity, "real", y);
     if (kind === "historical") return `historique-${normalizeEntity(entity)}-${y}.xlsx`;
@@ -195,7 +200,10 @@
   function getEntityFileCandidates(entity, kind, year){
     const y = clampYear(year);
     const primary = getEntityFile(entity, kind, y);
-    const legacy = getLegacyFiles(entity, kind, y);
+    let legacy = getLegacyFiles(entity, kind, y);
+    if (kind === "realN1"){
+      legacy = legacy.concat(getLegacyFiles(entity, "real", y - 1));
+    }
     return unique([primary].concat(legacy));
   }
 
@@ -266,12 +274,19 @@
   function fillYearSelect(select, options){
     if (!select) return;
     const opts = options || {};
-    const min = clampYear(opts.min || YEAR_MIN);
-    const max = clampYear(opts.max || YEAR_MAX);
+    const currentYear = clampYear(getCalendarYear());
     const selected = clampYear(opts.selectedYear || getActiveYear());
+    const min = clampYear(opts.min || currentYear);
+    const max = clampYear(opts.max || (currentYear + 1));
     const years = [];
+    if (selected < min){
+      years.push(`<option value="${selected}">${selected}</option>`);
+    }
     for (let year = min; year <= max; year += 1){
       years.push(`<option value="${year}">${year}</option>`);
+    }
+    if (selected > max){
+      years.push(`<option value="${selected}">${selected}</option>`);
     }
     select.innerHTML = years.join("");
     select.value = String(selected);
