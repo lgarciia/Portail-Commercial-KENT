@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Etude coût de lavage</title>
+  <script src="./shared-ui.js"></script>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg-2: #121935;
+      --panel: rgba(255, 255, 255, 0.08);
+      --panel-strong: rgba(255, 255, 255, 0.11);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --muted: #b8bfd3;
+      --accent: #7c3aed;
+      --accent-2: #2563eb;
+      --good: #22c55e;
+      --bad: #ef4444;
+      --warn: #f59e0b;
+      --radius: 20px;
+      --shadow: 0 24px 55px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124, 58, 237, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.18), transparent 24%),
+        radial-gradient(circle at bottom center, rgba(34, 197, 94, 0.1), transparent 30%),
+        linear-gradient(135deg, var(--bg), var(--bg-2));
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .glass {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(37, 99, 235, 0.78));
+      box-shadow: 0 14px 30px rgba(124, 58, 237, 0.28);
+      font-size: 1.3rem;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-top: 3px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn,
+    .link-btn {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover,
+    .link-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn.primary {
+      border: none;
+      background: linear-gradient(135deg, var(--accent), #5b21b6);
+      box-shadow: 0 14px 30px rgba(124, 58, 237, 0.24);
+    }
+
+    .btn.secondary {
+      background: rgba(37, 99, 235, 0.15);
+      border-color: rgba(37, 99, 235, 0.28);
+    }
+
+    .hero {
+      padding: 26px;
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 240px;
+      height: 240px;
+      right: -70px;
+      bottom: -80px;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.3), transparent 65%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 2rem;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 880px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.96rem;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 13px;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.14);
+      border: 1px solid rgba(37, 99, 235, 0.25);
+      color: #dbeafe;
+      font-size: 0.82rem;
+      font-weight: 700;
+      white-space: nowrap;
+      height: fit-content;
+    }
+
+    .hero-meta {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hero-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.95fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 1.02rem;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .panel-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
+    .field input,
+    .field select,
+    .modal-field input {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 13px 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .modal-field input:focus {
+      border-color: rgba(124, 58, 237, 0.5);
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+    }
+
+    .field .help {
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+
+    .mode-switch {
+      display: inline-flex;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+    }
+
+    .mode-btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      color: var(--muted);
+      background: transparent;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+
+    .mode-btn:hover {
+      transform: translateY(-1px);
+      color: var(--text);
+    }
+
+    .mode-btn.is-active {
+      color: #ffffff;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(37, 99, 235, 0.82));
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.24);
+    }
+
+    .assumption-strip {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .assumption-chip {
+      min-width: 170px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .assumption-chip .chip-label {
+      color: var(--muted);
+      font-size: 0.74rem;
+      margin-bottom: 5px;
+      font-weight: 700;
+    }
+
+    .assumption-chip .chip-value {
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .scenario-card {
+      display: grid;
+      gap: 16px;
+    }
+
+    .scenario-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .scenario-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .scenario-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 1.35rem;
+    }
+
+    .scenario-title h3 {
+      margin: 0;
+      font-size: 1.06rem;
+      letter-spacing: -0.02em;
+    }
+
+    .scenario-title p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .input-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      display: grid;
+      gap: 14px;
+    }
+
+    .input-card.kent {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(37, 99, 235, 0.08));
+      border-color: rgba(124, 58, 237, 0.2);
+    }
+
+    .input-card h4 {
+      margin: 0;
+      font-size: 0.98rem;
+      letter-spacing: -0.01em;
+    }
+
+    .input-card p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .compare-table-wrap {
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+      background: rgba(8, 12, 24, 0.3);
+    }
+
+    .compare-table th,
+    .compare-table td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .compare-table th {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .compare-table td:first-child {
+      font-weight: 700;
+      min-width: 200px;
+    }
+
+    .compare-table td strong {
+      font-weight: 800;
+    }
+
+    .delta-good {
+      color: #86efac;
+      font-weight: 800;
+    }
+
+    .delta-bad {
+      color: #fca5a5;
+      font-weight: 800;
+    }
+
+    .delta-neutral {
+      color: #fcd34d;
+      font-weight: 800;
+    }
+
+    .insight-box {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      display: grid;
+      gap: 12px;
+    }
+
+    .insight-box.good {
+      border-color: rgba(34, 197, 94, 0.25);
+      background: rgba(34, 197, 94, 0.08);
+    }
+
+    .insight-box.bad {
+      border-color: rgba(239, 68, 68, 0.24);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .insight-box.neutral {
+      border-color: rgba(245, 158, 11, 0.24);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .insight-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .insight-subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.88rem;
+    }
+
+    .bullets {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bullet {
+      padding-left: 16px;
+      position: relative;
+      color: var(--text);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .bullet::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 9px;
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.9);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .summary-card {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: grid;
+      gap: 10px;
+    }
+
+    .summary-card.highlight {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.14), rgba(37, 99, 235, 0.08));
+      border-color: rgba(124, 58, 237, 0.18);
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .summary-value {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .summary-note {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .status-bar {
+      margin-top: 16px;
+      padding: 11px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .section-hidden {
+      display: none !important;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 16, 0.6);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 80;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: min(560px, 100%);
+      padding: 24px;
+      border-radius: 22px;
+      background: rgba(10, 16, 30, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.45);
+      display: grid;
+      gap: 16px;
+    }
+
+    .modal h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+
+    .modal p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.9rem;
+    }
+
+    .modal-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .modal-field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .modal-field label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #pdfExportRoot {
+      display: none;
+    }
+
+    @media (max-width: 1120px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .scenario-grid,
+      .summary-grid,
+      .input-grid,
+      .modal-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 16px;
+      }
+
+      .topbar {
+        position: static;
+      }
+
+      .topbar,
+      .panel,
+      .hero {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .hero h1 {
+        font-size: 1.72rem;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="./shared-theme.css">
+</head>
+<body>
+  <div class="container">
+    <nav class="glass topbar">
+      <div class="brand">
+        <div class="brand-logo">🧪</div>
+        <div>
+          <div class="brand-title">Etude coût de lavage</div>
+          <div class="brand-subtitle">Comparatif solution client vs solution KENT pour le shampoing et l'auto-séchant</div>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn secondary" type="button" id="openAssumptionsBtn">Hypothèses</button>
+        <button class="btn primary" type="button" id="exportPdfBtn">Générer le PDF</button>
+        <a class="link-btn" href="./commerce.html">Retour Commerce</a>
+      </div>
+    </nav>
+
+    <section class="glass hero">
+      <div class="hero-top">
+        <div>
+          <h1>Simulation commerciale prête à envoyer</h1>
+          <p>
+            Cette étude compare le coût réel d'une prestation de lavage offerte au garage.
+            L'objectif est simple : vérifier si la solution KENT baisse le coût par prestation
+            et le coût annuel, ou si elle ressort trop chère pour soutenir la vente.
+          </p>
+        </div>
+
+        <div class="hero-badge">Simulation + PDF client</div>
+      </div>
+
+      <div class="hero-meta">
+        <div class="hero-chip">Mode d'étude au choix : shampoing, auto-séchant ou les deux</div>
+        <div class="hero-chip">Lecture commerciale automatique en direct</div>
+        <div class="hero-chip">PDF KENT généré avec uniquement les blocs étudiés</div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <div class="stack">
+        <section class="glass panel">
+          <div class="panel-head">
+            <div>
+              <h2>Informations de l'étude</h2>
+              <p>Renseigne le client et choisis la portée de l'étude. Le calcul se met à jour automatiquement.</p>
+            </div>
+            <div class="panel-label">Paramètres de travail</div>
+          </div>
+
+          <div class="input-grid">
+            <div class="field">
+              <label for="clientName">Nom du client</label>
+              <input id="clientName" type="text" placeholder="Ex : Garage Martin">
+              <div class="help">Ce nom est repris dans l'étude à l'écran et dans le PDF final.</div>
+            </div>
+
+            <div class="field">
+              <label>Portée de l'étude</label>
+              <div class="mode-switch" id="modeSwitch">
+                <button class="mode-btn is-active" type="button" data-mode="both">Les deux</button>
+                <button class="mode-btn" type="button" data-mode="shampoo">Shampoing</button>
+                <button class="mode-btn" type="button" data-mode="dry">Auto-séchant</button>
+              </div>
+              <div class="help">Le PDF reprend uniquement les produits réellement étudiés.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="glass panel">
+          <div class="panel-head">
+            <div>
+              <h2>Hypothèses verrouillées</h2>
+              <p>Les hypothèses de base restent modifiables, mais uniquement via une confirmation explicite.</p>
+            </div>
+            <div class="panel-label">Validation requise</div>
+          </div>
+
+          <div class="assumption-strip" id="assumptionStrip"></div>
+        </section>
+
+        <section class="glass panel scenario-card" id="section-shampoo">
+          <div class="scenario-head">
+            <div class="scenario-title">
+              <div class="scenario-icon">🧽</div>
+              <div>
+                <h3>Etude shampoing</h3>
+                <p>Comparatif direct entre la solution actuelle du client et la proposition KENT.</p>
+              </div>
+            </div>
+            <div class="panel-label">Produit étudié</div>
+          </div>
+
+          <div class="scenario-grid">
+            <div class="input-card">
+              <div>
+                <h4>Solution client</h4>
+                <p>Valeurs constatées aujourd'hui chez le garage.</p>
+              </div>
+
+              <div class="field">
+                <label for="shampooClientPrice">Prix du fût client (€ HT)</label>
+                <input id="shampooClientPrice" type="number" step="0.01" min="0">
+              </div>
+
+              <div class="field">
+                <label for="shampooClientDilution">Taux de dilution client (%)</label>
+                <input id="shampooClientDilution" type="number" step="0.01" min="0">
+              </div>
+
+              <div class="field">
+                <label for="shampooClientBarrels">Nombre de fûts client / an</label>
+                <input id="shampooClientBarrels" type="number" step="0.01" min="0">
+              </div>
+            </div>
+
+            <div class="input-card kent">
+              <div>
+                <h4>Solution KENT</h4>
+                <p>Proposition commerciale à défendre chez le client.</p>
+              </div>
+
+              <div class="field">
+                <label for="shampooKentPrice">Prix du fût KENT (€ HT)</label>
+                <input id="shampooKentPrice" type="number" step="0.01" min="0">
+              </div>
+
+              <div class="field">
+                <label for="shampooKentDilution">Taux de dilution KENT (%)</label>
+                <input id="shampooKentDilution" type="number" step="0.01" min="0">
+              </div>
+            </div>
+          </div>
+
+          <div class="compare-table-wrap">
+            <table class="compare-table" id="table-shampoo"></table>
+          </div>
+
+          <div id="insight-shampoo"></div>
+        </section>
+
+        <section class="glass panel scenario-card" id="section-dry">
+          <div class="scenario-head">
+            <div class="scenario-title">
+              <div class="scenario-icon">✨</div>
+              <div>
+                <h3>Etude auto-séchant</h3>
+                <p>Comparatif du coût de prestation sur l'étape d'auto-séchage.</p>
+              </div>
+            </div>
+            <div class="panel-label">Produit étudié</div>
+          </div>
+
+          <div class="scenario-grid">
+            <div class="input-card">
+              <div>
+                <h4>Solution client</h4>
+                <p>Base actuellement utilisée dans le garage.</p>
+              </div>
+
+              <div class="field">
+                <label for="dryClientPrice">Prix du fût client (€ HT)</label>
+                <input id="dryClientPrice" type="number" step="0.01" min="0">
+              </div>
+
+              <div class="field">
+                <label for="dryClientDilution">Taux de dilution client (%)</label>
+                <input id="dryClientDilution" type="number" step="0.01" min="0">
+              </div>
+
+              <div class="field">
+                <label for="dryClientBarrels">Nombre de fûts client / an</label>
+                <input id="dryClientBarrels" type="number" step="0.01" min="0">
+              </div>
+            </div>
+
+            <div class="input-card kent">
+              <div>
+                <h4>Solution KENT</h4>
+                <p>Projection de coût avec la solution KENT proposée.</p>
+              </div>
+
+              <div class="field">
+                <label for="dryKentPrice">Prix du fût KENT (€ HT)</label>
+                <input id="dryKentPrice" type="number" step="0.01" min="0">
+              </div>
+
+              <div class="field">
+                <label for="dryKentDilution">Taux de dilution KENT (%)</label>
+                <input id="dryKentDilution" type="number" step="0.01" min="0">
+              </div>
+            </div>
+          </div>
+
+          <div class="compare-table-wrap">
+            <table class="compare-table" id="table-dry"></table>
+          </div>
+
+          <div id="insight-dry"></div>
+        </section>
+      </div>
+
+      <aside class="stack">
+        <section class="glass panel">
+          <div class="panel-head">
+            <div>
+              <h2>Synthèse automatique</h2>
+              <p>Lecture rapide du dossier pour savoir si la proposition KENT tient la route.</p>
+            </div>
+            <div class="panel-label">Décision</div>
+          </div>
+
+          <div class="summary-grid" id="summaryGrid"></div>
+          <div class="status-bar" id="statusBar">Prêt. Renseigne les données client pour lancer l'étude.</div>
+        </section>
+
+        <section class="glass panel">
+          <div class="panel-head">
+            <div>
+              <h2>Lecture commerciale</h2>
+              <p>Une interprétation claire, exploitable en rendez-vous puis dans le PDF.</p>
+            </div>
+            <div class="panel-label">Aide à la vente</div>
+          </div>
+
+          <div id="overallInsight"></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="assumptionsModal" aria-hidden="true">
+    <div class="modal">
+      <div>
+        <h3>Modifier les hypothèses de calcul</h3>
+        <p>Ces valeurs pilotent toute l'étude. Toute modification demande une confirmation avant d'être appliquée.</p>
+      </div>
+
+      <div class="modal-grid">
+        <div class="modal-field">
+          <label for="assumptionBarrelVolume">Conditionnement par fût (L)</label>
+          <input id="assumptionBarrelVolume" type="number" step="0.01" min="0">
+        </div>
+
+        <div class="modal-field">
+          <label for="assumptionShampooLiters">Consommation shampoing / véhicule (L)</label>
+          <input id="assumptionShampooLiters" type="number" step="0.01" min="0">
+        </div>
+
+        <div class="modal-field">
+          <label for="assumptionDryLiters">Consommation auto-séchant / véhicule (L)</label>
+          <input id="assumptionDryLiters" type="number" step="0.01" min="0">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" type="button" id="resetAssumptionsBtn">Réinitialiser</button>
+        <button class="btn" type="button" id="closeAssumptionsBtn">Annuler</button>
+        <button class="btn primary" type="button" id="saveAssumptionsBtn">Confirmer les hypothèses</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pdfExportRoot"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="./etude-cout-lavage-app.js"></script>
+</body>
+</html>
