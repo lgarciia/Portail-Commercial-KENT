@@ -676,7 +676,7 @@
 
   function render(){
     if (!pivot?.clients?.length){
-      renderEmpty("Aucune donnée. Charge le fichier.");
+      renderEmpty(`Aucune donnée. Charge ${FILE_NAME}.`);
       return;
     }
 

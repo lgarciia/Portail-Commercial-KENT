@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>RequÃªte PSA (type TCD)</title>
+<title>Requête PSA (type TCD)</title>
   <script src="./shared-ui.js"></script>
 
 <style>
@@ -195,7 +195,7 @@
 
 
 /* ================================
-   âœ… Compactage zone critÃ¨res + scroll
+   Compactage zone critères + scroll
    ================================ */
 
 /* La grille des filtres prend moins de place + scroll si besoin */
@@ -203,16 +203,16 @@
   /* garde ton grid, mais limite la hauteur visible */
   max-height: 280px;
   overflow: auto;
-  padding-right: 6px; /* pour Ã©viter que la scrollbar mange le contenu */
+  padding-right: 6px; /* pour éviter que la scrollbar mange le contenu */
 }
 
 /* Cartes filtres un peu plus compactes */
 .fbox{
   padding: 8px;              /* avant: 10px */
-  border-radius: 12px;       /* lÃ©ger */
+  border-radius: 12px;       /* léger */
 }
 
-/* En-tÃªte moins haut */
+/* En-tête moins haut */
 .fhead{
   margin-bottom: 6px;        /* avant: 8px */
   font-size: 11px;
@@ -241,10 +241,10 @@ select[multiple]{
 }
 
 /* ================================
-   âœ… Surbrillance sÃ©lection plus premium
+   Surbrillance sélection plus premium
    ================================ */
 
-/* Focus plus joli (glow lÃ©ger) */
+/* Focus plus joli (glow léger) */
 select[multiple]:focus{
   border-color: rgba(124,58,237,.55);
   box-shadow: 0 0 0 3px rgba(124,58,237,.18);
@@ -255,14 +255,14 @@ select[multiple] option:hover{
   background: rgba(255,255,255,.08);
 }
 
-/* SÃ©lection (plus propre que le bleu agressif) */
+/* Sélection (plus propre que le bleu agressif) */
 select[multiple] option:checked{
   background: rgba(124,58,237,.42);
   color: rgba(255,255,255,.95);
 }
 
 /* ================================
-   âœ… Scrollbars dark premium (filters + selects)
+   Scrollbars dark premium (filters + selects)
    ================================ */
 .filters::-webkit-scrollbar,
 select[multiple]::-webkit-scrollbar{
@@ -319,8 +319,8 @@ select[multiple]::-webkit-scrollbar-thumb:hover{
     <div class="brand">
       <div class="logo"></div>
       <div class="title">
-        <b>RequÃªte PSA (style TCD)</b>
-        <span>SÃ©lection en colonnes + Cumul + GÃ©nÃ©rer â€¢ Tri CA cliquable</span>
+        <b>Requête PSA (style TCD)</b>
+        <span>Sélection en colonnes + Cumul + Générer • Tri CA cliquable</span>
       </div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -331,9 +331,9 @@ select[multiple]::-webkit-scrollbar-thumb:hover{
 
   <div class="card">
     <div class="meta">
-      <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargementâ€¦</span></span>
-      <span class="chip"><span class="dot ok"></span><span>Fichier : <b id="fileNameLabel">â€”</b></span></span>
-      <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes dÃ©tectÃ©es : â€”</span></span>
+      <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargement...</span></span>
+      <span class="chip"><span class="dot ok"></span><span>Fichier : <b id="fileNameLabel">—</b></span></span>
+      <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes détectées : —</span></span>
     </div>
     <div class="small">
     
@@ -351,7 +351,7 @@ select[multiple]::-webkit-scrollbar-thumb:hover{
     </div>
 
     <div class="genRow">
-      <button class="btn primary" id="genBtn">GÃ©nÃ©rer</button>
+      <button class="btn primary" id="genBtn">Générer</button>
     </div>
   </div>
 
@@ -359,22 +359,22 @@ select[multiple]::-webkit-scrollbar-thumb:hover{
     <div class="tableWrap">
       <table>
         <thead id="thead"></thead>
-        <tbody id="tbody"><tr><td style="color:var(--muted)">â€”</td></tr></tbody>
+        <tbody id="tbody"><tr><td style="color:var(--muted)">—</td></tr></tbody>
       </table>
     </div>
 
     <div class="kpis">
       <div class="kpi">
-        <div class="k">Lignes rÃ©sultat</div>
-        <div class="v" id="kpiRows">â€”</div>
+        <div class="k">Lignes résultat</div>
+        <div class="v" id="kpiRows">—</div>
       </div>
       <div class="kpi">
-        <div class="k">QuantitÃ© totale</div>
-        <div class="v" id="kpiQty">â€”</div>
+        <div class="k">Quantité totale</div>
+        <div class="v" id="kpiQty">—</div>
       </div>
       <div class="kpi">
         <div class="k">CA total</div>
-        <div class="v" id="kpiCA">â€”</div>
+        <div class="v" id="kpiCA">—</div>
       </div>
     </div>
   </div>
@@ -388,17 +388,17 @@ const FILE_CANDIDATES = [EXCEL_FILE].concat(KentDataConfig.getEntityFileCandidat
 document.getElementById("fileNameLabel").textContent = EXCEL_FILE;
 
 const TARGETS = {
-  YEAR:  ["AnnÃ©e","Annee","annÃ©e","annee"],
+  YEAR:  ["Année","Annee","année","annee"],
   MONTH: ["Mois","mois","Mois2","mois2"],
   SELLER:["Vendeur","VENDEUR","Vendeur KENT","Vendeur PSA"],
   CLIENT:["Nom LR","NOM LR","Nom du client","Client","Clients"],
-  REF:   ["Reference Produits","RÃ©fÃ©rence Produits","Reference Produit","RÃ©fÃ©rence Produit","Ref Produits","RÃ©f Produits"],
-  DES:   ["DÃ©signations","Designations","DÃ©signation","Designation"],
-  QTY:   ["QuantitÃ© Payante servie","Quantite Payante servie","QuantitÃ©","Quantite"],
+  REF:   ["Reference Produits","Référence Produits","Reference Produit","Référence Produit","Ref Produits","Réf Produits"],
+  DES:   ["Désignations","Designations","Désignation","Designation"],
+  QTY:   ["Quantité Payante servie","Quantite Payante servie","Quantité","Quantite"],
   CA:    ["Montant prix achat KENT","Montant prix d'achat KENT","Montant achat KENT","Montant KENT","CA"]
 };
 
-const MONTHS_FR = ["Janvier","FÃ©vrier","Mars","Avril","Mai","Juin","Juillet","AoÃ»t","Septembre","Octobre","Novembre","DÃ©cembre"];
+const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR" });
 
 const $ = (id) => document.getElementById(id);
@@ -479,7 +479,7 @@ function buildListBox(mountId, title){
     <div class="fhead">
       <div class="headLeft">
         <div>${title}</div>
-        <div class="badge" id="${mountId}_badge">â€”</div>
+        <div class="badge" id="${mountId}_badge">—</div>
       </div>
       <div class="headBtns">
         <button class="miniBtn" type="button" id="${mountId}_all">Tout</button>
@@ -581,12 +581,12 @@ let lastResult = [];
 let lastHeaders = [];
 let sortCAAsc = false;
 
-const boxYear   = buildListBox("boxYear",   "AnnÃ©e *");
+const boxYear   = buildListBox("boxYear",   "Année *");
 const boxMonth  = buildListBox("boxMonth",  "Mois *");
 const boxSeller = buildListBox("boxSeller", "Vendeur");
 const boxClient = buildListBox("boxClient", "Clients");
 const boxRef    = buildListBox("boxRef",    "Reference Produits");
-const boxDes    = buildListBox("boxDes",    "DÃ©signations");
+const boxDes    = buildListBox("boxDes",    "Désignations");
 
 const chain = [
   { box: boxYear,   key: "YEAR",   labelFn: null,       sortFn: (a,b)=>Number(a)-Number(b) },
@@ -627,13 +627,13 @@ function buildKey(obj, colsList){
 }
 function prettyHeader(h){
   const m = new Map([
-    [cols.YEAR, "AnnÃ©e"],
+    [cols.YEAR, "Année"],
     [cols.MONTH, "Mois"],
     [cols.SELLER, "Vendeur"],
     [cols.CLIENT, "Clients"],
     [cols.REF, "Reference Produits"],
-    [cols.DES, "DÃ©signations"],
-    [cols.QTY, "QuantitÃ© Payante servie"],
+    [cols.DES, "Désignations"],
+    [cols.QTY, "Quantité Payante servie"],
     [cols.CA, "Montant prix achat KENT"],
   ]);
   return m.get(h) ?? h;
@@ -647,14 +647,14 @@ function generate(){
     const colName = cols[chain[i].key];
     const selected = new Set(chain[i].box.getSelected());
     if (!colName || selected.size === 0){
-      renderEmpty("SÃ©lection vide sur une colonne.");
+      renderEmpty("Sélection vide sur une colonne.");
       return;
     }
     f = f.filter(x => selected.has((x[colName] ?? "").toString().trim()));
   }
 
   if (!f.length){
-    renderEmpty("Aucune donnÃ©e pour cette requÃªte.");
+    renderEmpty("Aucune donnée pour cette requête.");
     return;
   }
 
@@ -706,9 +706,9 @@ function generate(){
 function renderEmpty(msg){
   $("thead").innerHTML = "";
   $("tbody").innerHTML = `<tr><td style="color:rgba(255,255,255,.6)">${msg}</td></tr>`;
-  $("kpiRows").textContent = "â€”";
-  $("kpiQty").textContent  = "â€”";
-  $("kpiCA").textContent   = "â€”";
+  $("kpiRows").textContent = "—";
+  $("kpiQty").textContent  = "—";
+  $("kpiCA").textContent   = "—";
   $("exportBtn").disabled = true;
   lastResult = [];
   lastHeaders = [];
@@ -720,7 +720,7 @@ function renderTable(groupCols, colQ, colCA, result, totalQty, totalCA){
     {label: prettyHeader(colQ), col:colQ, right:true, kind:"num"},
     {label: prettyHeader(colCA), col:colCA, right:true, kind:"eur", sortable:true},
   ];
-  const icon = sortCAAsc ? "â–²" : "â–¼";
+  const icon = sortCAAsc ? "▲" : "▼";
 
   $("thead").innerHTML = `
     <tr>
@@ -794,8 +794,8 @@ function exportCSV(){
 
 /******** LOAD ********/
 async function loadExcel(){
-  setStatus("warn", "Chargement de la baseâ€¦");
-  renderEmpty("â€”");
+  setStatus("warn", "Chargement de la base...");
+  renderEmpty("—");
 
   try{
     const { buf, fileName } = await fetchExcelBuffer();
@@ -804,8 +804,8 @@ async function loadExcel(){
     rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
 
     if (!rows.length){
-      setStatus("warn", "Fichier chargÃ© mais vide.");
-      renderEmpty("Aucune ligne dÃ©tectÃ©e dans la feuille.");
+      setStatus("warn", "Fichier chargé mais vide.");
+      renderEmpty("Aucune ligne détectée dans la feuille.");
       return;
     }
 
@@ -822,16 +822,16 @@ async function loadExcel(){
     };
 
     $("colsDebug").textContent =
-      `Colonnes dÃ©tectÃ©es : AnnÃ©e=${cols.YEAR || "âŒ"} | Mois=${cols.MONTH || "âŒ"} | Vendeur=${cols.SELLER || "âŒ"} | Client=${cols.CLIENT || "âŒ"} | Ref=${cols.REF || "âŒ"} | DÃ©signation=${cols.DES || "âŒ"} | Qte=${cols.QTY || "âŒ"} | CA=${cols.CA || "âŒ"}`;
+      `Colonnes détectées : Année=${cols.YEAR || "KO"} | Mois=${cols.MONTH || "KO"} | Vendeur=${cols.SELLER || "KO"} | Client=${cols.CLIENT || "KO"} | Ref=${cols.REF || "KO"} | Désignation=${cols.DES || "KO"} | Qte=${cols.QTY || "KO"} | CA=${cols.CA || "KO"}`;
 
     if (!cols.YEAR || !cols.MONTH){
-      setStatus("warn", "Colonnes AnnÃ©e/Mois introuvables (noms diffÃ©rents).");
-      renderEmpty("âš ï¸ Je ne trouve pas les colonnes AnnÃ©e/Mois. Regarde la ligne â€œColonnes dÃ©tectÃ©esâ€.");
+      setStatus("warn", "Colonnes Année/Mois introuvables (noms différents).");
+      renderEmpty("Je ne trouve pas les colonnes Année/Mois. Regarde la ligne \"Colonnes détectées\".");
       return;
     }
     if (!cols.QTY || !cols.CA){
-      setStatus("warn", "Colonnes QuantitÃ©/CA introuvables (noms diffÃ©rents).");
-      renderEmpty("âš ï¸ Je ne trouve pas les colonnes QuantitÃ©/CA. Regarde la ligne â€œColonnes dÃ©tectÃ©esâ€.");
+      setStatus("warn", "Colonnes Quantité/CA introuvables (noms différents).");
+      renderEmpty("Je ne trouve pas les colonnes Quantité/CA. Regarde la ligne \"Colonnes détectées\".");
       return;
     }
 

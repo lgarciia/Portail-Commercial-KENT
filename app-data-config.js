@@ -276,7 +276,7 @@
     const opts = options || {};
     const currentYear = clampYear(getCalendarYear());
     const selected = clampYear(opts.selectedYear || getActiveYear());
-    const min = clampYear(opts.min || currentYear);
+    const min = clampYear(opts.min || YEAR_MIN);
     const max = clampYear(opts.max || (currentYear + 1));
     const years = [];
     if (selected < min){
