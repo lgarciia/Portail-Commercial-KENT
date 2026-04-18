@@ -93,6 +93,22 @@
       gap: 2px;
     }
 
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.96), rgba(59, 130, 246, 0.82));
+      box-shadow: 0 16px 34px rgba(59, 130, 246, 0.24);
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      flex-shrink: 0;
+    }
+
     .brand-title {
       font-size: 1.15rem;
       font-weight: 700;
@@ -213,54 +229,32 @@
       background: rgba(255,255,255,0.1);
     }
 
-    .hero {
-      padding: 28px;
+    .apps-shell {
+      padding: 22px;
       margin-bottom: 20px;
-      overflow: hidden;
-      position: relative;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+      border: 1px solid rgba(255, 255, 255, 0.12);
     }
 
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: auto -80px -80px auto;
-      width: 220px;
-      height: 220px;
-      background: radial-gradient(circle, rgba(124, 58, 237, 0.28), transparent 65%);
-      pointer-events: none;
-    }
-
-    .hero-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .hero h1 {
-      font-size: 2rem;
+    .section-kicker {
       margin-bottom: 8px;
-      letter-spacing: -0.03em;
+      color: #c4b5fd;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.74rem;
+      font-weight: 700;
     }
 
-    .hero p {
-      color: var(--muted);
-      max-width: 900px;
-      line-height: 1.6;
-      font-size: 0.96rem;
-    }
-
-    .hero-badge {
+    .section-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 9px 12px;
+      padding: 10px 13px;
       border-radius: 999px;
-      background: rgba(124, 58, 237, 0.14);
-      border: 1px solid rgba(124, 58, 237, 0.22);
-      color: #ddd6fe;
-      font-size: 0.82rem;
+      background: rgba(37, 99, 235, 0.14);
+      border: 1px solid rgba(37, 99, 235, 0.24);
+      color: #dbeafe;
+      font-size: 0.8rem;
       font-weight: 700;
       white-space: nowrap;
     }
@@ -272,34 +266,63 @@
     .section-head {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 18px;
       flex-wrap: wrap;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
+    .section-head h1,
     .section-head h2 {
-      font-size: 1.05rem;
-      letter-spacing: -0.01em;
+      font-size: 1.9rem;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
     }
 
     .section-head p {
       color: var(--muted);
-      font-size: 0.88rem;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      max-width: 720px;
     }
 
     .cards-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
     }
 
     .card {
-      padding: 18px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      min-height: 220px;
+      min-height: 228px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      right: -44px;
+      bottom: -48px;
+      width: 132px;
+      height: 132px;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.16), transparent 68%);
+      pointer-events: none;
     }
 
     .card-top {
@@ -307,6 +330,8 @@
       justify-content: space-between;
       gap: 14px;
       align-items: flex-start;
+      position: relative;
+      z-index: 1;
     }
 
     .card-icon {
@@ -319,6 +344,31 @@
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(255,255,255,0.08);
       flex-shrink: 0;
+    }
+
+    .card:nth-child(1) .card-icon {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.26), rgba(37, 99, 235, 0.14));
+      border-color: rgba(59, 130, 246, 0.24);
+    }
+
+    .card:nth-child(2) .card-icon {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.26), rgba(91, 33, 182, 0.16));
+      border-color: rgba(124, 58, 237, 0.24);
+    }
+
+    .card:nth-child(3) .card-icon {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(6, 95, 70, 0.14));
+      border-color: rgba(16, 185, 129, 0.22);
+    }
+
+    .card:nth-child(4) .card-icon {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.24), rgba(217, 119, 6, 0.14));
+      border-color: rgba(245, 158, 11, 0.22);
+    }
+
+    .card:nth-child(5) .card-icon {
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.24), rgba(190, 24, 93, 0.14));
+      border-color: rgba(236, 72, 153, 0.22);
     }
 
     .card-icon svg {
@@ -343,13 +393,17 @@
     .card h3 {
       font-size: 1.02rem;
       letter-spacing: -0.01em;
+      position: relative;
+      z-index: 1;
     }
 
     .card p {
       color: var(--muted);
       line-height: 1.55;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       flex: 1;
+      position: relative;
+      z-index: 1;
     }
 
     .card-actions {
@@ -357,12 +411,16 @@
       gap: 10px;
       flex-wrap: wrap;
       margin-top: auto;
+      position: relative;
+      z-index: 1;
     }
 
     .card-link.primary {
-      background: linear-gradient(135deg, var(--accent), #5b21b6);
+      width: 100%;
+      justify-content: center;
+      background: linear-gradient(135deg, #2563eb, var(--accent));
       border: none;
-      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.24);
+      box-shadow: 0 14px 32px rgba(37, 99, 235, 0.2);
     }
 
     .footer-note {
@@ -389,8 +447,8 @@
 
       .nav-left {
         width: 100%;
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
       }
 
       .nav-right {
@@ -414,12 +472,13 @@
         padding: 16px;
       }
 
-      .hero {
-        padding: 22px;
+      .apps-shell {
+        padding: 18px;
       }
 
-      .hero h1 {
-        font-size: 1.65rem;
+      .section-head h1,
+      .section-head h2 {
+        font-size: 1.55rem;
       }
     }
   </style>
@@ -429,12 +488,10 @@
   <div class="container">
     <nav class="glass navbar">
       <div class="nav-left">
+        <div class="brand-mark">KC</div>
         <div class="brand">
-          <div class="brand-title">Pilotage commercial</div>
-          <div class="brand-subtitle">Hub des outils Commerce</div>
-        </div>
-
-        <div class="nav-links">
+          <div class="brand-title">Hub Commerce</div>
+          <div class="brand-subtitle">Applications métier et outils rapides</div>
         </div>
       </div>
 
@@ -457,29 +514,14 @@
 
     <div class="dropdown-backdrop" id="dropdownBackdrop" aria-hidden="true"></div>
 
-    <section class="glass hero">
-      <div class="hero-top">
-        <div>
-          <h1>Accueil Commerce</h1>
-          <p>
-            Cette page regroupe les accès utiles du quotidien commercial :
-            fiches client, suivi d'activité, rapport du jour, rappels, gestion des tarifs
-            et import de la base clients. L'objectif est que tu puisses tout ouvrir d'ici
-            sans passer par plusieurs menus.
-          </p>
-        </div>
-
-        <div class="hero-badge">Hub métier</div>
-      </div>
-
-    </section>
-
-    <section class="section">
+    <section class="section apps-shell glass">
       <div class="section-head">
         <div>
-          <h2>Applications Commerce</h2>
-          <p>Les écrans principaux du quotidien et les outils d'administration.</p>
+          <div class="section-kicker">Portail commercial KENT</div>
+          <h1>Applications Commerce</h1>
+          <p>Ouvre directement les écrans essentiels du quotidien commercial depuis un seul hub.</p>
         </div>
+        <div class="section-badge">Accès essentiels</div>
       </div>
 
       <div class="cards-grid">
@@ -493,10 +535,7 @@
             <div class="card-tag">Client</div>
           </div>
           <h3>Fiches client</h3>
-          <p>
-            Accède aux fiches complètes pour consulter l'historique, les visites,
-            les produits, les tarifs et les éléments de suivi terrain.
-          </p>
+          <p>Historique client, visites, produits, tarifs et éléments de suivi terrain.</p>
           <div class="card-actions">
             <a class="card-link primary" href="ficherclt.html">Ouvrir</a>
           </div>
@@ -512,10 +551,7 @@
             <div class="card-tag">Pilotage</div>
           </div>
           <h3>Tableau de bord activité</h3>
-          <p>
-            Visualise les indicateurs clés, les tendances d’activité, les clients à suivre
-            et les zones à fort enjeu commercial pour piloter la semaine.
-          </p>
+          <p>Indicateurs clés, tendances d’activité et priorités de la semaine pour piloter rapidement.</p>
           <div class="card-actions">
             <a class="card-link primary" href="tdbactivite.html">Ouvrir</a>
           </div>
@@ -531,10 +567,7 @@
             <div class="card-tag">Compte rendu</div>
           </div>
           <h3>Rapport journalier</h3>
-          <p>
-            Prépare rapidement le récap de fin de journée avec les visites, les notes
-            et les commandes pour diffusion propre et rapide.
-          </p>
+          <p>Prépare le compte rendu du jour avec les visites, notes et commandes à diffuser.</p>
           <div class="card-actions">
             <a class="card-link primary" href="rapportjournalier.html">Ouvrir</a>
           </div>
@@ -550,10 +583,7 @@
             <div class="card-tag">Relances</div>
           </div>
           <h3>Rappels clients</h3>
-          <p>
-            Remonte les lignes rouges à traiter pour ne rien oublier :
-            client, numéro, produit, date, note et lien direct vers la fiche.
-          </p>
+          <p>Relances à traiter avec lien direct vers la fiche et les informations utiles.</p>
           <div class="card-actions">
             <a class="card-link primary" href="rappelclt.html">Ouvrir</a>
           </div>
@@ -569,10 +599,7 @@
             <div class="card-tag">Etude</div>
           </div>
           <h3>Etude coût de lavage</h3>
-          <p>
-            Monte une étude prête à envoyer pour comparer la solution actuelle du garage
-            avec la proposition KENT sur le shampoing, l'auto-séchant ou les deux.
-          </p>
+          <p>Monte une étude client prête à envoyer avec lecture commerciale et export PDF KENT.</p>
           <div class="card-actions">
             <a class="card-link primary" href="etude-cout-lavage.html">Ouvrir</a>
           </div>
@@ -583,7 +610,7 @@
     </section>
 
     <div class="footer-note">
-      Hub Commerce - accès central vers les outils terrain, clients et administration.
+      Portail central des applications terrain, des suivis clients et des études commerciales.
     </div>
   </div>
 

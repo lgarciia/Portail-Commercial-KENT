@@ -754,12 +754,23 @@
       }).join("") +
       "</tbody>" +
       "</table>" +
-      '<div class="pdf-note-list">' +
-      bullets.map(function (line) {
-        return '<div class="pdf-note-item">' + escapeHtml(line) + "</div>";
-      }).join("") +
-      "</div>" +
+      buildPdfNoteList(bullets) +
       "</section>"
+    );
+  }
+
+  function buildPdfNoteList(lines) {
+    return (
+      '<div class="pdf-note-list">' +
+      lines.map(function (line) {
+        return (
+          '<div class="pdf-note-item">' +
+          '<span class="pdf-note-dot"></span>' +
+          '<span class="pdf-note-text">' + escapeHtml(line) + "</span>" +
+          "</div>"
+        );
+      }).join("") +
+      "</div>"
     );
   }
 
@@ -788,41 +799,43 @@
       "<tr><td>Écart annuel</td><td>" + escapeHtml(buildDeltaText(study.totals.annualDelta)) + "</td></tr>" +
       "<tr><td>Écart mensuel</td><td>" + escapeHtml(buildDeltaText(study.totals.monthlyDelta)) + "</td></tr>" +
       "</tbody></table>" +
-      '<div class="pdf-note-list">' +
-      study.overallBullets.map(function (line) {
-        return '<div class="pdf-note-item">' + escapeHtml(line) + "</div>";
-      }).join("") +
-      "</div>" +
+      buildPdfNoteList(study.overallBullets) +
       "</section>";
 
     return (
       '<div class="pdf-root">' +
       "<style>" +
       ".pdf-root,.pdf-root *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;color:#0f172a;}" +
-      ".pdf-root{width:190mm;padding:10mm 9mm;background:#ffffff;}" +
-      ".pdf-header{display:flex;justify-content:space-between;gap:8mm;align-items:flex-start;border-bottom:2px solid #2563eb;padding-bottom:5mm;margin-bottom:6mm;}" +
+      ".pdf-root{width:184mm;padding:8mm 8mm 7mm;background:#ffffff;}" +
+      ".pdf-header{display:flex;justify-content:space-between;gap:6mm;align-items:flex-start;border-bottom:2px solid #2563eb;padding-bottom:4.5mm;margin-bottom:5.5mm;}" +
       ".pdf-brand{display:flex;gap:4mm;align-items:center;}" +
-      ".pdf-logo{width:16mm;height:16mm;border:1px solid #dbe5f1;border-radius:4mm;display:flex;align-items:center;justify-content:center;overflow:hidden;}" +
+      ".pdf-logo{width:15mm;height:15mm;border:1px solid #dbe5f1;border-radius:4mm;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}" +
       ".pdf-logo img{width:10mm;height:10mm;display:block;}" +
       ".pdf-kicker{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#2563eb;font-weight:700;margin-bottom:1.6mm;}" +
       ".pdf-title{font-size:18px;line-height:1.05;font-weight:700;margin:0 0 1.4mm;color:#0b2540;}" +
-      ".pdf-subtitle{font-size:9px;line-height:1.5;color:#475569;max-width:105mm;}" +
-      ".pdf-meta{font-size:9px;line-height:1.6;text-align:right;color:#334155;min-width:44mm;}" +
-      ".pdf-section{margin-bottom:5.5mm;}" +
+      ".pdf-subtitle{font-size:8.8px;line-height:1.45;color:#475569;max-width:96mm;}" +
+      ".pdf-meta{font-size:8.8px;line-height:1.55;text-align:right;color:#334155;min-width:38mm;}" +
+      ".pdf-section{margin-bottom:4.8mm;page-break-inside:avoid;break-inside:avoid;}" +
       ".pdf-section-head{display:flex;justify-content:space-between;align-items:center;gap:4mm;margin-bottom:2.5mm;}" +
       ".pdf-section-kicker{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#2563eb;font-weight:700;}" +
       ".pdf-section-status{font-size:8px;font-weight:700;padding:1.4mm 2.4mm;border-radius:999px;border:1px solid #dbe5f1;}" +
       ".pdf-good{background:#dcfce7;color:#166534;border-color:#bbf7d0;}" +
       ".pdf-bad{background:#fee2e2;color:#991b1b;border-color:#fecaca;}" +
       ".pdf-neutral{background:#fef3c7;color:#92400e;border-color:#fde68a;}" +
-      ".pdf-table,.pdf-metrics{width:100%;border-collapse:collapse;}" +
-      ".pdf-table th,.pdf-table td,.pdf-metrics td{border:1px solid #e2e8f0;padding:2.6mm 2.4mm;font-size:8.5px;vertical-align:top;}" +
+      ".pdf-table,.pdf-metrics{width:100%;border-collapse:collapse;table-layout:fixed;}" +
+      ".pdf-table th,.pdf-table td,.pdf-metrics td{border:1px solid #e2e8f0;padding:2.3mm 2.1mm;font-size:8.25px;line-height:1.42;vertical-align:top;overflow-wrap:break-word;word-break:break-word;}" +
       ".pdf-table th{background:#f8fafc;color:#475569;font-weight:700;}" +
+      ".pdf-table th:nth-child(1),.pdf-table td:nth-child(1){width:24%;}" +
+      ".pdf-table th:nth-child(2),.pdf-table td:nth-child(2){width:19%;}" +
+      ".pdf-table th:nth-child(3),.pdf-table td:nth-child(3){width:19%;}" +
+      ".pdf-table th:nth-child(4),.pdf-table td:nth-child(4){width:38%;}" +
+      ".pdf-table tr,.pdf-metrics tr{page-break-inside:avoid;break-inside:avoid;}" +
       ".pdf-metrics td:first-child{width:44mm;font-weight:700;background:#f8fafc;color:#475569;}" +
-      ".pdf-note-list{margin-top:2.8mm;display:grid;gap:1.8mm;}" +
-      ".pdf-note-item{font-size:8.6px;line-height:1.5;padding-left:4mm;position:relative;color:#334155;}" +
-      ".pdf-note-item:before{content:'';position:absolute;left:0;top:3.4mm;width:1.6mm;height:1.6mm;border-radius:99px;background:#7c3aed;}" +
-      ".pdf-footer{margin-top:6mm;font-size:7.8px;line-height:1.55;text-align:center;color:#64748b;}" +
+      ".pdf-note-list{margin-top:2.6mm;display:grid;gap:1.7mm;}" +
+      ".pdf-note-item{display:grid;grid-template-columns:1.8mm 1fr;column-gap:2.2mm;align-items:flex-start;font-size:8.45px;line-height:1.58;color:#334155;page-break-inside:avoid;break-inside:avoid;}" +
+      ".pdf-note-dot{width:1.8mm;height:1.8mm;border-radius:99px;background:#7c3aed;display:block;margin-top:.95mm;}" +
+      ".pdf-note-text{min-width:0;overflow-wrap:break-word;word-break:break-word;}" +
+      ".pdf-footer{margin-top:5.4mm;font-size:7.8px;line-height:1.55;text-align:center;color:#64748b;}" +
       "</style>" +
       '<div class="pdf-header">' +
       '<div class="pdf-brand">' +
