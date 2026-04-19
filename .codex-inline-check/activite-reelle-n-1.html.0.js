@@ -1,399 +1,4 @@
-<!doctype html>
-<html lang="fr" data-theme="dark">
-<head>
-  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Activité Réelle N-1 (Pivot)</title>
-  <script src="./shared-ui.js"></script>
-
-  <!-- SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <style>
-    :root{
-      --bg:#0b0f17;
-      --panel:rgba(255,255,255,0.06);
-      --panel2:rgba(255,255,255,0.045);
-      --stroke:rgba(255,255,255,0.12);
-      --stroke2:rgba(255,255,255,0.16);
-      --text:rgba(255,255,255,0.90);
-      --muted:rgba(255,255,255,0.62);
-      --muted2:rgba(255,255,255,0.46);
-      --accent:rgba(132,182,255,0.95);
-      --shadow:0 16px 40px rgba(0,0,0,0.35);
-      --radius:16px;
-      --radius2:14px;
-      --cellH:34px;
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0;
-      font-family:var(--font);
-      background:
-        radial-gradient(1200px 700px at 20% -10%, rgba(90,140,255,0.15), transparent 60%),
-        radial-gradient(1100px 800px at 110% 20%, rgba(255,120,200,0.10), transparent 55%),
-        radial-gradient(900px 700px at 60% 110%, rgba(130,255,200,0.08), transparent 55%),
-        var(--bg);
-      color:var(--text);
-      overflow:hidden;
-    }
-
-    .app{
-      height:100%;
-      display:flex;
-      flex-direction:column;
-    }
-
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:14px 18px;
-      border-bottom:1px solid var(--stroke);
-      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      backdrop-filter: blur(10px);
-    }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      min-width: 420px;
-    }
-    .logo{
-      width:38px;height:38px;border-radius:12px;
-      background: linear-gradient(135deg, rgba(132,182,255,0.95), rgba(255,125,206,0.65));
-      box-shadow: 0 10px 22px rgba(0,0,0,0.35);
-      border:1px solid rgba(255,255,255,0.15);
-      flex:0 0 auto;
-    }
-    .titleWrap{ display:flex; flex-direction:column; line-height:1.15; }
-    .title{ font-weight:900; letter-spacing:0.2px; font-size:14px; }
-    .subtitle{ font-size:12px; color:var(--muted); }
-
-    .actions{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-
-    .btn{
-      height:34px;
-      padding:0 12px;
-      border-radius:12px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,0.06);
-      color:var(--text);
-      font-weight:800;
-      font-size:12px;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      cursor:pointer;
-      user-select:none;
-      transition: transform .12s ease, border-color .12s ease, background .12s ease;
-    }
-    .btn:hover{ transform: translateY(-1px); border-color: var(--stroke2); background: rgba(255,255,255,0.08); }
-    .btn:active{ transform: translateY(0px); }
-    .btn.primary{
-      background: rgba(132,182,255,0.18);
-      border-color: rgba(132,182,255,0.28);
-    }
-    .btn.ghost{
-      background: rgba(255,255,255,0.04);
-    }
-    .btn.danger{
-      background: rgba(255,110,110,0.12);
-      border-color: rgba(255,110,110,0.22);
-    }
-
-    .fileInput{ display:none; }
-
-    .shell{
-      height: calc(100% - 67px);
-      padding:10px 12px 12px;    
-      display:grid;
-      grid-template-rows: auto 1fr;
-      gap:10px;
-    }
-
-    .card{
-      border:1px solid var(--stroke);
-      background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(12px);
-      overflow:hidden;
-    }
-
-    .meta{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:12px 14px;
-      border-bottom:1px solid var(--stroke);
-      background: rgba(0,0,0,0.18);
-    }
-
-    .metaLeft{
-      display:flex;
-      align-items:center;
-      gap:14px;
-      flex-wrap:wrap;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      height:30px;
-      padding:0 10px;
-      border-radius:999px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,0.04);
-      color:var(--muted);
-      font-size:12px;
-    }
-    .pill strong{ color:var(--text); font-weight:900; }
-
-    .search{
-      height:30px;
-      width:320px;
-      border-radius:12px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,0.04);
-      color:var(--text);
-      padding:0 10px;
-      outline:none;
-      font-size:12px;
-    }
-    .search::placeholder{ color: var(--muted2); }
-
-    .gridWrap{
-      position:relative;
-      height:100%;
-    }
-    /* ✅ Fix hauteur + scroll : permet de voir la dernière ligne (TOTAL) */
-.shell{ min-height: calc(100vh - 67px); }   /* au lieu de height si besoin */
-
-.card{
-  display:flex;
-  flex-direction:column;
-  min-height:0;
-}
-
-.gridWrap{
-  flex:1;
-  min-height:0;
-}
-
-.tableScroller{
-  flex:1;
-  min-height:0;
-}
-
-
-    .dropHint{
-      position:absolute;
-      inset:10px;
-      border:1px dashed rgba(255,255,255,0.20);
-      border-radius: 16px;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      background: rgba(0,0,0,0.35);
-      color: rgba(255,255,255,0.86);
-      font-weight:900;
-      letter-spacing:0.2px;
-      z-index:10;
-      pointer-events:none;
-    }
-    .dropHint.show{ display:flex; }
-
-    .tableScroller{
-      height:100%;
-      overflow:auto;
-    }
-
-    table{
-      border-collapse:separate;
-      border-spacing:0;
-      width:max-content;
-      min-width:100%;
-      font-size:12px;
-    }
-
-    thead th{
-      position:sticky;
-      top:0;
-      z-index:5;
-      background: rgba(10,15,23,0.92);
-      backdrop-filter: blur(8px);
-      border-bottom:1px solid var(--stroke);
-    }
-
-    th, td{
-      border-right:1px solid rgba(255,255,255,0.10);
-      border-bottom:1px solid rgba(255,255,255,0.08);
-      padding:6px 8px;
-      height: var(--cellH);
-      white-space:nowrap;
-      vertical-align:middle;
-    }
-
-    thead tr:first-child th{
-      font-weight:900;
-      color:rgba(255,255,255,0.86);
-      text-align:center;
-      border-bottom:1px solid rgba(255,255,255,0.10);
-    }
-    thead tr:nth-child(2) th{
-      font-weight:800;
-      color:rgba(255,255,255,0.70);
-      text-align:center;
-    }
-
-    tbody tr:hover td{
-      background: rgba(255,255,255,0.03);
-    }
-
-    .col-sticky{
-      position:sticky;
-      left:0;
-      z-index:6;
-      background: rgba(10,15,23,0.96);
-      border-right:1px solid rgba(255,255,255,0.12);
-    }
-    .col-sticky2{
-      position:sticky;
-      left:160px;
-      z-index:6;
-      background: rgba(10,15,23,0.96);
-      border-right:1px solid rgba(255,255,255,0.12);
-    }
-
-    tbody .col-sticky{ z-index:4; font-weight:900; }
-    tbody .col-sticky2{ z-index:4; font-weight:800; color: rgba(255,255,255,0.86); }
-
-    .num{
-      text-align:right;
-      font-variant-numeric: tabular-nums;
-      font-weight:800;
-    }
-
-    /* TOTAL column = sticky right + clickable sort */
-    .col-total{
-      position:sticky;
-      right:0;
-      z-index:6;
-      background: rgba(10,15,23,0.96);
-      border-left:1px solid rgba(255,255,255,0.12);
-      min-width:140px;
-    }
-    tbody .col-total{ z-index:4; }
-
-    .sortable{
-      cursor:pointer;
-      user-select:none;
-    }
-    .sortHint{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      opacity:0.9;
-    }
-    .chev{
-      font-size:12px;
-      opacity:0.85;
-    }
-
-    /* footer total row */
-    .row-total td{
-      background: rgba(255,255,255,0.04);
-      font-weight:900;
-    }
-    .row-total:hover td{ background: rgba(255,255,255,0.04); }
-
-    .mutedNote{
-      padding:10px 14px 14px;
-      color: var(--muted);
-      font-size:12px;
-    }
-
-    .kbd{
-      display:inline-flex;
-      align-items:center;
-      height:18px;
-      padding:0 7px;
-      border-radius:7px;
-      border:1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.05);
-      color: rgba(255,255,255,0.78);
-      font-weight:900;
-      font-size:11px;
-      margin:0 3px;
-    }
-  </style>
-  <link rel="stylesheet" href="./shared-theme.css">
-</head>
-
-<body>
-  <div class="app">
-    <div class="topbar">
-      <div class="brand">
-        <div class="logo"></div>
-        <div class="titleWrap">
-          <div class="title" id="pageTitle">Activité Réelle N-1 (Pivot)</div>
-          <div class="subtitle">Clients en lignes • Mois en colonnes • Montants agrégés • Stockage local pour le reporting</div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
-        <button class="btn primary" id="btnReload">Charger / Recharger le réel N-1</button>
-        <button class="btn ghost" id="btnExportXlsx">Exporter XLSX</button>
-        <button class="btn ghost" id="btnExportCsv">Exporter CSV</button>
-        <button class="btn ghost" id="btnExportJson">Exporter JSON</button>
-        <button class="btn danger" id="btnReset">Reset local</button>
-      </div>
-    </div>
-
-    <div class="shell">
-      <div class="card">
-        <div class="meta">
-          <div class="metaLeft">
-            <div class="pill">Source : <strong id="srcLabel">—</strong></div>
-            <div class="pill">Clients : <strong id="clientsCount">0</strong></div>
-            <div class="pill">Dernière maj : <strong id="lastUpdate">—</strong></div>
-            <input class="search" id="search" placeholder="Filtrer client (N° interne ou nom)..." />
-          </div>
-          <div class="pill">
-            Astuce :<span class="kbd">Ctrl</span>+<span class="kbd">F</span> pour rechercher
-          </div>
-        </div>
-
-        <div class="gridWrap" id="dropZone">
-          <div class="dropHint" id="dropHint">Dépose le fichier réel N-1 pour recharger</div>
-          <div class="tableScroller">
-            <table id="pivotTable"></table>
-          </div>
-          <div class="mutedNote">
-            Colonnes acceptées dans l’Excel : <strong>N° client Interne</strong> ou <strong>Code livré</strong> • <strong>Nom du client</strong> ou <strong>Nom client</strong> • <strong>Montant prix achat KENT</strong> ou <strong>CA Total</strong> • <strong>Mois2</strong>.
-            Les montants sont agrégés par client et par mois puis stockés localement pour l’année active.
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-<script>
+﻿
 (function(){
   // =========================
   // CONFIG
@@ -416,17 +21,17 @@
 
   const MONTHS = [
     { key: "jan", label: "Janvier", aliases: ["janvier","jan"] },
-    { key: "feb", label: "Février", aliases: ["février","fevrier","fév","fev"] },
+    { key: "feb", label: "FÃ©vrier", aliases: ["fÃ©vrier","fevrier","fÃ©v","fev"] },
     { key: "mar", label: "Mars", aliases: ["mars","mar"] },
     { key: "apr", label: "Avril", aliases: ["avril","avr"] },
     { key: "may", label: "Mai", aliases: ["mai"] },
     { key: "jun", label: "Juin", aliases: ["juin"] },
     { key: "jul", label: "Juillet", aliases: ["juillet","juil"] },
-    { key: "aug", label: "Août", aliases: ["août","aout","aoû","aou"] },
+    { key: "aug", label: "AoÃ»t", aliases: ["aoÃ»t","aout","aoÃ»","aou"] },
     { key: "sep", label: "Septembre", aliases: ["septembre","sep","sept"] },
     { key: "oct", label: "Octobre", aliases: ["octobre","oct"] },
     { key: "nov", label: "Novembre", aliases: ["novembre","nov"] },
-    { key: "dec", label: "Décembre", aliases: ["décembre","decembre","déc","dec"] },
+    { key: "dec", label: "DÃ©cembre", aliases: ["dÃ©cembre","decembre","dÃ©c","dec"] },
   ];
 
   // =========================
@@ -454,16 +59,16 @@
   // =========================
   // STATE
   // =========================
-  document.title = `Réel N-1 ${PREV_YEAR} — PSA`;
-  if (el.title) el.title.textContent = "Réel N-1 — PSA";
+  document.title = `RÃ©el N-1 ${PREV_YEAR} â€” PSA`;
+  if (el.title) el.title.textContent = "RÃ©el N-1 â€” PSA";
   if (el.subtitle) {
-    el.subtitle.textContent = `Budget ${APP_YEAR} • fichier attendu ${FILE_NAME} • montants agrégés par client et par mois`;
+    el.subtitle.textContent = `Budget ${APP_YEAR} â€¢ fichier attendu ${FILE_NAME} â€¢ montants agrÃ©gÃ©s par client et par mois`;
   }
   if (el.note) {
-    el.note.innerHTML = `Colonnes acceptées dans l’Excel : <strong>N° client Interne</strong> ou <strong>Code livré</strong> • <strong>Nom du client</strong> ou <strong>Nom client</strong> • <strong>Montant prix achat KENT</strong> ou <strong>CA Total</strong> • <strong>Mois2</strong>.<br>Vue N-1 basée sur le budget ${APP_YEAR}, avec lecture directe de <strong>${FILE_NAME}</strong>.`;
+    el.note.innerHTML = `Colonnes acceptÃ©es dans lâ€™Excel : <strong>NÂ° client Interne</strong> ou <strong>Code livrÃ©</strong> â€¢ <strong>Nom du client</strong> ou <strong>Nom client</strong> â€¢ <strong>Montant prix achat KENT</strong> ou <strong>CA Total</strong> â€¢ <strong>Mois2</strong>.<br>Vue N-1 basÃ©e sur le budget ${APP_YEAR}, avec lecture directe de <strong>${FILE_NAME}</strong>.`;
   }
   el.btnReload.textContent = `Charger / Recharger ${FILE_NAME}`;
-  el.dropHint.textContent = `Dépose ${FILE_NAME} pour recharger`;
+  el.dropHint.textContent = `DÃ©pose ${FILE_NAME} pour recharger`;
 
   let pivot = loadJSONAny(STORAGE_KEY_CANDIDATES, null); // { meta, clients: [{id, clientInternal, clientName, months:{jan:number...}}] }
   let filterText = "";
@@ -473,7 +78,7 @@
   // INIT
   // =========================
   if (pivot?.clients?.length) render();
-  else renderEmpty(`Aucune donnée. Charge ${FILE_NAME}.`);
+  else renderEmpty(`Aucune donnÃ©e. Charge ${FILE_NAME}.`);
 
   autoFetchExcel(); // best effort
 
@@ -494,11 +99,11 @@
   });
 
   el.btnReset.addEventListener("click", () => {
-    if (!confirm(`Supprimer les données Réel N-1 PSA (${PREV_YEAR}) stockées en local ?`)) return;
+    if (!confirm(`Supprimer les donnÃ©es RÃ©el N-1 PSA (${PREV_YEAR}) stockÃ©es en local ?`)) return;
     removeStorageKeys(STORAGE_KEY_CANDIDATES);
     pivot = null;
     sortTotalDir = null;
-    renderEmpty(`Données locales supprimées. Recharge ${FILE_NAME}.`);
+    renderEmpty(`DonnÃ©es locales supprimÃ©es. Recharge ${FILE_NAME}.`);
   });
 
   el.btnExportJson.addEventListener("click", () => exportJSON());
@@ -521,7 +126,7 @@
     if (!file) return;
     const name = (file.name || "").toLowerCase();
     if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
-      alert("Veuillez déposer un fichier .xlsx ou .xls");
+      alert("Veuillez dÃ©poser un fichier .xlsx ou .xls");
       return;
     }
     await importFromFile(file);
@@ -549,8 +154,8 @@
 
     if (!pivot?.clients?.length){
       el.srcLabel.textContent = FILE_NAME;
-      el.lastUpdate.textContent = "échec auto";
-      renderEmpty(`Aucune donnée. Vérifie ${FILE_NAME}.`);
+      el.lastUpdate.textContent = "Ã©chec auto";
+      renderEmpty(`Aucune donnÃ©e. VÃ©rifie ${FILE_NAME}.`);
       if (lastError) console.warn(lastError);
     }
   }
@@ -569,7 +174,7 @@
   }
 
   // =========================
-  // PARSE + PIVOT (SANS QUANTITÉS)
+  // PARSE + PIVOT (SANS QUANTITÃ‰S)
   // =========================
   function parseAndBuildPivot(arrayBuffer, sourceLabel){
     const wb = XLSX.read(arrayBuffer, { type: "array" });
@@ -585,8 +190,8 @@
     const headerMap = buildHeaderMap(rows[0]);
 
     const colClientInterne = findCol(headerMap, [
-      "n° client interne","no client interne","n client interne","n° client","numero client interne",
-      "code livré","code livre","code"
+      "nÂ° client interne","no client interne","n client interne","nÂ° client","numero client interne",
+      "code livrÃ©","code livre","code"
     ]);
     const colNomClient = findCol(headerMap, ["nom du client","nom client","client"]);
     const colMontant = findCol(headerMap, [
@@ -597,7 +202,7 @@
 
     if (!colClientInterne || !colNomClient || !colMontant || !colMois){
       const missing = [
-        !colClientInterne ? "N° client Interne / Code livré" : null,
+        !colClientInterne ? "NÂ° client Interne / Code livrÃ©" : null,
         !colNomClient ? "Nom du client / Nom client" : null,
         !colMontant ? "Montant prix achat KENT / CA Total" : null,
         !colMois ? "Mois2" : null,
@@ -647,7 +252,7 @@
 
     saveJSON(STORAGE_KEY, pivot);
     saveJSON(LEGACY_STORAGE_KEY, pivot);
-    sortTotalDir = null; // reset tri à l'import
+    sortTotalDir = null; // reset tri Ã  l'import
     render();
   }
 
@@ -672,17 +277,17 @@
   }
 
   // =========================
-  // RENDER (2 colonnes séparées + TOTAL + ligne total)
+  // RENDER (2 colonnes sÃ©parÃ©es + TOTAL + ligne total)
   // =========================
   function renderEmpty(msg){
     el.clientsCount.textContent = "0";
     el.srcLabel.textContent = pivot?.meta?.source || `Cible auto : ${FILE_NAME}`;
-    el.lastUpdate.textContent = "—";
+    el.lastUpdate.textContent = "â€”";
 
     el.table.innerHTML = `
       <thead>
         <tr>
-          <th class="col-sticky" style="min-width:160px;">N° client</th>
+          <th class="col-sticky" style="min-width:160px;">NÂ° client</th>
           <th class="col-sticky2" style="min-width:360px;">Nom du client</th>
           ${MONTHS.map(m => `<th>${escapeHtml(m.label)}</th>`).join("")}
           <th class="col-total">TOTAL</th>
@@ -690,10 +295,10 @@
       </thead>
       <tbody>
         <tr>
-          <td class="col-sticky">—</td>
-          <td class="col-sticky2">${escapeHtml(msg || "Aucune donnée.")}</td>
-          ${MONTHS.map(() => `<td class="num">—</td>`).join("")}
-          <td class="num col-total">—</td>
+          <td class="col-sticky">â€”</td>
+          <td class="col-sticky2">${escapeHtml(msg || "Aucune donnÃ©e.")}</td>
+          ${MONTHS.map(() => `<td class="num">â€”</td>`).join("")}
+          <td class="num col-total">â€”</td>
         </tr>
       </tbody>
     `;
@@ -701,11 +306,11 @@
 
   function render(){
     if (!pivot?.clients?.length){
-      renderEmpty(`Aucune donnée. Charge ${FILE_NAME}.`);
+      renderEmpty(`Aucune donnÃ©e. Charge ${FILE_NAME}.`);
       return;
     }
 
-    el.srcLabel.textContent = pivot.meta?.source || "—";
+    el.srcLabel.textContent = pivot.meta?.source || "â€”";
     el.lastUpdate.textContent = formatDateTime(pivot.meta?.updatedAt);
     el.clientsCount.textContent = String(pivot.clients.length);
 
@@ -716,24 +321,24 @@
       return a.includes(filterText) || b.includes(filterText);
     });
 
-    // tri si activé
+    // tri si activÃ©
     if (sortTotalDir === "desc"){
       clients = clients.slice().sort((a,b) => getClientTotal(b) - getClientTotal(a));
     } else if (sortTotalDir === "asc"){
       clients = clients.slice().sort((a,b) => getClientTotal(a) - getClientTotal(b));
     }
 
-    // Totaux colonne + total général
+    // Totaux colonne + total gÃ©nÃ©ral
     const colSums = {};
     for (const m of MONTHS) colSums[m.key] = 0;
     let grandTotal = 0;
 
     // head (TOTAL clickable)
-    const sortArrow = sortTotalDir === "desc" ? "▼" : (sortTotalDir === "asc" ? "▲" : "↕");
+    const sortArrow = sortTotalDir === "desc" ? "â–¼" : (sortTotalDir === "asc" ? "â–²" : "â†•");
     const thead = `
       <thead>
         <tr>
-          <th class="col-sticky" style="min-width:160px;">N° client</th>
+          <th class="col-sticky" style="min-width:160px;">NÂ° client</th>
           <th class="col-sticky2" style="min-width:360px;">Nom du client</th>
           ${MONTHS.map(m => `<th>${escapeHtml(m.label)}</th>`).join("")}
           <th class="col-total sortable" id="thTotal">
@@ -770,7 +375,7 @@
     const tbodyFooter = `
       <tr class="row-total">
         <td class="col-sticky">TOTAL</td>
-        <td class="col-sticky2">—</td>
+        <td class="col-sticky2">â€”</td>
         ${footerCells}
         <td class="num col-total">${fmt0(grandTotal)}</td>
       </tr>
@@ -792,10 +397,10 @@
   }
 
   // =========================
-  // EXPORTS (inchangés)
+  // EXPORTS (inchangÃ©s)
   // =========================
   function exportJSON(){
-    if (!pivot?.clients?.length) { alert("Rien à exporter."); return; }
+    if (!pivot?.clients?.length) { alert("Rien Ã  exporter."); return; }
     downloadBlob(
       new Blob([JSON.stringify(pivot, null, 2)], { type: "application/json" }),
       `${EXPORT_STEM}_${stamp()}.json`
@@ -803,15 +408,15 @@
   }
 
   function exportCSV(){
-    if (!pivot?.clients?.length) { alert("Rien à exporter."); return; }
+    if (!pivot?.clients?.length) { alert("Rien Ã  exporter."); return; }
 
     const rows = pivot.clients.map(c => {
       const r = {
-        "N° client Interne": c.clientInternal || "",
+        "NÂ° client Interne": c.clientInternal || "",
         "Nom du client": c.clientName || "",
       };
       for (const m of MONTHS) r[m.label] = Math.round(toNumber(c.months?.[m.key]));
-      // ajout TOTAL à l'export (logique)
+      // ajout TOTAL Ã  l'export (logique)
       r["TOTAL"] = Math.round(getClientTotal(c));
       return r;
     });
@@ -822,11 +427,11 @@
   }
 
   function exportXLSX(){
-    if (!pivot?.clients?.length) { alert("Rien à exporter."); return; }
+    if (!pivot?.clients?.length) { alert("Rien Ã  exporter."); return; }
 
     const rows = pivot.clients.map(c => {
       const r = {
-        "N° client Interne": c.clientInternal || "",
+        "NÂ° client Interne": c.clientInternal || "",
         "Nom du client": c.clientName || "",
       };
       for (const m of MONTHS) r[m.label] = toNumber(c.months?.[m.key]);
@@ -836,7 +441,7 @@
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, "Activité Réelle (Pivot)");
+    XLSX.utils.book_append_sheet(wb, ws, "ActivitÃ© RÃ©elle (Pivot)");
     const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     downloadBlob(
       new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
@@ -924,7 +529,7 @@
       const d = new Date(iso);
       return d.toLocaleString("fr-FR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
     }catch{
-      return "—";
+      return "â€”";
     }
   }
 
@@ -952,6 +557,4 @@
   }
 
 })();
-</script>
-</body>
-</html>
+
