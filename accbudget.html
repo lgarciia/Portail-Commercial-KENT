@@ -114,24 +114,75 @@
 
     .ddBtn{
       appearance:none;
-      background:rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.12);
+      background:linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.05));
+      border:1px solid rgba(255,255,255,0.14);
       color:var(--text);
-      height:38px;
-      padding:0 14px 0 16px;
-      border-radius:999px;
+      height:42px;
+      padding:0 16px;
+      border-radius:16px;
       font-weight:800;
       font-size:13px;
+      letter-spacing:.01em;
       cursor:pointer;
-      display:flex;
+      display:inline-flex;
       align-items:center;
-      gap:8px;
+      gap:10px;
       transition:.15s;
       user-select:none;
       white-space:nowrap;
+      box-shadow:0 14px 32px rgba(0,0,0,0.22);
     }
 
-    .ddBtn:hover{ background:rgba(255,255,255,0.12); transform:translateY(-1px); }
+    .ddBtn:hover{
+      background:linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.07));
+      border-color:rgba(124,58,237,0.34);
+      transform:translateY(-1px);
+    }
+
+    .dd:focus-within .ddBtn{
+      border-color:rgba(124,58,237,0.48);
+      box-shadow:0 0 0 4px rgba(124,58,237,0.12), 0 18px 38px rgba(0,0,0,0.24);
+    }
+
+    .yearSelectWrap{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+    }
+
+    .yearSelectWrap::after{
+      content:"";
+      position:absolute;
+      right:18px;
+      width:9px;
+      height:9px;
+      border-right:2px solid rgba(255,255,255,0.84);
+      border-bottom:2px solid rgba(255,255,255,0.84);
+      transform:rotate(45deg);
+      margin-top:-4px;
+      pointer-events:none;
+      transition:.18s ease;
+    }
+
+    .yearSelectWrap:focus-within::after{
+      transform:translateY(1px) rotate(45deg);
+      border-color:#ffffff;
+    }
+
+    .yearSelectWrap select#yearSelect{
+      min-width:132px;
+      padding-right:48px !important;
+      background-image:linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.05)) !important;
+    }
+
+    html[data-theme="light"] .yearSelectWrap::after{
+      border-right-color:rgba(15,23,42,0.76);
+      border-bottom-color:rgba(15,23,42,0.76);
+    }
+
+    html[data-theme="light"] .yearSelectWrap select#yearSelect{
+      background-image:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(241,245,249,0.96)) !important;
+    }
 
     .chev{
       width:9px;height:9px;
@@ -296,8 +347,10 @@
 
     <!-- Budget -->
      <button class="helpBtn" id="openHelp">?</button>
-    <select class="ddBtn" id="yearSelect" title="Choix de l'année active"></select>
-<a class="btn primary" href="budget2026.html">Budget annuel</a>
+    <div class="yearSelectWrap">
+      <select class="ddBtn" id="yearSelect" title="Choix de l'année active"></select>
+    </div>
+<a class="btn primary" href="budget2026.html" data-year-link>Budget annuel</a>
 
     <!-- Réel N-1 -->
     <div class="dd" id="ddReel">
@@ -306,10 +359,10 @@
       </button>
 
       <div class="menu" id="menuReel">
-        <a href="activite-reelle-n-1.html">PSA <small>→</small></a>
-        <a href="activitereelgueudet.html">Gueudet <small>→</small></a>
-        <a href="activitereelford.html">Ford <small>→</small></a>
-        <a href="activitereeldirect.html">Direct <small>→</small></a>
+        <a href="activite-reelle-n-1.html" data-year-link>PSA <small>→</small></a>
+        <a href="activitereelgueudet.html?scope=n1" data-year-link>Gueudet <small>→</small></a>
+        <a href="activitereelford.html?scope=n1" data-year-link>Ford <small>→</small></a>
+        <a href="activitereeldirect.html?scope=n1" data-year-link>Direct <small>→</small></a>
       </div>
     </div>
 
@@ -320,15 +373,15 @@
       </button>
 
       <div class="menu" id="menuHisto">
-        <a href="histo-budget-psa.html">PSA <small>→</small></a>
-        <a href="histo-budget-gueudet.html">Gueudet <small>→</small></a>
-        <a href="histo-budget-ford.html">Ford <small>→</small></a>
-        <a href="histo-budget-direct.html">Direct <small>→</small></a>
+        <a href="histo-budget-psa.html" data-year-link>PSA <small>→</small></a>
+        <a href="histo-budget-gueudet.html" data-year-link>Gueudet <small>→</small></a>
+        <a href="histo-budget-ford.html" data-year-link>Ford <small>→</small></a>
+        <a href="histo-budget-direct.html" data-year-link>Direct <small>→</small></a>
       </div>
     </div>
 
     <!-- Projection -->
-    <a class="btn" href="projectionpsa2026.html">Projection PSA</a>
+    <a class="btn" href="projectionpsa2026.html" data-year-link>Projection PSA</a>
 
   </div>
 </div>
@@ -461,10 +514,15 @@ document.addEventListener("keydown",(e)=>{
 })
 
 const yearSelect = document.getElementById("yearSelect")
+function refreshYearLinks(year){
+  KentDataConfig.applyYearToLinks(document, year)
+}
 KentDataConfig.fillYearSelect(yearSelect, { selectedYear: KentDataConfig.getActiveYear() })
+refreshYearLinks(KentDataConfig.getActiveYear())
 yearSelect.addEventListener("change", () => {
   const nextYear = KentDataConfig.setActiveYear(Number(yearSelect.value))
   yearSelect.value = String(nextYear)
+  refreshYearLinks(nextYear)
 })
 
 </script>

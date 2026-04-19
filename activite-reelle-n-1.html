@@ -651,7 +651,7 @@
   // =========================
   function renderEmpty(msg){
     el.clientsCount.textContent = "0";
-    el.srcLabel.textContent = pivot?.meta?.source || "—";
+    el.srcLabel.textContent = pivot?.meta?.source || `Cible auto : ${FILE_NAME}`;
     el.lastUpdate.textContent = "—";
 
     el.table.innerHTML = `

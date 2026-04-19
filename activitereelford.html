@@ -350,14 +350,27 @@
   // =========================
   const ENTITY_KEY = "ford";
   const APP_YEAR = KentDataConfig.getActiveYear();
-  const FILE_CANDIDATES = KentDataConfig.getEntityFileCandidates(ENTITY_KEY, "real", APP_YEAR);
+  const VIEW_PARAMS = new URLSearchParams(location.search);
+  const IS_N1_VIEW = VIEW_PARAMS.get("scope") === "n1";
+  const TARGET_YEAR = IS_N1_VIEW ? KentDataConfig.getPreviousYear(APP_YEAR) : APP_YEAR;
+  const FILE_KIND = IS_N1_VIEW ? "realN1" : "real";
+  const FILE_CANDIDATES = KentDataConfig.getEntityFileCandidates(ENTITY_KEY, FILE_KIND, APP_YEAR);
   const FILE_NAME = FILE_CANDIDATES[0];
   const STORAGE = KentDataConfig.getStorageKeys(ENTITY_KEY, APP_YEAR);
-  const STORAGE_KEY_PIVOT = STORAGE.activityPivot.primary;
+  const TARGET_STORAGE = KentDataConfig.getStorageKeys(ENTITY_KEY, TARGET_YEAR);
+  const STORAGE_KEY_PIVOT = IS_N1_VIEW
+    ? KentDataConfig.buildStorageKey("ACTIVITE_REEL_N1", ENTITY_KEY, APP_YEAR)
+    : STORAGE.activityPivot.primary;
   const STORAGE_KEY_REPORTING_FORD = STORAGE.activityReport.primary;
-  const STORAGE_KEY_PIVOT_CANDIDATES = [STORAGE_KEY_PIVOT].concat(STORAGE.activityPivot.legacy);
-  const STORAGE_KEY_REPORTING_CANDIDATES = [STORAGE_KEY_REPORTING_FORD].concat(STORAGE.activityReport.legacy);
-  const EXPORT_STEM = `activite_reelle_ford_${APP_YEAR}`;
+  const STORAGE_KEY_PIVOT_CANDIDATES = IS_N1_VIEW
+    ? [STORAGE_KEY_PIVOT, TARGET_STORAGE.activityPivot.primary].concat(TARGET_STORAGE.activityPivot.legacy)
+    : [STORAGE_KEY_PIVOT].concat(STORAGE.activityPivot.legacy);
+  const STORAGE_KEY_REPORTING_CANDIDATES = IS_N1_VIEW
+    ? []
+    : [STORAGE_KEY_REPORTING_FORD].concat(STORAGE.activityReport.legacy);
+  const EXPORT_STEM = IS_N1_VIEW
+    ? `activite_reelle_ford_n1_${TARGET_YEAR}`
+    : `activite_reelle_ford_${APP_YEAR}`;
 
   const MONTHS = [
     { key: "jan", label: "Janvier", aliases: ["janvier","jan"] },
@@ -389,6 +402,9 @@
     clientsCount: document.getElementById("clientsCount"),
     lastUpdate: document.getElementById("lastUpdate"),
     syncLabel: document.getElementById("syncLabel"),
+    title: document.querySelector(".titleWrap .title"),
+    subtitle: document.querySelector(".titleWrap .subtitle"),
+    note: document.querySelector(".mutedNote"),
 
     search: document.getElementById("search"),
     dropZone: document.getElementById("dropZone"),
@@ -399,6 +415,18 @@
   // =========================
   // STATE
   // =========================
+  if (IS_N1_VIEW) {
+    document.title = `Réel N-1 ${TARGET_YEAR} — Ford`;
+    if (el.title) el.title.textContent = "Réel N-1 — Ford";
+    if (el.subtitle) {
+      el.subtitle.textContent = `Budget ${APP_YEAR} • fichier attendu ${FILE_NAME} • CA agrégé par client et par mois`;
+    }
+    if (el.note) {
+      el.note.innerHTML = `Colonnes attendues : <strong>Code livré</strong> • <strong>Nom client</strong> • <strong>CA Total</strong> • <strong>mois2</strong>.<br>Vue N-1 basée sur le budget ${APP_YEAR}, avec lecture directe de <strong>${FILE_NAME}</strong>.`;
+    }
+    const syncPill = el.syncLabel && el.syncLabel.closest(".pill");
+    if (syncPill) syncPill.style.display = "none";
+  }
   el.btnReload.textContent = `Charger / Recharger ${FILE_NAME}`;
   el.dropHint.textContent = `Dépose ${FILE_NAME} pour recharger`;
 
@@ -436,9 +464,12 @@
   });
 
   el.btnReset.addEventListener("click", () => {
-    if (!confirm("Supprimer les données Activité Réelle Ford stockées en local ?")) return;
+    const confirmLabel = IS_N1_VIEW
+      ? `Supprimer les données Réel N-1 Ford (${TARGET_YEAR}) stockées en local ?`
+      : "Supprimer les données Activité Réelle Ford stockées en local ?";
+    if (!confirm(confirmLabel)) return;
     removeStorageKeys(STORAGE_KEY_PIVOT_CANDIDATES);
-    removeStorageKeys(STORAGE_KEY_REPORTING_CANDIDATES);
+    if (!IS_N1_VIEW) removeStorageKeys(STORAGE_KEY_REPORTING_CANDIDATES);
     pivot = null;
     sortTotalDir = null;
     renderEmpty("Données locales supprimées. Recharge le fichier.");
@@ -570,8 +601,10 @@
 
     saveJSON(STORAGE_KEY_PIVOT, pivot);
 
-    // ✅ Bridge vers reporting annuel FORD (format identique PSA)
-    saveActiviteReelFordFromPivot(pivot);
+    if (!IS_N1_VIEW) {
+      // ✅ Bridge vers reporting annuel FORD (format identique PSA)
+      saveActiviteReelFordFromPivot(pivot);
+    }
 
     sortTotalDir = null;
     render();
@@ -622,6 +655,9 @@
   }
 
   function updateSyncLabel(){
+    if (IS_N1_VIEW){
+      return;
+    }
     const payload = loadJSONAny(STORAGE_KEY_REPORTING_CANDIDATES, null);
     if (payload?.clients?.length){
       el.syncLabel.textContent = `OK (${payload.clients.length})`;
@@ -644,7 +680,7 @@
   // =========================
   function renderEmpty(msg){
     el.clientsCount.textContent = "0";
-    el.srcLabel.textContent = pivot?.meta?.source || "—";
+    el.srcLabel.textContent = pivot?.meta?.source || `Cible auto : ${FILE_NAME}`;
     el.lastUpdate.textContent = "—";
 
     el.table.innerHTML = `

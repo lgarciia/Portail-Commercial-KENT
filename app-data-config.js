@@ -306,6 +306,7 @@
     getEntityConfig: entityConfig,
     getEntityFile,
     getEntityFileCandidates,
+    buildStorageKey,
     getStorageKeys,
     buildYearHref,
     applyYearToLinks,
