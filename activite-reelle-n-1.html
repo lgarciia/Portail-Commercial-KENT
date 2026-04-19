@@ -385,7 +385,7 @@
             <table id="pivotTable"></table>
           </div>
           <div class="mutedNote">
-            Colonnes attendues dans l’Excel : <strong>N° client Interne</strong> • <strong>Nom du client</strong> • <strong>Montant prix achat KENT</strong> • <strong>Mois2</strong>.
+            Colonnes acceptées dans l’Excel : <strong>N° client Interne</strong> ou <strong>Code livré</strong> • <strong>Nom du client</strong> ou <strong>Nom client</strong> • <strong>Montant prix achat KENT</strong> ou <strong>CA Total</strong> • <strong>Mois2</strong>.
             Les montants sont agrégés par client et par mois puis stockés localement pour l’année active.
           </div>
         </div>
@@ -566,16 +566,22 @@
 
     const headerMap = buildHeaderMap(rows[0]);
 
-    const colClientInterne = findCol(headerMap, ["n° client interne","no client interne","n client interne","n° client","numero client interne"]);
+    const colClientInterne = findCol(headerMap, [
+      "n° client interne","no client interne","n client interne","n° client","numero client interne",
+      "code livré","code livre","code"
+    ]);
     const colNomClient = findCol(headerMap, ["nom du client","nom client","client"]);
-    const colMontant = findCol(headerMap, ["montant prix achat kent","montant achat kent","montant"]);
+    const colMontant = findCol(headerMap, [
+      "montant prix achat kent","montant achat kent","montant",
+      "ca total","ca","chiffre d'affaires","chiffre daffaires"
+    ]);
     const colMois = findCol(headerMap, ["mois2","mois"]);
 
     if (!colClientInterne || !colNomClient || !colMontant || !colMois){
       const missing = [
-        !colClientInterne ? "N° client Interne" : null,
-        !colNomClient ? "Nom du client" : null,
-        !colMontant ? "Montant prix achat KENT" : null,
+        !colClientInterne ? "N° client Interne / Code livré" : null,
+        !colNomClient ? "Nom du client / Nom client" : null,
+        !colMontant ? "Montant prix achat KENT / CA Total" : null,
         !colMois ? "Mois2" : null,
       ].filter(Boolean).join(", ");
       renderEmpty("Colonnes manquantes : " + missing);
