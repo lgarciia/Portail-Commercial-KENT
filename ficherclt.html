@@ -384,6 +384,15 @@
     .modal-actions{align-items:center;margin-top:22px}
     .helper-text{color:var(--muted);font-size:.88rem;line-height:1.55;max-width:720px}
     .helper-inline{color:var(--muted);font-size:.82rem;line-height:1.45}
+    #clientModalOverlay .modal-header{
+      position:relative;
+      padding-right:56px;
+    }
+    #clientModalOverlay .modal-header .close-btn{
+      position:absolute;
+      top:0;
+      right:0;
+    }
     .top-products-list{display:flex;flex-direction:column;gap:12px}
     .top-product-item{padding:16px;border-radius:18px}
     .top-product-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;margin-bottom:12px}
@@ -518,10 +527,6 @@
         </div>
 
         <div class="meta-grid">
-          <div class="meta-card">
-            <span>Numero client</span>
-            <strong id="clientNumeroClient">—</strong>
-          </div>
           <div class="meta-card">
             <span>Compte</span>
             <strong id="clientNumeroCompte">—</strong>
@@ -710,7 +715,7 @@
         </div>
 
         <div class="modal-actions">
-          <div class="helper-inline">Le numero client affiché dans la fiche correspond a l'ID Supabase généré automatiquement.</div>
+          <div class="helper-inline">Les informations sont enregistrees directement dans la base clients.</div>
           <div class="actions-inline">
             <button class="btn btn-secondary" id="cancelClientBtn" type="button">Annuler</button>
             <button class="btn btn-primary" id="saveClientBtn" type="submit">Enregistrer client</button>
@@ -748,7 +753,6 @@
       dom.clientSelect = document.getElementById("clientSelect");
       dom.selectedClientInfo = document.getElementById("selectedClientInfo");
       dom.clientNameCard = document.getElementById("clientNameCard");
-      dom.clientNumeroClient = document.getElementById("clientNumeroClient");
       dom.clientNumeroCompte = document.getElementById("clientNumeroCompte");
       dom.clientTelephone = document.getElementById("clientTelephone");
       dom.clientAdresse = document.getElementById("clientAdresse");
@@ -1003,7 +1007,6 @@
       dom.selectedClientInfo.textContent = "Aucun client";
       dom.clientNameCard.textContent = "Aucun client";
       dom.selectedClientSyncLabel.textContent = "Aucun client";
-      dom.clientNumeroClient.textContent = "—";
       dom.clientNumeroCompte.textContent = "—";
       dom.clientTelephone.textContent = "—";
       dom.clientAdresse.textContent = "—";
@@ -1021,7 +1024,6 @@
       dom.selectedClientInfo.textContent = clientName;
       dom.clientNameCard.textContent = clientName;
       dom.selectedClientSyncLabel.textContent = clientName;
-      dom.clientNumeroClient.textContent = client.id ? String(client.id) : "—";
       dom.clientNumeroCompte.textContent = client.numero_compte || "—";
       dom.clientTelephone.textContent = client.telephone || "—";
       dom.clientAdresse.textContent = client.adresse || "—";
@@ -1080,7 +1082,7 @@
       if (!query) return [...state.clients];
 
       return state.clients.filter(client =>
-        [client.id, client.nom, client.numero_compte, client.telephone, client.adresse]
+        [client.nom, client.numero_compte, client.telephone, client.adresse]
           .some(value => normalizeText(value).includes(query))
       );
     }

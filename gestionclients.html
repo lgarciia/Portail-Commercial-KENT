@@ -195,6 +195,7 @@
     }
     .btn-secondary{color:var(--text);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
     .btn-info{color:#d8f3ff;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.16)}
+    .btn-danger{color:#fecaca;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2)}
     .btn-sm{padding:8px 11px;border-radius:12px;font-size:.79rem}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
     .action-cell{display:flex;gap:8px;flex-wrap:wrap}
@@ -229,6 +230,15 @@
     }
     .modal-head h3{font-size:1.34rem;letter-spacing:-.02em}
     .modal-head p{color:var(--muted);line-height:1.5;margin-top:6px}
+    #clientModalOverlay .modal-head{
+      position:relative;
+      padding-right:56px;
+    }
+    #clientModalOverlay .modal-head .close-btn{
+      position:absolute;
+      top:0;
+      right:0;
+    }
     .close-btn{
       width:42px;
       height:42px;
@@ -325,14 +335,14 @@
       <div class="section-head">
         <div>
           <h2>Liste complete des clients</h2>
-          <p>Nom, numero client (ID), compte, telephone, adresse et plaque.</p>
+          <p>Nom, compte, telephone, adresse et plaque.</p>
         </div>
       </div>
 
       <div class="toolbar">
         <div class="field">
           <label for="searchInput">Recherche client</label>
-          <input type="text" id="searchInput" placeholder="Nom, numero client, compte, telephone, adresse, plaque..." />
+          <input type="text" id="searchInput" placeholder="Nom, compte, telephone, adresse, plaque..." />
         </div>
         <div class="field">
           <label for="plaqueFilter">Filtre plaque</label>
@@ -345,7 +355,6 @@
           <thead>
             <tr>
               <th>Nom client</th>
-              <th>Numero client</th>
               <th>Compte</th>
               <th>Telephone</th>
               <th>Adresse</th>
@@ -366,7 +375,7 @@
           <h3 id="clientModalTitle">Ajouter client</h3>
           <p id="clientModalSubtitle">Renseigne les informations puis valide pour enregistrer dans la table clients.</p>
         </div>
-        <button class="close-btn" id="closeClientModalBtn" type="button">×</button>
+        <button class="close-btn" id="closeClientModalBtn" type="button">x</button>
       </div>
 
       <form id="clientForm">
@@ -400,13 +409,31 @@
         </div>
 
         <div class="modal-actions">
-          <div class="helper">Le numero client est l'ID de la ligne client dans Supabase.</div>
+          <div class="helper">Les informations sont enregistrees directement dans la base clients.</div>
           <div class="actions">
             <button class="btn btn-secondary" id="cancelClientBtn" type="button">Annuler</button>
             <button class="btn btn-primary" id="saveClientBtn" type="submit">Enregistrer client</button>
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="deleteModalOverlay">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-head">
+        <div>
+          <h3>Confirmation suppression</h3>
+          <p id="deleteModalMessage">Confirmer la suppression de ce client ?</p>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top:10px;">
+        <div class="helper">Cette action est definitive.</div>
+        <div class="actions">
+          <button class="btn btn-secondary" id="cancelDeleteBtn" type="button">Annuler</button>
+          <button class="btn btn-danger" id="confirmDeleteBtn" type="button">Supprimer client</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -420,7 +447,8 @@
 
     const state = {
       clients: [],
-      plaques: []
+      plaques: [],
+      pendingDeleteClientId: null
     };
 
     const dom = {};
@@ -446,6 +474,10 @@
       dom.clientAdresseInput = document.getElementById("clientAdresseInput");
       dom.clientPlaqueSelect = document.getElementById("clientPlaqueSelect");
       dom.saveClientBtn = document.getElementById("saveClientBtn");
+      dom.deleteModalOverlay = document.getElementById("deleteModalOverlay");
+      dom.deleteModalMessage = document.getElementById("deleteModalMessage");
+      dom.cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+      dom.confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
       dom.toastWrap = document.getElementById("toastWrap");
     }
 
@@ -549,7 +581,6 @@
 
         if (!query) return true;
         const candidates = [
-          client.id,
           client.nom,
           client.numero_compte,
           client.telephone,
@@ -565,7 +596,7 @@
       if (!clients.length) {
         dom.clientsTableBody.innerHTML = `
           <tr>
-            <td colspan="7">
+            <td colspan="6">
               <div class="empty">Aucun client trouvé avec ces filtres.</div>
             </td>
           </tr>
@@ -576,13 +607,13 @@
       dom.clientsTableBody.innerHTML = clients.map(client => `
         <tr>
           <td>${escapeHtml(client.nom || "Client sans nom")}</td>
-          <td>${escapeHtml(client.id || "—")}</td>
           <td>${escapeHtml(client.numero_compte || "—")}</td>
           <td>${escapeHtml(client.telephone || "—")}</td>
           <td>${escapeHtml(client.adresse || "—")}</td>
           <td>${escapeHtml(getPlaqueName(client))}</td>
           <td class="action-cell">
             <button class="btn btn-info btn-sm" type="button" data-action="edit" data-client-id="${escapeHtml(client.id)}">Modifier</button>
+            <button class="btn btn-danger btn-sm" type="button" data-action="delete" data-client-id="${escapeHtml(client.id)}">Supprimer</button>
             <a class="btn btn-secondary btn-sm" href="ficherclt.html?client_id=${encodeURIComponent(String(client.id))}">Voir fiche</a>
           </td>
         </tr>
@@ -622,6 +653,43 @@
 
     function closeClientModal() {
       dom.clientModalOverlay.classList.remove("active");
+    }
+
+    function openDeleteModal(client) {
+      state.pendingDeleteClientId = client?.id ? String(client.id) : null;
+      dom.deleteModalMessage.textContent = `Confirmer la suppression de "${client?.nom || "ce client"}" ?`;
+      dom.deleteModalOverlay.classList.add("active");
+    }
+
+    function closeDeleteModal() {
+      dom.deleteModalOverlay.classList.remove("active");
+      state.pendingDeleteClientId = null;
+    }
+
+    async function confirmDeleteClient() {
+      const clientId = state.pendingDeleteClientId;
+      if (!clientId) return;
+
+      try {
+        dom.confirmDeleteBtn.disabled = true;
+        setStatus("Suppression du client...", "info");
+        const { error } = await supabaseClient
+          .from("clients")
+          .delete()
+          .eq("id", clientId);
+        if (error) throw error;
+
+        await refreshData();
+        closeDeleteModal();
+        setStatus("Client supprime avec succes.", "success");
+        showToast("Client supprime.", "success");
+      } catch (error) {
+        console.error("Erreur confirmDeleteClient:", error);
+        setStatus("Erreur lors de la suppression du client.", "error");
+        showToast("Impossible de supprimer ce client (verifie les visites liees).", "error");
+      } finally {
+        dom.confirmDeleteBtn.disabled = false;
+      }
     }
 
     function findClientByCompteAndPlaque(numeroCompte, plaqueId, excludeId = "") {
@@ -709,14 +777,15 @@
     }
 
     function handleTableClick(event) {
-      const btn = event.target.closest("[data-action='edit'][data-client-id]");
+      const btn = event.target.closest("[data-action][data-client-id]");
       if (!btn) return;
       const client = getClientById(btn.dataset.clientId);
       if (!client) {
         showToast("Client introuvable.", "warning");
         return;
       }
-      openClientModal(client);
+      if (btn.dataset.action === "edit") openClientModal(client);
+      if (btn.dataset.action === "delete") openDeleteModal(client);
     }
 
     function attachEvents() {
@@ -727,13 +796,21 @@
       dom.closeClientModalBtn.addEventListener("click", closeClientModal);
       dom.cancelClientBtn.addEventListener("click", closeClientModal);
       dom.clientForm.addEventListener("submit", saveClient);
+      dom.cancelDeleteBtn.addEventListener("click", closeDeleteModal);
+      dom.confirmDeleteBtn.addEventListener("click", confirmDeleteClient);
 
       dom.clientModalOverlay.addEventListener("click", event => {
         if (event.target === dom.clientModalOverlay) closeClientModal();
       });
+      dom.deleteModalOverlay.addEventListener("click", event => {
+        if (event.target === dom.deleteModalOverlay) closeDeleteModal();
+      });
 
       document.addEventListener("keydown", event => {
-        if (event.key === "Escape") closeClientModal();
+        if (event.key === "Escape") {
+          closeClientModal();
+          closeDeleteModal();
+        }
       });
     }
 
@@ -758,3 +835,7 @@
   </script>
 </body>
 </html>
+
+
+
+
