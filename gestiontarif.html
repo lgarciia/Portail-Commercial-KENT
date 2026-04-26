@@ -832,9 +832,10 @@
 
     function telechargerModele() {
       const rows = [
-        { plaque: "MRA", reference_produit: "86807 00", prix_vente: 13 },
-        { plaque: "EURO", reference_produit: "86807 00", prix_vente: 12 },
-        { plaque: "Concessionnaire", reference_produit: "86807 00", prix_vente: 11.5 }
+        { plaque: "Gueudet Tarif revente", reference_produit: "86807 00", prix_vente: 13 },
+        { plaque: "PSA Tarif Revente", reference_produit: "86807 00", prix_vente: 12 },
+        { plaque: "Concession Ford Tarif Revente", reference_produit: "86807 00", prix_vente: 11.5 },
+        { plaque: "Direct Tarif", reference_produit: "86807 00", prix_vente: 11 }
       ];
 
       const worksheet = XLSX.utils.json_to_sheet(rows);

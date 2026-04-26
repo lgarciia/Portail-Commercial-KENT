@@ -761,8 +761,8 @@
     function downloadTemplate() {
       const csv = [
         "nom,numero_compte,adresse,telephone,plaque",
-        "A.R AUTOMOBILES,3659,12 rue de Paris,0600000000,MRA",
-        "A.R AUTOMOBILES,3659,12 rue de Paris,0600000000,AGENT"
+        "A.R AUTOMOBILES,3659,12 rue de Paris,0600000000,Gueudet Tarif revente",
+        "A.R AUTOMOBILES,3659,12 rue de Paris,0600000000,Gueudet Tarif achat"
       ].join("\n");
 
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
