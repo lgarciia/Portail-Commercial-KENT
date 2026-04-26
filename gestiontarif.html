@@ -356,9 +356,17 @@
           <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
         </div>
 
+        <div class="field-group" style="margin-bottom: 14px;">
+          <label for="defaultPlaqueSelect">Plaque par defaut (optionnel)</label>
+          <select id="defaultPlaqueSelect">
+            <option value="">Aucune plaque par defaut</option>
+          </select>
+        </div>
+
         <div class="helper-text">
           Format attendu : <strong>plaque</strong> / <strong>reference_produit</strong> / <strong>prix_vente</strong><br>
-          Une ligne = un tarif pour une plaque et un produit.
+          Une ligne = un tarif pour une plaque et un produit.<br>
+          Si la colonne plaque est absente ou vide, la plaque par defaut sera utilisee.
         </div>
 
         <div class="actions-row" style="margin-top: 16px;">
@@ -500,6 +508,36 @@
     let produits = [];
     let parsedRows = [];
     let analyzedRows = [];
+    let plaqueIndex = new Map();
+    let produitIndexByReference = new Map();
+
+    const COLUMN_ALIASES = {
+      plaque: [
+        "plaque",
+        "nom plaque",
+        "plaque client",
+        "type plaque",
+        "tarif plaque"
+      ],
+      reference_produit: [
+        "reference_produit",
+        "reference produit",
+        "referenceproduit",
+        "ref produit",
+        "ref_produit",
+        "ref",
+        "reference"
+      ],
+      prix_vente: [
+        "prix_vente",
+        "prix vente",
+        "prixvente",
+        "prix",
+        "tarif",
+        "prix de vente",
+        "prix client"
+      ]
+    };
 
     function setStatus(message) {
       document.getElementById("statusBar").textContent = message;
@@ -519,27 +557,130 @@
         .trim()
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+        .replace(/\s+/g, " ");
+    }
+
+    function normalizeHeaderKey(value) {
+      return String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "");
     }
 
     function normalizeReference(value) {
       return String(value ?? "")
         .trim()
-        .replace(/\s+/g, " ")
         .toUpperCase();
+    }
+
+    function canonicalReference(value) {
+      return normalizeReference(value)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Z0-9]/g, "");
     }
 
     function parsePrice(value) {
       if (value === null || value === undefined || value === "") return NaN;
 
-      if (typeof value === "number") return value;
+      if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
 
-      const cleaned = String(value)
+      let cleaned = String(value)
         .trim()
         .replace(/\s/g, "")
-        .replace(",", ".");
+        .replace(/[\u20AC\u00A3$]/g, "")
+        .replace(/[^0-9,.\-]/g, "");
+
+      if (!cleaned) return NaN;
+
+      const hasComma = cleaned.includes(",");
+      const hasDot = cleaned.includes(".");
+
+      if (hasComma && hasDot) {
+        if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+          cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+        } else {
+          cleaned = cleaned.replace(/,/g, "");
+        }
+      } else if (hasComma) {
+        cleaned = cleaned.replace(",", ".");
+      }
 
       return Number(cleaned);
+    }
+
+    function buildNormalizedLookup(row) {
+      const lookup = new Map();
+      Object.keys(row || {}).forEach(key => {
+        lookup.set(normalizeHeaderKey(key), row[key]);
+      });
+      return lookup;
+    }
+
+    function readColumnValue(lookup, aliases) {
+      for (const alias of aliases) {
+        const key = normalizeHeaderKey(alias);
+        if (lookup.has(key)) return lookup.get(key);
+      }
+      return "";
+    }
+
+    function hasAnyAlias(lookup, aliases) {
+      return aliases.some(alias => lookup.has(normalizeHeaderKey(alias)));
+    }
+
+    function rebuildPlaqueIndex() {
+      plaqueIndex = new Map();
+      plaques.forEach(plaque => {
+        const key = normalizeText(plaque.nom);
+        if (key && !plaqueIndex.has(key)) {
+          plaqueIndex.set(key, plaque);
+        }
+      });
+    }
+
+    function rebuildProduitIndex() {
+      produitIndexByReference = new Map();
+      produits.forEach(produit => {
+        const strictKey = normalizeReference(produit.reference_produit);
+        const canonicalKey = canonicalReference(produit.reference_produit);
+
+        if (strictKey && !produitIndexByReference.has(`strict:${strictKey}`)) {
+          produitIndexByReference.set(`strict:${strictKey}`, produit);
+        }
+
+        if (canonicalKey && !produitIndexByReference.has(`canon:${canonicalKey}`)) {
+          produitIndexByReference.set(`canon:${canonicalKey}`, produit);
+        }
+      });
+    }
+
+    function buildDefaultPlaqueSelect() {
+      const select = document.getElementById("defaultPlaqueSelect");
+      if (!select) return;
+
+      const current = select.value;
+      const options = ['<option value="">Aucune plaque par defaut</option>'];
+      plaques.forEach(plaque => {
+        options.push(`<option value="${escapeHtml(plaque.id)}">${escapeHtml(plaque.nom || "Plaque")}</option>`);
+      });
+
+      select.innerHTML = options.join("");
+
+      if (current && plaques.some(plaque => String(plaque.id) === String(current))) {
+        select.value = current;
+      }
+    }
+
+    function getDefaultPlaque() {
+      const selectedId = document.getElementById("defaultPlaqueSelect")?.value || "";
+      if (!selectedId) return null;
+      return plaques.find(plaque => String(plaque.id) === String(selectedId)) || null;
     }
 
     function formatCurrency(value) {
@@ -601,8 +742,10 @@
         const badgeClass = row.isValid ? "ok" : (row.errors.length ? "err" : "warn");
         const badgeText = row.isValid ? "Valide" : "Erreur";
         const detail = row.errors.length
-          ? row.errors.map(e => escapeHtml(e.message)).join(" • ")
-          : "Prête à importer";
+          ? row.errors.map(e => escapeHtml(e.message)).join(" | ")
+          : (row.usedDefaultPlaque
+              ? `Plaque par defaut appliquee : ${escapeHtml(row.plaque?.nom || "")}`
+              : "Prete a importer");
 
         return `
           <tr>
@@ -682,24 +825,41 @@
 
     function findPlaqueByName(name) {
       const normalized = normalizeText(name);
-      return plaques.find(p => normalizeText(p.nom) === normalized) || null;
+      if (!normalized) return null;
+      return plaqueIndex.get(normalized) || null;
     }
 
     function findProduitByReference(reference) {
-      const normalized = normalizeReference(reference);
-      return produits.find(p => normalizeReference(p.reference_produit) === normalized) || null;
+      const strict = normalizeReference(reference);
+      const canonical = canonicalReference(reference);
+      if (!strict && !canonical) return null;
+
+      if (strict && produitIndexByReference.has(`strict:${strict}`)) {
+        return produitIndexByReference.get(`strict:${strict}`) || null;
+      }
+
+      if (canonical && produitIndexByReference.has(`canon:${canonical}`)) {
+        return produitIndexByReference.get(`canon:${canonical}`) || null;
+      }
+
+      return null;
     }
 
     function analyserDonnees(rows) {
+      const defaultPlaque = getDefaultPlaque();
       analyzedRows = rows.map((raw, idx) => {
-        const plaque = findPlaqueByName(raw.plaque);
+        const rawPlaqueValue = String(raw.plaque ?? "").trim();
+        const usedDefaultPlaque = !rawPlaqueValue && Boolean(defaultPlaque);
+        const plaque = usedDefaultPlaque
+          ? defaultPlaque
+          : findPlaqueByName(raw.plaque);
         const produit = findProduitByReference(raw.reference_produit);
         const prix = parsePrice(raw.prix_vente);
         const errors = [];
 
-        if (!raw.plaque || !String(raw.plaque).trim()) {
+        if (!rawPlaqueValue && !defaultPlaque) {
           errors.push({ type: "plaque", message: "Plaque vide." });
-        } else if (!plaque) {
+        } else if (rawPlaqueValue && !plaque) {
           errors.push({ type: "plaque", message: `Plaque introuvable : ${raw.plaque}` });
         }
 
@@ -719,6 +879,7 @@
           plaque,
           produit,
           prix,
+          usedDefaultPlaque,
           errors,
           isValid: errors.length === 0
         };
@@ -761,14 +922,30 @@
           return;
         }
 
-        parsedRows = jsonData.map(row => ({
-          plaque: row.plaque ?? row.PLAQUE ?? row.Plaque ?? "",
-          reference_produit: row.reference_produit ?? row.REFERENCE_PRODUIT ?? row["reference produit"] ?? row["Référence produit"] ?? "",
-          prix_vente: row.prix_vente ?? row.PRIX_VENTE ?? row["prix vente"] ?? row["Prix vente"] ?? ""
-        }));
+        const headerLookup = buildNormalizedLookup(jsonData[0] || {});
+        const hasPlaqueColumn = hasAnyAlias(headerLookup, COLUMN_ALIASES.plaque);
+        const hasReferenceColumn = hasAnyAlias(headerLookup, COLUMN_ALIASES.reference_produit);
+        const hasPriceColumn = hasAnyAlias(headerLookup, COLUMN_ALIASES.prix_vente);
 
+        parsedRows = jsonData.map(row => {
+          const lookup = buildNormalizedLookup(row);
+          return {
+            plaque: readColumnValue(lookup, COLUMN_ALIASES.plaque),
+            reference_produit: readColumnValue(lookup, COLUMN_ALIASES.reference_produit),
+            prix_vente: readColumnValue(lookup, COLUMN_ALIASES.prix_vente)
+          };
+        });
+
+        const missingColumns = [];
+        if (!hasReferenceColumn) missingColumns.push("reference_produit");
+        if (!hasPriceColumn) missingColumns.push("prix_vente");
+        if (!hasPlaqueColumn && !getDefaultPlaque()) missingColumns.push("plaque (ou plaque par defaut)");
         analyserDonnees(parsedRows);
-        setStatus(`${parsedRows.length} ligne(s) lue(s), analyse terminée.`);
+        if (missingColumns.length) {
+          setStatus(`Analyse terminee avec colonnes manquantes: ${missingColumns.join(", ")}.`);
+        } else {
+          setStatus(`${parsedRows.length} ligne(s) lue(s), analyse terminee.`);
+        }
       } catch (error) {
         console.error("Erreur analyse fichier:", error);
         setStatus("Erreur de lecture du fichier.");
@@ -849,6 +1026,9 @@
         setStatus("Connexion à Supabase...");
         plaques = await fetchPlaques();
         produits = await fetchProduits();
+        rebuildPlaqueIndex();
+        rebuildProduitIndex();
+        buildDefaultPlaqueSelect();
         setStatus(`Connexion OK • ${plaques.length} plaque(s) • ${produits.length} produit(s) chargés.`);
       } catch (error) {
         console.error("Erreur init:", error);
@@ -859,6 +1039,12 @@
 
     document.getElementById("fileInput").addEventListener("change", () => {
       setStatus("Fichier sélectionné. Lance l’analyse.");
+    });
+
+    document.getElementById("defaultPlaqueSelect").addEventListener("change", () => {
+      if (!parsedRows.length) return;
+      analyserDonnees(parsedRows);
+      setStatus("Plaque par defaut mise a jour. Analyse rafraichie.");
     });
 
     initApp();

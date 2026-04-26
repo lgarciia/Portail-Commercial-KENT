@@ -396,8 +396,8 @@
       id: "supabase-pages",
       title: "Pages Supabase / terrain",
       subtitle: "CRM, suivi d'activité, fiches et tarifs",
-      pages: ["ficherclt.html", "tdbactivite.html", "gestionimportclients.html", "gestiontarif.html", "rappelclt.html", "rapportjournalier.html"],
-      reads: ["ficherclt.html : clients, produits, tarifs_plaques, visite_commandes, visites.", "tdbactivite.html : clients, produits, visite_commandes, visites.", "gestionimportclients.html : clients et plaques.", "gestiontarif.html : plaques, produits, tarifs_plaques.", "rappelclt.html : clients, produits, visite_commandes, visites.", "rapportjournalier.html : visites."],
+      pages: ["ficherclt.html", "tdbactivite.html", "gestionimportclients.html", "gestiontarif.html", "gestionproduits.html", "rappelclt.html", "rapportjournalier.html"],
+      reads: ["ficherclt.html : clients, produits, tarifs_plaques, visite_commandes, visites.", "tdbactivite.html : clients, produits, visite_commandes, visites.", "gestionimportclients.html : clients et plaques.", "gestiontarif.html : plaques, produits, tarifs_plaques.", "gestionproduits.html : produits.", "rappelclt.html : clients, produits, visite_commandes, visites.", "rapportjournalier.html : visites."],
       change: "La donnée de ces pages ne se corrige pas en modifiant un XLSX du repo. Il faut agir via Supabase ou via les écrans d'import de l'application.",
       storage: ["Peu utile comme source de vérité ; la vraie donnée est en base"],
       notes: "Si le bug est visuel, modifie le HTML. Si c'est la donnée métier, regarde la base."
