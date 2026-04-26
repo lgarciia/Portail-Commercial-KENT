@@ -205,6 +205,37 @@
       font-size: 0.88rem;
     }
 
+    .progress-wrap {
+      margin-top: 12px;
+      display: none;
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #7c3aed);
+      transition: width 0.2s ease;
+    }
+
     .helper-text {
       color: var(--muted);
       font-size: 0.86rem;
@@ -312,6 +343,79 @@
       padding: 32px 20px;
     }
 
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(580px, 100%);
+      background: #11162a;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .modal-head h3 {
+      font-size: 1rem;
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 14px 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .modal-summary {
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+
+    .result-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      display: grid;
+      gap: 6px;
+    }
+
+    .modal-actions {
+      padding: 0 16px 16px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
     .mono {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 0.8rem;
@@ -376,6 +480,15 @@
         </div>
 
         <div id="statusBar" class="status-bar">Prêt à analyser un fichier.</div>
+        <div class="progress-wrap" id="importProgress">
+          <div class="progress-head">
+            <span id="progressLabel">Preparation...</span>
+            <strong id="progressPercent">0%</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
 
         <div class="stats-grid">
           <div class="stat-box">
@@ -495,6 +608,22 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="resultModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="resultModalTitle">Resultat import</h3>
+        <button class="modal-close" type="button" onclick="closeResultModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-summary" id="resultModalSummary"></div>
+        <ul class="result-list" id="resultModalList"></ul>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" type="button" onclick="closeResultModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
@@ -541,6 +670,48 @@
 
     function setStatus(message) {
       document.getElementById("statusBar").textContent = message;
+    }
+
+    function showProgress() {
+      const wrap = document.getElementById("importProgress");
+      if (wrap) wrap.style.display = "block";
+    }
+
+    function hideProgress() {
+      const wrap = document.getElementById("importProgress");
+      if (wrap) wrap.style.display = "none";
+    }
+
+    function setImportProgress(current, total, label) {
+      const safeTotal = Math.max(1, Number(total) || 1);
+      const safeCurrent = Math.min(safeTotal, Math.max(0, Number(current) || 0));
+      const percent = Math.round((safeCurrent / safeTotal) * 100);
+
+      const fill = document.getElementById("progressFill");
+      const pct = document.getElementById("progressPercent");
+      const text = document.getElementById("progressLabel");
+
+      if (fill) fill.style.width = `${percent}%`;
+      if (pct) pct.textContent = `${percent}%`;
+      if (text) text.textContent = label || "Import en cours...";
+    }
+
+    function closeResultModal() {
+      document.getElementById("resultModal")?.classList.remove("active");
+    }
+
+    function openResultModal({ title, summary, lines = [] }) {
+      const overlay = document.getElementById("resultModal");
+      const titleEl = document.getElementById("resultModalTitle");
+      const summaryEl = document.getElementById("resultModalSummary");
+      const listEl = document.getElementById("resultModalList");
+
+      if (!overlay || !titleEl || !summaryEl || !listEl) return;
+
+      titleEl.textContent = title || "Resultat import";
+      summaryEl.textContent = summary || "";
+      listEl.innerHTML = lines.map(line => `<li>${escapeHtml(line)}</li>`).join("");
+      overlay.classList.add("active");
     }
 
     function escapeHtml(value) {
@@ -911,6 +1082,8 @@
         }
 
         setStatus("Lecture du fichier...");
+        hideProgress();
+        setImportProgress(0, 1, "Preparation...");
         const buffer = await readFileAsArrayBuffer(file);
         const workbook = XLSX.read(buffer, { type: "array" });
         const firstSheetName = workbook.SheetNames[0];
@@ -958,12 +1131,20 @@
         const valides = analyzedRows.filter(r => r.isValid);
 
         if (!analyzedRows.length) {
-          alert("Aucune donnée analysée.");
+          openResultModal({
+            title: "Import tarifs",
+            summary: "Aucune donnee analysee.",
+            lines: ["Analyse un fichier avant d'importer."]
+          });
           return;
         }
 
         if (!valides.length) {
-          alert("Aucune ligne valide à importer.");
+          openResultModal({
+            title: "Import tarifs",
+            summary: "Aucune ligne valide a importer.",
+            lines: ["Corrige les erreurs puis relance l'import."]
+          });
           return;
         }
 
@@ -971,28 +1152,80 @@
           return;
         }
 
-        setStatus("Préparation de l’import...");
+        setStatus("Preparation de l'import...");
+        showProgress();
+        setImportProgress(0, valides.length, "Preparation...");
 
-        const payload = valides.map(row => ({
-          plaque_id: row.plaque.id,
-          produit_id: row.produit.id,
-          prix_vente: row.prix
-        }));
+        let success = 0;
+        let failed = 0;
+        const chunkSize = 200;
+        let done = 0;
 
-        const { error } = await supabaseClient
-          .from("tarifs_plaques")
-          .upsert(payload, {
-            onConflict: "plaque_id,produit_id"
-          });
+        for (let start = 0; start < valides.length; start += chunkSize) {
+          const chunk = valides.slice(start, start + chunkSize);
+          const payload = chunk.map(row => ({
+            plaque_id: row.plaque.id,
+            produit_id: row.produit.id,
+            prix_vente: row.prix
+          }));
 
-        if (error) throw error;
+          try {
+            const { error } = await supabaseClient
+              .from("tarifs_plaques")
+              .upsert(payload, { onConflict: "plaque_id,produit_id" });
 
-        setStatus(`Import terminé avec succès • ${payload.length} ligne(s) insérée(s) ou mise(s) à jour.`);
-        alert(`Import terminé : ${payload.length} ligne(s) traitée(s).`);
+            if (error) throw error;
+            success += chunk.length;
+            done += chunk.length;
+            setImportProgress(done, valides.length, `Traitement ${done}/${valides.length}`);
+          } catch (chunkError) {
+            console.error("Erreur lot import tarifs, fallback ligne par ligne:", chunkError);
+
+            for (const row of chunk) {
+              try {
+                const { error } = await supabaseClient
+                  .from("tarifs_plaques")
+                  .upsert({
+                    plaque_id: row.plaque.id,
+                    produit_id: row.produit.id,
+                    prix_vente: row.prix
+                  }, { onConflict: "plaque_id,produit_id" });
+
+                if (error) throw error;
+                success++;
+              } catch (rowError) {
+                console.error("Erreur ligne import tarif:", row, rowError);
+                failed++;
+              }
+
+              done++;
+              setImportProgress(done, valides.length, `Traitement ${done}/${valides.length}`);
+            }
+          }
+        }
+
+        const hasFailures = failed > 0;
+        setStatus(
+          hasFailures
+            ? `Import termine avec erreurs • ${success} ligne(s) traitee(s) • ${failed} erreur(s).`
+            : `Import termine • ${success} ligne(s) traitee(s).`
+        );
+        openResultModal({
+          title: hasFailures ? "Import tarifs termine avec erreurs" : "Import tarifs termine",
+          summary: `Lignes valides traitees: ${valides.length}`,
+          lines: [
+            `Lignes traitees: ${success}`,
+            `Erreurs: ${failed}`
+          ]
+        });
       } catch (error) {
         console.error("Erreur import:", error);
-        setStatus("Erreur pendant l’import.");
-        alert("Erreur pendant l’import. Vérifie surtout la contrainte unique sur plaque_id + produit_id.");
+        setStatus("Erreur pendant l'import.");
+        openResultModal({
+          title: "Import tarifs en echec",
+          summary: "Une erreur globale a interrompu l'import.",
+          lines: [error?.message || "Erreur inconnue"]
+        });
       }
     }
 
@@ -1004,6 +1237,8 @@
       renderPreview();
       renderErrors();
       renderValidRows();
+      hideProgress();
+      setImportProgress(0, 1, "Preparation...");
       setStatus("Analyse vidée.");
     }
 
@@ -1029,6 +1264,8 @@
         rebuildPlaqueIndex();
         rebuildProduitIndex();
         buildDefaultPlaqueSelect();
+        hideProgress();
+        setImportProgress(0, 1, "Preparation...");
         setStatus(`Connexion OK • ${plaques.length} plaque(s) • ${produits.length} produit(s) chargés.`);
       } catch (error) {
         console.error("Erreur init:", error);
@@ -1045,6 +1282,14 @@
       if (!parsedRows.length) return;
       analyserDonnees(parsedRows);
       setStatus("Plaque par defaut mise a jour. Analyse rafraichie.");
+    });
+
+    document.getElementById("resultModal")?.addEventListener("click", event => {
+      if (event.target?.id === "resultModal") closeResultModal();
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeResultModal();
     });
 
     initApp();
