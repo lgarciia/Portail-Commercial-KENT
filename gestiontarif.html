@@ -717,6 +717,23 @@
       return IMPORT_TYPES.find(item => item.id === id) || IMPORT_TYPES[0];
     }
 
+    function getImportReadStrategy(importType) {
+      const typeId = importType?.id || "";
+      if (typeId === "FORD") {
+        return {
+          mode: "fixed-columns",
+          refIndex: 0,         // Colonne A
+          designationIndex: 5, // Colonne F
+          tarifIndex: 9,       // Colonne J
+          dataStartRow: 0
+        };
+      }
+
+      return {
+        mode: "header-detect"
+      };
+    }
+
     function buildImportTypeOptions() {
       const select = document.getElementById("importTypeSelect");
       if (!select) return;
@@ -727,11 +744,14 @@
 
     function updateImportHint() {
       const type = getSelectedImportType();
+      const strategy = getImportReadStrategy(type);
       const hint = document.getElementById("importHint");
       if (!hint) return;
       hint.innerHTML = [
         `Plaque cible: <code>${escapeHtml(type.plaqueName)}</code>.`,
-        "Le module lit toutes les feuilles utiles (Ref. / Designation / TARIF).",
+        strategy.mode === "fixed-columns"
+          ? "Lecture Ford imposee: A = Code produit, F = Description, J = Tarif Revente."
+          : "Le module lit toutes les feuilles utiles (Ref. / Designation / TARIF).",
         "Il met a jour les produits puis remplace les tarifs de la plaque choisie."
       ].join("<br>");
     }
@@ -847,21 +867,36 @@
       return null;
     }
 
-    function analyzeWorkbook(workbook) {
+    function analyzeWorkbook(workbook, importType) {
       const allRows = [];
       const sheetNames = workbook.SheetNames || [];
       let sheetsUsed = 0;
+      const strategy = getImportReadStrategy(importType);
 
       for (const sheetName of sheetNames) {
         const sheet = workbook.Sheets[sheetName];
         if (!sheet) continue;
 
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-        const header = findHeaderInRows(rows);
-        if (!header) continue;
+        let header = null;
+        let dataStartRow = 0;
+        let rowHasData = false;
 
-        sheetsUsed += 1;
-        for (let r = header.rowIndex + 1; r < rows.length; r += 1) {
+        if (strategy.mode === "fixed-columns") {
+          header = {
+            rowIndex: -1,
+            refIndex: strategy.refIndex,
+            designationIndex: strategy.designationIndex,
+            tarifIndex: strategy.tarifIndex
+          };
+          dataStartRow = Math.max(0, Number(strategy.dataStartRow) || 0);
+        } else {
+          header = findHeaderInRows(rows);
+          if (!header) continue;
+          dataStartRow = header.rowIndex + 1;
+        }
+
+        for (let r = dataStartRow; r < rows.length; r += 1) {
           const row = rows[r] || [];
           const rawRef = row[header.refIndex];
           const rawDesignation = row[header.designationIndex];
@@ -871,8 +906,11 @@
           const designation = normalizeText(rawDesignation);
           const price = parsePrice(rawTarif);
 
-          const hasAnyData = reference || designation || normalizeText(rawTarif);
+          const hasAnyData = strategy.mode === "fixed-columns"
+            ? Boolean(reference || normalizeText(rawTarif))
+            : Boolean(reference || designation || normalizeText(rawTarif));
           if (!hasAnyData) continue;
+          rowHasData = true;
 
           const errors = [];
           if (!reference) errors.push("Reference manquante");
@@ -892,6 +930,8 @@
             keepForImport: errors.length === 0
           });
         }
+
+        if (rowHasData) sheetsUsed += 1;
       }
 
       const validRows = allRows.filter(row => row.status === "ok");
@@ -947,7 +987,7 @@
 
         const buffer = await file.arrayBuffer();
         const workbook = XLSX.read(buffer, { type: "array" });
-        const analyzed = analyzeWorkbook(workbook);
+        const analyzed = analyzeWorkbook(workbook, getSelectedImportType());
 
         previewRows = analyzed.preview;
         importRows = analyzed.importRows;
