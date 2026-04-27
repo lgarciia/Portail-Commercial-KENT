@@ -733,6 +733,11 @@
           dataStartRow: 0
         };
       }
+      if (typeId === "GUEUDET" || typeId === "GUEUDET_ACHAT") {
+        return {
+          mode: "gueudet-prof-header"
+        };
+      }
 
       return {
         mode: "header-detect"
@@ -756,7 +761,9 @@
         `Plaque cible: <code>${escapeHtml(type.plaqueName)}</code>.`,
         strategy.mode === "fixed-columns"
           ? "Lecture Ford imposee: A = Code produit, F = Description, J = Tarif Revente."
-          : "Le module lit toutes les feuilles utiles (Ref. / Designation / TARIF).",
+          : (strategy.mode === "gueudet-prof-header"
+            ? "Lecture Gueudet imposee: colonnes Reference, Description, Tarif Revente au professionnel."
+            : "Le module lit toutes les feuilles utiles (Ref. / Designation / TARIF)."),
         "Il met a jour les produits puis remplace les tarifs de la plaque choisie."
       ].join("<br>");
     }
@@ -948,7 +955,7 @@
       }).join("");
     }
 
-    function findHeaderInRows(rows) {
+    function findHeaderInRows(rows, mode = "header-detect") {
       const maxScan = Math.min(rows.length, 40);
       for (let rowIndex = 0; rowIndex < maxScan; rowIndex += 1) {
         const row = rows[rowIndex] || [];
@@ -961,10 +968,19 @@
           if (refIndex === -1 && (token === "ref" || token === "ref." || token === "reference")) {
             refIndex = index;
           }
-          if (designationIndex === -1 && token.includes("designation")) {
+          if (
+            designationIndex === -1 &&
+            (token.includes("designation") || token.includes("description"))
+          ) {
             designationIndex = index;
           }
-          if (tarifIndex === -1 && (token.includes("tarif") || token === "prix")) {
+          if (
+            tarifIndex === -1 &&
+            (
+              (mode === "gueudet-prof-header" && token.includes("tarif") && token.includes("professionnel")) ||
+              (mode !== "gueudet-prof-header" && (token.includes("tarif") || token === "prix"))
+            )
+          ) {
             tarifIndex = index;
           }
         });
@@ -1001,7 +1017,7 @@
           };
           dataStartRow = Math.max(0, Number(strategy.dataStartRow) || 0);
         } else {
-          header = findHeaderInRows(rows);
+          header = findHeaderInRows(rows, strategy.mode);
           if (!header) continue;
           dataStartRow = header.rowIndex + 1;
         }
