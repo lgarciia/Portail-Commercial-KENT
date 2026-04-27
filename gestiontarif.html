@@ -4,9 +4,8 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestion des tarifs</title>
+  <title>Import tarifs multi-entites</title>
   <script src="./shared-ui.js"></script>
-
   <style>
     * {
       box-sizing: border-box;
@@ -27,7 +26,6 @@
       --danger: #ef4444;
       --warning: #f59e0b;
       --success: #22c55e;
-      --info: #3b82f6;
       --input: rgba(255, 255, 255, 0.06);
       --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
       --radius: 16px;
@@ -63,21 +61,23 @@
     .page-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 14px;
       margin-bottom: 22px;
       flex-wrap: wrap;
     }
 
     .page-title h1 {
-      font-size: 1.85rem;
-      margin-bottom: 4px;
+      font-size: 1.9rem;
+      margin-bottom: 6px;
       letter-spacing: -0.02em;
     }
 
     .page-title p {
       color: var(--muted);
-      font-size: 0.94rem;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      max-width: 960px;
     }
 
     .header-actions {
@@ -97,10 +97,11 @@
       margin-bottom: 18px;
     }
 
-    .grid-top {
+    .top-grid {
       display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: 18px;
+      grid-template-columns: 1.2fr 1.4fr auto auto auto;
+      gap: 12px;
+      align-items: end;
     }
 
     .field-group {
@@ -116,8 +117,7 @@
     }
 
     input,
-    select,
-    textarea {
+    select {
       width: 100%;
       background: var(--input);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -130,8 +130,7 @@
     }
 
     input:focus,
-    select:focus,
-    textarea:focus {
+    select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
     }
@@ -151,6 +150,12 @@
       transform: translateY(-1px);
     }
 
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     .btn-primary {
       background: linear-gradient(135deg, var(--accent), #5b21b6);
       color: white;
@@ -166,7 +171,7 @@
     .btn-success {
       background: rgba(34, 197, 94, 0.16);
       color: #dcfce7;
-      border: 1px solid rgba(34, 197, 94, 0.24);
+      border: 1px solid rgba(34, 197, 94, 0.2);
     }
 
     .btn-danger {
@@ -175,24 +180,22 @@
       border: 1px solid rgba(239, 68, 68, 0.18);
     }
 
-    .btn-warning {
-      background: rgba(245, 158, 11, 0.14);
-      color: #fde68a;
-      border: 1px solid rgba(245, 158, 11, 0.18);
+    .helper-box {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.18);
+      color: #dbeafe;
+      font-size: 0.88rem;
+      line-height: 1.45;
     }
 
-    .btn-sm {
-      padding: 7px 10px;
-      font-size: 0.76rem;
-      border-radius: 9px;
-      line-height: 1;
-    }
-
-    .actions-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
+    .helper-box code {
+      background: rgba(255,255,255,0.08);
+      padding: 2px 7px;
+      border-radius: 8px;
+      color: #fff;
     }
 
     .status-bar {
@@ -236,47 +239,48 @@
       transition: width 0.2s ease;
     }
 
-    .helper-text {
-      color: var(--muted);
-      font-size: 0.86rem;
-      line-height: 1.5;
-    }
-
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 12px;
-      margin-top: 14px;
     }
 
     .stat-box {
-      padding: 12px 14px;
+      padding: 14px;
       border-radius: 14px;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      min-height: 78px;
+      min-height: 88px;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 4px;
+      gap: 6px;
     }
 
     .stat-label {
       color: var(--muted-2);
-      font-size: 0.72rem;
+      font-size: 0.76rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
     .stat-value {
-      font-size: 1.08rem;
+      font-size: 1.2rem;
       font-weight: 700;
       color: var(--text);
     }
 
-    .panel-title {
-      font-size: 1rem;
+    .table-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
       margin-bottom: 12px;
+    }
+
+    .table-topbar h2 {
+      font-size: 1.02rem;
     }
 
     .table-wrapper {
@@ -287,60 +291,69 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 980px;
+      min-width: 1100px;
     }
 
     th,
     td {
       text-align: left;
-      padding: 10px 10px;
+      padding: 10px 8px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       vertical-align: middle;
-      font-size: 0.83rem;
+      font-size: 0.84rem;
     }
 
     th {
       color: #d1d5db;
       background: rgba(255, 255, 255, 0.03);
       white-space: nowrap;
-      font-size: 0.76rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 7px 10px;
+      justify-content: center;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 600;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
     }
 
-    .badge.ok {
-      background: rgba(34, 197, 94, 0.12);
-      border-color: rgba(34, 197, 94, 0.2);
-      color: #dcfce7;
+    .badge-ok {
+      background: rgba(34, 197, 94, 0.14);
+      color: #bbf7d0;
+      border: 1px solid rgba(34, 197, 94, 0.18);
     }
 
-    .badge.warn {
-      background: rgba(245, 158, 11, 0.12);
-      border-color: rgba(245, 158, 11, 0.2);
+    .badge-warn {
+      background: rgba(245, 158, 11, 0.14);
       color: #fde68a;
+      border: 1px solid rgba(245, 158, 11, 0.18);
     }
 
-    .badge.err {
-      background: rgba(239, 68, 68, 0.12);
-      border-color: rgba(239, 68, 68, 0.2);
+    .badge-error {
+      background: rgba(239, 68, 68, 0.14);
       color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.18);
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.8rem;
     }
 
     .empty-state {
       text-align: center;
       color: var(--muted);
-      padding: 32px 20px;
+      padding: 34px 20px;
+    }
+
+    .muted {
+      color: var(--muted);
     }
 
     .modal-overlay {
@@ -359,7 +372,7 @@
     }
 
     .modal-card {
-      width: min(580px, 100%);
+      width: min(640px, 100%);
       background: #11162a;
       border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 16px;
@@ -416,21 +429,25 @@
       justify-content: flex-end;
     }
 
-    .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.8rem;
+    @media (max-width: 1300px) {
+      .top-grid {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
-    .two-cols {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-    }
-
-    @media (max-width: 1150px) {
-      .grid-top,
-      .two-cols,
+    @media (max-width: 1100px) {
       .stats-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 780px) {
+      body {
+        padding: 16px;
+      }
+
+      .stats-grid,
+      .top-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -441,169 +458,104 @@
   <div class="container">
     <div class="page-header">
       <div class="page-title">
-        <h1>Gestion des tarifs</h1>
-        <p>Import Excel / CSV des tarifs par plaque avec contrôle avant insertion dans Supabase</p>
+        <h1>Import tarifs multi-entites</h1>
+        <p>
+          Un seul import alimente <strong>produits</strong> et <strong>tarifs_plaques</strong>.
+          Pour la plaque choisie, les anciens tarifs sont supprimes puis remplaces par le nouveau fichier.
+        </p>
       </div>
-
       <div class="header-actions">
-        <button class="btn btn-secondary" type="button" onclick="telechargerModele()">Télécharger modèle</button>
-        <button class="btn btn-primary" type="button" onclick="document.getElementById('fileInput').click()">Choisir un fichier</button>
+        <button class="btn btn-secondary" type="button" onclick="downloadTemplate()">Modele CSV</button>
+        <button class="btn btn-danger" type="button" onclick="resetImport()">Reinitialiser</button>
       </div>
     </div>
 
-    <div class="grid-top">
-      <div class="glass-card">
-        <div class="panel-title">Import fichier</div>
-
-        <div class="field-group" style="margin-bottom: 14px;">
-          <label for="fileInput">Fichier Excel ou CSV</label>
-          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+    <div class="glass-card">
+      <div class="top-grid">
+        <div class="field-group">
+          <label for="importTypeSelect">Type d'import</label>
+          <select id="importTypeSelect"></select>
         </div>
-
-        <div class="field-group" style="margin-bottom: 14px;">
-          <label for="defaultPlaqueSelect">Plaque par defaut (optionnel)</label>
-          <select id="defaultPlaqueSelect">
-            <option value="">Aucune plaque par defaut</option>
-          </select>
+        <div class="field-group">
+          <label for="fileInput">Fichier Excel / CSV</label>
+          <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" />
         </div>
-
-        <div class="helper-text">
-          Format attendu : <strong>plaque</strong> / <strong>reference_produit</strong> / <strong>prix_vente</strong><br>
-          Une ligne = un tarif pour une plaque et un produit.<br>
-          Si la colonne plaque est absente ou vide, la plaque par defaut sera utilisee.
-        </div>
-
-        <div class="actions-row" style="margin-top: 16px;">
-          <button class="btn btn-secondary" type="button" onclick="analyserFichier()">Analyser le fichier</button>
-          <button class="btn btn-success" type="button" onclick="importerTarifs()">Importer dans Supabase</button>
-          <button class="btn btn-danger" type="button" onclick="viderAnalyse()">Vider</button>
-        </div>
-
-        <div id="statusBar" class="status-bar">Prêt à analyser un fichier.</div>
-        <div class="progress-wrap" id="importProgress">
-          <div class="progress-head">
-            <span id="progressLabel">Preparation...</span>
-            <strong id="progressPercent">0%</strong>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" id="progressFill"></div>
-          </div>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-box">
-            <div class="stat-label">Lignes lues</div>
-            <div class="stat-value" id="statTotal">0</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Valides</div>
-            <div class="stat-value" id="statValides">0</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Plaques inconnues</div>
-            <div class="stat-value" id="statPlaques">0</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Produits inconnus</div>
-            <div class="stat-value" id="statProduits">0</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Prix invalides</div>
-            <div class="stat-value" id="statPrix">0</div>
-          </div>
-        </div>
+        <button class="btn btn-primary" id="analyzeBtn" type="button" onclick="analyzeFile()">Analyser</button>
+        <button class="btn btn-success" id="importBtn" type="button" onclick="importData()" disabled>Importer</button>
       </div>
 
-      <div class="glass-card">
-        <div class="panel-title">Règles de fonctionnement</div>
-        <div class="helper-text">
-          L’import ne passe que sur les lignes propres.<br><br>
-          Si une combinaison <strong>plaque + produit</strong> existe déjà dans <strong>tarifs_plaques</strong>, le prix sera mis à jour.<br>
-          Si elle n’existe pas, une nouvelle ligne sera créée.<br><br>
-          Les lignes en erreur resteront visibles dans la prévisualisation pour que tu voies exactement ce qui bloque.
-        </div>
+      <div class="helper-box" id="importHint">
+        Format attendu: feuilles avec en-tetes <code>Ref.</code>, <code>Designation</code>, <code>TARIF</code>.
+        Les feuilles sans ces colonnes sont ignorees.
+      </div>
 
-        <div style="margin-top: 18px; display:flex; gap:10px; flex-wrap:wrap;">
-          <span class="badge ok">Ligne valide</span>
-          <span class="badge warn">À vérifier</span>
-          <span class="badge err">Bloquante</span>
+      <div class="status-bar" id="statusBar">En attente d'un fichier.</div>
+      <div class="progress-wrap" id="importProgress">
+        <div class="progress-head">
+          <span id="progressLabel">Preparation...</span>
+          <strong id="progressPercent">0%</strong>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
         </div>
       </div>
     </div>
 
     <div class="glass-card">
-      <div class="panel-title">Prévisualisation de l’import</div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">Feuilles scannees</div>
+          <div class="stat-value" id="statSheetsScanned">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Feuilles utiles</div>
+          <div class="stat-value" id="statSheetsUsed">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Lignes lues</div>
+          <div class="stat-value" id="statRowsRead">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Lignes valides</div>
+          <div class="stat-value" id="statRowsValid">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Refs uniques importees</div>
+          <div class="stat-value" id="statRefsUnique">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Doublons refs</div>
+          <div class="stat-value" id="statDuplicates">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="table-topbar">
+        <h2>Previsualisation de l'import</h2>
+        <div class="muted" id="previewInfo">Aucune donnee chargee.</div>
+      </div>
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
               <th>#</th>
-              <th>Plaque fichier</th>
-              <th>Référence fichier</th>
-              <th>Prix fichier</th>
-              <th>Plaque trouvée</th>
-              <th>Produit trouvé</th>
-              <th>Référence produit</th>
-              <th>Prix normalisé</th>
+              <th>Feuille</th>
+              <th>Reference</th>
+              <th>Designation</th>
+              <th>Tarif</th>
               <th>Statut</th>
-              <th>Détail</th>
+              <th>Detail</th>
             </tr>
           </thead>
           <tbody id="previewBody">
             <tr>
-              <td colspan="10">
-                <div class="empty-state">Aucune donnée chargée.</div>
+              <td colspan="7">
+                <div class="empty-state">Charge un fichier pour voir la previsualisation.</div>
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <div class="two-cols">
-      <div class="glass-card">
-        <div class="panel-title">Erreurs détectées</div>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Ligne</th>
-                <th>Type</th>
-                <th>Détail</th>
-              </tr>
-            </thead>
-            <tbody id="errorsBody">
-              <tr>
-                <td colspan="3">
-                  <div class="empty-state">Aucune erreur.</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="glass-card">
-        <div class="panel-title">Résumé importable</div>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Plaque</th>
-                <th>Produit</th>
-                <th>Référence</th>
-                <th>Prix</th>
-              </tr>
-            </thead>
-            <tbody id="validBody">
-              <tr>
-                <td colspan="4">
-                  <div class="empty-state">Aucune ligne valide.</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   </div>
@@ -612,7 +564,7 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="resultModalTitle">Resultat import</h3>
-        <button class="modal-close" type="button" onclick="closeResultModal()">✕</button>
+        <button class="modal-close" type="button" onclick="closeResultModal()">x</button>
       </div>
       <div class="modal-body">
         <div class="modal-summary" id="resultModalSummary"></div>
@@ -625,47 +577,31 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script>
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const IMPORT_TYPES = [
+      { id: "PSA", label: "PSA Tarif Revente", plaqueName: "PSA Tarif Revente" },
+      { id: "GUEUDET", label: "Gueudet Tarif revente", plaqueName: "Gueudet Tarif revente" },
+      { id: "FORD", label: "Concession Ford Tarif Revente", plaqueName: "Concession Ford Tarif Revente" },
+      { id: "DIRECT", label: "Direct Tarif", plaqueName: "Direct Tarif" }
+    ];
 
     let plaques = [];
     let produits = [];
-    let parsedRows = [];
-    let analyzedRows = [];
-    let plaqueIndex = new Map();
-    let produitIndexByReference = new Map();
-
-    const COLUMN_ALIASES = {
-      plaque: [
-        "plaque",
-        "nom plaque",
-        "plaque client",
-        "type plaque",
-        "tarif plaque"
-      ],
-      reference_produit: [
-        "reference_produit",
-        "reference produit",
-        "referenceproduit",
-        "ref produit",
-        "ref_produit",
-        "ref",
-        "reference"
-      ],
-      prix_vente: [
-        "prix_vente",
-        "prix vente",
-        "prixvente",
-        "prix",
-        "tarif",
-        "prix de vente",
-        "prix client"
-      ]
+    let previewRows = [];
+    let importRows = [];
+    let importMeta = {
+      sheetsScanned: 0,
+      sheetsUsed: 0,
+      rowsRead: 0,
+      validRows: 0,
+      uniqueRefs: 0,
+      duplicates: 0
     };
 
     function setStatus(message) {
@@ -686,11 +622,9 @@
       const safeTotal = Math.max(1, Number(total) || 1);
       const safeCurrent = Math.min(safeTotal, Math.max(0, Number(current) || 0));
       const percent = Math.round((safeCurrent / safeTotal) * 100);
-
       const fill = document.getElementById("progressFill");
       const pct = document.getElementById("progressPercent");
       const text = document.getElementById("progressLabel");
-
       if (fill) fill.style.width = `${percent}%`;
       if (pct) pct.textContent = `${percent}%`;
       if (text) text.textContent = label || "Import en cours...";
@@ -705,9 +639,7 @@
       const titleEl = document.getElementById("resultModalTitle");
       const summaryEl = document.getElementById("resultModalSummary");
       const listEl = document.getElementById("resultModalList");
-
       if (!overlay || !titleEl || !summaryEl || !listEl) return;
-
       titleEl.textContent = title || "Resultat import";
       summaryEl.textContent = summary || "";
       listEl.innerHTML = lines.map(line => `<li>${escapeHtml(line)}</li>`).join("");
@@ -724,41 +656,36 @@
     }
 
     function normalizeText(value) {
-      return String(value ?? "")
-        .trim()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim()
-        .replace(/\s+/g, " ");
+      return String(value ?? "").trim();
     }
 
-    function normalizeHeaderKey(value) {
-      return String(value ?? "")
-        .trim()
-        .toLowerCase()
+    function normalizeComparable(value) {
+      return normalizeText(value)
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    }
+
+    function normalizeHeaderToken(value) {
+      return normalizeText(value)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
         .replace(/[^a-z0-9]+/g, "");
     }
 
-    function normalizeReference(value) {
-      return String(value ?? "")
-        .trim()
-        .toUpperCase();
-    }
-
-    function canonicalReference(value) {
-      return normalizeReference(value)
+    function normalizeReferenceKey(value) {
+      return normalizeText(value)
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
         .replace(/[^A-Z0-9]/g, "");
     }
 
     function parsePrice(value) {
       if (value === null || value === undefined || value === "") return NaN;
-
       if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
 
       let cleaned = String(value)
@@ -785,80 +712,28 @@
       return Number(cleaned);
     }
 
-    function buildNormalizedLookup(row) {
-      const lookup = new Map();
-      Object.keys(row || {}).forEach(key => {
-        lookup.set(normalizeHeaderKey(key), row[key]);
-      });
-      return lookup;
+    function getSelectedImportType() {
+      const id = document.getElementById("importTypeSelect")?.value;
+      return IMPORT_TYPES.find(item => item.id === id) || IMPORT_TYPES[0];
     }
 
-    function readColumnValue(lookup, aliases) {
-      for (const alias of aliases) {
-        const key = normalizeHeaderKey(alias);
-        if (lookup.has(key)) return lookup.get(key);
-      }
-      return "";
-    }
-
-    function hasAnyAlias(lookup, aliases) {
-      return aliases.some(alias => lookup.has(normalizeHeaderKey(alias)));
-    }
-
-    function rebuildPlaqueIndex() {
-      plaqueIndex = new Map();
-      plaques.forEach(plaque => {
-        const key = normalizeText(plaque.nom);
-        if (key && !plaqueIndex.has(key)) {
-          plaqueIndex.set(key, plaque);
-        }
-      });
-    }
-
-    function rebuildProduitIndex() {
-      produitIndexByReference = new Map();
-      produits.forEach(produit => {
-        const strictKey = normalizeReference(produit.reference_produit);
-        const canonicalKey = canonicalReference(produit.reference_produit);
-
-        if (strictKey && !produitIndexByReference.has(`strict:${strictKey}`)) {
-          produitIndexByReference.set(`strict:${strictKey}`, produit);
-        }
-
-        if (canonicalKey && !produitIndexByReference.has(`canon:${canonicalKey}`)) {
-          produitIndexByReference.set(`canon:${canonicalKey}`, produit);
-        }
-      });
-    }
-
-    function buildDefaultPlaqueSelect() {
-      const select = document.getElementById("defaultPlaqueSelect");
+    function buildImportTypeOptions() {
+      const select = document.getElementById("importTypeSelect");
       if (!select) return;
-
-      const current = select.value;
-      const options = ['<option value="">Aucune plaque par defaut</option>'];
-      plaques.forEach(plaque => {
-        options.push(`<option value="${escapeHtml(plaque.id)}">${escapeHtml(plaque.nom || "Plaque")}</option>`);
-      });
-
-      select.innerHTML = options.join("");
-
-      if (current && plaques.some(plaque => String(plaque.id) === String(current))) {
-        select.value = current;
-      }
+      select.innerHTML = IMPORT_TYPES.map(item =>
+        `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`
+      ).join("");
     }
 
-    function getDefaultPlaque() {
-      const selectedId = document.getElementById("defaultPlaqueSelect")?.value || "";
-      if (!selectedId) return null;
-      return plaques.find(plaque => String(plaque.id) === String(selectedId)) || null;
-    }
-
-    function formatCurrency(value) {
-      return Number(value || 0).toLocaleString("fr-FR", {
-        style: "currency",
-        currency: "EUR"
-      });
+    function updateImportHint() {
+      const type = getSelectedImportType();
+      const hint = document.getElementById("importHint");
+      if (!hint) return;
+      hint.innerHTML = [
+        `Plaque cible: <code>${escapeHtml(type.plaqueName)}</code>.`,
+        "Le module lit toutes les feuilles utiles (Ref. / Designation / TARIF).",
+        "Il met a jour les produits puis remplace les tarifs de la plaque choisie."
+      ].join("<br>");
     }
 
     async function fetchPlaques() {
@@ -866,7 +741,6 @@
         .from("plaques")
         .select("id, nom")
         .order("nom", { ascending: true });
-
       if (error) throw error;
       return data || [];
     }
@@ -874,414 +748,529 @@
     async function fetchProduits() {
       const { data, error } = await supabaseClient
         .from("produits")
-        .select("id, nom, reference_produit, actif")
-        .order("nom", { ascending: true });
-
+        .select("id, nom, reference_produit, prix_vente, actif");
       if (error) throw error;
       return data || [];
     }
 
-    function updateStats() {
-      const total = analyzedRows.length;
-      const valides = analyzedRows.filter(r => r.isValid).length;
-      const plaquesKo = analyzedRows.filter(r => r.errors.some(e => e.type === "plaque")).length;
-      const produitsKo = analyzedRows.filter(r => r.errors.some(e => e.type === "produit")).length;
-      const prixKo = analyzedRows.filter(r => r.errors.some(e => e.type === "prix")).length;
+    function buildProductMap(list) {
+      const map = new Map();
+      (list || []).forEach(product => {
+        const key = normalizeReferenceKey(product.reference_produit);
+        if (key && !map.has(key)) map.set(key, product);
+      });
+      return map;
+    }
 
-      document.getElementById("statTotal").textContent = total;
-      document.getElementById("statValides").textContent = valides;
-      document.getElementById("statPlaques").textContent = plaquesKo;
-      document.getElementById("statProduits").textContent = produitsKo;
-      document.getElementById("statPrix").textContent = prixKo;
+    function findPlaqueByName(name) {
+      const target = normalizeComparable(name);
+      return plaques.find(plaque => normalizeComparable(plaque.nom) === target) || null;
+    }
+
+    function updateStats() {
+      document.getElementById("statSheetsScanned").textContent = String(importMeta.sheetsScanned || 0);
+      document.getElementById("statSheetsUsed").textContent = String(importMeta.sheetsUsed || 0);
+      document.getElementById("statRowsRead").textContent = String(importMeta.rowsRead || 0);
+      document.getElementById("statRowsValid").textContent = String(importMeta.validRows || 0);
+      document.getElementById("statRefsUnique").textContent = String(importMeta.uniqueRefs || 0);
+      document.getElementById("statDuplicates").textContent = String(importMeta.duplicates || 0);
+      document.getElementById("importBtn").disabled = importRows.length === 0;
+      document.getElementById("previewInfo").textContent = importRows.length
+        ? `${importRows.length} reference(s) unique(s) pretes a importer`
+        : "Aucune donnee chargee.";
     }
 
     function renderPreview() {
       const body = document.getElementById("previewBody");
-
-      if (!analyzedRows.length) {
+      if (!previewRows.length) {
         body.innerHTML = `
           <tr>
-            <td colspan="10">
-              <div class="empty-state">Aucune donnée chargée.</div>
+            <td colspan="7">
+              <div class="empty-state">Charge un fichier pour voir la previsualisation.</div>
             </td>
           </tr>
         `;
         return;
       }
 
-      body.innerHTML = analyzedRows.map(row => {
-        const badgeClass = row.isValid ? "ok" : (row.errors.length ? "err" : "warn");
-        const badgeText = row.isValid ? "Valide" : "Erreur";
-        const detail = row.errors.length
-          ? row.errors.map(e => escapeHtml(e.message)).join(" | ")
-          : (row.usedDefaultPlaque
-              ? `Plaque par defaut appliquee : ${escapeHtml(row.plaque?.nom || "")}`
-              : "Prete a importer");
+      body.innerHTML = previewRows.map(row => {
+        let badgeClass = "badge-error";
+        let badgeText = "Erreur";
+        if (row.status === "ok") {
+          badgeClass = "badge-ok";
+          badgeText = "Valide";
+        } else if (row.status === "warn") {
+          badgeClass = "badge-warn";
+          badgeText = "Ignoree";
+        }
 
         return `
           <tr>
-            <td>${row.index}</td>
-            <td>${escapeHtml(row.raw.plaque)}</td>
-            <td class="mono">${escapeHtml(row.raw.reference_produit)}</td>
-            <td>${escapeHtml(String(row.raw.prix_vente ?? ""))}</td>
-            <td>${row.plaque ? escapeHtml(row.plaque.nom) : "—"}</td>
-            <td>${row.produit ? escapeHtml(row.produit.nom) : "—"}</td>
-            <td class="mono">${row.produit ? escapeHtml(row.produit.reference_produit || "") : "—"}</td>
-            <td>${Number.isFinite(row.prix) ? formatCurrency(row.prix) : "—"}</td>
+            <td>${row.rowNumber}</td>
+            <td>${escapeHtml(row.sheetName)}</td>
+            <td class="mono">${escapeHtml(row.reference || "-")}</td>
+            <td>${escapeHtml(row.designation || "-")}</td>
+            <td>${Number.isFinite(row.price) ? escapeHtml(row.price) : "-"}</td>
             <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-            <td>${escapeHtml(detail)}</td>
+            <td>${escapeHtml(row.detail || "")}</td>
           </tr>
         `;
       }).join("");
     }
 
-    function renderErrors() {
-      const body = document.getElementById("errorsBody");
+    function findHeaderInRows(rows) {
+      const maxScan = Math.min(rows.length, 40);
+      for (let rowIndex = 0; rowIndex < maxScan; rowIndex += 1) {
+        const row = rows[rowIndex] || [];
+        const tokens = row.map(cell => normalizeHeaderToken(cell));
+        let refIndex = -1;
+        let designationIndex = -1;
+        let tarifIndex = -1;
 
-      const errors = [];
-      analyzedRows.forEach(row => {
-        row.errors.forEach(err => {
-          errors.push({
-            index: row.index,
-            type: err.type,
-            message: err.message
-          });
+        tokens.forEach((token, index) => {
+          if (refIndex === -1 && (token === "ref" || token === "ref." || token === "reference")) {
+            refIndex = index;
+          }
+          if (designationIndex === -1 && token.includes("designation")) {
+            designationIndex = index;
+          }
+          if (tarifIndex === -1 && (token.includes("tarif") || token === "prix")) {
+            tarifIndex = index;
+          }
         });
-      });
 
-      if (!errors.length) {
-        body.innerHTML = `
-          <tr>
-            <td colspan="3">
-              <div class="empty-state">Aucune erreur.</div>
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      body.innerHTML = errors.map(err => `
-        <tr>
-          <td>${err.index}</td>
-          <td>${escapeHtml(err.type)}</td>
-          <td>${escapeHtml(err.message)}</td>
-        </tr>
-      `).join("");
-    }
-
-    function renderValidRows() {
-      const body = document.getElementById("validBody");
-      const valides = analyzedRows.filter(r => r.isValid);
-
-      if (!valides.length) {
-        body.innerHTML = `
-          <tr>
-            <td colspan="4">
-              <div class="empty-state">Aucune ligne valide.</div>
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      body.innerHTML = valides.map(row => `
-        <tr>
-          <td>${escapeHtml(row.plaque.nom)}</td>
-          <td>${escapeHtml(row.produit.nom || "")}</td>
-          <td class="mono">${escapeHtml(row.produit.reference_produit || "")}</td>
-          <td>${formatCurrency(row.prix)}</td>
-        </tr>
-      `).join("");
-    }
-
-    function findPlaqueByName(name) {
-      const normalized = normalizeText(name);
-      if (!normalized) return null;
-      return plaqueIndex.get(normalized) || null;
-    }
-
-    function findProduitByReference(reference) {
-      const strict = normalizeReference(reference);
-      const canonical = canonicalReference(reference);
-      if (!strict && !canonical) return null;
-
-      if (strict && produitIndexByReference.has(`strict:${strict}`)) {
-        return produitIndexByReference.get(`strict:${strict}`) || null;
-      }
-
-      if (canonical && produitIndexByReference.has(`canon:${canonical}`)) {
-        return produitIndexByReference.get(`canon:${canonical}`) || null;
+        if (refIndex >= 0 && designationIndex >= 0 && tarifIndex >= 0) {
+          return { rowIndex, refIndex, designationIndex, tarifIndex };
+        }
       }
 
       return null;
     }
 
-    function analyserDonnees(rows) {
-      const defaultPlaque = getDefaultPlaque();
-      analyzedRows = rows.map((raw, idx) => {
-        const rawPlaqueValue = String(raw.plaque ?? "").trim();
-        const usedDefaultPlaque = !rawPlaqueValue && Boolean(defaultPlaque);
-        const plaque = usedDefaultPlaque
-          ? defaultPlaque
-          : findPlaqueByName(raw.plaque);
-        const produit = findProduitByReference(raw.reference_produit);
-        const prix = parsePrice(raw.prix_vente);
-        const errors = [];
+    function analyzeWorkbook(workbook) {
+      const allRows = [];
+      const sheetNames = workbook.SheetNames || [];
+      let sheetsUsed = 0;
 
-        if (!rawPlaqueValue && !defaultPlaque) {
-          errors.push({ type: "plaque", message: "Plaque vide." });
-        } else if (rawPlaqueValue && !plaque) {
-          errors.push({ type: "plaque", message: `Plaque introuvable : ${raw.plaque}` });
+      for (const sheetName of sheetNames) {
+        const sheet = workbook.Sheets[sheetName];
+        if (!sheet) continue;
+
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+        const header = findHeaderInRows(rows);
+        if (!header) continue;
+
+        sheetsUsed += 1;
+        for (let r = header.rowIndex + 1; r < rows.length; r += 1) {
+          const row = rows[r] || [];
+          const rawRef = row[header.refIndex];
+          const rawDesignation = row[header.designationIndex];
+          const rawTarif = row[header.tarifIndex];
+
+          const reference = normalizeText(rawRef);
+          const designation = normalizeText(rawDesignation);
+          const price = parsePrice(rawTarif);
+
+          const hasAnyData = reference || designation || normalizeText(rawTarif);
+          if (!hasAnyData) continue;
+
+          const errors = [];
+          if (!reference) errors.push("Reference manquante");
+          if (!designation) errors.push("Designation manquante");
+          if (!Number.isFinite(price) || price < 0) errors.push(`Tarif invalide: ${rawTarif}`);
+
+          allRows.push({
+            sheetName,
+            rowNumber: r + 1,
+            reference,
+            designation,
+            referenceKey: normalizeReferenceKey(reference),
+            price,
+            errors,
+            status: errors.length ? "error" : "ok",
+            detail: errors.length ? errors.join(" | ") : "Ligne valide",
+            keepForImport: errors.length === 0
+          });
         }
+      }
 
-        if (!raw.reference_produit || !String(raw.reference_produit).trim()) {
-          errors.push({ type: "produit", message: "Référence produit vide." });
-        } else if (!produit) {
-          errors.push({ type: "produit", message: `Produit introuvable : ${raw.reference_produit}` });
-        }
-
-        if (!Number.isFinite(prix) || prix < 0) {
-          errors.push({ type: "prix", message: `Prix invalide : ${raw.prix_vente}` });
-        }
-
-        return {
-          index: idx + 2,
-          raw,
-          plaque,
-          produit,
-          prix,
-          usedDefaultPlaque,
-          errors,
-          isValid: errors.length === 0
-        };
+      const validRows = allRows.filter(row => row.status === "ok");
+      const lastIndexByKey = new Map();
+      validRows.forEach((row, index) => {
+        lastIndexByKey.set(row.referenceKey, index);
       });
 
-      updateStats();
-      renderPreview();
-      renderErrors();
-      renderValidRows();
-    }
-
-    function readFileAsArrayBuffer(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file);
+      let duplicates = 0;
+      validRows.forEach((row, index) => {
+        const lastIndex = lastIndexByKey.get(row.referenceKey);
+        const keep = lastIndex === index;
+        row.keepForImport = keep;
+        if (!keep) {
+          row.status = "warn";
+          row.detail = "Doublon reference: ligne ignoree (dernier tarif conserve).";
+          duplicates += 1;
+        } else if (lastIndexByKey.has(row.referenceKey) && validRows.filter(v => v.referenceKey === row.referenceKey).length > 1) {
+          row.detail = "Doublon reference detecte: dernier tarif conserve.";
+        }
       });
+
+      const rowsToImport = validRows.filter(row => row.keepForImport);
+      return {
+        preview: allRows,
+        importRows: rowsToImport,
+        meta: {
+          sheetsScanned: sheetNames.length,
+          sheetsUsed,
+          rowsRead: allRows.length,
+          validRows: validRows.length,
+          uniqueRefs: rowsToImport.length,
+          duplicates
+        }
+      };
     }
 
-    async function analyserFichier() {
+    async function analyzeFile() {
       try {
-        const fileInput = document.getElementById("fileInput");
-        const file = fileInput.files[0];
-
+        const file = document.getElementById("fileInput").files?.[0];
         if (!file) {
-          alert("Choisis un fichier avant d’analyser.");
+          openResultModal({
+            title: "Analyse fichier",
+            summary: "Aucun fichier selectionne.",
+            lines: ["Choisis un fichier avant de lancer l'analyse."]
+          });
           return;
         }
 
-        setStatus("Lecture du fichier...");
         hideProgress();
         setImportProgress(0, 1, "Preparation...");
-        const buffer = await readFileAsArrayBuffer(file);
-        const workbook = XLSX.read(buffer, { type: "array" });
-        const firstSheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        setStatus("Lecture du fichier...");
 
-        if (!jsonData.length) {
-          alert("Le fichier est vide.");
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const analyzed = analyzeWorkbook(workbook);
+
+        previewRows = analyzed.preview;
+        importRows = analyzed.importRows;
+        importMeta = analyzed.meta;
+        renderPreview();
+        updateStats();
+
+        if (!previewRows.length) {
+          setStatus("Aucune feuille exploitable detectee.");
           return;
         }
 
-        const headerLookup = buildNormalizedLookup(jsonData[0] || {});
-        const hasPlaqueColumn = hasAnyAlias(headerLookup, COLUMN_ALIASES.plaque);
-        const hasReferenceColumn = hasAnyAlias(headerLookup, COLUMN_ALIASES.reference_produit);
-        const hasPriceColumn = hasAnyAlias(headerLookup, COLUMN_ALIASES.prix_vente);
-
-        parsedRows = jsonData.map(row => {
-          const lookup = buildNormalizedLookup(row);
-          return {
-            plaque: readColumnValue(lookup, COLUMN_ALIASES.plaque),
-            reference_produit: readColumnValue(lookup, COLUMN_ALIASES.reference_produit),
-            prix_vente: readColumnValue(lookup, COLUMN_ALIASES.prix_vente)
-          };
-        });
-
-        const missingColumns = [];
-        if (!hasReferenceColumn) missingColumns.push("reference_produit");
-        if (!hasPriceColumn) missingColumns.push("prix_vente");
-        if (!hasPlaqueColumn && !getDefaultPlaque()) missingColumns.push("plaque (ou plaque par defaut)");
-        analyserDonnees(parsedRows);
-        if (missingColumns.length) {
-          setStatus(`Analyse terminee avec colonnes manquantes: ${missingColumns.join(", ")}.`);
-        } else {
-          setStatus(`${parsedRows.length} ligne(s) lue(s), analyse terminee.`);
-        }
+        setStatus(
+          `${importMeta.sheetsUsed} feuille(s) utile(s), ${importMeta.rowsRead} ligne(s) lue(s), ${importRows.length} reference(s) prete(s).`
+        );
       } catch (error) {
         console.error("Erreur analyse fichier:", error);
-        setStatus("Erreur de lecture du fichier.");
-        alert("Impossible de lire le fichier. Vérifie le format et les colonnes.");
-      }
-    }
-
-    async function importerTarifs() {
-      try {
-        const valides = analyzedRows.filter(r => r.isValid);
-
-        if (!analyzedRows.length) {
-          openResultModal({
-            title: "Import tarifs",
-            summary: "Aucune donnee analysee.",
-            lines: ["Analyse un fichier avant d'importer."]
-          });
-          return;
-        }
-
-        if (!valides.length) {
-          openResultModal({
-            title: "Import tarifs",
-            summary: "Aucune ligne valide a importer.",
-            lines: ["Corrige les erreurs puis relance l'import."]
-          });
-          return;
-        }
-
-        if (!confirm(`Importer ${valides.length} ligne(s) dans tarifs_plaques ?`)) {
-          return;
-        }
-
-        setStatus("Preparation de l'import...");
-        showProgress();
-        setImportProgress(0, valides.length, "Preparation...");
-
-        let success = 0;
-        let failed = 0;
-        const chunkSize = 200;
-        let done = 0;
-
-        for (let start = 0; start < valides.length; start += chunkSize) {
-          const chunk = valides.slice(start, start + chunkSize);
-          const payload = chunk.map(row => ({
-            plaque_id: row.plaque.id,
-            produit_id: row.produit.id,
-            prix_vente: row.prix
-          }));
-
-          try {
-            const { error } = await supabaseClient
-              .from("tarifs_plaques")
-              .upsert(payload, { onConflict: "plaque_id,produit_id" });
-
-            if (error) throw error;
-            success += chunk.length;
-            done += chunk.length;
-            setImportProgress(done, valides.length, `Traitement ${done}/${valides.length}`);
-          } catch (chunkError) {
-            console.error("Erreur lot import tarifs, fallback ligne par ligne:", chunkError);
-
-            for (const row of chunk) {
-              try {
-                const { error } = await supabaseClient
-                  .from("tarifs_plaques")
-                  .upsert({
-                    plaque_id: row.plaque.id,
-                    produit_id: row.produit.id,
-                    prix_vente: row.prix
-                  }, { onConflict: "plaque_id,produit_id" });
-
-                if (error) throw error;
-                success++;
-              } catch (rowError) {
-                console.error("Erreur ligne import tarif:", row, rowError);
-                failed++;
-              }
-
-              done++;
-              setImportProgress(done, valides.length, `Traitement ${done}/${valides.length}`);
-            }
-          }
-        }
-
-        const hasFailures = failed > 0;
-        setStatus(
-          hasFailures
-            ? `Import termine avec erreurs • ${success} ligne(s) traitee(s) • ${failed} erreur(s).`
-            : `Import termine • ${success} ligne(s) traitee(s).`
-        );
+        setStatus("Erreur pendant l'analyse du fichier.");
         openResultModal({
-          title: hasFailures ? "Import tarifs termine avec erreurs" : "Import tarifs termine",
-          summary: `Lignes valides traitees: ${valides.length}`,
-          lines: [
-            `Lignes traitees: ${success}`,
-            `Erreurs: ${failed}`
-          ]
-        });
-      } catch (error) {
-        console.error("Erreur import:", error);
-        setStatus("Erreur pendant l'import.");
-        openResultModal({
-          title: "Import tarifs en echec",
-          summary: "Une erreur globale a interrompu l'import.",
+          title: "Analyse en echec",
+          summary: "Impossible de lire le fichier.",
           lines: [error?.message || "Erreur inconnue"]
         });
       }
     }
 
-    function viderAnalyse() {
-      parsedRows = [];
-      analyzedRows = [];
-      document.getElementById("fileInput").value = "";
-      updateStats();
-      renderPreview();
-      renderErrors();
-      renderValidRows();
-      hideProgress();
-      setImportProgress(0, 1, "Preparation...");
-      setStatus("Analyse vidée.");
+    function chunkArray(list, size) {
+      const chunks = [];
+      for (let i = 0; i < list.length; i += size) {
+        chunks.push(list.slice(i, i + size));
+      }
+      return chunks;
     }
 
-    function telechargerModele() {
-      const rows = [
-        { plaque: "Gueudet Tarif revente", reference_produit: "86807 00", prix_vente: 13 },
-        { plaque: "PSA Tarif Revente", reference_produit: "86807 00", prix_vente: 12 },
-        { plaque: "Concession Ford Tarif Revente", reference_produit: "86807 00", prix_vente: 11.5 },
-        { plaque: "Direct Tarif", reference_produit: "86807 00", prix_vente: 11 }
-      ];
+    async function upsertInChunks(table, rows, onConflict, chunkSize, onProgress) {
+      let success = 0;
+      let failed = 0;
+      const chunks = chunkArray(rows, chunkSize);
 
-      const worksheet = XLSX.utils.json_to_sheet(rows);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Tarifs");
-      XLSX.writeFile(workbook, "modele_import_tarifs.xlsx");
+      for (const chunk of chunks) {
+        try {
+          const { error } = await supabaseClient
+            .from(table)
+            .upsert(chunk, { onConflict });
+
+          if (error) throw error;
+          success += chunk.length;
+          if (onProgress) onProgress(chunk.length);
+        } catch (chunkError) {
+          console.error(`Erreur lot ${table}, fallback ligne par ligne:`, chunkError);
+          for (const row of chunk) {
+            try {
+              const { error } = await supabaseClient
+                .from(table)
+                .upsert(row, { onConflict });
+              if (error) throw error;
+              success += 1;
+            } catch (rowError) {
+              console.error(`Erreur ligne ${table}:`, row, rowError);
+              failed += 1;
+            }
+            if (onProgress) onProgress(1);
+          }
+        }
+      }
+
+      return { success, failed };
+    }
+
+    async function importData() {
+      const type = getSelectedImportType();
+      if (!importRows.length) {
+        openResultModal({
+          title: "Import tarifs",
+          summary: "Aucune ligne importable.",
+          lines: ["Analyse un fichier valide avant de lancer l'import."]
+        });
+        return;
+      }
+
+      const plaque = findPlaqueByName(type.plaqueName);
+      if (!plaque) {
+        openResultModal({
+          title: "Import impossible",
+          summary: `Plaque introuvable: ${type.plaqueName}`,
+          lines: ["Verifie la table plaques dans Supabase."]
+        });
+        return;
+      }
+
+      if (!confirm(`Importer ${importRows.length} reference(s) pour ${type.label} ?`)) {
+        return;
+      }
+
+      const importBtn = document.getElementById("importBtn");
+      const analyzeBtn = document.getElementById("analyzeBtn");
+      importBtn.disabled = true;
+      analyzeBtn.disabled = true;
+
+      const totalSteps = (importRows.length * 2) + 4;
+      let currentStep = 0;
+      const step = (inc, label) => {
+        currentStep += inc;
+        setImportProgress(currentStep, totalSteps, label);
+      };
+
+      showProgress();
+      setImportProgress(0, totalSteps, "Preparation...");
+
+      try {
+        setStatus(`Import ${type.label}: synchronisation des produits...`);
+        const produitMapBefore = buildProductMap(produits);
+
+        const productPayloadRows = importRows.map(row => ({
+          referenceKey: row.referenceKey,
+          payload: {
+            reference_produit: row.reference,
+            nom: row.designation,
+            prix_vente: row.price,
+            actif: true
+          },
+          existing: produitMapBefore.get(row.referenceKey) || null
+        }));
+
+        const productCreateRows = productPayloadRows
+          .filter(item => !item.existing)
+          .map(item => item.payload);
+
+        const productUpdateRows = productPayloadRows
+          .filter(item => Boolean(item.existing))
+          .map(item => ({
+            id: item.existing.id,
+            ...item.payload
+          }));
+
+        const createdCountTarget = productCreateRows.length;
+        const updatedCountTarget = productUpdateRows.length;
+        let createdCount = 0;
+        let updatedCount = 0;
+        let productFailed = 0;
+
+        if (productCreateRows.length) {
+          const resultCreate = await upsertInChunks(
+            "produits",
+            productCreateRows,
+            "reference_produit",
+            200,
+            inc => step(inc, `Produits: creation ${Math.min(currentStep, totalSteps)}/${totalSteps}`)
+          );
+          createdCount = resultCreate.success;
+          productFailed += resultCreate.failed;
+        }
+
+        if (productUpdateRows.length) {
+          const resultUpdate = await upsertInChunks(
+            "produits",
+            productUpdateRows,
+            "id",
+            200,
+            inc => step(inc, `Produits: mise a jour ${Math.min(currentStep, totalSteps)}/${totalSteps}`)
+          );
+          updatedCount = resultUpdate.success;
+          productFailed += resultUpdate.failed;
+        }
+
+        if (!productCreateRows.length && !productUpdateRows.length) {
+          step(importRows.length, "Produits deja synchronises.");
+        } else {
+          const missingProgress = importRows.length - (createdCount + updatedCount + productFailed);
+          if (missingProgress > 0) step(missingProgress, "Produits: finalisation...");
+        }
+
+        produits = await fetchProduits();
+        const produitMapAfter = buildProductMap(produits);
+        step(1, "Produits rafraichis.");
+
+        setStatus(`Import ${type.label}: suppression des anciens tarifs ${type.plaqueName}...`);
+        const countBeforeDelete = await supabaseClient
+          .from("tarifs_plaques")
+          .select("produit_id", { count: "exact", head: true })
+          .eq("plaque_id", plaque.id);
+        if (countBeforeDelete.error) throw countBeforeDelete.error;
+        const oldTarifsCount = countBeforeDelete.count || 0;
+        step(1, "Comptage anciens tarifs.");
+
+        const deleteRes = await supabaseClient
+          .from("tarifs_plaques")
+          .delete()
+          .eq("plaque_id", plaque.id);
+        if (deleteRes.error) throw deleteRes.error;
+        step(1, "Anciens tarifs supprimes.");
+
+        setStatus(`Import ${type.label}: insertion des nouveaux tarifs...`);
+        const tariffRows = [];
+        let tarifFailed = 0;
+
+        importRows.forEach(row => {
+          const product = produitMapAfter.get(row.referenceKey);
+          if (!product) {
+            tarifFailed += 1;
+            return;
+          }
+          tariffRows.push({
+            plaque_id: plaque.id,
+            produit_id: product.id,
+            prix_vente: row.price
+          });
+        });
+
+        const tariffResult = await upsertInChunks(
+          "tarifs_plaques",
+          tariffRows,
+          "plaque_id,produit_id",
+          200,
+          inc => step(inc, `Tarifs: traitement ${Math.min(currentStep, totalSteps)}/${totalSteps}`)
+        );
+        const tarifsInserted = tariffResult.success;
+        tarifFailed += tariffResult.failed;
+
+        const finalMissingProgress = importRows.length - (tarifsInserted + tarifFailed);
+        if (finalMissingProgress > 0) step(finalMissingProgress, "Tarifs: finalisation...");
+
+        const hasErrors = productFailed > 0 || tarifFailed > 0;
+        setStatus(
+          hasErrors
+            ? `Import ${type.label} termine avec erreurs.`
+            : `Import ${type.label} termine avec succes.`
+        );
+
+        openResultModal({
+          title: hasErrors ? `Import ${type.label} termine avec erreurs` : `Import ${type.label} termine`,
+          summary: `Plaque cible: ${type.plaqueName}`,
+          lines: [
+            `Feuilles scannees: ${importMeta.sheetsScanned}`,
+            `Feuilles utiles: ${importMeta.sheetsUsed}`,
+            `References uniques importees: ${importRows.length}`,
+            `Produits crees: ${createdCount} / cible ${createdCountTarget}`,
+            `Produits mis a jour: ${updatedCount} / cible ${updatedCountTarget}`,
+            `Erreurs produits: ${productFailed}`,
+            `Anciens tarifs supprimes: ${oldTarifsCount}`,
+            `Tarifs inserts/mis a jour: ${tarifsInserted}`,
+            `Erreurs tarifs: ${tarifFailed}`
+          ]
+        });
+      } catch (error) {
+        console.error("Erreur import multi-entites:", error);
+        setStatus("Erreur pendant l'import.");
+        openResultModal({
+          title: "Import en echec",
+          summary: "Une erreur globale a interrompu l'import.",
+          lines: [error?.message || "Erreur inconnue"]
+        });
+      } finally {
+        setImportProgress(totalSteps, totalSteps, "Import termine.");
+        importBtn.disabled = importRows.length === 0;
+        analyzeBtn.disabled = false;
+      }
+    }
+    function resetImport() {
+      previewRows = [];
+      importRows = [];
+      importMeta = {
+        sheetsScanned: 0,
+        sheetsUsed: 0,
+        rowsRead: 0,
+        validRows: 0,
+        uniqueRefs: 0,
+        duplicates: 0
+      };
+      document.getElementById("fileInput").value = "";
+      hideProgress();
+      setImportProgress(0, 1, "Preparation...");
+      updateStats();
+      renderPreview();
+      setStatus("Reinitialisation effectuee.");
+    }
+
+    function downloadTemplate() {
+      const csv = [
+        "Ref.,Designation,TARIF",
+        "86807 00,Exemple produit 1,12.5",
+        "11111 AA,Exemple produit 2,9.9"
+      ].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "modele_import_tarifs_multi.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     }
 
     async function initApp() {
       try {
-        setStatus("Connexion à Supabase...");
-        plaques = await fetchPlaques();
-        produits = await fetchProduits();
-        rebuildPlaqueIndex();
-        rebuildProduitIndex();
-        buildDefaultPlaqueSelect();
+        buildImportTypeOptions();
+        updateImportHint();
+        setStatus("Connexion a Supabase...");
+        [plaques, produits] = await Promise.all([fetchPlaques(), fetchProduits()]);
         hideProgress();
         setImportProgress(0, 1, "Preparation...");
-        setStatus(`Connexion OK • ${plaques.length} plaque(s) • ${produits.length} produit(s) chargés.`);
+        updateStats();
+        renderPreview();
+        setStatus(`Connexion OK - ${plaques.length} plaque(s) - ${produits.length} produit(s) charges.`);
       } catch (error) {
-        console.error("Erreur init:", error);
-        setStatus("Erreur de connexion à Supabase.");
-        alert("Impossible de charger les plaques et les produits depuis Supabase.");
+        console.error("Erreur init import multi-entites:", error);
+        setStatus("Erreur de connexion a Supabase.");
+        openResultModal({
+          title: "Connexion Supabase en echec",
+          summary: "Impossible de charger plaques/produits.",
+          lines: [error?.message || "Verifie la cle, l'URL et les policies."]
+        });
       }
     }
 
-    document.getElementById("fileInput").addEventListener("change", () => {
-      setStatus("Fichier sélectionné. Lance l’analyse.");
+    document.getElementById("importTypeSelect").addEventListener("change", () => {
+      updateImportHint();
     });
 
-    document.getElementById("defaultPlaqueSelect").addEventListener("change", () => {
-      if (!parsedRows.length) return;
-      analyserDonnees(parsedRows);
-      setStatus("Plaque par defaut mise a jour. Analyse rafraichie.");
+    document.getElementById("fileInput").addEventListener("change", () => {
+      setStatus("Fichier selectionne. Lance l'analyse.");
     });
 
     document.getElementById("resultModal")?.addEventListener("click", event => {
@@ -1296,3 +1285,5 @@
   </script>
 </body>
 </html>
+
+
