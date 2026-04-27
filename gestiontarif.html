@@ -982,7 +982,25 @@
       return chunks;
     }
 
-    async function upsertInChunks(table, rows, onConflict, chunkSize, onProgress) {
+    function formatSupabaseError(error) {
+      if (!error) return "Erreur inconnue";
+      const parts = [error.message, error.details, error.hint]
+        .map(value => normalizeText(value))
+        .filter(Boolean);
+      if (parts.length) return parts.join(" | ");
+      try {
+        return JSON.stringify(error);
+      } catch (jsonError) {
+        return String(error);
+      }
+    }
+
+    function pushErrorSample(list, label, error) {
+      if (!Array.isArray(list) || list.length >= 5) return;
+      list.push(`${label}: ${formatSupabaseError(error)}`);
+    }
+
+    async function insertInChunks(table, rows, chunkSize, onProgress, errorSamples) {
       let success = 0;
       let failed = 0;
       const chunks = chunkArray(rows, chunkSize);
@@ -991,26 +1009,63 @@
         try {
           const { error } = await supabaseClient
             .from(table)
-            .upsert(chunk, { onConflict });
+            .insert(chunk);
 
           if (error) throw error;
           success += chunk.length;
           if (onProgress) onProgress(chunk.length);
         } catch (chunkError) {
-          console.error(`Erreur lot ${table}, fallback ligne par ligne:`, chunkError);
+          console.error(`Erreur lot insert ${table}, fallback ligne par ligne:`, chunkError);
+          pushErrorSample(errorSamples, `${table} lot`, chunkError);
           for (const row of chunk) {
             try {
               const { error } = await supabaseClient
                 .from(table)
-                .upsert(row, { onConflict });
+                .insert(row);
               if (error) throw error;
               success += 1;
             } catch (rowError) {
-              console.error(`Erreur ligne ${table}:`, row, rowError);
+              console.error(`Erreur ligne insert ${table}:`, row, rowError);
               failed += 1;
+              pushErrorSample(errorSamples, `${table} ligne`, rowError);
             }
             if (onProgress) onProgress(1);
           }
+        }
+      }
+
+      return { success, failed };
+    }
+
+    async function updateByIdInChunks(table, rows, chunkSize, onProgress, errorSamples) {
+      let success = 0;
+      let failed = 0;
+      const chunks = chunkArray(rows, chunkSize);
+
+      for (const chunk of chunks) {
+        for (const row of chunk) {
+          const { id, ...payload } = row || {};
+          if (!id) {
+            failed += 1;
+            pushErrorSample(errorSamples, `${table} update`, { message: "id manquant pour update" });
+            if (onProgress) onProgress(1);
+            continue;
+          }
+
+          try {
+            const { error } = await supabaseClient
+              .from(table)
+              .update(payload)
+              .eq("id", id);
+            if (error) throw error;
+            success += 1;
+          } catch (rowError) {
+            console.error(`Erreur ligne update ${table}:`, row, rowError);
+            failed += 1;
+            pushErrorSample(errorSamples, `${table} id=${id}`, rowError);
+          }
+
+          if (onProgress) onProgress(1);
         }
       }
 
@@ -1088,26 +1143,28 @@
         let createdCount = 0;
         let updatedCount = 0;
         let productFailed = 0;
+        const productErrorSamples = [];
+        const tariffErrorSamples = [];
 
         if (productCreateRows.length) {
-          const resultCreate = await upsertInChunks(
+          const resultCreate = await insertInChunks(
             "produits",
             productCreateRows,
-            "reference_produit",
             200,
-            inc => step(inc, `Produits: creation ${Math.min(currentStep, totalSteps)}/${totalSteps}`)
+            inc => step(inc, `Produits: creation ${Math.min(currentStep, totalSteps)}/${totalSteps}`),
+            productErrorSamples
           );
           createdCount = resultCreate.success;
           productFailed += resultCreate.failed;
         }
 
         if (productUpdateRows.length) {
-          const resultUpdate = await upsertInChunks(
+          const resultUpdate = await updateByIdInChunks(
             "produits",
             productUpdateRows,
-            "id",
             200,
-            inc => step(inc, `Produits: mise a jour ${Math.min(currentStep, totalSteps)}/${totalSteps}`)
+            inc => step(inc, `Produits: mise a jour ${Math.min(currentStep, totalSteps)}/${totalSteps}`),
+            productErrorSamples
           );
           updatedCount = resultUpdate.success;
           productFailed += resultUpdate.failed;
@@ -1123,6 +1180,30 @@
         produits = await fetchProduits();
         const produitMapAfter = buildProductMap(produits);
         step(1, "Produits rafraichis.");
+
+        setStatus(`Import ${type.label}: preparation des tarifs ${type.plaqueName}...`);
+        const tariffRows = [];
+        let tarifFailed = 0;
+
+        importRows.forEach(row => {
+          const product = produitMapAfter.get(row.referenceKey);
+          if (!product) {
+            tarifFailed += 1;
+            return;
+          }
+          tariffRows.push({
+            plaque_id: plaque.id,
+            produit_id: product.id,
+            prix_vente: row.price
+          });
+        });
+
+        if (!tariffRows.length) {
+          throw new Error(
+            "Aucun tarif a inserer: aucun produit associe aux references importees. " +
+            "Verifie les droits d'ecriture sur la table produits ou les references du fichier."
+          );
+        }
 
         setStatus(`Import ${type.label}: suppression des anciens tarifs ${type.plaqueName}...`);
         const countBeforeDelete = await supabaseClient
@@ -1141,28 +1222,12 @@
         step(1, "Anciens tarifs supprimes.");
 
         setStatus(`Import ${type.label}: insertion des nouveaux tarifs...`);
-        const tariffRows = [];
-        let tarifFailed = 0;
-
-        importRows.forEach(row => {
-          const product = produitMapAfter.get(row.referenceKey);
-          if (!product) {
-            tarifFailed += 1;
-            return;
-          }
-          tariffRows.push({
-            plaque_id: plaque.id,
-            produit_id: product.id,
-            prix_vente: row.price
-          });
-        });
-
-        const tariffResult = await upsertInChunks(
+        const tariffResult = await insertInChunks(
           "tarifs_plaques",
           tariffRows,
-          "plaque_id,produit_id",
           200,
-          inc => step(inc, `Tarifs: traitement ${Math.min(currentStep, totalSteps)}/${totalSteps}`)
+          inc => step(inc, `Tarifs: traitement ${Math.min(currentStep, totalSteps)}/${totalSteps}`),
+          tariffErrorSamples
         );
         const tarifsInserted = tariffResult.success;
         tarifFailed += tariffResult.failed;
@@ -1189,7 +1254,13 @@
             `Erreurs produits: ${productFailed}`,
             `Anciens tarifs supprimes: ${oldTarifsCount}`,
             `Tarifs inserts/mis a jour: ${tarifsInserted}`,
-            `Erreurs tarifs: ${tarifFailed}`
+            `Erreurs tarifs: ${tarifFailed}`,
+            ...(productErrorSamples.length
+              ? ["Details erreurs produits:", ...productErrorSamples]
+              : []),
+            ...(tariffErrorSamples.length
+              ? ["Details erreurs tarifs:", ...tariffErrorSamples]
+              : [])
           ]
         });
       } catch (error) {
