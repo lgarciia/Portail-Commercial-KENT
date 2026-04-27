@@ -585,10 +585,15 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const IMPORT_TYPES = [
-      { id: "PSA", label: "PSA Tarif Revente", plaqueName: "PSA Tarif Revente" },
       { id: "GUEUDET", label: "Gueudet Tarif revente", plaqueName: "Gueudet Tarif revente" },
-      { id: "FORD", label: "Concession Ford Tarif Revente", plaqueName: "Concession Ford Tarif Revente" },
+      { id: "GUEUDET_ACHAT", label: "Gueudet Tarif achat Concession", plaqueName: "Gueudet Tarif achat Concession" },
+      { id: "FORD", label: "Ford Tarif Revente", plaqueName: "Ford Tarif Revente" },
+      { id: "PSA", label: "PSA Tarif Revente", plaqueName: "PSA Tarif Revente" },
       { id: "DIRECT", label: "Direct Tarif", plaqueName: "Direct Tarif" }
+    ];
+
+    const PLAQUE_NAME_ALIASES = [
+      { from: "Concession Ford Tarif Revente", to: "Ford Tarif Revente" }
     ];
 
     let plaques = [];
@@ -785,6 +790,111 @@
     function findPlaqueByName(name) {
       const target = normalizeComparable(name);
       return plaques.find(plaque => normalizeComparable(plaque.nom) === target) || null;
+    }
+
+    function listExpectedPlaqueNames() {
+      return IMPORT_TYPES.map(item => item.plaqueName);
+    }
+
+    function findPlaqueRowByName(list, name) {
+      const target = normalizeComparable(name);
+      return (list || []).find(item => normalizeComparable(item?.nom) === target) || null;
+    }
+
+    async function harmonizePlaquesCatalog() {
+      const report = {
+        renamed: 0,
+        inserted: 0,
+        deleted: 0,
+        renameErrors: [],
+        insertErrors: [],
+        deleteErrors: [],
+        deleteBlocked: [],
+        extras: []
+      };
+
+      let currentPlaques = plaques.slice();
+
+      for (const alias of PLAQUE_NAME_ALIASES) {
+        const fromRow = findPlaqueRowByName(currentPlaques, alias.from);
+        const toRow = findPlaqueRowByName(currentPlaques, alias.to);
+        if (!fromRow || toRow) continue;
+
+        const { error } = await supabaseClient
+          .from("plaques")
+          .update({ nom: alias.to })
+          .eq("id", fromRow.id);
+
+        if (error) {
+          report.renameErrors.push(`${alias.from} -> ${alias.to}: ${formatSupabaseError(error)}`);
+        } else {
+          report.renamed += 1;
+        }
+      }
+
+      currentPlaques = await fetchPlaques();
+      const expectedNames = listExpectedPlaqueNames();
+
+      for (const expectedName of expectedNames) {
+        const exists = findPlaqueRowByName(currentPlaques, expectedName);
+        if (exists) continue;
+
+        const { error } = await supabaseClient
+          .from("plaques")
+          .insert({ nom: expectedName });
+
+        if (error) {
+          report.insertErrors.push(`${expectedName}: ${formatSupabaseError(error)}`);
+        } else {
+          report.inserted += 1;
+        }
+      }
+
+      currentPlaques = await fetchPlaques();
+      const expectedComparable = new Set(expectedNames.map(name => normalizeComparable(name)));
+      const extraRows = currentPlaques
+        .filter(item => !expectedComparable.has(normalizeComparable(item.nom)));
+
+      for (const extra of extraRows) {
+        try {
+          const usageRes = await supabaseClient
+            .from("clients")
+            .select("id", { count: "exact", head: true })
+            .eq("plaque_id", extra.id);
+
+          if (usageRes.error) {
+            report.deleteErrors.push(`${extra.nom}: ${formatSupabaseError(usageRes.error)}`);
+            continue;
+          }
+
+          const usageCount = usageRes.count || 0;
+          if (usageCount > 0) {
+            report.deleteBlocked.push(`${extra.nom}: utilisee par ${usageCount} client(s)`);
+            continue;
+          }
+
+          const deleteRes = await supabaseClient
+            .from("plaques")
+            .delete()
+            .eq("id", extra.id);
+
+          if (deleteRes.error) {
+            report.deleteErrors.push(`${extra.nom}: ${formatSupabaseError(deleteRes.error)}`);
+          } else {
+            report.deleted += 1;
+          }
+        } catch (error) {
+          report.deleteErrors.push(`${extra.nom}: ${formatSupabaseError(error)}`);
+        }
+      }
+
+      currentPlaques = await fetchPlaques();
+      report.extras = currentPlaques
+        .filter(item => !expectedComparable.has(normalizeComparable(item.nom)))
+        .map(item => item.nom);
+
+      plaques = currentPlaques;
+      return report;
     }
 
     function updateStats() {
@@ -1360,11 +1470,52 @@
         updateImportHint();
         setStatus("Connexion a Supabase...");
         [plaques, produits] = await Promise.all([fetchPlaques(), fetchProduits()]);
+
+        const plaqueSync = await harmonizePlaquesCatalog();
+        const plaqueSyncHasIssues =
+          plaqueSync.renameErrors.length ||
+          plaqueSync.insertErrors.length ||
+          plaqueSync.deleteErrors.length ||
+          plaqueSync.deleteBlocked.length;
+        const plaqueSyncHasExtras = plaqueSync.extras.length > 0;
+
         hideProgress();
         setImportProgress(0, 1, "Preparation...");
         updateStats();
         renderPreview();
-        setStatus(`Connexion OK - ${plaques.length} plaque(s) - ${produits.length} produit(s) charges.`);
+        setStatus(
+          `Connexion OK - ${plaques.length} plaque(s) - ${produits.length} produit(s) charges. ` +
+          `Plaques sync: +${plaqueSync.inserted}, renommes ${plaqueSync.renamed}, supprimes ${plaqueSync.deleted}.`
+        );
+
+        if (plaqueSyncHasIssues || plaqueSyncHasExtras) {
+          const lines = [];
+          if (plaqueSync.renameErrors.length) {
+            lines.push("Erreurs renommage plaques:");
+            lines.push(...plaqueSync.renameErrors);
+          }
+          if (plaqueSync.insertErrors.length) {
+            lines.push("Erreurs creation plaques:");
+            lines.push(...plaqueSync.insertErrors);
+          }
+          if (plaqueSync.deleteErrors.length) {
+            lines.push("Erreurs suppression plaques:");
+            lines.push(...plaqueSync.deleteErrors);
+          }
+          if (plaqueSync.deleteBlocked.length) {
+            lines.push("Suppression impossible (plaque deja utilisee):");
+            lines.push(...plaqueSync.deleteBlocked);
+          }
+          if (plaqueSync.extras.length) {
+            lines.push("Plaques encore en plus apres nettoyage:");
+            lines.push(...plaqueSync.extras);
+          }
+          openResultModal({
+            title: "Controle du catalogue plaques",
+            summary: "Le module attend exactement les plaques standards.",
+            lines
+          });
+        }
       } catch (error) {
         console.error("Erreur init import multi-entites:", error);
         setStatus("Erreur de connexion a Supabase.");
