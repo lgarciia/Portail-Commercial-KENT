@@ -345,6 +345,7 @@ select[multiple]::-webkit-scrollbar-thumb:hover{
       <div class="fbox" id="boxYear"></div>
       <div class="fbox" id="boxMonth"></div>
       <div class="fbox" id="boxSeller"></div>
+      <div class="fbox" id="boxClientInt"></div>
       <div class="fbox" id="boxClient"></div>
       <div class="fbox" id="boxRef"></div>
       <div class="fbox" id="boxDes"></div>
@@ -391,6 +392,7 @@ const TARGETS = {
   YEAR:  ["Année","Annee","année","annee"],
   MONTH: ["Mois","mois","Mois2","mois2"],
   SELLER:["Vendeur","VENDEUR","Vendeur KENT","Vendeur PSA"],
+  CLIENT_INT:["N° client Interne","N° client interne","No client Interne","No client interne","N client Interne","N client interne","Numero client interne","Numéro client interne"],
   CLIENT:["Nom LR","NOM LR","Nom du client","Client","Clients"],
   REF:   ["Reference Produits","Référence Produits","Reference Produit","Référence Produit","Ref Produits","Réf Produits"],
   DES:   ["Désignations","Designations","Désignation","Designation"],
@@ -584,6 +586,7 @@ let sortCAAsc = false;
 const boxYear   = buildListBox("boxYear",   "Année *");
 const boxMonth  = buildListBox("boxMonth",  "Mois *");
 const boxSeller = buildListBox("boxSeller", "Vendeur");
+const boxClientInt = buildListBox("boxClientInt", "N° client Interne");
 const boxClient = buildListBox("boxClient", "Clients");
 const boxRef    = buildListBox("boxRef",    "Reference Produits");
 const boxDes    = buildListBox("boxDes",    "Désignations");
@@ -592,6 +595,7 @@ const chain = [
   { box: boxYear,   key: "YEAR",   labelFn: null,       sortFn: (a,b)=>Number(a)-Number(b) },
   { box: boxMonth,  key: "MONTH",  labelFn: monthLabel, sortFn: (a,b)=>Number(a)-Number(b) },
   { box: boxSeller, key: "SELLER", labelFn: null,       sortFn: null },
+  { box: boxClientInt, key: "CLIENT_INT", labelFn: null, sortFn: sortNumIfPossible },
   { box: boxClient, key: "CLIENT", labelFn: null,       sortFn: null },
   { box: boxRef,    key: "REF",    labelFn: null,       sortFn: null },
   { box: boxDes,    key: "DES",    labelFn: null,       sortFn: null },
@@ -630,6 +634,7 @@ function prettyHeader(h){
     [cols.YEAR, "Année"],
     [cols.MONTH, "Mois"],
     [cols.SELLER, "Vendeur"],
+    [cols.CLIENT_INT, "N° client Interne"],
     [cols.CLIENT, "Clients"],
     [cols.REF, "Reference Produits"],
     [cols.DES, "Désignations"],
@@ -814,6 +819,7 @@ async function loadExcel(){
       YEAR:   detectColumn(headers, TARGETS.YEAR),
       MONTH:  detectColumn(headers, TARGETS.MONTH),
       SELLER: detectColumn(headers, TARGETS.SELLER),
+      CLIENT_INT: detectColumn(headers, TARGETS.CLIENT_INT),
       CLIENT: detectColumn(headers, TARGETS.CLIENT),
       REF:    detectColumn(headers, TARGETS.REF),
       DES:    detectColumn(headers, TARGETS.DES),
@@ -822,7 +828,7 @@ async function loadExcel(){
     };
 
     $("colsDebug").textContent =
-      `Colonnes détectées : Année=${cols.YEAR || "KO"} | Mois=${cols.MONTH || "KO"} | Vendeur=${cols.SELLER || "KO"} | Client=${cols.CLIENT || "KO"} | Ref=${cols.REF || "KO"} | Désignation=${cols.DES || "KO"} | Qte=${cols.QTY || "KO"} | CA=${cols.CA || "KO"}`;
+      `Colonnes détectées : Année=${cols.YEAR || "KO"} | Mois=${cols.MONTH || "KO"} | Vendeur=${cols.SELLER || "KO"} | N° client Interne=${cols.CLIENT_INT || "KO"} | Client=${cols.CLIENT || "KO"} | Ref=${cols.REF || "KO"} | Désignation=${cols.DES || "KO"} | Qte=${cols.QTY || "KO"} | CA=${cols.CA || "KO"}`;
 
     if (!cols.YEAR || !cols.MONTH){
       setStatus("warn", "Colonnes Année/Mois introuvables (noms différents).");
@@ -855,18 +861,22 @@ async function loadExcel(){
     boxSeller.setOptions(cols.SELLER ? base2.map(r => r[cols.SELLER]) : [], {preserve:false});
     const base3 = filterRowsUpTo(2);
 
-    boxClient.setOptions(cols.CLIENT ? base3.map(r => r[cols.CLIENT]) : [], {preserve:false});
+    boxClientInt.setOptions(cols.CLIENT_INT ? base3.map(r => r[cols.CLIENT_INT]) : [], {preserve:false, sortFn: sortNumIfPossible});
     const base4 = filterRowsUpTo(3);
 
-    boxRef.setOptions(cols.REF ? base4.map(r => r[cols.REF]) : [], {preserve:false});
+    boxClient.setOptions(cols.CLIENT ? base4.map(r => r[cols.CLIENT]) : [], {preserve:false});
     const base5 = filterRowsUpTo(4);
 
-    boxDes.setOptions(cols.DES ? base5.map(r => r[cols.DES]) : [], {preserve:false});
+    boxRef.setOptions(cols.REF ? base5.map(r => r[cols.REF]) : [], {preserve:false});
+    const base6 = filterRowsUpTo(5);
+
+    boxDes.setOptions(cols.DES ? base6.map(r => r[cols.DES]) : [], {preserve:false});
 
     // default cumul
     boxYear.setCumul(false);
     boxMonth.setCumul(false);
     boxSeller.setCumul(false);
+    boxClientInt.setCumul(false);
     boxClient.setCumul(true);
     boxRef.setCumul(false);
     boxDes.setCumul(false);
