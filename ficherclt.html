@@ -929,22 +929,50 @@
     }
 
     async function fetchProduits() {
-      const { data, error } = await supabaseClient
-        .from("produits")
-        .select("id, nom, actif, reference_produit, prix_vente")
-        .order("nom", { ascending: true });
+      const pageSize = 1000;
+      let from = 0;
+      const all = [];
 
-      if (error) throw error;
-      return data || [];
+      while (true) {
+        const to = from + pageSize - 1;
+        const { data, error } = await supabaseClient
+          .from("produits")
+          .select("id, nom, actif, reference_produit, prix_vente")
+          .order("nom", { ascending: true })
+          .range(from, to);
+
+        if (error) throw error;
+        const batch = data || [];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+
+      return all;
     }
 
     async function fetchTarifsPlaques() {
-      const { data, error } = await supabaseClient
-        .from("tarifs_plaques")
-        .select("plaque_id, produit_id, prix_vente");
+      const pageSize = 1000;
+      let from = 0;
+      const all = [];
 
-      if (error) throw error;
-      return data || [];
+      while (true) {
+        const to = from + pageSize - 1;
+        const { data, error } = await supabaseClient
+          .from("tarifs_plaques")
+          .select("plaque_id, produit_id, prix_vente")
+          .order("plaque_id", { ascending: true })
+          .order("produit_id", { ascending: true })
+          .range(from, to);
+
+        if (error) throw error;
+        const batch = data || [];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+
+      return all;
     }
 
     async function fetchPlaques() {
@@ -1250,6 +1278,7 @@
 
       dom.clientSelect.value = nextValue;
       updateClientHeader();
+      refreshProductDatalist(nextValue);
       return true;
     }
 
@@ -1478,9 +1507,32 @@
       }
     }
 
-    function buildProductDatalistOptions() {
-      const pool = state.produitsActifs.length ? state.produitsActifs : state.produits;
+    function getProductsForClient(clientId) {
+      const client = getClientById(clientId);
+      if (!client) return [...state.produits];
+
+      const plaqueId = client.plaque_id;
+      if (!plaqueId) return [...state.produits];
+
+      const productIds = new Set(
+        state.tarifsPlaques
+          .filter(item => String(item.plaque_id) === String(plaqueId))
+          .map(item => String(item.produit_id))
+      );
+
+      if (!productIds.size) return [...state.produits];
+      const filtered = state.produits.filter(produit => productIds.has(String(produit.id)));
+      return filtered.length ? filtered : [...state.produits];
+    }
+
+    function buildProductDatalistOptions(clientId = null) {
+      const resolvedClientId = clientId || getPopupSelectedClientId() || getSelectedClientId();
+      const pool = getProductsForClient(resolvedClientId);
       return pool.map(produit => `<option value="${escapeHtml(getProductLabel(produit))}"></option>`).join("");
+    }
+
+    function refreshProductDatalist(clientId = null) {
+      dom.produitsDatalist.innerHTML = buildProductDatalistOptions(clientId);
     }
 
     function findProduitFromSearch(value) {
@@ -1613,6 +1665,7 @@
     function refreshAllPopupPrices() {
       [...dom.productsFormList.querySelectorAll(".product-row")].forEach(syncProductRow);
       updatePopupTotalCommande();
+      refreshProductDatalist(getPopupSelectedClientId());
       updatePopupPricingHint();
     }
 
@@ -1745,6 +1798,7 @@
         addProductRow();
       }
 
+      refreshProductDatalist(getPopupSelectedClientId());
       updatePopupPricingHint();
       updatePopupTotalCommande();
       dom.visitModalOverlay.classList.add("active");
@@ -1971,6 +2025,7 @@
 
     async function handleClientChange() {
       updateClientHeader();
+      refreshProductDatalist(getSelectedClientId());
       await loadVisites();
     }
 
@@ -2002,7 +2057,10 @@
       dom.cancelVisitBtn.addEventListener("click", closeVisitModal);
       dom.addProductRowBtn.addEventListener("click", () => addProductRow());
       dom.visitForm.addEventListener("submit", saveVisit);
-      dom.popupClient.addEventListener("change", refreshAllPopupPrices);
+      dom.popupClient.addEventListener("change", () => {
+        refreshProductDatalist(getPopupSelectedClientId());
+        refreshAllPopupPrices();
+      });
       dom.closeTopProduitsBtn.addEventListener("click", closeTopProduits);
       dom.closeClientModalBtn.addEventListener("click", closeClientModal);
       dom.cancelClientBtn.addEventListener("click", closeClientModal);
@@ -2054,7 +2112,7 @@
         state.tarifsPlaques = tarifsPlaques;
         state.plaques = plaques;
 
-        dom.produitsDatalist.innerHTML = buildProductDatalistOptions();
+        refreshProductDatalist(getSelectedClientId());
 
         const selectionFromUrl = applyClientSelectionFromUrl();
         if (!selectionFromUrl) renderClientOptions();
