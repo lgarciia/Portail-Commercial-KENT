@@ -738,6 +738,11 @@
           mode: "gueudet-prof-header"
         };
       }
+      if (typeId === "PSA") {
+        return {
+          mode: "psa-ref-header"
+        };
+      }
 
       return {
         mode: "header-detect"
@@ -757,13 +762,18 @@
       const strategy = getImportReadStrategy(type);
       const hint = document.getElementById("importHint");
       if (!hint) return;
+      let modeMessage = "Le module lit toutes les feuilles utiles (Ref. / Designation / TARIF).";
+      if (strategy.mode === "fixed-columns") {
+        modeMessage = "Lecture Ford imposee: A = Code produit, F = Description, J = Tarif Revente.";
+      } else if (strategy.mode === "gueudet-prof-header") {
+        modeMessage = "Lecture Gueudet imposee: colonnes Reference, Description, Tarif Revente au professionnel.";
+      } else if (strategy.mode === "psa-ref-header") {
+        modeMessage = "Lecture PSA imposee: colonne Ref. (et non CrossRef + Code), Designation, TARIF.";
+      }
+
       hint.innerHTML = [
         `Plaque cible: <code>${escapeHtml(type.plaqueName)}</code>.`,
-        strategy.mode === "fixed-columns"
-          ? "Lecture Ford imposee: A = Code produit, F = Description, J = Tarif Revente."
-          : (strategy.mode === "gueudet-prof-header"
-            ? "Lecture Gueudet imposee: colonnes Reference, Description, Tarif Revente au professionnel."
-            : "Le module lit toutes les feuilles utiles (Ref. / Designation / TARIF)."),
+        modeMessage,
         "Il met a jour les produits puis remplace les tarifs de la plaque choisie."
       ].join("<br>");
     }
@@ -973,10 +983,19 @@
       const maxScan = Math.min(rows.length, 40);
       for (let rowIndex = 0; rowIndex < maxScan; rowIndex += 1) {
         const row = rows[rowIndex] || [];
+        const rawCells = row.map(cell => normalizeText(cell));
         const tokens = row.map(cell => normalizeHeaderToken(cell));
         let refIndex = -1;
         let designationIndex = -1;
         let tarifIndex = -1;
+
+        if (mode === "psa-ref-header") {
+          // PSA: priorite stricte sur la colonne "Ref." pour eviter "CrossRef + Code".
+          refIndex = rawCells.findIndex(cell => {
+            const cleaned = cell.toLowerCase().replace(/\s+/g, "");
+            return cleaned === "ref." || cleaned === "ref";
+          });
+        }
 
         tokens.forEach((token, index) => {
           if (refIndex === -1 && (token === "ref" || token === "ref." || token === "reference")) {
