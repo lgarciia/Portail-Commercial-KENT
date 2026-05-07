@@ -22,6 +22,9 @@
       totalQuantite: 0,
       totalStock: 0,
       totalCA: 0,
+      nbVisitesAvecVente: 0,
+      nbVisitesSansVente: 0,
+      tauxTransformation: 0,
       avgLinesPerVisit: 0,
       topClients: [],
       topProducts: [],
@@ -55,6 +58,26 @@
   function normalizeColor(value) {
     var color = String(value == null ? "" : value).trim().toLowerCase();
     return ["red", "yellow", "green", "blue"].includes(color) ? color : "other";
+  }
+
+  function normalizeVisitType(value) {
+    var normalized = String(value == null ? "" : value)
+      .trim()
+      .toLowerCase()
+      .replaceAll("-", "_")
+      .replaceAll(" ", "_");
+    if (normalized === "vente") return "vente";
+    if (normalized === "passage_sans_vente") return "passage_sans_vente";
+    if (normalized === "client_ferme") return "client_ferme";
+    return "";
+  }
+
+  function isSaleVisit(visite) {
+    var visitType = normalizeVisitType(visite && visite.type_visite);
+    if (visitType === "vente") return true;
+    if (visitType) return false;
+    if (normalizeNumber(visite && visite.total_commande) > 0) return true;
+    return Boolean(visite && visite.commandes && visite.commandes.length);
   }
 
   function formatNumber(value) {
@@ -181,6 +204,16 @@
     );
 
     points.push(
+      "Transformation : " +
+        formatNumber(stats.nbVisitesAvecVente) +
+        " visite(s) avec vente, " +
+        formatNumber(stats.nbVisitesSansVente) +
+        " sans vente, soit " +
+        formatAverage(stats.tauxTransformation) +
+        "%."
+    );
+
+    points.push(
       "Volume du jour : " +
         formatNumber(stats.totalQuantite) +
         " unite(s) vendues ou saisies et " +
@@ -231,7 +264,7 @@
     var result = await supabaseClient
       .from("visites")
       .select(
-        "id, client_id, date_visite, note, total_commande, clients ( id, nom, numero_compte, adresse, telephone ), visite_commandes ( id, produit_id, quantite, stock_client, couleur, prix_unitaire, produits ( id, nom, reference_produit, prix_vente ) )"
+        "id, client_id, date_visite, note, type_visite, total_commande, clients ( id, nom, numero_compte, adresse, telephone ), visite_commandes ( id, produit_id, quantite, stock_client, couleur, prix_unitaire, produits ( id, nom, reference_produit, prix_vente ) )"
       )
       .eq("date_visite", reportDate)
       .order("date_visite", { ascending: true });
@@ -247,6 +280,7 @@
         client_id: visite.client_id,
         date_visite: visite.date_visite,
         note: visite.note,
+        type_visite: normalizeVisitType(visite.type_visite),
         total_commande: visite.total_commande,
         client: visite.clients || null,
         commandes: (visite.visite_commandes || []).map(function (cmd) {
@@ -273,9 +307,12 @@
     var productMap = new Map();
 
     stats.nbVisites = visites.length;
+    stats.nbVisitesAvecVente = 0;
+    stats.nbVisitesSansVente = 0;
 
     visites.forEach(function (visite) {
       var visitMetrics = computeVisitMetrics(visite);
+      var saleVisit = isSaleVisit(visite);
       var clientName = visite.client && visite.client.nom ? visite.client.nom : "Client inconnu";
       var clientId =
         (visite.client && visite.client.id) ||
@@ -291,6 +328,8 @@
       stats.nbJaunes += visitMetrics.nbJaunes;
       stats.nbVerts += visitMetrics.nbVerts;
       stats.nbBleus += visitMetrics.nbBleus;
+      if (saleVisit) stats.nbVisitesAvecVente += 1;
+      else stats.nbVisitesSansVente += 1;
 
       if (!clientMap.has(String(clientId))) {
         clientMap.set(String(clientId), {
@@ -394,6 +433,7 @@
     });
 
     stats.nbClients = uniqueClients.size;
+    stats.tauxTransformation = stats.nbVisites ? (stats.nbVisitesAvecVente / stats.nbVisites) * 100 : 0;
     stats.avgLinesPerVisit = stats.nbVisites ? stats.nbLignes / stats.nbVisites : 0;
 
     groupedClients = Array.from(clientMap.values())
@@ -709,6 +749,9 @@
     lines.push("");
     lines.push("Synthese :");
     lines.push("- Visites : " + formatNumber(reportStats.nbVisites));
+    lines.push("- Visites avec vente : " + formatNumber(reportStats.nbVisitesAvecVente));
+    lines.push("- Visites sans vente : " + formatNumber(reportStats.nbVisitesSansVente));
+    lines.push("- Taux transformation : " + formatAverage(reportStats.tauxTransformation) + "%");
     lines.push("- Clients : " + formatNumber(reportStats.nbClients));
     lines.push("- Lignes produits : " + formatNumber(reportStats.nbLignes));
     lines.push("- Quantite totale : " + formatNumber(reportStats.totalQuantite));
@@ -790,6 +833,9 @@
     return (
       '<div class="preview-summary-grid">' +
       buildPreviewSummaryCard("Visites", formatNumber(reportStats.nbVisites)) +
+      buildPreviewSummaryCard("Avec vente", formatNumber(reportStats.nbVisitesAvecVente)) +
+      buildPreviewSummaryCard("Sans vente", formatNumber(reportStats.nbVisitesSansVente)) +
+      buildPreviewSummaryCard("Transfo", formatAverage(reportStats.tauxTransformation) + "%") +
       buildPreviewSummaryCard("Clients", formatNumber(reportStats.nbClients)) +
       buildPreviewSummaryCard("Lignes produits", formatNumber(reportStats.nbLignes)) +
       buildPreviewSummaryCard("Quantite totale", formatNumber(reportStats.totalQuantite)) +
@@ -1093,6 +1139,9 @@
       '<div class="section-title">Synthese du jour</div>' +
       '<table class="summary-table"><tbody>' +
       "<tr><th>Nombre de visites</th><td>" + escapeHtml(formatNumber(reportStats.nbVisites)) + "</td></tr>" +
+      "<tr><th>Visites avec vente</th><td>" + escapeHtml(formatNumber(reportStats.nbVisitesAvecVente)) + "</td></tr>" +
+      "<tr><th>Visites sans vente</th><td>" + escapeHtml(formatNumber(reportStats.nbVisitesSansVente)) + "</td></tr>" +
+      "<tr><th>Taux transformation</th><td>" + escapeHtml(formatAverage(reportStats.tauxTransformation) + "%") + "</td></tr>" +
       "<tr><th>Clients visites</th><td>" + escapeHtml(formatNumber(reportStats.nbClients)) + "</td></tr>" +
       "<tr><th>Lignes produits</th><td>" + escapeHtml(formatNumber(reportStats.nbLignes)) + "</td></tr>" +
       "<tr><th>Quantite totale</th><td>" + escapeHtml(formatNumber(reportStats.totalQuantite)) + "</td></tr>" +
@@ -1169,6 +1218,9 @@
   function buildPdfMetricRows() {
     var rows = [
       ["CA du jour", formatCurrency(reportStats.totalCA)],
+      ["Visites avec vente", formatNumber(reportStats.nbVisitesAvecVente)],
+      ["Visites sans vente", formatNumber(reportStats.nbVisitesSansVente)],
+      ["Taux transformation", formatAverage(reportStats.tauxTransformation) + "%"],
       ["Quantite totale", formatNumber(reportStats.totalQuantite) + " unite(s)"],
       ["Stock observe", formatNumber(reportStats.totalStock) + " unite(s)"],
       ["Moyenne lignes / visite", formatAverage(reportStats.avgLinesPerVisit)],

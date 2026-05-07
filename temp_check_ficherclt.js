@@ -1,799 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr" data-theme="dark">
-<head>
-  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fiche Client Terrain - Supabase</title>
-  <script src="./shared-ui.js"></script>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --bg:#07111a;
-      --bg-soft:#0b1722;
-      --panel:rgba(10,20,34,.8);
-      --panel-border:rgba(255,255,255,.08);
-      --panel-border-strong:rgba(255,255,255,.12);
-      --text:#eef4ff;
-      --muted:#9fb1c6;
-      --muted-2:#6f859d;
-      --accent:#38bdf8;
-      --accent-strong:#2563eb;
-      --success:#22c55e;
-      --warning:#f59e0b;
-      --danger:#ef4444;
-      --shadow:0 28px 70px rgba(2,6,23,.44);
-      --radius-xl:28px;
-      --radius-lg:22px;
-      --radius-md:16px;
-    }
-    *::-webkit-scrollbar{width:10px;height:10px}
-    *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px}
-    body{
-      min-height:100vh;
-      font-family:"Aptos","Segoe UI",sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(circle at top left,rgba(56,189,248,.2),transparent 28%),
-        radial-gradient(circle at top right,rgba(37,99,235,.18),transparent 26%),
-        radial-gradient(circle at bottom left,rgba(245,158,11,.14),transparent 28%),
-        linear-gradient(140deg,var(--bg),var(--bg-soft));
-      padding:26px;
-      position:relative;
-      overflow-x:hidden;
-    }
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      background-image:
-        linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
-      background-size:120px 120px;
-      mask-image:radial-gradient(circle at center,rgba(0,0,0,.85),transparent 80%);
-      pointer-events:none;
-      opacity:.32;
-    }
-    .app-shell{max-width:1560px;margin:0 auto;position:relative;z-index:1}
-    .glass-card{
-      background:var(--panel);
-      border:1px solid var(--panel-border);
-      border-radius:var(--radius-lg);
-      backdrop-filter:blur(18px);
-      -webkit-backdrop-filter:blur(18px);
-      box-shadow:var(--shadow);
-    }
-    .hero-card{
-      display:grid;
-      grid-template-columns:minmax(0,1.7fr) minmax(280px,.95fr);
-      gap:18px;
-      padding:24px;
-      margin-bottom:18px;
-      overflow:hidden;
-      position:relative;
-      background:
-        linear-gradient(135deg,rgba(14,25,40,.9),rgba(7,15,27,.88)),
-        radial-gradient(circle at top right,rgba(56,189,248,.14),transparent 42%);
-    }
-    .hero-card::after{
-      content:"";
-      position:absolute;
-      width:240px;height:240px;
-      right:-70px;top:-90px;border-radius:50%;
-      background:radial-gradient(circle,rgba(56,189,248,.22),transparent 66%);
-      pointer-events:none;
-    }
-    .hero-eyebrow{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 12px;border-radius:999px;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
-      color:#d9ecff;font-size:.76rem;
-      text-transform:uppercase;letter-spacing:.12em;
-      margin-bottom:14px;
-    }
-    .hero-title h1{
-      font-size:clamp(2rem,4vw,3rem);
-      line-height:1;letter-spacing:-.04em;margin-bottom:10px;
-    }
-    .hero-title p{max-width:780px;color:var(--muted);font-size:1rem;line-height:1.6}
-    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
-    .sync-card{
-      display:flex;flex-direction:column;justify-content:space-between;gap:18px;
-      padding:18px;border-radius:var(--radius-md);
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.08);
-      position:relative;z-index:1;
-    }
-    .sync-label,.section-kicker{
-      color:var(--muted-2);
-      font-size:.74rem;
-      text-transform:uppercase;
-      letter-spacing:.12em;
-    }
-    .status-banner{
-      padding:14px 16px;border-radius:16px;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
-      color:#dce8ff;line-height:1.5;min-height:70px;
-      display:flex;align-items:center;
-    }
-    .status-banner[data-tone="success"]{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.25);color:#d1fae5}
-    .status-banner[data-tone="warning"]{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.25);color:#fde68a}
-    .status-banner[data-tone="error"]{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25);color:#fecaca}
-    .sync-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    .sync-meta-box,.meta-card,.highlight-card,.stat-card,.note-card,.visit-line,.top-product-item{
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.06);
-    }
-    .sync-meta-box{padding:12px 14px;border-radius:14px}
-    .sync-meta-box span{display:block;color:var(--muted-2);font-size:.74rem;margin-bottom:4px}
-    .sync-meta-box strong{font-size:1rem;color:var(--text)}
-    .control-layout{
-      display:grid;
-      grid-template-columns:minmax(0,1.2fr) minmax(340px,.95fr);
-      gap:18px;margin-bottom:18px;
-    }
-    .control-card,.client-card,.stats-card,.section-card{padding:20px}
-    .section-kicker{margin-bottom:10px}
-    .section-title,.panel-toolbar,.visit-card-head,.visit-card-foot,.modal-header,.products-toolbar,.modal-actions{
-      display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;
-    }
-    .section-title{margin-bottom:18px}
-    .section-title h2{font-size:1.22rem;letter-spacing:-.02em}
-    .section-title p{color:var(--muted);font-size:.92rem;line-height:1.5;max-width:620px}
-    .filter-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.85fr);gap:14px}
-    .field-group{display:flex;flex-direction:column;gap:8px}
-    label{color:var(--muted);font-size:.85rem;font-weight:600}
-    input,select,textarea{
-      width:100%;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:14px;color:var(--text);
-      padding:12px 14px;outline:none;font-size:.94rem;
-      transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;
-    }
-    input:focus,select:focus,textarea:focus{
-      border-color:rgba(56,189,248,.6);
-      box-shadow:0 0 0 4px rgba(56,189,248,.16);
-      transform:translateY(-1px);
-    }
-    select option,datalist option{color:#0f172a;background:#fff}
-    textarea{min-height:120px;resize:vertical;line-height:1.55}
-    .selected-client-pill{
-      display:inline-flex;align-items:center;gap:10px;
-      padding:10px 14px;border-radius:999px;
-      background:rgba(56,189,248,.12);
-      border:1px solid rgba(56,189,248,.18);
-      color:#d8f3ff;font-weight:700;font-size:.92rem;min-height:46px;
-    }
-    .selected-client-pill::before{
-      content:"";width:10px;height:10px;border-radius:50%;
-      background:var(--accent);box-shadow:0 0 0 5px rgba(56,189,248,.16);
-    }
-    .client-card{
-      background:
-        linear-gradient(160deg,rgba(9,21,34,.92),rgba(7,14,25,.84)),
-        radial-gradient(circle at top right,rgba(245,158,11,.12),transparent 38%);
-      position:relative;overflow:hidden;
-    }
-    .client-card::after{
-      content:"";
-      position:absolute;inset:auto -60px -90px auto;
-      width:220px;height:220px;border-radius:50%;
-      background:radial-gradient(circle,rgba(37,99,235,.2),transparent 65%);
-      pointer-events:none;
-    }
-    .client-card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;position:relative;z-index:1}
-    .client-card-name{font-size:1.38rem;letter-spacing:-.02em}
-    .plaque-pill,.mini-badge,.metric-chip{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 12px;border-radius:999px;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.06);
-      color:var(--muted);font-size:.8rem;
-    }
-    .visit-type-badge{
-      display:inline-flex;align-items:center;
-      padding:8px 12px;border-radius:999px;
-      border:1px solid rgba(56,189,248,.2);
-      background:rgba(56,189,248,.12);
-      color:#d8f3ff;font-size:.78rem;font-weight:700;
-      text-transform:uppercase;letter-spacing:.04em;
-      white-space:nowrap;
-    }
-    .visit-type-badge.sale{
-      border-color:rgba(34,197,94,.28);
-      background:rgba(34,197,94,.16);
-      color:#dcfce7;
-    }
-    .visit-type-badge.no-sale{
-      border-color:rgba(245,158,11,.3);
-      background:rgba(245,158,11,.16);
-      color:#fde68a;
-    }
-    .plaque-pill strong,.metric-chip strong{color:var(--text)}
-    .meta-grid,.highlight-grid,.stats-grid{display:grid;gap:12px}
-    .meta-grid,.highlight-grid{grid-template-columns:repeat(2,minmax(0,1fr));position:relative;z-index:1}
-    .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-    .meta-card,.highlight-card,.stat-card{padding:14px;border-radius:16px}
-    .highlight-card{background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.14)}
-    .meta-card span,.highlight-card span,.stat-card span{
-      display:block;
-      color:var(--muted-2);
-      font-size:.76rem;
-      margin-bottom:8px;
-      text-transform:uppercase;
-      letter-spacing:.08em;
-    }
-    .highlight-card span{color:#b6e8ff}
-    .meta-card strong,.highlight-card strong,.stat-card strong{
-      display:block;color:var(--text);line-height:1.4;word-break:break-word;
-    }
-    .stat-card{padding:16px;border-radius:18px;min-height:104px;display:flex;flex-direction:column;justify-content:center;gap:8px}
-    .stat-card strong{font-size:1.35rem;letter-spacing:-.03em}
-    .panel-toolbar{margin-bottom:18px}
-    .view-switch{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:6px;border-radius:999px;
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.06);
-    }
-    .switch-btn{
-      border:none;border-radius:999px;padding:11px 16px;cursor:pointer;
-      background:transparent;color:var(--muted);font-weight:700;font-size:.82rem;transition:.2s ease;
-    }
-    .switch-btn.active{
-      background:linear-gradient(135deg,var(--accent),var(--accent-strong));
-      color:#fff;box-shadow:0 12px 25px rgba(37,99,235,.28);
-    }
-    .view-panel{display:none}
-    .view-panel.active{display:block;animation:rise-in .3s ease}
-    .timeline-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
-    .visit-card{
-      display:flex;flex-direction:column;gap:16px;padding:18px;border-radius:22px;
-      background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.025));
-      border:1px solid rgba(255,255,255,.07);min-height:100%;position:relative;overflow:hidden;
-    }
-    .visit-card::before{
-      content:"";position:absolute;width:180px;height:180px;right:-80px;top:-80px;
-      background:radial-gradient(circle,rgba(56,189,248,.14),transparent 70%);pointer-events:none;
-    }
-    .visit-card-head,.visit-card-foot{position:relative;z-index:1}
-    .visit-date-label{
-      color:var(--muted-2);font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px
-    }
-    .visit-date-value{font-size:1.14rem;font-weight:700;letter-spacing:-.02em}
-    .visit-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    .visit-total-box{
-      min-width:138px;padding:14px 16px;border-radius:18px;
-      background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.16);text-align:right;
-    }
-    .visit-total-box span{display:block;color:#b6e8ff;font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
-    .visit-total-box strong{font-size:1.25rem;letter-spacing:-.03em}
-    .note-card{padding:14px;border-radius:16px;position:relative;z-index:1}
-    .note-card span{display:block;color:var(--muted-2);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
-    .note-card p{color:var(--text);font-size:.9rem;line-height:1.6;white-space:pre-wrap;word-break:break-word}
-    .visit-lines{display:flex;flex-direction:column;gap:10px;position:relative;z-index:1}
-    .visit-line{
-      padding:14px;border-radius:16px;
-      display:flex;flex-direction:column;align-items:stretch;gap:12px;
-    }
-    .visit-line-main{display:flex;align-items:flex-start;gap:12px;min-width:0;width:100%}
-    .visit-line-name{flex:1 1 auto;min-width:0}
-    .visit-line-name strong{
-      display:block;
-      font-size:.96rem;
-      line-height:1.35;
-      word-break:normal;
-      overflow-wrap:break-word;
-    }
-    .visit-line-name span{
-      display:block;
-      color:var(--muted-2);
-      font-size:.76rem;
-      margin-top:4px;
-      word-break:normal;
-      overflow-wrap:anywhere;
-    }
-    .visit-line-metrics{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;width:100%}
-    .metric-chip{font-size:.77rem;white-space:nowrap}
-    .table-shell{
-      overflow-x:auto;border-radius:18px;
-      border:1px solid rgba(255,255,255,.06);
-      background:rgba(255,255,255,.02);
-    }
-    table{width:100%;border-collapse:collapse;min-width:1100px}
-    th,td{padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.07);text-align:center;vertical-align:middle;font-size:.82rem}
-    th{
-      color:#dbe7f9;background:rgba(8,15,26,.96);
-      position:sticky;top:0;z-index:1;
-      font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;
-    }
-    td.note-cell,th.note-cell{text-align:left}
-    .sticky-col{position:sticky;background:rgba(8,15,26,.98);z-index:2}
-    th.sticky-col{z-index:3}
-    .sticky-col-1{left:0;min-width:112px;width:112px}
-    .sticky-col-2{left:112px;min-width:120px;width:120px}
-    .note-col{min-width:260px}
-    .actions-col{min-width:130px;width:130px}
-    .type-col{min-width:170px;width:170px}
-    .product-col{min-width:92px;width:92px}
-    .table-product-head{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;line-height:1.18}
-    .table-product-head strong{font-size:.73rem;text-transform:none;letter-spacing:0}
-    .table-product-head span{color:var(--muted-2);font-size:.66rem;text-transform:none;letter-spacing:0}
-    .table-product-cell{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;min-height:58px}
-    .table-product-cell strong{color:#d8f3ff;font-size:.83rem}
-    .table-product-cell span{color:var(--muted);font-size:.72rem}
-    .table-total{color:#d7efff;font-weight:700;white-space:nowrap}
-    .note-text{color:var(--text);font-size:.82rem;line-height:1.55;white-space:pre-wrap;word-break:break-word}
-    .empty-cell{color:rgba(255,255,255,.22)}
-    .empty-state{
-      padding:34px 20px;text-align:center;color:var(--muted);line-height:1.7;
-      border-radius:18px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.08);
-    }
-    .btn{
-      border:none;cursor:pointer;border-radius:14px;padding:12px 16px;
-      font-weight:700;font-size:.9rem;transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;white-space:nowrap;
-    }
-    .btn:hover{transform:translateY(-1px)}
-    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
-    .btn-primary{
-      color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-strong));
-      box-shadow:0 14px 28px rgba(37,99,235,.25);
-    }
-    .btn-secondary{color:var(--text);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
-    .btn-info{color:#d8f3ff;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.16)}
-    .btn-danger{color:#fecaca;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.18)}
-    .btn-warning{color:#fde68a;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.18)}
-    .btn-sm{padding:9px 12px;border-radius:12px;font-size:.79rem}
-    .actions-inline{display:flex;gap:8px;flex-wrap:wrap}
-    .color-dot,.color-choice{
-      width:16px;height:16px;border-radius:999px;
-      border:2px solid rgba(255,255,255,.2);flex-shrink:0;
-    }
-    .color-choice{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
-    .color-choice:hover{transform:scale(1.08)}
-    .color-choice.active{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.1);transform:scale(1.08)}
-    .red{background:#ef4444}.yellow{background:#f59e0b}.green{background:#22c55e}.blue{background:#3b82f6}
-    .modal-overlay{
-      position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-      padding:22px;background:rgba(2,8,18,.68);backdrop-filter:blur(8px);z-index:1000;
-    }
-    .modal-overlay.active{display:flex}
-    .modal{
-      width:min(1180px,100%);max-height:92vh;overflow:auto;padding:24px;
-      border-radius:var(--radius-xl);
-      background:linear-gradient(180deg,rgba(9,17,29,.96),rgba(6,12,22,.95));
-      border:1px solid var(--panel-border-strong);box-shadow:0 36px 90px rgba(0,0,0,.45);
-    }
-    .modal-header{margin-bottom:22px}
-    .modal-header h3{font-size:1.4rem;letter-spacing:-.02em}
-    .modal-header p{color:var(--muted);line-height:1.55;margin-top:6px;max-width:720px}
-    .close-btn{
-      width:42px;height:42px;border-radius:14px;
-      border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);
-      color:#fff;font-size:1rem;cursor:pointer;flex-shrink:0;
-    }
-    .modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:22px}
-    .full-width{grid-column:1/-1}
-    .products-toolbar{margin-bottom:14px;align-items:flex-start}
-    .products-toolbar h4{font-size:1rem}
-    .products-toolbar p{color:var(--muted);font-size:.86rem;line-height:1.45;margin-top:4px}
-    .products-form-list{display:flex;flex-direction:column;gap:14px}
-    .products-form-list.products-disabled{
-      opacity:.6;
-      pointer-events:none;
-      filter:saturate(.8);
-    }
-    .products-addline-wrap{
-      position:sticky;
-      bottom:0;
-      z-index:6;
-      margin-top:12px;
-      padding:10px 0 6px;
-      display:flex;
-      justify-content:flex-end;
-      background:linear-gradient(180deg,rgba(9,17,29,0),rgba(9,17,29,.9) 28%,rgba(9,17,29,.96));
-    }
-    .product-row{
-      display:grid;
-      grid-template-columns:minmax(0,2.2fr) .75fr .8fr .95fr .95fr 1fr auto;
-      gap:10px;align-items:end;padding:16px;border-radius:18px;
-      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
-    }
-    .product-selected-hint{min-height:18px;margin-top:6px;color:var(--muted-2);font-size:.75rem;line-height:1.35}
-    .price-box{
-      min-height:46px;display:flex;align-items:center;padding:11px 12px;border-radius:14px;
-      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
-      color:var(--text);font-weight:700;font-size:.86rem;
-    }
-    .color-picker{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:46px}
-    .form-total-box{
-      margin-top:18px;padding:16px 18px;border-radius:18px;
-      background:rgba(56,189,248,.11);border:1px solid rgba(56,189,248,.18);
-      display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
-    }
-    .form-total-box span{color:#cfefff;font-size:.88rem}
-    .form-total-value{color:#f8fbff;font-size:1.3rem;font-weight:800;letter-spacing:-.03em}
-    .modal-actions{align-items:center;margin-top:22px}
-    .helper-text{color:var(--muted);font-size:.88rem;line-height:1.55;max-width:720px}
-    .helper-inline{color:var(--muted);font-size:.82rem;line-height:1.45}
-    #clientModalOverlay .modal-header{
-      position:relative;
-      padding-right:56px;
-    }
-    #clientModalOverlay .modal-header .close-btn{
-      position:absolute;
-      top:0;
-      right:0;
-    }
-    .top-products-list{display:flex;flex-direction:column;gap:12px}
-    .top-product-item{padding:16px;border-radius:18px}
-    .top-product-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;margin-bottom:12px}
-    .rank-badge{
-      width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;
-      border-radius:14px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.16);
-      color:#d8f3ff;font-weight:800;
-    }
-    .top-product-main strong{display:block;font-size:.94rem;line-height:1.35}
-    .top-product-main span{display:block;margin-top:4px;color:var(--muted-2);font-size:.78rem}
-    .top-product-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-    .progress-track{width:100%;height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
-    .progress-track span{display:block;height:100%;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent-strong))}
-    .toast-container{
-      position:fixed;right:20px;bottom:20px;z-index:1400;
-      display:flex;flex-direction:column;gap:10px;pointer-events:none;
-    }
-    .toast{
-      min-width:260px;max-width:420px;padding:13px 16px;border-radius:16px;
-      border:1px solid rgba(255,255,255,.08);background:rgba(8,15,26,.96);color:var(--text);
-      box-shadow:0 24px 50px rgba(2,6,23,.35);transform:translateY(10px);opacity:0;
-      transition:opacity .2s ease,transform .2s ease;
-    }
-    .toast.visible{opacity:1;transform:translateY(0)}
-    .toast.success{border-color:rgba(34,197,94,.24);background:rgba(9,30,18,.96)}
-    .toast.warning{border-color:rgba(245,158,11,.24);background:rgba(40,25,6,.96)}
-    .toast.error{border-color:rgba(239,68,68,.24);background:rgba(39,10,10,.96)}
-    .fab{
-      position:fixed;right:18px;bottom:18px;z-index:900;display:none;align-items:center;gap:10px;
-      padding:14px 18px;border-radius:999px;border:none;cursor:pointer;color:#fff;font-weight:800;
-      background:linear-gradient(135deg,var(--accent),var(--accent-strong));
-      box-shadow:0 18px 34px rgba(37,99,235,.28);
-    }
-    @keyframes rise-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-    @media (max-width:1240px){
-      .hero-card,.control-layout{grid-template-columns:1fr}
-      .product-row{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .product-row .field-group:last-child{grid-column:1/-1}
-    }
-    @media (max-width:980px){
-      .filter-grid,.modal-grid,.stats-grid,.meta-grid,.highlight-grid{grid-template-columns:1fr}
-      .timeline-list{grid-template-columns:1fr}
-      .visit-line{grid-template-columns:1fr}
-      .visit-line-metrics{justify-content:flex-start}
-    }
-    @media (max-width:720px){
-      body{padding:16px}
-      .hero-card,.control-card,.client-card,.stats-card,.section-card,.modal{padding:18px}
-      .hero-actions{width:100%}
-      .hero-actions .btn{flex:1 1 calc(50% - 6px)}
-      .panel-toolbar{align-items:stretch}
-      .view-switch{width:100%;justify-content:space-between}
-      .switch-btn{flex:1 1 50%}
-      .product-row{grid-template-columns:1fr}
-      .products-addline-wrap{justify-content:stretch}
-      .products-addline-wrap .btn{width:100%}
-      .modal-actions{flex-direction:column;align-items:stretch}
-      .actions-inline{width:100%}
-      .actions-inline .btn{flex:1 1 auto}
-      .fab{display:inline-flex}
-    }
-  </style>
-  <link rel="stylesheet" href="./shared-theme.css">
-</head>
-<body>
-  <div class="app-shell">
-    <header class="glass-card hero-card">
-      <div>
-        <div class="hero-eyebrow">Fiche client terrain</div>
-        <div class="hero-title">
-          <h1>Fiche client</h1>
-          <p>Puissance fonctionnelle, une lecture plus rapide, une saisie plus fluide et une présentation premium.</p>
-        </div>
-        <div class="hero-actions">
-          <button class="btn btn-info" id="openTopProductsBtn" type="button">Top produits</button>
-          <button class="btn btn-secondary" id="openClientModalBtn" type="button">Ajout client</button>
-          <button class="btn btn-primary" id="openVisitModalBtn" type="button">+ Nouvelle visite</button>
-        </div>
-      </div>
-
-      <div class="sync-card">
-        <div>
-          <div class="sync-label">Etat de synchronisation</div>
-          <div id="statusBar" class="status-banner" data-tone="info">Connexion à Supabase en cours...</div>
-        </div>
-        <div class="sync-meta">
-          <div class="sync-meta-box">
-            <span>Vue active</span>
-            <strong id="activeViewLabel">Terrain</strong>
-          </div>
-          <div class="sync-meta-box">
-            <span>Client sélectionné</span>
-            <strong id="selectedClientSyncLabel">Aucun client</strong>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <section class="control-layout">
-      <div class="glass-card control-card">
-        <div class="section-kicker">Pilotage rapide</div>
-        <div class="section-title">
-          <div>
-            <h2>Sélection client</h2>
-            <p>Recherche immédiate, sélection directe et ouverture rapide d’une fiche terrain.</p>
-          </div>
-        </div>
-
-        <div class="filter-grid">
-          <div class="field-group">
-            <label for="clientSearch">Recherche</label>
-            <input type="text" id="clientSearch" placeholder="Nom, compte, téléphone ou adresse..." />
-          </div>
-
-          <div class="field-group">
-            <label for="clientSelect">Client</label>
-            <select id="clientSelect"></select>
-          </div>
-
-          <div class="field-group full-width">
-            <label>Client actif</label>
-            <div id="selectedClientInfo" class="selected-client-pill">Aucun client</div>
-          </div>
-        </div>
-      </div>
-
-      <aside class="glass-card client-card">
-        <div class="client-card-top">
-          <div>
-            <div class="section-kicker">Client en cours</div>
-            <div class="client-card-name" id="clientNameCard">Aucun client</div>
-          </div>
-          <div class="plaque-pill">Plaque <strong id="clientPlaque">—</strong></div>
-        </div>
-
-        <div class="meta-grid">
-          <div class="meta-card">
-            <span>Compte</span>
-            <strong id="clientNumeroCompte">—</strong>
-          </div>
-          <div class="meta-card">
-            <span>Téléphone</span>
-            <strong id="clientTelephone">—</strong>
-          </div>
-          <div class="meta-card">
-            <span>Adresse</span>
-            <strong id="clientAdresse">—</strong>
-          </div>
-          <div class="meta-card">
-            <span>Statut terrain</span>
-            <strong id="clientTerrainStatus">Client prêt à consulter</strong>
-          </div>
-        </div>
-
-        <div class="highlight-grid">
-          <div class="highlight-card">
-            <span>Dernière visite</span>
-            <strong id="clientLastVisit">—</strong>
-          </div>
-          <div class="highlight-card">
-            <span>Produit top</span>
-            <strong id="clientTopProduct">—</strong>
-          </div>
-        </div>
-      </aside>
-    </section>
-
-    <section class="glass-card stats-card" style="margin-bottom:18px;">
-      <div class="section-kicker">Indicateurs</div>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <span>Nombre de visites</span>
-          <strong id="statNbVisites">0</strong>
-        </div>
-        <div class="stat-card">
-          <span>CA cumulé</span>
-          <strong id="statCaCumule">0,00 €</strong>
-        </div>
-        <div class="stat-card">
-          <span>Panier moyen</span>
-          <strong id="statPanierMoyen">0,00 €</strong>
-        </div>
-        <div class="stat-card">
-          <span>Articles distincts</span>
-          <strong id="statNbProduits">0</strong>
-        </div>
-        <div class="stat-card">
-          <span>Visites avec vente</span>
-          <strong id="statVisitsWithSale">0</strong>
-        </div>
-        <div class="stat-card">
-          <span>Visites sans vente</span>
-          <strong id="statVisitsWithoutSale">0</strong>
-        </div>
-        <div class="stat-card">
-          <span>Taux transformation</span>
-          <strong id="statTransformRate">0 %</strong>
-        </div>
-      </div>
-    </section>
-
-    <section class="glass-card section-card">
-      <div class="panel-toolbar">
-        <div>
-          <div class="section-kicker">Historique client</div>
-          <h2 style="font-size:1.3rem;letter-spacing:-.02em;">Vue terrain + vue synthèse</h2>
-          <p style="color:var(--muted);margin-top:8px;line-height:1.55;"></p>
-        </div>
-
-        <div class="view-switch" aria-label="Changer de vue">
-          <button class="switch-btn active" type="button" data-view="timeline">Terrain</button>
-          <button class="switch-btn" type="button" data-view="matrix">Synthèse produit</button>
-        </div>
-      </div>
-
-      <div id="timelineView" class="view-panel active">
-        <div id="timelineList" class="timeline-list"></div>
-      </div>
-
-      <div id="matrixView" class="view-panel">
-        <div class="table-shell">
-          <table>
-            <thead id="visitesTableHead"></thead>
-            <tbody id="visitesTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <div class="modal-overlay" id="visitModalOverlay">
-    <div class="modal">
-      <div class="modal-header">
-        <div>
-          <h3 id="visitModalTitle">Nouvelle visite</h3>
-          <p id="visitModalSubtitle">Saisie rapide terrain: date, note, produits, stock client et total calculé automatiquement.</p>
-        </div>
-        <button class="close-btn" id="closeVisitModalBtn" type="button">✕</button>
-      </div>
-
-      <form id="visitForm">
-        <div class="modal-grid">
-          <div class="field-group">
-            <label for="popupDate">Date de visite</label>
-            <input type="date" id="popupDate" />
-          </div>
-
-          <div class="field-group">
-            <label for="popupClient">Client</label>
-            <select id="popupClient"></select>
-          </div>
-
-          <div class="field-group">
-            <label for="popupVisitType">Type de visite</label>
-            <select id="popupVisitType">
-              <option value="vente">Vente</option>
-              <option value="passage_sans_vente">Passage sans vente</option>
-              <option value="client_ferme">Client ferme</option>
-            </select>
-          </div>
-
-          <div class="field-group full-width">
-            <label for="popupNote">Note terrain</label>
-            <textarea id="popupNote" placeholder="Compte rendu, remontée, point de vente, blocage, opportunité, etc."></textarea>
-          </div>
-        </div>
-
-        <div class="products-toolbar">
-          <div>
-            <h4>Produits de la visite</h4>
-            <p>Recherche par nom ou référence, couleurs d’alerte, stock client et total ligne en direct.</p>
-          </div>
-        </div>
-
-        <div id="productsFormList" class="products-form-list"></div>
-        <div class="products-addline-wrap">
-          <button class="btn btn-secondary btn-sm" id="addProductRowBtn" type="button">+ Ajouter une ligne</button>
-        </div>
-
-        <div class="form-total-box">
-          <span>Total estimé de la visite</span>
-          <div class="form-total-value" id="popupTotalCommande">0,00 €</div>
-        </div>
-
-        <div class="modal-actions">
-          <div>
-            <div class="helper-text" id="popupPricingHint">Le prix affiche depend de la plaque du client, puis il est fige au moment de l'enregistrement.</div>
-            <div class="helper-text" id="popupVisitTypeHint">La note terrain est obligatoire pour toute visite.</div>
-          </div>
-          <div class="actions-inline">
-            <button class="btn btn-secondary" id="cancelVisitBtn" type="button">Annuler</button>
-            <button class="btn btn-primary" id="saveVisitBtn" type="submit">Enregistrer</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="topProduitsOverlay">
-    <div class="modal" style="max-width:920px;">
-      <div class="modal-header">
-        <div>
-          <h3>Top produits du client</h3>
-          <p>Lecture simple des habitudes d’achat du client, utile en préparation de visite et en rebond commercial.</p>
-        </div>
-        <button class="close-btn" id="closeTopProduitsBtn" type="button">✕</button>
-      </div>
-      <div id="topProduitsList" class="top-products-list"></div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="clientModalOverlay">
-    <div class="modal" style="max-width:760px;">
-      <div class="modal-header">
-        <div>
-          <h3 id="clientModalTitle">Ajout client</h3>
-          <p id="clientModalSubtitle">Ajoute un client avec toutes les infos terrain pour le retrouver tout de suite dans la liste des visites.</p>
-        </div>
-        <button class="close-btn" id="closeClientModalBtn" type="button">×</button>
-      </div>
-
-      <form id="clientForm">
-        <div class="modal-grid">
-          <div class="field-group">
-            <label for="clientNomInput">Nom client</label>
-            <input type="text" id="clientNomInput" placeholder="Nom client" />
-          </div>
-
-          <div class="field-group">
-            <label for="clientNumeroCompteInput">Numero client / compte</label>
-            <input type="text" id="clientNumeroCompteInput" placeholder="Compte ou numero client" />
-          </div>
-
-          <div class="field-group">
-            <label for="clientTelephoneInput">Telephone</label>
-            <input type="text" id="clientTelephoneInput" placeholder="Telephone" />
-          </div>
-
-          <div class="field-group">
-            <label for="clientPlaqueSelect">Plaque</label>
-            <select id="clientPlaqueSelect"></select>
-          </div>
-
-          <div class="field-group full-width">
-            <label for="clientAdresseInput">Adresse</label>
-            <textarea id="clientAdresseInput" placeholder="Adresse du client"></textarea>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <div class="helper-inline">Les informations sont enregistrees directement dans la base clients.</div>
-          <div class="actions-inline">
-            <button class="btn btn-secondary" id="cancelClientBtn" type="button">Annuler</button>
-            <button class="btn btn-primary" id="saveClientBtn" type="submit">Enregistrer client</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div id="toastContainer" class="toast-container"></div>
-  <datalist id="produitsDatalist"></datalist>
-  <button class="fab" id="mobileAddVisitBtn" type="button">+ Visite</button>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
+﻿
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -950,14 +155,14 @@
 
     function formatDate(dateStr) {
       const parsed = parseLocalDate(dateStr);
-      return parsed ? parsed.toLocaleDateString("fr-FR") : "—";
+      return parsed ? parsed.toLocaleDateString("fr-FR") : "â€”";
     }
 
     function formatDateLong(dateStr) {
       const parsed = parseLocalDate(dateStr);
       return parsed
         ? parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
-        : "—";
+        : "â€”";
     }
 
     function formatCurrency(value) {
@@ -982,11 +187,11 @@
     }
 
     function getProduitDisplay(id) {
-      return getProduitById(id) || { id, nom: "Produit archivé", reference_produit: "" };
+      return getProduitById(id) || { id, nom: "Produit archivÃ©", reference_produit: "" };
     }
 
     function getClientPlaqueLabel(client) {
-      return client?.plaques?.nom || "—";
+      return client?.plaques?.nom || "â€”";
     }
 
     function getProductLabel(produit) {
@@ -1138,13 +343,13 @@
       dom.selectedClientInfo.textContent = "Aucun client";
       dom.clientNameCard.textContent = "Aucun client";
       dom.selectedClientSyncLabel.textContent = "Aucun client";
-      dom.clientNumeroCompte.textContent = "—";
-      dom.clientTelephone.textContent = "—";
-      dom.clientAdresse.textContent = "—";
-      dom.clientPlaque.textContent = "—";
-      dom.clientTerrainStatus.textContent = "Sélectionne un client pour démarrer";
-      dom.clientLastVisit.textContent = "—";
-      dom.clientTopProduct.textContent = "—";
+      dom.clientNumeroCompte.textContent = "â€”";
+      dom.clientTelephone.textContent = "â€”";
+      dom.clientAdresse.textContent = "â€”";
+      dom.clientPlaque.textContent = "â€”";
+      dom.clientTerrainStatus.textContent = "SÃ©lectionne un client pour dÃ©marrer";
+      dom.clientLastVisit.textContent = "â€”";
+      dom.clientTopProduct.textContent = "â€”";
     }
 
     function updateClientHeader() {
@@ -1155,11 +360,11 @@
       dom.selectedClientInfo.textContent = clientName;
       dom.clientNameCard.textContent = clientName;
       dom.selectedClientSyncLabel.textContent = clientName;
-      dom.clientNumeroCompte.textContent = client.numero_compte || "—";
-      dom.clientTelephone.textContent = client.telephone || "—";
-      dom.clientAdresse.textContent = client.adresse || "—";
+      dom.clientNumeroCompte.textContent = client.numero_compte || "â€”";
+      dom.clientTelephone.textContent = client.telephone || "â€”";
+      dom.clientAdresse.textContent = client.adresse || "â€”";
       dom.clientPlaque.textContent = getClientPlaqueLabel(client);
-      dom.clientTerrainStatus.textContent = "Fiche client prête pour le rendez-vous";
+      dom.clientTerrainStatus.textContent = "Fiche client prÃªte pour le rendez-vous";
     }
 
     function isVisitWithSale(visite) {
@@ -1374,13 +579,13 @@
       dom.clientSelect.innerHTML = "";
 
       if (!filteredClients.length) {
-        dom.clientSelect.innerHTML = '<option value="">Aucun client trouvé</option>';
+        dom.clientSelect.innerHTML = '<option value="">Aucun client trouvÃ©</option>';
         state.visites = [];
         clearClientContext();
         updateStats([]);
-        renderTimelineEmpty("Aucun client trouvé avec cette recherche.");
-        renderMatrixEmpty("Aucun client trouvé avec cette recherche.");
-        setStatus("Aucun client ne correspond à la recherche.", "warning");
+        renderTimelineEmpty("Aucun client trouvÃ© avec cette recherche.");
+        renderMatrixEmpty("Aucun client trouvÃ© avec cette recherche.");
+        setStatus("Aucun client ne correspond Ã  la recherche.", "warning");
         return false;
       }
 
@@ -1433,7 +638,7 @@
       });
 
       const totalUnites = commandes.reduce((sum, commande) => sum + Number(commande.quantite || 0), 0);
-      const note = visite.note?.trim() || "Aucune note renseignée pour cette visite.";
+      const note = visite.note?.trim() || "Aucune note renseignÃ©e pour cette visite.";
       const linesHtml = commandes.length
         ? commandes.map(commande => {
             const produit = getProduitDisplay(commande.produit_id);
@@ -1445,11 +650,11 @@
                   ${getColorDotHtml(commande.couleur || "green")}
                   <div class="visit-line-name">
                     <strong>${escapeHtml(produit.nom || "Produit")}</strong>
-                    <span>${escapeHtml(produit.reference_produit || "Sans référence")}</span>
+                    <span>${escapeHtml(produit.reference_produit || "Sans rÃ©fÃ©rence")}</span>
                   </div>
                 </div>
                 <div class="visit-line-metrics">
-                  <div class="metric-chip">Qté <strong>${Number(commande.quantite || 0)}</strong></div>
+                  <div class="metric-chip">QtÃ© <strong>${Number(commande.quantite || 0)}</strong></div>
                   <div class="metric-chip">Stock <strong>${Number(commande.stock_client || 0)}</strong></div>
                   <div class="metric-chip">PU <strong>${formatCurrency(commande.prix_unitaire || 0)}</strong></div>
                   <div class="metric-chip">Ligne <strong>${formatCurrency(lineTotal)}</strong></div>
@@ -1468,7 +673,7 @@
               <div class="visit-badges">
                 ${buildVisitTypeBadgeHtml(visite.type_visite)}
                 <div class="mini-badge">${commandes.length} produit(s)</div>
-                <div class="mini-badge">${totalUnites} unité(s)</div>
+                <div class="mini-badge">${totalUnites} unitÃ©(s)</div>
               </div>
             </div>
             <div class="visit-total-box">
@@ -1496,13 +701,13 @@
     }
 
     function renderTimelineView() {
-      if (!getSelectedClientId()) return renderTimelineEmpty("Sélectionne un client pour afficher l’historique terrain.");
-      if (!state.visites.length) return renderTimelineEmpty("Aucune visite enregistrée pour ce client.");
+      if (!getSelectedClientId()) return renderTimelineEmpty("SÃ©lectionne un client pour afficher lâ€™historique terrain.");
+      if (!state.visites.length) return renderTimelineEmpty("Aucune visite enregistrÃ©e pour ce client.");
       dom.timelineList.innerHTML = state.visites.map(renderTimelineCard).join("");
     }
 
     function renderMatrixView() {
-      if (!getSelectedClientId()) return renderMatrixEmpty("Sélectionne un client pour afficher la synthèse produit.");
+      if (!getSelectedClientId()) return renderMatrixEmpty("SÃ©lectionne un client pour afficher la synthÃ¨se produit.");
 
       const produitsDynamiques = getDynamicProducts();
       let headHtml = `
@@ -1535,7 +740,7 @@
         dom.visitesTableBody.innerHTML = `
           <tr>
             <td colspan="${produitsDynamiques.length + 5}">
-              <div class="empty-state">Aucune visite enregistrée pour ce client.</div>
+              <div class="empty-state">Aucune visite enregistrÃ©e pour ce client.</div>
             </td>
           </tr>
         `;
@@ -1554,7 +759,7 @@
           const commande = (visite.commandes || []).find(item => String(item.produit_id) === String(produit.id));
 
           if (!commande) {
-            rowHtml += `<td class="empty-cell">—</td>`;
+            rowHtml += `<td class="empty-cell">â€”</td>`;
           } else {
             rowHtml += `
               <td>
@@ -1569,7 +774,7 @@
         });
 
         rowHtml += `
-            <td class="note-cell note-text">${escapeHtml(visite.note || "—")}</td>
+            <td class="note-cell note-text">${escapeHtml(visite.note || "â€”")}</td>
             <td>
               <div class="actions-inline">
                 <button class="btn btn-warning btn-sm" type="button" data-action="edit" data-visite-id="${escapeHtml(visite.id)}">Modifier</button>
@@ -1591,7 +796,7 @@
       state.currentView = viewName === "matrix" ? "matrix" : "timeline";
       dom.timelineView.classList.toggle("active", state.currentView === "timeline");
       dom.matrixView.classList.toggle("active", state.currentView === "matrix");
-      dom.activeViewLabel.textContent = state.currentView === "matrix" ? "Synthèse produit" : "Terrain";
+      dom.activeViewLabel.textContent = state.currentView === "matrix" ? "SynthÃ¨se produit" : "Terrain";
 
       dom.viewButtons.forEach(button => {
         button.classList.toggle("active", button.dataset.view === state.currentView);
@@ -1606,8 +811,8 @@
         state.visites = [];
         updateStats([]);
         updateClientInsights([]);
-        renderTimelineEmpty("Sélectionne un client pour afficher l’historique terrain.");
-        renderMatrixEmpty("Sélectionne un client pour afficher la synthèse produit.");
+        renderTimelineEmpty("SÃ©lectionne un client pour afficher lâ€™historique terrain.");
+        renderMatrixEmpty("SÃ©lectionne un client pour afficher la synthÃ¨se produit.");
         return;
       }
 
@@ -1617,7 +822,7 @@
         updateStats(state.visites);
         updateClientInsights(state.visites);
         renderAllViews();
-        setStatus(`${state.visites.length} visite(s) chargée(s) pour ce client.`, "success");
+        setStatus(`${state.visites.length} visite(s) chargÃ©e(s) pour ce client.`, "success");
       } catch (error) {
         console.error("Erreur loadVisites:", error);
         state.visites = [];
@@ -1710,11 +915,11 @@
       const plaqueLabel = getClientPlaqueLabel(client);
 
       if (state.activeVisitId) {
-        dom.popupPricingHint.textContent = "Les prix déjà présents restent figés. Si tu remplaces un produit, le tarif du client actuel sera repris.";
+        dom.popupPricingHint.textContent = "Les prix dÃ©jÃ  prÃ©sents restent figÃ©s. Si tu remplaces un produit, le tarif du client actuel sera repris.";
       } else {
-        dom.popupPricingHint.textContent = plaqueLabel === "—"
-          ? "Aucune plaque client détectée: tarif standard produit appliqué."
-          : `Tarification active: plaque ${plaqueLabel}. Le prix sera figé à l'enregistrement.`;
+        dom.popupPricingHint.textContent = plaqueLabel === "â€”"
+          ? "Aucune plaque client dÃ©tectÃ©e: tarif standard produit appliquÃ©."
+          : `Tarification active: plaque ${plaqueLabel}. Le prix sera figÃ© Ã  l'enregistrement.`;
       }
     }
 
@@ -1744,7 +949,7 @@
       if (!produit) {
         hiddenInput.value = "";
         priceInput.value = "";
-        hint.textContent = typedValue ? "Produit non reconnu" : "Choisis un produit actif ou déjà utilisé";
+        hint.textContent = typedValue ? "Produit non reconnu" : "Choisis un produit actif ou dÃ©jÃ  utilisÃ©";
         unitPriceBox.textContent = formatCurrency(0);
         updateRowLineTotal(row);
         return;
@@ -1770,10 +975,10 @@
       const client = getClientById(getPopupSelectedClientId());
       const plaqueLabel = getClientPlaqueLabel(client);
       const pricingSource = keepsFrozenPrice
-        ? "Prix figé de la visite"
-        : (plaqueLabel === "—" ? "Tarif standard" : `Plaque ${plaqueLabel}`);
+        ? "Prix figÃ© de la visite"
+        : (plaqueLabel === "â€”" ? "Tarif standard" : `Plaque ${plaqueLabel}`);
 
-      hint.textContent = `${produit.nom || "Produit"}${produit.reference_produit ? " • " + produit.reference_produit : ""} • ${pricingSource}`;
+      hint.textContent = `${produit.nom || "Produit"}${produit.reference_produit ? " â€¢ " + produit.reference_produit : ""} â€¢ ${pricingSource}`;
       unitPriceBox.textContent = formatCurrency(prixUnitaire);
       updateRowLineTotal(row);
     }
@@ -1815,14 +1020,14 @@
       row.innerHTML = `
         <div class="field-group">
           <label>Produit</label>
-          <input type="text" class="produit-search-input" list="produitsDatalist" placeholder="Tape une référence ou un nom..." autocomplete="off" value="${escapeHtml(label)}" />
+          <input type="text" class="produit-search-input" list="produitsDatalist" placeholder="Tape une rÃ©fÃ©rence ou un nom..." autocomplete="off" value="${escapeHtml(label)}" />
           <input type="hidden" class="produit-id-input" value="${escapeHtml(produit?.id || "")}" />
           <input type="hidden" class="prix-unitaire-input" value="${escapeHtml(initialPrice)}" />
-          <div class="product-selected-hint">Choisis un produit actif ou déjà utilisé</div>
+          <div class="product-selected-hint">Choisis un produit actif ou dÃ©jÃ  utilisÃ©</div>
         </div>
 
         <div class="field-group">
-          <label>Quantité</label>
+          <label>QuantitÃ©</label>
           <input type="number" class="quantite-input" min="0" value="${Number(prefill?.quantite || 0)}" />
         </div>
 
@@ -1929,8 +1134,8 @@
 
         state.activeVisitId = visite.id;
         dom.visitModalTitle.textContent = "Modifier la visite";
-        dom.visitModalSubtitle.textContent = "Même simplicité de saisie, avec conservation des prix déjà figés dans la visite.";
-        dom.saveVisitBtn.textContent = "Mettre à jour";
+        dom.visitModalSubtitle.textContent = "MÃªme simplicitÃ© de saisie, avec conservation des prix dÃ©jÃ  figÃ©s dans la visite.";
+        dom.saveVisitBtn.textContent = "Mettre Ã  jour";
         dom.popupClient.value = String(visite.client_id);
         dom.popupClient.disabled = true;
         dom.popupDate.value = visite.date_visite || getTodayIsoLocal();
@@ -1945,7 +1150,7 @@
       } else {
         state.activeVisitId = null;
         dom.visitModalTitle.textContent = "Nouvelle visite";
-        dom.visitModalSubtitle.textContent = "Saisie rapide terrain: note, produits, stock client et total calculé immédiatement.";
+        dom.visitModalSubtitle.textContent = "Saisie rapide terrain: note, produits, stock client et total calculÃ© immÃ©diatement.";
         dom.saveVisitBtn.textContent = "Enregistrer";
         dom.popupClient.disabled = false;
         dom.popupClient.value = getSelectedClientId() || (state.clients[0]?.id ? String(state.clients[0].id) : "");
@@ -2019,11 +1224,11 @@
       const { commandes, invalidFilledRow } = collectCommandesFromForm();
       const saleVisit = isSaleVisitType(typeVisite);
 
-      if (!clientId) return showToast("Sélectionne un client avant d’enregistrer.", "warning");
+      if (!clientId) return showToast("SÃ©lectionne un client avant dâ€™enregistrer.", "warning");
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
       if (!note) return showToast("La note terrain est obligatoire pour enregistrer la visite.", "warning");
-      if (invalidFilledRow) return showToast("Une ligne produit est renseignée mais le produit n’est pas reconnu.", "warning");
-      if (saleVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantité ou stock.", "warning");
+      if (invalidFilledRow) return showToast("Une ligne produit est renseignÃ©e mais le produit nâ€™est pas reconnu.", "warning");
+      if (saleVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantitÃ© ou stock.", "warning");
 
       const totalCommande = saleVisit
         ? commandes.reduce((sum, commande) => {
@@ -2032,7 +1237,7 @@
         : 0;
 
       try {
-        setStatus(state.activeVisitId ? "Mise à jour de la visite..." : "Enregistrement de la visite...", "info");
+        setStatus(state.activeVisitId ? "Mise Ã  jour de la visite..." : "Enregistrement de la visite...", "info");
 
         if (state.activeVisitId) {
           const visiteId = state.activeVisitId;
@@ -2065,7 +1270,7 @@
             if (insertCommandesError) throw insertCommandesError;
           }
 
-          showToast("Visite mise à jour avec succès.", "success");
+          showToast("Visite mise Ã  jour avec succÃ¨s.", "success");
         } else {
           const { data: visiteData, error: visiteError } = await supabaseClient
             .from("visites")
@@ -2090,7 +1295,7 @@
             if (insertCommandesError) throw insertCommandesError;
           }
 
-          showToast("Visite enregistrée avec succès.", "success");
+          showToast("Visite enregistrÃ©e avec succÃ¨s.", "success");
         }
 
         dom.clientSearch.value = "";
@@ -2100,8 +1305,8 @@
         await loadVisites();
       } catch (error) {
         console.error("Erreur saveVisit:", error);
-        setStatus("Erreur lors de l’enregistrement de la visite.", "error");
-        showToast("Impossible d’enregistrer la visite.", "error");
+        setStatus("Erreur lors de lâ€™enregistrement de la visite.", "error");
+        showToast("Impossible dâ€™enregistrer la visite.", "error");
       }
     }
 
@@ -2113,8 +1318,8 @@
         const { error } = await supabaseClient.from("visites").delete().eq("id", visiteId);
         if (error) throw error;
         await loadVisites();
-        setStatus("Visite supprimée.", "success");
-        showToast("Visite supprimée.", "success");
+        setStatus("Visite supprimÃ©e.", "success");
+        showToast("Visite supprimÃ©e.", "success");
       } catch (error) {
         console.error("Erreur deleteVisit:", error);
         setStatus("Erreur lors de la suppression.", "error");
@@ -2124,7 +1329,7 @@
 
     function renderTopProduits() {
       if (!state.visites.length) {
-        dom.topProduitsList.innerHTML = `<div class="empty-state">Aucune donnée disponible pour ce client.</div>`;
+        dom.topProduitsList.innerHTML = `<div class="empty-state">Aucune donnÃ©e disponible pour ce client.</div>`;
         return;
       }
 
@@ -2137,7 +1342,7 @@
             aggregation[commande.produit_id] = {
               produit_id: commande.produit_id,
               nom: produit.nom || "Produit",
-              reference_produit: produit.reference_produit || "Sans référence",
+              reference_produit: produit.reference_produit || "Sans rÃ©fÃ©rence",
               quantite: 0,
               visites: 0,
               chiffreAffaires: 0
@@ -2156,7 +1361,7 @@
       });
 
       if (!topProduits.length) {
-        dom.topProduitsList.innerHTML = `<div class="empty-state">Aucun produit commandé pour ce client.</div>`;
+        dom.topProduitsList.innerHTML = `<div class="empty-state">Aucun produit commandÃ© pour ce client.</div>`;
         return;
       }
 
@@ -2174,7 +1379,7 @@
               </div>
             </div>
             <div class="top-product-stats">
-              <div class="metric-chip">Qté <strong>${item.quantite}</strong></div>
+              <div class="metric-chip">QtÃ© <strong>${item.quantite}</strong></div>
               <div class="metric-chip">Visites <strong>${item.visites}</strong></div>
               <div class="metric-chip">CA <strong>${formatCurrency(item.chiffreAffaires)}</strong></div>
             </div>
@@ -2270,11 +1475,11 @@
       cacheDom();
       attachEvents();
       setView("timeline");
-      renderTimelineEmpty("Chargement des données client...");
-      renderMatrixEmpty("Chargement des données client...");
+      renderTimelineEmpty("Chargement des donnÃ©es client...");
+      renderMatrixEmpty("Chargement des donnÃ©es client...");
 
       try {
-        setStatus("Connexion à Supabase...", "info");
+        setStatus("Connexion Ã  Supabase...", "info");
 
         const [clients, produits, tarifsPlaques, plaques] = await Promise.all([
           fetchClients(),
@@ -2305,20 +1510,18 @@
           setStatus("Aucun client disponible dans Supabase.", "warning");
         }
 
-        showToast("Fiche client prête.", "success");
+        showToast("Fiche client prÃªte.", "success");
       } catch (error) {
         console.error("Erreur initApp:", error);
         clearClientContext();
         updateStats([]);
         updateClientInsights([]);
-        renderTimelineEmpty("Impossible de charger les données Supabase.");
-        renderMatrixEmpty("Impossible de charger les données Supabase.");
-        setStatus("Erreur de connexion à Supabase.", "error");
-        showToast("Impossible de charger les données depuis Supabase.", "error");
+        renderTimelineEmpty("Impossible de charger les donnÃ©es Supabase.");
+        renderMatrixEmpty("Impossible de charger les donnÃ©es Supabase.");
+        setStatus("Erreur de connexion Ã  Supabase.", "error");
+        showToast("Impossible de charger les donnÃ©es depuis Supabase.", "error");
       }
     }
 
     initApp();
-  </script>
-</body>
-</html>
+  

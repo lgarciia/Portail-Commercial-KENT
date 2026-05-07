@@ -1,830 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr" data-theme="dark">
-<head>
-  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tableau de bord activité</title>
-  <script src="./shared-ui.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #0b1020;
-      --bg2: #11162a;
-      --card: rgba(255, 255, 255, 0.08);
-      --card-border: rgba(255, 255, 255, 0.12);
-      --text: #f3f4f6;
-      --muted: #b8bfd3;
-      --muted-2: #94a3b8;
-      --accent: #7c3aed;
-      --accent-2: #5b21b6;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --success: #22c55e;
-      --info: #3b82f6;
-      --input: rgba(255, 255, 255, 0.06);
-      --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
-      --radius: 16px;
-    }
-
-    *::-webkit-scrollbar { width: 10px; height: 10px; }
-    *::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.12);
-      border-radius: 999px;
-    }
-
-    body {
-      min-height: 100vh;
-      font-family: "Segoe UI", Roboto, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(124, 58, 237, 0.22), transparent 28%),
-        radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 25%),
-        radial-gradient(circle at bottom, rgba(236, 72, 153, 0.12), transparent 30%),
-        linear-gradient(135deg, var(--bg), var(--bg2));
-      padding: 24px;
-    }
-
-    .container {
-      max-width: 1680px;
-      margin: 0 auto;
-    }
-
-    .glass-card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      box-shadow: var(--shadow);
-    }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 18px;
-    }
-
-    .page-title h1 {
-      font-size: 2rem;
-      margin-bottom: 6px;
-      letter-spacing: -0.02em;
-    }
-
-    .page-title p {
-      color: var(--muted);
-      font-size: 0.94rem;
-      max-width: 820px;
-      line-height: 1.45;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      border: none;
-      cursor: pointer;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-weight: 600;
-      transition: 0.2s ease;
-      font-size: 0.88rem;
-      white-space: nowrap;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn:hover { transform: translateY(-1px); }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: white;
-      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.28);
-    }
-
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .btn-danger {
-      background: rgba(239, 68, 68, 0.14);
-      color: #fecaca;
-      border: 1px solid rgba(239, 68, 68, 0.18);
-    }
-
-    .btn-info {
-      background: rgba(59, 130, 246, 0.14);
-      color: #bfdbfe;
-      border: 1px solid rgba(59, 130, 246, 0.18);
-    }
-
-    .btn-warning {
-      background: rgba(245, 158, 11, 0.14);
-      color: #fde68a;
-      border: 1px solid rgba(245, 158, 11, 0.18);
-    }
-
-    .top-panel,
-    .section-card {
-      padding: 18px;
-      margin-bottom: 18px;
-    }
-
-    .filters-grid {
-      display: grid;
-      grid-template-columns: 220px 220px 220px 1fr auto;
-      gap: 12px;
-      align-items: end;
-    }
-
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    label {
-      font-size: 0.82rem;
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    input,
-    select {
-      width: 100%;
-      background: var(--input);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: var(--text);
-      padding: 11px 13px;
-      border-radius: 12px;
-      outline: none;
-      transition: 0.2s ease;
-      font-size: 0.92rem;
-    }
-
-    input:focus,
-    select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
-    }
-
-    select option {
-      color: #111827;
-      background: #ffffff;
-    }
-
-    .status-bar {
-      margin-top: 14px;
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--muted);
-      font-size: 0.88rem;
-    }
-
-    .hero-strip {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-
-    .hero-main,
-    .hero-side {
-      padding: 18px;
-    }
-
-    .hero-main h2,
-    .hero-side h2,
-    .section-head h2 {
-      font-size: 1.02rem;
-      margin-bottom: 12px;
-    }
-
-    .hero-main-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .hero-kpi {
-      padding: 14px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      min-height: 92px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .hero-kpi-label {
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted-2);
-    }
-
-    .hero-kpi-value {
-      font-size: 1.28rem;
-      font-weight: 800;
-      color: var(--text);
-      line-height: 1.15;
-    }
-
-    .hero-kpi-sub {
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-
-    .mini-alert-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .mini-alert-item {
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .mini-alert-item strong {
-      font-size: 0.9rem;
-    }
-
-    .mini-alert-item span {
-      color: var(--muted);
-      font-size: 0.78rem;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 34px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 0.78rem;
-      white-space: nowrap;
-    }
-
-    .badge-danger {
-      background: rgba(239, 68, 68, 0.14);
-      color: #fecaca;
-      border: 1px solid rgba(239, 68, 68, 0.18);
-    }
-
-    .badge-warning {
-      background: rgba(245, 158, 11, 0.14);
-      color: #fde68a;
-      border: 1px solid rgba(245, 158, 11, 0.18);
-    }
-
-    .badge-success {
-      background: rgba(34, 197, 94, 0.14);
-      color: #bbf7d0;
-      border: 1px solid rgba(34, 197, 94, 0.18);
-    }
-
-    .badge-info {
-      background: rgba(59, 130, 246, 0.14);
-      color: #bfdbfe;
-      border: 1px solid rgba(59, 130, 246, 0.18);
-    }
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-
-    .span-12 { grid-column: span 12; }
-    .span-8 { grid-column: span 8; }
-    .span-6 { grid-column: span 6; }
-    .span-4 { grid-column: span 4; }
-    .span-3 { grid-column: span 3; }
-
-    .section-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
-
-    .section-head p {
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .kpi-card {
-      padding: 14px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .kpi-title {
-      color: var(--muted-2);
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 8px;
-    }
-
-    .kpi-value {
-      font-size: 1.12rem;
-      font-weight: 800;
-      color: var(--text);
-      line-height: 1.15;
-    }
-
-    .kpi-foot {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 0.76rem;
-    }
-
-    .progress-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .progress-row {
-      display: grid;
-      grid-template-columns: 145px 1fr 72px;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .progress-row-label {
-      font-size: 0.82rem;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .progress-bar {
-      width: 100%;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.08);
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-    }
-
-    .progress-value {
-      text-align: right;
-      font-size: 0.78rem;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
-    .list-table-wrap {
-      overflow: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 760px;
-    }
-
-    th,
-    td {
-      text-align: left;
-      padding: 10px 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      vertical-align: middle;
-      font-size: 0.82rem;
-    }
-
-    th {
-      color: #d1d5db;
-      background: rgba(255,255,255,0.03);
-      font-size: 0.74rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    td.number,
-    th.number {
-      text-align: right;
-    }
-
-    .link-btn {
-      border: none;
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
-      padding: 7px 10px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 0.76rem;
-      font-weight: 600;
-    }
-
-    .link-btn:hover {
-      background: rgba(255,255,255,0.1);
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
-    .small {
-      font-size: 0.76rem;
-    }
-
-    .empty-state {
-      color: var(--muted);
-      padding: 22px 10px;
-      text-align: center;
-    }
-
-    .split-list {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .action-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .action-item {
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .action-main {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .action-main strong {
-      font-size: 0.86rem;
-      line-height: 1.25;
-    }
-
-    .action-main span {
-      color: var(--muted);
-      font-size: 0.76rem;
-      line-height: 1.3;
-    }
-
-    .action-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--muted);
-      font-size: 0.75rem;
-      white-space: nowrap;
-    }
-
-    .color-chip {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      display: inline-block;
-    }
-
-    .red { background: #ef4444; }
-    .yellow { background: #f59e0b; }
-    .green { background: #22c55e; }
-    .blue { background: #3b82f6; }
-
-    @media (max-width: 1400px) {
-      .filters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .hero-strip { grid-template-columns: 1fr; }
-      .hero-main-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .span-8, .span-6, .span-4, .span-3 { grid-column: span 12; }
-      .split-list { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 760px) {
-      body { padding: 16px; }
-      .filters-grid,
-      .hero-main-grid,
-      .kpi-grid {
-        grid-template-columns: 1fr;
-      }
-      .progress-row {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-  <link rel="stylesheet" href="./shared-theme.css">
-</head>
-<body>
-  <div class="container">
-    <div class="page-header">
-      <div class="page-title">
-        <h1>Tableau de bord activité</h1>
-        <p>
-          Vue directe sur l’activité commerciale : visites, chiffre d’affaires, rappels rouges.
-        
-        </p>
-      </div>
-
-      <div class="header-actions">
-          <a class="btn btn-danger" href="rappelclt.html">Rappels rouges</a>
-        <a class="btn btn-info" href="ficherclt.html">Fiche client</a>
-        <button class="btn btn-primary" type="button" onclick="refreshDashboard()">Actualiser</button>
-      </div>
-    </div>
-
-    <div class="glass-card top-panel">
-      <div class="filters-grid">
-        <div class="field-group">
-          <label for="periodSelect">Période</label>
-          <select id="periodSelect">
-            <option value="today">Aujourd’hui</option>
-            <option value="week">Cette semaine</option>
-            <option value="month" selected>Ce mois</option>
-            <option value="30days">30 derniers jours</option>
-            <option value="custom">Période perso</option>
-          </select>
-        </div>
-
-        <div class="field-group">
-          <label for="dateStart">Date début</label>
-          <input type="date" id="dateStart" />
-        </div>
-
-        <div class="field-group">
-          <label for="dateEnd">Date fin</label>
-          <input type="date" id="dateEnd" />
-        </div>
-
-        <div class="field-group">
-          <label for="clientSearch">Recherche client / compte</label>
-          <input type="text" id="clientSearch" placeholder="Nom du client ou n° de compte..." />
-        </div>
-
-        <div class="field-group">
-          <label>&nbsp;</label>
-          <button class="btn btn-secondary" type="button" onclick="applyFilters()">Appliquer</button>
-        </div>
-      </div>
-
-      <div class="status-bar" id="statusBar">Connexion en cours...</div>
-    </div>
-
-    <div class="hero-strip">
-      <div class="glass-card hero-main">
-        <h2>Vue rapide</h2>
-        <div class="hero-main-grid">
-          <div class="hero-kpi">
-            <div class="hero-kpi-label">Visites période</div>
-            <div class="hero-kpi-value" id="heroVisites">0</div>
-            <div class="hero-kpi-sub" id="heroClients">0 client visité</div>
-          </div>
-          <div class="hero-kpi">
-            <div class="hero-kpi-label">CA période</div>
-            <div class="hero-kpi-value" id="heroCa">0,00 €</div>
-            <div class="hero-kpi-sub" id="heroPanier">Panier moyen : 0,00 €</div>
-          </div>
-          <div class="hero-kpi">
-            <div class="hero-kpi-label">Visites aujourd’hui</div>
-            <div class="hero-kpi-value" id="heroToday">0</div>
-            <div class="hero-kpi-sub" id="heroTodayCa">CA jour : 0,00 €</div>
-          </div>
-          <div class="hero-kpi">
-            <div class="hero-kpi-label">Rappels rouges</div>
-            <div class="hero-kpi-value" id="heroRed">0</div>
-            <div class="hero-kpi-sub" id="heroRedClients">0 client concerné</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="glass-card hero-side">
-        <h2>Alertes immédiates</h2>
-        <div class="mini-alert-list">
-          <div class="mini-alert-item">
-            <div>
-              <strong>Clients non visités depuis 30 jours</strong>
-              <span id="alertNoVisitText">0 client</span>
-            </div>
-            <div class="badge badge-warning" id="alertNoVisit">0</div>
-          </div>
-          <div class="mini-alert-item">
-            <div>
-              <strong>Visites sans commande</strong>
-              <span id="alertNoOrderText">0 visite</span>
-            </div>
-            <div class="badge badge-info" id="alertNoOrder">0</div>
-          </div>
-          <div class="mini-alert-item">
-            <div>
-              <strong>Stocks client faibles</strong>
-              <span id="alertLowStockText">0 ligne</span>
-            </div>
-            <div class="badge badge-danger" id="alertLowStock">0</div>
-          </div>
-          <div class="mini-alert-item">
-            <div>
-              <strong>Produits distincts vendus</strong>
-              <span id="alertDistinctText">0 référence</span>
-            </div>
-            <div class="badge badge-success" id="alertDistinct">0</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="dashboard-grid">
-      <div class="glass-card section-card span-12">
-        <div class="section-head">
-          <div>
-            <h2>Indicateurs d’activité</h2>
-            <p>Les métriques terrain les plus utiles pour piloter la période en cours.</p>
-          </div>
-        </div>
-        <div class="kpi-grid" id="activityKpis"></div>
-      </div>
-
-      <div class="glass-card section-card span-6">
-        <div class="section-head">
-          <div>
-            <h2>Répartition des statuts couleur</h2>
-            <p>Vision directe des remontées terrain par couleur.</p>
-          </div>
-        </div>
-        <div class="progress-group" id="colorProgress"></div>
-      </div>
-
-      <div class="glass-card section-card span-6">
-        <div class="section-head">
-          <div>
-            <h2>Produits les plus vendus</h2>
-            <p>Top quantité sur la période filtrée.</p>
-          </div>
-        </div>
-        <div class="progress-group" id="topProductsProgress"></div>
-      </div>
-
-      <div class="glass-card section-card span-8">
-        <div class="section-head">
-          <div>
-            <h2>Top clients</h2>
-            <p>Ceux qui génèrent le plus de CA sur la période.</p>
-          </div>
-        </div>
-        <div class="list-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Client</th>
-                <th>Compte</th>
-                <th class="number">Visites</th>
-                <th class="number">CA</th>
-                <th class="number">Panier moyen</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="topClientsBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="glass-card section-card span-4">
-        <div class="section-head">
-          <div>
-            <h2>Actions prioritaires</h2>
-            <p>Ce qu’il faut traiter vite.</p>
-          </div>
-        </div>
-        <div class="action-list" id="priorityActions"></div>
-      </div>
-
-      <div class="glass-card section-card span-6">
-        <div class="section-head">
-          <div>
-            <h2>Clients à relancer</h2>
-            <p>Clients non visités récemment.</p>
-          </div>
-        </div>
-        <div class="action-list" id="relanceList"></div>
-      </div>
-
-      <div class="glass-card section-card span-6">
-        <div class="section-head">
-          <div>
-            <h2>Dernières remontées rouges</h2>
-            <p>Rappels à traiter en priorité.</p>
-          </div>
-          <a class="btn btn-danger" href="rappelclt.html">Voir tout</a>
-        </div>
-        <div class="action-list" id="redList"></div>
-      </div>
-
-      <div class="glass-card section-card span-6">
-        <div class="section-head">
-          <div>
-            <h2>Dernières visites</h2>
-            <p>Historique récent saisi dans l’outil.</p>
-          </div>
-        </div>
-        <div class="action-list" id="lastVisitsList"></div>
-      </div>
-
-      <div class="glass-card section-card span-6">
-        <div class="section-head">
-          <div>
-            <h2>Opportunités produits</h2>
-            <p>Produits peu vus, peu vendus ou à surveiller.</p>
-          </div>
-        </div>
-        <div class="action-list" id="opportunityList"></div>
-      </div>
-
-      <div class="glass-card section-card span-12">
-        <div class="section-head">
-          <div>
-            <h2>Détail produits</h2>
-            <p>Analyse produit : quantité, CA, clients concernés et alertes rouges.</p>
-          </div>
-        </div>
-        <div class="list-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Produit</th>
-                <th>Référence</th>
-                <th class="number">Qté</th>
-                <th class="number">CA</th>
-                <th class="number">Clients</th>
-                <th class="number">Rouges</th>
-              </tr>
-            </thead>
-            <tbody id="productsDetailBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
+﻿
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -847,7 +21,7 @@
     }
 
     function formatDate(dateStr) {
-      if (!dateStr) return "—";
+      if (!dateStr) return "â€”";
       const d = new Date(dateStr);
       if (Number.isNaN(d.getTime())) return dateStr;
       return d.toLocaleDateString("fr-FR");
@@ -1063,7 +237,7 @@
           map.set(key, {
             client_id: client.id,
             nom: client.nom || "Client",
-            numero_compte: client.numero_compte || "—",
+            numero_compte: client.numero_compte || "â€”",
             visites: 0,
             ca: 0
           });
@@ -1095,7 +269,7 @@
           map.set(key, {
             produit_id: produit.id,
             nom: produit.nom || "Produit",
-            reference_produit: produit.reference_produit || "—",
+            reference_produit: produit.reference_produit || "â€”",
             quantite: 0,
             ca: 0,
             clientIds: new Set(),
@@ -1138,7 +312,7 @@
           return {
             client_id: client?.id || "",
             client_nom: client?.nom || "Client",
-            numero_compte: client?.numero_compte || "—",
+            numero_compte: client?.numero_compte || "â€”",
             produit_nom: produit?.nom || "Produit",
             stock_client: Number(ligne.stock_client || 0),
             date_visite: visite?.date_visite || ""
@@ -1158,7 +332,7 @@
           return {
             client_id: client?.id || "",
             client_nom: client?.nom || "Client",
-            numero_compte: client?.numero_compte || "—",
+            numero_compte: client?.numero_compte || "â€”",
             produit_nom: produit?.nom || "Produit",
             date_visite: visite?.date_visite || "",
             note: visite?.note || ""
@@ -1184,7 +358,7 @@
         return {
           client_id: client.id,
           nom: client.nom || "Client",
-          numero_compte: client.numero_compte || "—",
+          numero_compte: client.numero_compte || "â€”",
           lastDate: lastVisite?.date_visite || "",
           inactive
         };
@@ -1219,13 +393,13 @@
       const panier = visitesFiltered.length ? ca / visitesFiltered.length : 0;
 
       document.getElementById("heroVisites").textContent = visitesFiltered.length;
-      document.getElementById("heroClients").textContent = `${clientIds.size} client${clientIds.size > 1 ? "s" : ""} visité${clientIds.size > 1 ? "s" : ""}`;
+      document.getElementById("heroClients").textContent = `${clientIds.size} client${clientIds.size > 1 ? "s" : ""} visitÃ©${clientIds.size > 1 ? "s" : ""}`;
       document.getElementById("heroCa").textContent = formatCurrency(ca);
       document.getElementById("heroPanier").textContent = `Panier moyen : ${formatCurrency(panier)}`;
       document.getElementById("heroToday").textContent = todayMetrics.visitesToday.length;
       document.getElementById("heroTodayCa").textContent = `CA jour : ${formatCurrency(todayMetrics.caToday)}`;
       document.getElementById("heroRed").textContent = redLines.length;
-      document.getElementById("heroRedClients").textContent = `${redClientIds.size} client${redClientIds.size > 1 ? "s" : ""} concerné${redClientIds.size > 1 ? "s" : ""}`;
+      document.getElementById("heroRedClients").textContent = `${redClientIds.size} client${redClientIds.size > 1 ? "s" : ""} concernÃ©${redClientIds.size > 1 ? "s" : ""}`;
     }
 
     function renderAlerts(context) {
@@ -1244,7 +418,7 @@
       document.getElementById("alertLowStockText").textContent = `${lowStockLines.length} ligne${lowStockLines.length > 1 ? "s" : ""}`;
 
       document.getElementById("alertDistinct").textContent = distinctProducts.size;
-      document.getElementById("alertDistinctText").textContent = `${distinctProducts.size} référence${distinctProducts.size > 1 ? "s" : ""}`;
+      document.getElementById("alertDistinctText").textContent = `${distinctProducts.size} rÃ©fÃ©rence${distinctProducts.size > 1 ? "s" : ""}`;
     }
 
     function renderActivityKpis(context) {
@@ -1259,14 +433,14 @@
       const tauxTransformation = visitesFiltered.length ? (visitsWithSale / visitesFiltered.length) * 100 : 0;
 
       const kpis = [
-        { title: "Clients visités", value: clientIds.size, foot: "sur la période filtrée" },
+        { title: "Clients visitÃ©s", value: clientIds.size, foot: "sur la pÃ©riode filtrÃ©e" },
         { title: "Nombre de lignes", value: lignesFiltered.length, foot: "lignes produits saisies" },
-        { title: "Quantité vendue", value: qty, foot: "total quantités commandées" },
+        { title: "QuantitÃ© vendue", value: qty, foot: "total quantitÃ©s commandÃ©es" },
         { title: "Panier moyen", value: formatCurrency(panier), foot: "CA moyen par visite" },
-        { title: "CA par client", value: formatCurrency(clientIds.size ? ca / clientIds.size : 0), foot: "moyenne par client visité" },
+        { title: "CA par client", value: formatCurrency(clientIds.size ? ca / clientIds.size : 0), foot: "moyenne par client visitÃ©" },
         { title: "Taux transformation", value: `${tauxTransformation.toFixed(0)} %`, foot: `${visitsWithSale} visite(s) avec vente` },
         { title: "Note moyenne / visite", value: (visitesFiltered.filter(v => (v.note || "").trim()).length / (visitesFiltered.length || 1)).toFixed(2), foot: "niveau de saisie terrain" },
-        { title: "Dernière visite", value: visitesFiltered[0] ? formatDate(visitesFiltered[0].date_visite) : "—", foot: "sur la période" }
+        { title: "DerniÃ¨re visite", value: visitesFiltered[0] ? formatDate(visitesFiltered[0].date_visite) : "â€”", foot: "sur la pÃ©riode" }
       ];
 
       body.innerHTML = kpis.map(item => `
@@ -1291,7 +465,7 @@
       ];
 
       if (!total) {
-        body.innerHTML = `<div class="empty-state">Aucune ligne produit sur la période.</div>`;
+        body.innerHTML = `<div class="empty-state">Aucune ligne produit sur la pÃ©riode.</div>`;
         return;
       }
 
@@ -1306,7 +480,7 @@
             <div class="progress-bar">
               <div class="progress-fill" style="width:${pct.toFixed(1)}%"></div>
             </div>
-            <div class="progress-value">${row.value} • ${pct.toFixed(0)} %</div>
+            <div class="progress-value">${row.value} â€¢ ${pct.toFixed(0)} %</div>
           </div>
         `;
       }).join("");
@@ -1319,7 +493,7 @@
         .slice(0, 6);
 
       if (!items.length) {
-        body.innerHTML = `<div class="empty-state">Aucun produit sur la période.</div>`;
+        body.innerHTML = `<div class="empty-state">Aucun produit sur la pÃ©riode.</div>`;
         return;
       }
 
@@ -1343,7 +517,7 @@
         .slice(0, 10);
 
       if (!rows.length) {
-        body.innerHTML = `<tr><td colspan="6"><div class="empty-state">Aucun client sur la période.</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="6"><div class="empty-state">Aucun client sur la pÃ©riode.</div></td></tr>`;
         return;
       }
 
@@ -1369,21 +543,21 @@
       const items = [
         {
           title: "Traiter les rappels rouges",
-          sub: "Remontées terrain signalées comme sensibles",
+          sub: "RemontÃ©es terrain signalÃ©es comme sensibles",
           badge: `${redCount} rouge${redCount > 1 ? "s" : ""}`,
           badgeClass: "badge-danger",
       action: `<a class="btn btn-danger" href="rappelclt.html">Ouvrir</a>`
         },
         {
           title: "Relancer les clients inactifs",
-          sub: "Clients non visités depuis plus de 30 jours",
+          sub: "Clients non visitÃ©s depuis plus de 30 jours",
           badge: `${inactiveCount}`,
           badgeClass: "badge-warning",
           action: ``
         },
         {
-          title: "Vérifier les stocks bas",
-          sub: "Clients avec stock faible observé en visite",
+          title: "VÃ©rifier les stocks bas",
+          sub: "Clients avec stock faible observÃ© en visite",
           badge: `${lowStockCount}`,
           badgeClass: "badge-danger",
           action: ``
@@ -1424,7 +598,7 @@
         <div class="action-item">
           <div class="action-main">
             <strong>${escapeHtml(item.nom)}</strong>
-            <span>Compte ${escapeHtml(item.numero_compte)} • Dernière visite : ${item.lastDate ? formatDate(item.lastDate) : "jamais"}</span>
+            <span>Compte ${escapeHtml(item.numero_compte)} â€¢ DerniÃ¨re visite : ${item.lastDate ? formatDate(item.lastDate) : "jamais"}</span>
           </div>
           <div class="action-right">
             <button class="link-btn" onclick="goToClient('${String(item.client_id).replace(/'/g, "\\'")}')">Voir fiche</button>
@@ -1438,15 +612,15 @@
       const rows = buildRedLinesAll().slice(0, 8);
 
       if (!rows.length) {
-        body.innerHTML = `<div class="empty-state">Aucune ligne rouge enregistrée.</div>`;
+        body.innerHTML = `<div class="empty-state">Aucune ligne rouge enregistrÃ©e.</div>`;
         return;
       }
 
       body.innerHTML = rows.map(item => `
         <div class="action-item">
           <div class="action-main">
-            <strong>${escapeHtml(item.client_nom)} • ${escapeHtml(item.produit_nom)}</strong>
-            <span>Compte ${escapeHtml(item.numero_compte)} • ${formatDate(item.date_visite)}${item.note ? " • " + escapeHtml(item.note) : ""}</span>
+            <strong>${escapeHtml(item.client_nom)} â€¢ ${escapeHtml(item.produit_nom)}</strong>
+            <span>Compte ${escapeHtml(item.numero_compte)} â€¢ ${formatDate(item.date_visite)}${item.note ? " â€¢ " + escapeHtml(item.note) : ""}</span>
           </div>
           <div class="action-right">
             <button class="link-btn" onclick="goToClient('${String(item.client_id).replace(/'/g, "\\'")}')">Voir fiche</button>
@@ -1460,7 +634,7 @@
       const rows = [...context.visitesFiltered].slice(0, 8);
 
       if (!rows.length) {
-        body.innerHTML = `<div class="empty-state">Aucune visite sur la période.</div>`;
+        body.innerHTML = `<div class="empty-state">Aucune visite sur la pÃ©riode.</div>`;
         return;
       }
 
@@ -1470,7 +644,7 @@
           <div class="action-item">
             <div class="action-main">
               <strong>${escapeHtml(client?.nom || "Client")}</strong>
-              <span>${formatDate(visite.date_visite)} • ${formatCurrency(visite.total_commande || 0)}${visite.note ? " • " + escapeHtml(visite.note) : ""}</span>
+              <span>${formatDate(visite.date_visite)} â€¢ ${formatCurrency(visite.total_commande || 0)}${visite.note ? " â€¢ " + escapeHtml(visite.note) : ""}</span>
             </div>
             <div class="action-right">
               <button class="link-btn" onclick="goToClient('${String(client?.id || "").replace(/'/g, "\\'")}')">Voir fiche</button>
@@ -1487,7 +661,7 @@
         .slice(0, 6);
 
       if (!products.length) {
-        body.innerHTML = `<div class="empty-state">Aucune opportunité produit sur la période.</div>`;
+        body.innerHTML = `<div class="empty-state">Aucune opportunitÃ© produit sur la pÃ©riode.</div>`;
         return;
       }
 
@@ -1495,7 +669,7 @@
         <div class="action-item">
           <div class="action-main">
             <strong>${escapeHtml(item.nom)}</strong>
-            <span>Réf ${escapeHtml(item.reference_produit)} • Qté ${item.quantite} • ${item.clientsCount} client${item.clientsCount > 1 ? "s" : ""}</span>
+            <span>RÃ©f ${escapeHtml(item.reference_produit)} â€¢ QtÃ© ${item.quantite} â€¢ ${item.clientsCount} client${item.clientsCount > 1 ? "s" : ""}</span>
           </div>
           <div class="action-right">
             <span class="pill">Rouges : ${item.rouges}</span>
@@ -1511,7 +685,7 @@
         .sort((a, b) => b.ca - a.ca);
 
       if (!rows.length) {
-        body.innerHTML = `<tr><td colspan="6"><div class="empty-state">Aucun produit sur la période.</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="6"><div class="empty-state">Aucun produit sur la pÃ©riode.</div></td></tr>`;
         return;
       }
 
@@ -1543,7 +717,7 @@
       renderProductsDetail(context);
 
       setStatus(
-        `Dashboard à jour • ${context.visitesFiltered.length} visite(s) • ${context.lignesFiltered.length} ligne(s) • ${clients.length} client(s) • ${produits.length} produit(s)`
+        `Dashboard Ã  jour â€¢ ${context.visitesFiltered.length} visite(s) â€¢ ${context.lignesFiltered.length} ligne(s) â€¢ ${clients.length} client(s) â€¢ ${produits.length} produit(s)`
       );
     }
 
@@ -1554,13 +728,13 @@
 
     async function refreshDashboard() {
       try {
-        setStatus("Actualisation des données...");
+        setStatus("Actualisation des donnÃ©es...");
         await fetchAllData();
         applyFilters();
       } catch (error) {
         console.error(error);
         setStatus("Erreur de chargement du tableau de bord.");
-        alert("Erreur lors du chargement des données dashboard.");
+        alert("Erreur lors du chargement des donnÃ©es dashboard.");
       }
     }
 
@@ -1583,18 +757,16 @@
 
     async function initDashboard() {
       try {
-        setStatus("Connexion à Supabase...");
+        setStatus("Connexion Ã  Supabase...");
         setDefaultDatesFromPeriod();
         await fetchAllData();
         applyFilters();
       } catch (error) {
         console.error("Erreur initDashboard:", error);
-        setStatus("Erreur de connexion à Supabase.");
-        alert("Impossible de charger le tableau de bord. Vérifie la clé Supabase et les policies.");
+        setStatus("Erreur de connexion Ã  Supabase.");
+        alert("Impossible de charger le tableau de bord. VÃ©rifie la clÃ© Supabase et les policies.");
       }
     }
 
     initDashboard();
-  </script>
-</body>
-</html>
+  
