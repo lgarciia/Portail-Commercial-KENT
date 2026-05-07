@@ -383,7 +383,6 @@
     .products-form-list{display:flex;flex-direction:column;gap:14px}
     .products-form-list.products-disabled{
       opacity:.6;
-      pointer-events:none;
       filter:saturate(.8);
     }
     .products-addline-wrap{
@@ -816,6 +815,10 @@
       passage_sans_vente: "Passage sans vente",
       client_ferme: "Client ferme"
     };
+    const LOCAL_CACHE_KEYS = {
+      produits: "kent_cache_produits",
+      tarifsPlaques: "kent_cache_tarifs_plaques"
+    };
 
     function cacheDom() {
       dom.clientSearch = document.getElementById("clientSearch");
@@ -912,6 +915,25 @@
 
     function normalizeText(value) {
       return String(value ?? "").trim().toLowerCase();
+    }
+
+    function saveLocalCache(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value ?? []));
+      } catch (_) {
+        // Cache helper: ignore storage limitations in private mode or locked browsers.
+      }
+    }
+
+    function loadLocalCache(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
     }
 
     function normalizeVisitType(value) {
@@ -1049,6 +1071,12 @@
         from += pageSize;
       }
 
+      if (all.length) saveLocalCache(LOCAL_CACHE_KEYS.produits, all);
+      if (!all.length) {
+        const cached = loadLocalCache(LOCAL_CACHE_KEYS.produits);
+        if (cached.length) return cached;
+      }
+
       return all;
     }
 
@@ -1071,6 +1099,12 @@
         all.push(...batch);
         if (batch.length < pageSize) break;
         from += pageSize;
+      }
+
+      if (all.length) saveLocalCache(LOCAL_CACHE_KEYS.tarifsPlaques, all);
+      if (!all.length) {
+        const cached = loadLocalCache(LOCAL_CACHE_KEYS.tarifsPlaques);
+        if (cached.length) return cached;
       }
 
       return all;
@@ -1110,11 +1144,44 @@
 
       if (error) throw error;
 
-      return (data || []).map(visite => ({
-        ...visite,
-        type_visite: normalizeVisitType(visite.type_visite),
-        commandes: visite.visite_commandes || []
-      }));
+      const visites = data || [];
+      const visiteIds = visites.map(visite => String(visite.id)).filter(Boolean);
+      let commandesByVisiteId = new Map();
+
+      // Fallback direct query: protects the UI if relation embedding does not return nested rows.
+      if (visiteIds.length) {
+        const chunkSize = 100;
+        for (let i = 0; i < visiteIds.length; i += chunkSize) {
+          const chunk = visiteIds.slice(i, i + chunkSize);
+          const { data: lignesData, error: lignesError } = await supabaseClient
+            .from("visite_commandes")
+            .select("id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire")
+            .in("visite_id", chunk);
+
+          if (lignesError) {
+            console.warn("Fallback visite_commandes indisponible:", lignesError.message);
+            break;
+          }
+
+          (lignesData || []).forEach(ligne => {
+            const key = String(ligne.visite_id);
+            if (!commandesByVisiteId.has(key)) commandesByVisiteId.set(key, []);
+            commandesByVisiteId.get(key).push(ligne);
+          });
+        }
+      }
+
+      return visites.map(visite => {
+        const nestedCommandes = Array.isArray(visite.visite_commandes) ? visite.visite_commandes : [];
+        const fallbackCommandes = commandesByVisiteId.get(String(visite.id)) || [];
+        const commandes = nestedCommandes.length ? nestedCommandes : fallbackCommandes;
+
+        return {
+          ...visite,
+          type_visite: normalizeVisitType(visite.type_visite),
+          commandes
+        };
+      });
     }
 
     function getTarifPlaque(clientId, produitId) {
@@ -1617,7 +1684,15 @@
         updateStats(state.visites);
         updateClientInsights(state.visites);
         renderAllViews();
-        setStatus(`${state.visites.length} visite(s) chargée(s) pour ce client.`, "success");
+        const salesWithoutLines = state.visites.filter(visite => isVisitWithSale(visite) && !(visite.commandes || []).length).length;
+        if (salesWithoutLines > 0) {
+          setStatus(
+            `${state.visites.length} visite(s) chargée(s). Attention: ${salesWithoutLines} visite(s) vente sans detail ligne visible.`,
+            "warning"
+          );
+        } else {
+          setStatus(`${state.visites.length} visite(s) chargée(s) pour ce client.`, "success");
+        }
       } catch (error) {
         console.error("Erreur loadVisites:", error);
         state.visites = [];
@@ -1902,10 +1977,15 @@
       dom.popupVisitType.value = visitType;
       dom.productsFormList.classList.toggle("products-disabled", !saleVisit);
       dom.addProductRowBtn.disabled = !saleVisit;
+      dom.addProductRowBtn.style.display = saleVisit ? "" : "none";
 
       if (saleVisit) {
+        refreshProductDatalist(getPopupSelectedClientId());
         if (!dom.productsFormList.querySelector(".product-row")) addProductRow();
-        dom.popupVisitTypeHint.textContent = "La note terrain est obligatoire pour toute visite.";
+        refreshAllPopupPrices();
+        dom.popupVisitTypeHint.textContent = state.produits.length
+          ? "La note terrain est obligatoire pour toute visite."
+          : "Aucun produit visible: verifie les imports tarifs/produits ou les droits de lecture Supabase.";
       } else {
         if (!keepRows) dom.productsFormList.innerHTML = "";
         dom.popupVisitTypeHint.textContent = "Visite sans vente: produits bloques, note obligatoire, total force a 0 EUR.";
@@ -2289,6 +2369,8 @@
         state.tarifsPlaques = tarifsPlaques;
         state.plaques = plaques;
 
+        const noProductsVisible = state.produits.length === 0;
+
         refreshProductDatalist(getSelectedClientId());
 
         const selectionFromUrl = applyClientSelectionFromUrl();
@@ -2305,7 +2387,11 @@
           setStatus("Aucun client disponible dans Supabase.", "warning");
         }
 
-        showToast("Fiche client prête.", "success");
+        if (noProductsVisible) {
+          showToast("Aucun produit visible: verifie les imports produits/tarifs ou les droits de lecture Supabase.", "warning");
+        } else {
+          showToast("Fiche client prête.", "success");
+        }
       } catch (error) {
         console.error("Erreur initApp:", error);
         clearClientContext();
