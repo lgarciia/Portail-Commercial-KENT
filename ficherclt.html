@@ -317,7 +317,6 @@
     .sticky-col-2{left:112px;min-width:120px;width:120px}
     .note-col{min-width:260px}
     .actions-col{min-width:130px;width:130px}
-    .type-col{min-width:170px;width:170px}
     .product-col{min-width:92px;width:92px}
     .table-product-head{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;line-height:1.18}
     .table-product-head strong{font-size:.73rem;text-transform:none;letter-spacing:0}
@@ -1421,14 +1420,13 @@
         <tr>
           <th class="sticky-col sticky-col-1">Date</th>
           <th class="sticky-col sticky-col-2">Total</th>
-          <th class="type-col">Type visite</th>
           <th class="note-cell note-col">Note</th>
           <th class="actions-col">Actions</th>
         </tr>
       `;
       dom.visitesTableBody.innerHTML = `
         <tr>
-          <td colspan="5">
+          <td colspan="4">
             <div class="empty-state">${escapeHtml(message)}</div>
           </td>
         </tr>
@@ -1533,7 +1531,6 @@
               <div class="visit-date-label">Visite</div>
               <div class="visit-date-value">${escapeHtml(formatDateLong(visite.date_visite))}</div>
               <div class="visit-badges">
-                ${buildVisitTypeBadgeHtml(visite.type_visite)}
                 <div class="mini-badge">${commandes.length} produit(s)</div>
                 <div class="mini-badge">${totalUnites} unité(s)</div>
               </div>
@@ -1576,7 +1573,6 @@
         <tr>
           <th class="sticky-col sticky-col-1">Date</th>
           <th class="sticky-col sticky-col-2">Total</th>
-          <th class="type-col">Type visite</th>
       `;
 
       produitsDynamiques.forEach(produit => {
@@ -1601,7 +1597,7 @@
       if (!state.visites.length) {
         dom.visitesTableBody.innerHTML = `
           <tr>
-            <td colspan="${produitsDynamiques.length + 5}">
+            <td colspan="${produitsDynamiques.length + 4}">
               <div class="empty-state">Aucune visite enregistrée pour ce client.</div>
             </td>
           </tr>
@@ -1614,7 +1610,6 @@
           <tr>
             <td class="sticky-col sticky-col-1">${escapeHtml(formatDate(visite.date_visite))}</td>
             <td class="sticky-col sticky-col-2 table-total">${formatCurrency(visite.total_commande || 0)}</td>
-            <td>${buildVisitTypeBadgeHtml(visite.type_visite)}</td>
         `;
 
         produitsDynamiques.forEach(produit => {
@@ -1724,8 +1719,9 @@
     }
 
     function buildProductDatalistOptions(clientId = null) {
-      const resolvedClientId = clientId || getPopupSelectedClientId() || getSelectedClientId();
-      const pool = getProductsForClient(resolvedClientId);
+      const pool = [...state.produits].sort((a, b) => {
+        return getProductLabel(a).localeCompare(getProductLabel(b), "fr");
+      });
       return pool.map(produit => `<option value="${escapeHtml(getProductLabel(produit))}"></option>`).join("");
     }
 
