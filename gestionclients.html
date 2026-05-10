@@ -264,6 +264,7 @@
       flex-wrap:wrap;
     }
     .helper{color:var(--muted);font-size:.84rem;line-height:1.45}
+    .client-number-hint{color:var(--muted-2);font-size:.78rem;line-height:1.35;margin-top:2px}
     .toast-wrap{
       position:fixed;
       right:18px;
@@ -390,6 +391,7 @@
           <div class="field">
             <label for="clientNumeroCompteInput">Numero client / compte</label>
             <input type="text" id="clientNumeroCompteInput" placeholder="Compte ou numero client" />
+            <div class="client-number-hint" id="clientNumeroHint">Chargement du dernier numero...</div>
           </div>
 
           <div class="field">
@@ -470,6 +472,7 @@
       dom.editingClientId = document.getElementById("editingClientId");
       dom.clientNomInput = document.getElementById("clientNomInput");
       dom.clientNumeroCompteInput = document.getElementById("clientNumeroCompteInput");
+      dom.clientNumeroHint = document.getElementById("clientNumeroHint");
       dom.clientTelephoneInput = document.getElementById("clientTelephoneInput");
       dom.clientAdresseInput = document.getElementById("clientAdresseInput");
       dom.clientPlaqueSelect = document.getElementById("clientPlaqueSelect");
@@ -509,6 +512,41 @@
 
     function normalizeText(value) {
       return String(value ?? "").trim().toLowerCase();
+    }
+
+    function parseClientNumberValue(value) {
+      const raw = String(value ?? "").trim().replace(/\s+/g, "");
+      if (!/^\d+$/.test(raw)) return null;
+      const numericValue = Number.parseInt(raw, 10);
+      if (!Number.isFinite(numericValue)) return null;
+      return { numericValue, width: raw.length };
+    }
+
+    function getClientNumberMeta() {
+      let maxValue = null;
+      let width = 4;
+
+      (state.clients || []).forEach(client => {
+        const parsed = parseClientNumberValue(client?.numero_compte);
+        if (!parsed) return;
+        if (parsed.width > width) width = parsed.width;
+        if (maxValue === null || parsed.numericValue > maxValue) {
+          maxValue = parsed.numericValue;
+        }
+      });
+
+      if (maxValue === null) return null;
+      const last = String(maxValue).padStart(width, "0");
+      const next = String(maxValue + 1).padStart(width, "0");
+      return { last, next };
+    }
+
+    function updateClientNumberHint() {
+      if (!dom.clientNumeroHint) return;
+      const meta = getClientNumberMeta();
+      dom.clientNumeroHint.textContent = meta
+        ? `Dernier numero detecte: ${meta.last} | Prochain conseille: ${meta.next}`
+        : "Aucun numero numerique detecte (exemple conseille: 0001).";
     }
 
     function getPlaqueName(client) {
@@ -630,6 +668,7 @@
       dom.clientTelephoneInput.value = "";
       dom.clientAdresseInput.value = "";
       buildPlaqueSelectOptions();
+      updateClientNumberHint();
     }
 
     function openClientModal(client = null) {
@@ -643,6 +682,7 @@
         dom.clientTelephoneInput.value = client.telephone || "";
         dom.clientAdresseInput.value = client.adresse || "";
         buildPlaqueSelectOptions(client.plaque_id || "");
+        updateClientNumberHint();
       } else {
         resetClientForm();
       }
@@ -712,6 +752,7 @@
       updateStats();
       buildPlaqueFilterOptions();
       renderClientsTable();
+      updateClientNumberHint();
     }
 
     async function saveClient(event) {
@@ -835,7 +876,6 @@
   </script>
 </body>
 </html>
-
 
 
 
