@@ -406,6 +406,9 @@
       background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
       color:var(--text);font-weight:700;font-size:.86rem;
     }
+    .price-edit-input{display:none}
+    .product-row.direct-pricing .unit-price-box{display:none}
+    .product-row.direct-pricing .price-edit-input{display:block}
     .color-picker{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:46px}
     .form-total-box{
       margin-top:18px;padding:16px 18px;border-radius:18px;
@@ -1057,6 +1060,17 @@
 
     function getClientPlaqueLabel(client) {
       return client?.plaques?.nom || "—";
+    }
+
+    function isDirectPlaqueLabel(plaqueLabel) {
+      const normalized = normalizeText(plaqueLabel).replace(/\s+/g, " ");
+      return normalized === "direct tarif";
+    }
+
+    function isDirectPricingClient(clientId) {
+      const client = getClientById(clientId);
+      if (!client) return false;
+      return isDirectPlaqueLabel(getClientPlaqueLabel(client));
     }
 
     function getProductLabel(produit) {
@@ -1830,8 +1844,11 @@
 
       const client = getClientById(getPopupSelectedClientId());
       const plaqueLabel = getClientPlaqueLabel(client);
+      const directPricing = isDirectPricingClient(getPopupSelectedClientId());
 
-      if (state.activeVisitId) {
+      if (directPricing) {
+        dom.popupPricingHint.textContent = "Client Direct Tarif: prix unitaire libre sur chaque ligne. Le prix saisi est fige a l'enregistrement.";
+      } else if (state.activeVisitId) {
         dom.popupPricingHint.textContent = "Les prix déjà présents restent figés. Si tu remplaces un produit, le tarif du client actuel sera repris.";
       } else {
         dom.popupPricingHint.textContent = plaqueLabel === "—"
@@ -1850,11 +1867,15 @@
       const searchInput = row.querySelector(".produit-search-input");
       const hiddenInput = row.querySelector(".produit-id-input");
       const priceInput = row.querySelector(".prix-unitaire-input");
+      const priceEditInput = row.querySelector(".price-edit-input");
       const hint = row.querySelector(".product-selected-hint");
       const unitPriceBox = row.querySelector(".unit-price-box");
       const currentProduct = hiddenInput.value ? getProduitById(hiddenInput.value) : null;
       const typedValue = searchInput.value.trim();
       const matchedProduct = findProduitFromSearch(typedValue);
+      const directPricing = isDirectPricingClient(getPopupSelectedClientId());
+
+      row.classList.toggle("direct-pricing", directPricing);
 
       let produit = matchedProduct;
       if (!produit && currentProduct) {
@@ -1866,6 +1887,7 @@
       if (!produit) {
         hiddenInput.value = "";
         priceInput.value = "";
+        if (priceEditInput) priceEditInput.value = "";
         hint.textContent = typedValue ? "Produit non reconnu" : "Choisis un produit actif ou déjà utilisé";
         unitPriceBox.textContent = formatCurrency(0);
         updateRowLineTotal(row);
@@ -1874,26 +1896,45 @@
 
       hiddenInput.value = produit.id;
 
-      const keepsFrozenPrice =
-        row.dataset.frozenPrice === "true" &&
-        String(row.dataset.originalProductId) === String(produit.id) &&
-        priceInput.value !== "";
+      let prixUnitaire = 0;
+      let pricingSource = "";
 
-      const prixUnitaire = keepsFrozenPrice
-        ? Number(priceInput.value || 0)
-        : getTarifPlaque(getPopupSelectedClientId(), produit.id);
-
-      if (!keepsFrozenPrice) {
+      if (directPricing) {
+        const directRawPrice = priceEditInput ? Number(priceEditInput.value) : NaN;
+        if (Number.isFinite(directRawPrice) && directRawPrice >= 0) {
+          prixUnitaire = directRawPrice;
+        } else {
+          prixUnitaire = getTarifPlaque(getPopupSelectedClientId(), produit.id);
+          if (priceEditInput) priceEditInput.value = String(prixUnitaire);
+        }
         priceInput.value = String(prixUnitaire);
-        row.dataset.frozenPrice = "false";
+        row.dataset.frozenPrice = "true";
         row.dataset.originalProductId = String(produit.id);
-      }
+        pricingSource = "Prix libre Direct";
+      } else {
+        const keepsFrozenPrice =
+          row.dataset.frozenPrice === "true" &&
+          String(row.dataset.originalProductId) === String(produit.id) &&
+          priceInput.value !== "";
 
-      const client = getClientById(getPopupSelectedClientId());
-      const plaqueLabel = getClientPlaqueLabel(client);
-      const pricingSource = keepsFrozenPrice
-        ? "Prix figé de la visite"
-        : (plaqueLabel === "—" ? "Tarif standard" : `Plaque ${plaqueLabel}`);
+        prixUnitaire = keepsFrozenPrice
+          ? Number(priceInput.value || 0)
+          : getTarifPlaque(getPopupSelectedClientId(), produit.id);
+
+        if (!keepsFrozenPrice) {
+          priceInput.value = String(prixUnitaire);
+          row.dataset.frozenPrice = "false";
+          row.dataset.originalProductId = String(produit.id);
+        }
+
+        const client = getClientById(getPopupSelectedClientId());
+        const plaqueLabel = getClientPlaqueLabel(client);
+        pricingSource = keepsFrozenPrice
+          ? "Prix figé de la visite"
+          : (plaqueLabel === "—" ? "Tarif standard" : `Plaque ${plaqueLabel}`);
+
+        if (priceEditInput) priceEditInput.value = String(prixUnitaire);
+      }
 
       hint.textContent = `${produit.nom || "Produit"}${produit.reference_produit ? " • " + produit.reference_produit : ""} • ${pricingSource}`;
       unitPriceBox.textContent = formatCurrency(prixUnitaire);
@@ -1956,6 +1997,7 @@
         <div class="field-group">
           <label>Prix unit.</label>
           <div class="price-box unit-price-box">${formatCurrency(initialPrice)}</div>
+          <input type="number" class="price-edit-input" step="0.01" min="0" value="${escapeHtml(initialPrice)}" />
         </div>
 
         <div class="field-group">
@@ -1991,6 +2033,15 @@
       });
 
       row.querySelector(".stock-input").addEventListener("input", () => {
+        updateRowLineTotal(row);
+        updatePopupTotalCommande();
+      });
+
+      row.querySelector(".price-edit-input").addEventListener("input", () => {
+        const priceInput = row.querySelector(".prix-unitaire-input");
+        const nextPrice = Number(row.querySelector(".price-edit-input").value || 0);
+        priceInput.value = Number.isFinite(nextPrice) && nextPrice >= 0 ? String(nextPrice) : "0";
+        row.dataset.frozenPrice = "true";
         updateRowLineTotal(row);
         updatePopupTotalCommande();
       });
