@@ -588,6 +588,7 @@
       { id: "GUEUDET", label: "Gueudet Tarif revente", plaqueName: "Gueudet Tarif revente" },
       { id: "GUEUDET_ACHAT", label: "Gueudet Tarif achat Concession", plaqueName: "Gueudet Tarif achat Concession" },
       { id: "FORD", label: "Ford Tarif Revente", plaqueName: "Ford Tarif Revente" },
+      { id: "FORD_ACHAT", label: "Ford Tarif Achat", plaqueName: "Ford Tarif Achat" },
       { id: "PSA", label: "PSA Tarif Revente", plaqueName: "PSA Tarif Revente" },
       { id: "DIRECT", label: "Direct Tarif", plaqueName: "Direct Tarif" }
     ];
@@ -726,11 +727,22 @@
       const typeId = importType?.id || "";
       if (typeId === "FORD") {
         return {
-          mode: "fixed-columns",
-          refIndex: 0,         // Colonne A
-          designationIndex: 5, // Colonne F
-          tarifIndex: 9,       // Colonne J
-          dataStartRow: 0
+          mode: "ford-target-header",
+          targetTarif: "revente",
+          fallbackRefIndex: 0,         // Colonne A
+          fallbackDesignationIndex: 5, // Colonne F
+          fallbackTarifIndex: 9,       // Colonne J (historique Ford revente)
+          fallbackDataStartRow: 0
+        };
+      }
+      if (typeId === "FORD_ACHAT") {
+        return {
+          mode: "ford-target-header",
+          targetTarif: "achat",
+          fallbackRefIndex: 0,         // Colonne A
+          fallbackDesignationIndex: 5, // Colonne F
+          fallbackTarifIndex: null,    // Exige la detection de la colonne Tarif achat
+          fallbackDataStartRow: 0
         };
       }
       if (typeId === "GUEUDET" || typeId === "GUEUDET_ACHAT") {
@@ -763,8 +775,10 @@
       const hint = document.getElementById("importHint");
       if (!hint) return;
       let modeMessage = "Le module lit toutes les feuilles utiles (Ref. / Designation / TARIF).";
-      if (strategy.mode === "fixed-columns") {
-        modeMessage = "Lecture Ford imposee: A = Code produit, F = Description, J = Tarif Revente.";
+      if (strategy.mode === "ford-target-header") {
+        modeMessage = strategy.targetTarif === "achat"
+          ? "Lecture Ford: Code produit + Description + colonne Tarif achat (entetes)."
+          : "Lecture Ford: Code produit + Description + colonne Tarif Revente (entetes). Fallback A/F/J actif.";
       } else if (strategy.mode === "gueudet-prof-header") {
         modeMessage = "Lecture Gueudet imposee: colonnes Reference, Description, Tarif Revente au professionnel.";
       } else if (strategy.mode === "psa-ref-header") {
@@ -1026,6 +1040,83 @@
       return null;
     }
 
+    function findFordHeaderInRows(rows, targetTarif = "revente") {
+      const maxScan = Math.min(rows.length, 60);
+
+      for (let rowIndex = 0; rowIndex < maxScan; rowIndex += 1) {
+        const row = rows[rowIndex] || [];
+        const tokens = row.map(cell => normalizeHeaderToken(cell));
+
+        let refIndex = -1;
+        let designationIndex = -1;
+        let tarifPreferredIndex = -1;
+        let tarifFallbackIndex = -1;
+
+        tokens.forEach((token, index) => {
+          if (!token) return;
+
+          if (
+            refIndex === -1 &&
+            (
+              token === "ref" ||
+              token === "reference" ||
+              token === "code" ||
+              token === "codeproduit" ||
+              token === "referenceproduit"
+            )
+          ) {
+            refIndex = index;
+          }
+
+          if (
+            designationIndex === -1 &&
+            (
+              token.includes("designation") ||
+              token.includes("description") ||
+              token.includes("libelle")
+            )
+          ) {
+            designationIndex = index;
+          }
+
+          const isTarifToken = token.includes("tarif") || token.includes("prix");
+          if (!isTarifToken) return;
+
+          const isAchatToken = token.includes("achat");
+          const isReventeToken =
+            token.includes("revente") ||
+            token.includes("vente") ||
+            token.includes("public") ||
+            token.includes("professionnel") ||
+            token.includes("pro");
+
+          if (targetTarif === "achat") {
+            if (tarifPreferredIndex === -1 && isAchatToken) {
+              tarifPreferredIndex = index;
+            } else if (tarifFallbackIndex === -1) {
+              tarifFallbackIndex = index;
+            }
+          } else {
+            if (tarifPreferredIndex === -1 && isReventeToken) {
+              tarifPreferredIndex = index;
+            } else if (tarifFallbackIndex === -1) {
+              tarifFallbackIndex = index;
+            }
+          }
+        });
+
+        const tarifIndex = tarifPreferredIndex >= 0 ? tarifPreferredIndex : tarifFallbackIndex;
+        if (refIndex >= 0 && designationIndex >= 0 && tarifIndex >= 0) {
+          if (targetTarif === "achat" && tarifPreferredIndex === -1) {
+            continue;
+          }
+          return { rowIndex, refIndex, designationIndex, tarifIndex };
+        }
+      }
+
+      return null;
+    }
+
     function analyzeWorkbook(workbook, importType) {
       const allRows = [];
       const sheetNames = workbook.SheetNames || [];
@@ -1040,6 +1131,7 @@
         let header = null;
         let dataStartRow = 0;
         let rowHasData = false;
+        let useFixedLikeDataCheck = false;
 
         if (strategy.mode === "fixed-columns") {
           header = {
@@ -1049,6 +1141,33 @@
             tarifIndex: strategy.tarifIndex
           };
           dataStartRow = Math.max(0, Number(strategy.dataStartRow) || 0);
+          useFixedLikeDataCheck = true;
+        } else if (strategy.mode === "ford-target-header") {
+          header = findFordHeaderInRows(rows, strategy.targetTarif || "revente");
+          if (header) {
+            dataStartRow = header.rowIndex + 1;
+          } else if (Number.isInteger(strategy.fallbackTarifIndex)) {
+            const fallbackRefIndex = Number.isInteger(strategy.fallbackRefIndex) ? strategy.fallbackRefIndex : 0;
+            const fallbackDesignationIndex = Number.isInteger(strategy.fallbackDesignationIndex)
+              ? strategy.fallbackDesignationIndex
+              : 5;
+            const fallbackTarifIndex = Number.isInteger(strategy.fallbackTarifIndex)
+              ? strategy.fallbackTarifIndex
+              : 9;
+            const fallbackDataStartRow = Number.isFinite(strategy.fallbackDataStartRow)
+              ? strategy.fallbackDataStartRow
+              : 0;
+            header = {
+              rowIndex: -1,
+              refIndex: fallbackRefIndex,
+              designationIndex: fallbackDesignationIndex,
+              tarifIndex: fallbackTarifIndex
+            };
+            dataStartRow = Math.max(0, fallbackDataStartRow);
+            useFixedLikeDataCheck = true;
+          } else {
+            continue;
+          }
         } else {
           header = findHeaderInRows(rows, strategy.mode);
           if (!header) continue;
@@ -1065,7 +1184,7 @@
           const designation = normalizeText(rawDesignation);
           const price = parsePrice(rawTarif);
 
-          const hasAnyData = strategy.mode === "fixed-columns"
+          const hasAnyData = useFixedLikeDataCheck
             ? Boolean(reference || normalizeText(rawTarif))
             : Boolean(reference || designation || normalizeText(rawTarif));
           if (!hasAnyData) continue;
