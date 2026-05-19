@@ -144,7 +144,7 @@
 
     .filters-grid {
       display: grid;
-      grid-template-columns: 220px 220px 220px 1fr auto;
+      grid-template-columns: 220px 220px 220px 1fr 220px auto;
       gap: 12px;
       align-items: end;
     }
@@ -580,13 +580,13 @@
       <div class="page-title">
         <h1>Tableau de bord activité</h1>
         <p>
-          Vue directe sur l’activité commerciale : visites, chiffre d’affaires, rappels rouges.
+          Vue directe sur l'activite commerciale : visites, chiffre d'affaires, et mes rappels.
         
         </p>
       </div>
 
       <div class="header-actions">
-          <a class="btn btn-danger" href="rappelclt.html">Rappels rouges</a>
+          <a class="btn btn-danger" href="rappelclt.html">Mes rappels</a>
         <a class="btn btn-info" href="ficherclt.html">Fiche client</a>
         <button class="btn btn-primary" type="button" onclick="refreshDashboard()">Actualiser</button>
       </div>
@@ -621,6 +621,16 @@
         </div>
 
         <div class="field-group">
+          <label for="reminderColorFilter">Mes rappels</label>
+          <select id="reminderColorFilter">
+            <option value="red" selected>Rouge</option>
+            <option value="yellow">Jaune</option>
+            <option value="green">Vert</option>
+            <option value="blue">Bleu</option>
+          </select>
+        </div>
+
+        <div class="field-group">
           <label>&nbsp;</label>
           <button class="btn btn-secondary" type="button" onclick="applyFilters()">Appliquer</button>
         </div>
@@ -649,7 +659,7 @@
             <div class="hero-kpi-sub" id="heroTodayCa">CA jour : 0,00 €</div>
           </div>
           <div class="hero-kpi">
-            <div class="hero-kpi-label">Rappels rouges</div>
+            <div class="hero-kpi-label" id="heroReminderLabel">Mes rappels</div>
             <div class="hero-kpi-value" id="heroRed">0</div>
             <div class="hero-kpi-sub" id="heroRedClients">0 client concerné</div>
           </div>
@@ -769,10 +779,10 @@
       <div class="glass-card section-card span-6">
         <div class="section-head">
           <div>
-            <h2>Dernières remontées rouges</h2>
-            <p>Rappels à traiter en priorité.</p>
+            <h2 id="reminderSectionTitle">Dernieres remontees rappel</h2>
+            <p id="reminderSectionSubtitle">Rappels a traiter en priorite.</p>
           </div>
-          <a class="btn btn-danger" href="rappelclt.html">Voir tout</a>
+          <a class="btn btn-danger" href="rappelclt.html">Mes rappels</a>
         </div>
         <div class="action-list" id="redList"></div>
       </div>
@@ -801,7 +811,7 @@
         <div class="section-head">
           <div>
             <h2>Détail produits</h2>
-            <p>Analyse produit : quantité, CA, clients concernés et alertes rouges.</p>
+            <p>Analyse produit : quantité, CA, clients concernés et rappels de la couleur sélectionnée.</p>
           </div>
         </div>
         <div class="list-table-wrap">
@@ -813,7 +823,7 @@
                 <th class="number">Qté</th>
                 <th class="number">CA</th>
                 <th class="number">Clients</th>
-                <th class="number">Rouges</th>
+                <th class="number">Rappels</th>
               </tr>
             </thead>
             <tbody id="productsDetailBody"></tbody>
@@ -834,6 +844,7 @@
     let visites = [];
     let lignesCommandes = [];
     let filteredContext = null;
+    const REMINDER_COLORS = new Set(["red", "yellow", "green", "blue"]);
 
     function setStatus(message) {
       document.getElementById("statusBar").textContent = message;
@@ -869,6 +880,25 @@
       if (c === "vert") return "green";
       if (c === "bleu") return "blue";
       return c;
+    }
+
+    function getReminderColorFilter() {
+      const select = document.getElementById("reminderColorFilter");
+      const value = normalizeColor(select?.value || "red");
+      return REMINDER_COLORS.has(value) ? value : "red";
+    }
+
+    function getReminderColorLabel(value) {
+      if (value === "red") return "rouge";
+      if (value === "yellow") return "jaune";
+      if (value === "green") return "vert";
+      if (value === "blue") return "bleu";
+      return "rouge";
+    }
+
+    function lineMatchesReminderFilter(ligne, reminderColorFilter) {
+      const colorValue = normalizeColor(ligne?.couleur);
+      return colorValue === reminderColorFilter;
     }
 
     function normalizeVisitType(value) {
@@ -980,6 +1010,7 @@
 
     function buildContext() {
       const clientSearch = document.getElementById("clientSearch").value.trim().toLowerCase();
+      const reminderColorFilter = getReminderColorFilter();
       const period = document.getElementById("periodSelect").value;
       const dateStartValue = document.getElementById("dateStart").value;
       const dateEndValue = document.getElementById("dateEnd").value;
@@ -1026,12 +1057,18 @@
         visiteIds.has(String(ligne.visite_id))
       );
 
+      const reminderLinesInPeriod = lignesFiltered.filter(ligne =>
+        lineMatchesReminderFilter(ligne, reminderColorFilter)
+      );
+
       return {
         start,
         end,
         clientSearch,
+        reminderColorFilter,
         visitesFiltered,
         lignesFiltered,
+        reminderLinesInPeriod,
         matchingClientIds
       };
     }
@@ -1080,7 +1117,7 @@
       }));
     }
 
-    function aggregateProductStats(lignesFiltered) {
+    function aggregateProductStats(lignesFiltered, reminderColorFilter = "red") {
       const map = new Map();
 
       lignesFiltered.forEach(ligne => {
@@ -1099,7 +1136,7 @@
             quantite: 0,
             ca: 0,
             clientIds: new Set(),
-            rouges: 0
+            rappels: 0
           });
         }
 
@@ -1107,7 +1144,7 @@
         item.quantite += Number(ligne.quantite || 0);
         item.ca += Number(ligne.quantite || 0) * Number(ligne.prix_unitaire || 0);
         if (clientId) item.clientIds.add(clientId);
-        if (normalizeColor(ligne.couleur) === "red") item.rouges += 1;
+        if (lineMatchesReminderFilter(ligne, reminderColorFilter)) item.rappels += 1;
       });
 
       return [...map.values()].map(item => ({
@@ -1147,9 +1184,9 @@
         .sort((a, b) => a.stock_client - b.stock_client || new Date(b.date_visite) - new Date(a.date_visite));
     }
 
-    function buildRedLinesAll() {
+    function buildReminderLinesAll(reminderColorFilter = "red") {
       return lignesCommandes
-        .filter(ligne => normalizeColor(ligne.couleur) === "red")
+        .filter(ligne => lineMatchesReminderFilter(ligne, reminderColorFilter))
         .map(ligne => {
           const visite = visites.find(v => String(v.id) === String(ligne.visite_id));
           const client = visite ? getClientById(visite.client_id) : null;
@@ -1204,12 +1241,11 @@
     }
 
     function renderHero(context) {
-      const { visitesFiltered, lignesFiltered } = context;
+      const { visitesFiltered, reminderLinesInPeriod, reminderColorFilter } = context;
       const todayMetrics = getTodayMetrics();
       const clientIds = new Set(visitesFiltered.map(v => String(v.client_id)));
-      const redLines = lignesFiltered.filter(l => normalizeColor(l.couleur) === "red");
-      const redClientIds = new Set(
-        redLines.map(l => {
+      const reminderClientIds = new Set(
+        reminderLinesInPeriod.map(l => {
           const visite = visites.find(v => String(v.id) === String(l.visite_id));
           return visite ? String(visite.client_id) : "";
         }).filter(Boolean)
@@ -1219,13 +1255,18 @@
       const panier = visitesFiltered.length ? ca / visitesFiltered.length : 0;
 
       document.getElementById("heroVisites").textContent = visitesFiltered.length;
-      document.getElementById("heroClients").textContent = `${clientIds.size} client${clientIds.size > 1 ? "s" : ""} visité${clientIds.size > 1 ? "s" : ""}`;
+      document.getElementById("heroClients").textContent = `${clientIds.size} client${clientIds.size > 1 ? "s" : ""} visite${clientIds.size > 1 ? "s" : ""}`;
       document.getElementById("heroCa").textContent = formatCurrency(ca);
       document.getElementById("heroPanier").textContent = `Panier moyen : ${formatCurrency(panier)}`;
       document.getElementById("heroToday").textContent = todayMetrics.visitesToday.length;
       document.getElementById("heroTodayCa").textContent = `CA jour : ${formatCurrency(todayMetrics.caToday)}`;
-      document.getElementById("heroRed").textContent = redLines.length;
-      document.getElementById("heroRedClients").textContent = `${redClientIds.size} client${redClientIds.size > 1 ? "s" : ""} concerné${redClientIds.size > 1 ? "s" : ""}`;
+
+      const reminderLabelEl = document.getElementById("heroReminderLabel");
+      if (reminderLabelEl) {
+        reminderLabelEl.textContent = `Mes rappels ${getReminderColorLabel(reminderColorFilter)}`;
+      }
+      document.getElementById("heroRed").textContent = reminderLinesInPeriod.length;
+      document.getElementById("heroRedClients").textContent = `${reminderClientIds.size} client${reminderClientIds.size > 1 ? "s" : ""} concerne${reminderClientIds.size > 1 ? "s" : ""}`;
     }
 
     function renderAlerts(context) {
@@ -1314,7 +1355,7 @@
 
     function renderTopProductsProgress(context) {
       const body = document.getElementById("topProductsProgress");
-      const items = aggregateProductStats(context.lignesFiltered)
+      const items = aggregateProductStats(context.lignesFiltered, context.reminderColorFilter)
         .sort((a, b) => b.quantite - a.quantite)
         .slice(0, 6);
 
@@ -1361,39 +1402,40 @@
 
     function renderPriorityActions(context) {
       const body = document.getElementById("priorityActions");
-      const redCount = context.lignesFiltered.filter(l => normalizeColor(l.couleur) === "red").length;
+      const reminderCount = context.reminderLinesInPeriod.length;
       const lowStockCount = buildLowStockLines(context.lignesFiltered).length;
       const noOrderCount = buildVisitsWithoutOrders(context.visitesFiltered, context.lignesFiltered).length;
       const inactiveCount = buildInactiveClients(30).length;
+      const reminderLabel = getReminderColorLabel(context.reminderColorFilter);
 
       const items = [
         {
-          title: "Traiter les rappels rouges",
-          sub: "Remontées terrain signalées comme sensibles",
-          badge: `${redCount} rouge${redCount > 1 ? "s" : ""}`,
+          title: "Traiter mes rappels",
+          sub: `Remontees terrain couleur ${reminderLabel}`,
+          badge: `${reminderCount} rappel${reminderCount > 1 ? "s" : ""} ${reminderLabel}${reminderCount > 1 ? "s" : ""}`,
           badgeClass: "badge-danger",
-      action: `<a class="btn btn-danger" href="rappelclt.html">Ouvrir</a>`
+          action: `<a class="btn btn-danger" href="rappelclt.html">Ouvrir</a>`
         },
         {
           title: "Relancer les clients inactifs",
-          sub: "Clients non visités depuis plus de 30 jours",
+          sub: "Clients non visites depuis plus de 30 jours",
           badge: `${inactiveCount}`,
           badgeClass: "badge-warning",
-          action: ``
+          action: ""
         },
         {
-          title: "Vérifier les stocks bas",
-          sub: "Clients avec stock faible observé en visite",
+          title: "Verifier les stocks bas",
+          sub: "Clients avec stock faible observe en visite",
           badge: `${lowStockCount}`,
           badgeClass: "badge-danger",
-          action: ``
+          action: ""
         },
         {
           title: "Analyser les visites sans commande",
           sub: "Visites faites mais sans ligne produit",
           badge: `${noOrderCount}`,
           badgeClass: "badge-info",
-          action: ``
+          action: ""
         }
       ];
 
@@ -1433,12 +1475,18 @@
       `).join("");
     }
 
-    function renderRedList() {
+    function renderReminderList(context) {
       const body = document.getElementById("redList");
-      const rows = buildRedLinesAll().slice(0, 8);
+      const rows = buildReminderLinesAll(context.reminderColorFilter).slice(0, 8);
+      const reminderLabel = getReminderColorLabel(context.reminderColorFilter);
+
+      const titleEl = document.getElementById("reminderSectionTitle");
+      const subtitleEl = document.getElementById("reminderSectionSubtitle");
+      if (titleEl) titleEl.textContent = `Dernieres remontees ${reminderLabel}`;
+      if (subtitleEl) subtitleEl.textContent = `Rappels ${reminderLabel} a traiter en priorite.`;
 
       if (!rows.length) {
-        body.innerHTML = `<div class="empty-state">Aucune ligne rouge enregistrée.</div>`;
+        body.innerHTML = `<div class="empty-state">Aucune ligne de rappel enregistree.</div>`;
         return;
       }
 
@@ -1482,7 +1530,7 @@
 
     function renderOpportunityList(context) {
       const body = document.getElementById("opportunityList");
-      const products = aggregateProductStats(context.lignesFiltered)
+      const products = aggregateProductStats(context.lignesFiltered, context.reminderColorFilter)
         .sort((a, b) => a.quantite - b.quantite)
         .slice(0, 6);
 
@@ -1498,7 +1546,7 @@
             <span>Réf ${escapeHtml(item.reference_produit)} • Qté ${item.quantite} • ${item.clientsCount} client${item.clientsCount > 1 ? "s" : ""}</span>
           </div>
           <div class="action-right">
-            <span class="pill">Rouges : ${item.rouges}</span>
+            <span class="pill">Rappels : ${item.rappels}</span>
             <span class="pill">CA : ${formatCurrency(item.ca)}</span>
           </div>
         </div>
@@ -1507,7 +1555,7 @@
 
     function renderProductsDetail(context) {
       const body = document.getElementById("productsDetailBody");
-      const rows = aggregateProductStats(context.lignesFiltered)
+      const rows = aggregateProductStats(context.lignesFiltered, context.reminderColorFilter)
         .sort((a, b) => b.ca - a.ca);
 
       if (!rows.length) {
@@ -1522,7 +1570,7 @@
           <td class="number">${item.quantite}</td>
           <td class="number">${formatCurrency(item.ca)}</td>
           <td class="number">${item.clientsCount}</td>
-          <td class="number">${item.rouges}</td>
+          <td class="number">${item.rappels}</td>
         </tr>
       `).join("");
     }
@@ -1537,7 +1585,7 @@
       renderTopClients(context);
       renderPriorityActions(context);
       renderRelanceList();
-      renderRedList();
+      renderReminderList(context);
       renderLastVisits(context);
       renderOpportunityList(context);
       renderProductsDetail(context);
@@ -1580,6 +1628,7 @@
     });
 
     document.getElementById("clientSearch").addEventListener("input", applyFilters);
+    document.getElementById("reminderColorFilter").addEventListener("change", applyFilters);
 
     async function initDashboard() {
       try {

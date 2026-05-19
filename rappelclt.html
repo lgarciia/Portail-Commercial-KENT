@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rappels clients</title>
+  <title>Mes rappels clients</title>
   <script src="./shared-ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -73,6 +73,7 @@
     }
 
     .search-box,
+    .filter-box,
     .badge-box,
     .debug-box {
       background: var(--glass);
@@ -91,6 +92,11 @@
       min-width: 340px;
     }
 
+    .filter-box {
+      padding: 0 12px;
+      min-width: 180px;
+    }
+
     .search-box input {
       width: 100%;
       border: none;
@@ -102,6 +108,22 @@
 
     .search-box input::placeholder {
       color: var(--soft);
+    }
+
+    .filter-box select {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .filter-box select option {
+      color: #0f172a;
+      background: #ffffff;
     }
 
     .badge-box {
@@ -118,6 +140,11 @@
       background: var(--danger);
       box-shadow: 0 0 16px rgba(239, 68, 68, 0.8);
     }
+    .badge-dot.red { background: #ef4444; box-shadow: 0 0 16px rgba(239, 68, 68, 0.8); }
+    .badge-dot.yellow { background: #f59e0b; box-shadow: 0 0 16px rgba(245, 158, 11, 0.75); }
+    .badge-dot.green { background: #22c55e; box-shadow: 0 0 16px rgba(34, 197, 94, 0.75); }
+    .badge-dot.blue { background: #3b82f6; box-shadow: 0 0 16px rgba(59, 130, 246, 0.75); }
+    .badge-dot.all { background: #cbd5e1; box-shadow: 0 0 16px rgba(203, 213, 225, 0.75); }
 
     .debug-box {
       padding: 0 16px;
@@ -276,8 +303,8 @@
   <div class="page">
     <div class="topbar">
       <div class="title-wrap">
-        <h1>Rappels clients</h1>
-        <p>Toutes les lignes rouges à suivre sur l’ensemble des clients.</p>
+        <h1>Mes rappels clients</h1>
+        <p>Affichage des lignes de rappel par couleur sur l'ensemble des clients.</p>
       </div>
 
       <div class="top-actions">
@@ -287,6 +314,15 @@
             id="searchInput"
             placeholder="Rechercher un client, un numéro ou un produit..."
           />
+        </div>
+
+        <div class="filter-box">
+          <select id="colorFilter" aria-label="Couleur des rappels">
+            <option value="red" selected>Rouge</option>
+            <option value="yellow">Jaune</option>
+            <option value="green">Vert</option>
+            <option value="blue">Bleu</option>
+          </select>
         </div>
 
         <div class="badge-box">
@@ -329,10 +365,13 @@
 
   const tableBody = document.getElementById("rappelTableBody");
   const searchInput = document.getElementById("searchInput");
+  const colorFilter = document.getElementById("colorFilter");
   const alertCount = document.getElementById("alertCount");
+  const alertDot = document.querySelector(".badge-dot");
   const debugInfo = document.getElementById("debugInfo");
 
   let allRows = [];
+  const TRACKED_COLORS = new Set(["red", "yellow", "green", "blue"]);
 
   function escapeHtml(value) {
     if (value === null || value === undefined) return "";
@@ -351,8 +390,28 @@
     return date.toLocaleDateString("fr-FR");
   }
 
-  function updateCount(count) {
-    alertCount.textContent = `${count} rappel${count > 1 ? "s" : ""}`;
+  function getColorFilterValue() {
+    const value = normalizeColor(colorFilter?.value || "red");
+    return TRACKED_COLORS.has(value) ? value : "red";
+  }
+
+  function getColorFilterLabel(value) {
+    if (value === "red") return "rouge";
+    if (value === "yellow") return "jaune";
+    if (value === "green") return "vert";
+    if (value === "blue") return "bleu";
+    return "rouge";
+  }
+
+  function updateCount(count, colorValue = "red") {
+    const label = getColorFilterLabel(colorValue);
+    alertCount.textContent = `${count} rappel${count > 1 ? "s" : ""} ${label}${count > 1 ? "s" : ""}`;
+  }
+
+  function updateBadgeColor(colorValue = "red") {
+    if (!alertDot) return;
+    alertDot.classList.remove("red", "yellow", "green", "blue", "all");
+    alertDot.classList.add(colorValue);
   }
 
   function setStatus(text) {
@@ -361,13 +420,14 @@
     }
   }
 
-  function renderRows(rows) {
-    updateCount(rows.length);
+  function renderRows(rows, colorValue = "red") {
+    updateCount(rows.length, colorValue);
 
     if (!rows.length) {
+      const label = getColorFilterLabel(colorValue);
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6" class="empty-state">Aucune ligne rouge trouvée.</td>
+          <td colspan="6" class="empty-state">Aucune ligne ${escapeHtml(label)} trouvee.</td>
         </tr>
       `;
       return;
@@ -393,14 +453,22 @@
 
   function applyFilter() {
     const q = searchInput.value.trim().toLowerCase();
+    const selectedColor = getColorFilterValue();
+    updateBadgeColor(selectedColor);
+
+    const colorRows = allRows.filter(row => lineMatchesColorFilter(row.couleur_norm, selectedColor));
 
     if (!q) {
-      renderRows(allRows);
-      setStatus(allRows.length ? `${allRows.length} rappel${allRows.length > 1 ? "s" : ""} actif${allRows.length > 1 ? "s" : ""}` : "Aucun rappel actif");
+      renderRows(colorRows, selectedColor);
+      setStatus(
+        colorRows.length
+          ? `${colorRows.length} rappel${colorRows.length > 1 ? "s" : ""} actif${colorRows.length > 1 ? "s" : ""} (${getColorFilterLabel(selectedColor)})`
+          : `Aucun rappel actif (${getColorFilterLabel(selectedColor)})`
+      );
       return;
     }
 
-    const filtered = allRows.filter(row => {
+    const filtered = colorRows.filter(row => {
       return [
         row.client_nom,
         row.numero_compte,
@@ -412,8 +480,12 @@
         .some(value => String(value).toLowerCase().includes(q));
     });
 
-    renderRows(filtered);
-    setStatus(filtered.length ? `${filtered.length} résultat${filtered.length > 1 ? "s" : ""}` : "Aucun résultat");
+    renderRows(filtered, selectedColor);
+    setStatus(
+      filtered.length
+        ? `${filtered.length} resultat${filtered.length > 1 ? "s" : ""} (${getColorFilterLabel(selectedColor)})`
+        : `Aucun resultat (${getColorFilterLabel(selectedColor)})`
+    );
   }
 
   function mapById(array) {
@@ -477,7 +549,16 @@
   }
 
   function normalizeColor(value) {
-    return String(value || "").trim().toLowerCase();
+    const c = String(value || "").trim().toLowerCase();
+    if (c === "rouge") return "red";
+    if (c === "jaune") return "yellow";
+    if (c === "vert") return "green";
+    if (c === "bleu") return "blue";
+    return c;
+  }
+
+  function lineMatchesColorFilter(colorValue, selectedColor) {
+    return colorValue === selectedColor;
   }
 
   async function loadRappels() {
@@ -506,15 +587,11 @@
       const clientsById = mapById(clients);
       const produitsById = mapById(produits);
 
-      const rouges = commandes.filter(cmd => {
-        const c = normalizeColor(cmd.couleur);
-        return c === "rouge" || c === "red";
-      });
-
-      allRows = rouges.map(cmd => {
+      allRows = commandes.map(cmd => {
         const visite = visitesById.get(String(cmd.visite_id)) || null;
         const client = visite ? (clientsById.get(String(visite.client_id)) || null) : null;
         const produit = produitsById.get(String(cmd.produit_id)) || null;
+        const couleurNorm = normalizeColor(cmd.couleur);
 
         return {
           client_id: visite?.client_id || "",
@@ -522,16 +599,18 @@
           numero_compte: client?.numero_compte || "-",
           produit_nom: buildProductDisplay(produit, cmd),
           date_visite: visite?.date_visite || "",
-          note: visite?.note || ""
+          note: visite?.note || "",
+          couleur_norm: couleurNorm
         };
-      }).sort((a, b) => {
+      })
+      .filter(row => TRACKED_COLORS.has(row.couleur_norm))
+      .sort((a, b) => {
         const da = a.date_visite ? new Date(a.date_visite).getTime() : 0;
         const db = b.date_visite ? new Date(b.date_visite).getTime() : 0;
         return db - da;
       });
 
-      renderRows(allRows);
-      setStatus(allRows.length ? `${allRows.length} rappel${allRows.length > 1 ? "s" : ""} actif${allRows.length > 1 ? "s" : ""}` : "Aucun rappel actif");
+      applyFilter();
 
     } catch (err) {
       console.error("Erreur loadRappels :", err);
@@ -542,7 +621,7 @@
           </td>
         </tr>
       `;
-      updateCount(0);
+      updateCount(0, getColorFilterValue());
       setStatus("Erreur de chargement");
     }
   }
@@ -557,6 +636,7 @@
 
   window.goToClient = goToClient;
   searchInput.addEventListener("input", applyFilter);
+  colorFilter.addEventListener("change", applyFilter);
   loadRappels();
 </script>
 </body>
