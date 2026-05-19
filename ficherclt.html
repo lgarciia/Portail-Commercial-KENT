@@ -406,9 +406,7 @@
       background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
       color:var(--text);font-weight:700;font-size:.86rem;
     }
-    .price-edit-input{display:none}
-    .product-row.direct-pricing .unit-price-box{display:none}
-    .product-row.direct-pricing .price-edit-input{display:block}
+    .price-edit-input{display:block}
     .color-picker{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:46px}
     .form-total-box{
       margin-top:18px;padding:16px 18px;border-radius:18px;
@@ -716,7 +714,7 @@
 
         <div class="modal-actions">
           <div>
-            <div class="helper-text" id="popupPricingHint">Le prix affiche depend de la plaque du client, puis il est fige au moment de l'enregistrement.</div>
+            <div class="helper-text" id="popupPricingHint">Le prix remonte automatiquement selon la plaque du client et reste modifiable a la main.</div>
             <div class="helper-text" id="popupVisitTypeHint">La note terrain est obligatoire pour toute visite.</div>
           </div>
           <div class="actions-inline">
@@ -1038,6 +1036,16 @@
         style: "currency",
         currency: "EUR"
       });
+    }
+
+    function roundPrice(value) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric) || numeric < 0) return 0;
+      return Math.round(numeric * 100) / 100;
+    }
+
+    function toPriceInputValue(value) {
+      return roundPrice(value).toFixed(2);
     }
 
     function getTodayIsoLocal() {
@@ -1844,22 +1852,19 @@
 
       const client = getClientById(getPopupSelectedClientId());
       const plaqueLabel = getClientPlaqueLabel(client);
-      const directPricing = isDirectPricingClient(getPopupSelectedClientId());
-
-      if (directPricing) {
-        dom.popupPricingHint.textContent = "Client Direct Tarif: prix unitaire libre sur chaque ligne. Le prix saisi est fige a l'enregistrement.";
-      } else if (state.activeVisitId) {
-        dom.popupPricingHint.textContent = "Les prix déjà présents restent figés. Si tu remplaces un produit, le tarif du client actuel sera repris.";
-      } else {
-        dom.popupPricingHint.textContent = plaqueLabel === "—"
-          ? "Aucune plaque client détectée: tarif standard produit appliqué."
-          : `Tarification active: plaque ${plaqueLabel}. Le prix sera figé à l'enregistrement.`;
+      if (state.activeVisitId) {
+        dom.popupPricingHint.textContent = "Prix auto selon la plaque, modifiable a la main. Si tu changes de produit, le tarif de la plaque est recharge.";
+        return;
       }
+
+      dom.popupPricingHint.textContent = plaqueLabel === "—"
+        ? "Aucune plaque client detectee: tarif standard produit applique, puis modifiable a la main."
+        : `Tarification active: plaque ${plaqueLabel}. Le prix remonte automatiquement et reste modifiable.`;
     }
 
     function updateRowLineTotal(row) {
       const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
-      const prixUnitaire = Number(row.querySelector(".prix-unitaire-input").value || 0);
+      const prixUnitaire = roundPrice(row.querySelector(".prix-unitaire-input").value || 0);
       row.querySelector(".line-total-box").textContent = formatCurrency(quantite * prixUnitaire);
     }
 
@@ -1869,13 +1874,9 @@
       const priceInput = row.querySelector(".prix-unitaire-input");
       const priceEditInput = row.querySelector(".price-edit-input");
       const hint = row.querySelector(".product-selected-hint");
-      const unitPriceBox = row.querySelector(".unit-price-box");
       const currentProduct = hiddenInput.value ? getProduitById(hiddenInput.value) : null;
       const typedValue = searchInput.value.trim();
       const matchedProduct = findProduitFromSearch(typedValue);
-      const directPricing = isDirectPricingClient(getPopupSelectedClientId());
-
-      row.classList.toggle("direct-pricing", directPricing);
 
       let produit = matchedProduct;
       if (!produit && currentProduct) {
@@ -1889,55 +1890,33 @@
         priceInput.value = "";
         if (priceEditInput) priceEditInput.value = "";
         hint.textContent = typedValue ? "Produit non reconnu" : "Choisis un produit actif ou déjà utilisé";
-        unitPriceBox.textContent = formatCurrency(0);
         updateRowLineTotal(row);
         return;
       }
 
       hiddenInput.value = produit.id;
 
-      let prixUnitaire = 0;
-      let pricingSource = "";
+      const keepsFrozenPrice =
+        row.dataset.frozenPrice === "true" &&
+        String(row.dataset.originalProductId) === String(produit.id) &&
+        priceInput.value !== "";
 
-      if (directPricing) {
-        const directRawPrice = priceEditInput ? Number(priceEditInput.value) : NaN;
-        if (Number.isFinite(directRawPrice) && directRawPrice >= 0) {
-          prixUnitaire = directRawPrice;
-        } else {
-          prixUnitaire = getTarifPlaque(getPopupSelectedClientId(), produit.id);
-          if (priceEditInput) priceEditInput.value = String(prixUnitaire);
-        }
-        priceInput.value = String(prixUnitaire);
-        row.dataset.frozenPrice = "true";
-        row.dataset.originalProductId = String(produit.id);
-        pricingSource = "Prix libre Direct";
-      } else {
-        const keepsFrozenPrice =
-          row.dataset.frozenPrice === "true" &&
-          String(row.dataset.originalProductId) === String(produit.id) &&
-          priceInput.value !== "";
+      const prixUnitaire = keepsFrozenPrice
+        ? roundPrice(priceInput.value)
+        : roundPrice(getTarifPlaque(getPopupSelectedClientId(), produit.id));
 
-        prixUnitaire = keepsFrozenPrice
-          ? Number(priceInput.value || 0)
-          : getTarifPlaque(getPopupSelectedClientId(), produit.id);
+      priceInput.value = toPriceInputValue(prixUnitaire);
+      if (priceEditInput) priceEditInput.value = toPriceInputValue(prixUnitaire);
+      row.dataset.frozenPrice = keepsFrozenPrice ? "true" : "false";
+      row.dataset.originalProductId = String(produit.id);
 
-        if (!keepsFrozenPrice) {
-          priceInput.value = String(prixUnitaire);
-          row.dataset.frozenPrice = "false";
-          row.dataset.originalProductId = String(produit.id);
-        }
-
-        const client = getClientById(getPopupSelectedClientId());
-        const plaqueLabel = getClientPlaqueLabel(client);
-        pricingSource = keepsFrozenPrice
-          ? "Prix figé de la visite"
-          : (plaqueLabel === "—" ? "Tarif standard" : `Plaque ${plaqueLabel}`);
-
-        if (priceEditInput) priceEditInput.value = String(prixUnitaire);
-      }
+      const client = getClientById(getPopupSelectedClientId());
+      const plaqueLabel = getClientPlaqueLabel(client);
+      const pricingSource = keepsFrozenPrice
+        ? "Prix saisi manuellement"
+        : (plaqueLabel === "—" ? "Tarif standard" : `Plaque ${plaqueLabel}`);
 
       hint.textContent = `${produit.nom || "Produit"}${produit.reference_produit ? " • " + produit.reference_produit : ""} • ${pricingSource}`;
-      unitPriceBox.textContent = formatCurrency(prixUnitaire);
       updateRowLineTotal(row);
     }
 
@@ -1946,7 +1925,7 @@
       const total = rows.reduce((sum, row) => {
         const produitId = row.querySelector(".produit-id-input").value;
         const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
-        const prixUnitaire = Number(row.querySelector(".prix-unitaire-input").value || 0);
+        const prixUnitaire = roundPrice(row.querySelector(".prix-unitaire-input").value || 0);
         return produitId ? sum + quantite * prixUnitaire : sum;
       }, 0);
 
@@ -1966,9 +1945,10 @@
       const produit = prefill?.produit_id ? getProduitDisplay(prefill.produit_id) : null;
       const label = produit ? getProductLabel(produit) : "";
       const initialPrice = prefill?.prix_unitaire != null
-        ? Number(prefill.prix_unitaire || 0)
-        : (produit ? getTarifPlaque(getPopupSelectedClientId(), produit.id) : 0);
+        ? roundPrice(prefill.prix_unitaire || 0)
+        : (produit ? roundPrice(getTarifPlaque(getPopupSelectedClientId(), produit.id)) : 0);
       const frozenPrice = prefill?.prix_unitaire != null;
+      const quantiteValue = prefill?.quantite != null ? Number(prefill.quantite || 0) : "";
 
       const row = document.createElement("div");
       row.className = "product-row";
@@ -1980,13 +1960,13 @@
           <label>Produit</label>
           <input type="text" class="produit-search-input" list="produitsDatalist" placeholder="Tape une référence ou un nom..." autocomplete="off" value="${escapeHtml(label)}" />
           <input type="hidden" class="produit-id-input" value="${escapeHtml(produit?.id || "")}" />
-          <input type="hidden" class="prix-unitaire-input" value="${escapeHtml(initialPrice)}" />
+          <input type="hidden" class="prix-unitaire-input" value="${escapeHtml(toPriceInputValue(initialPrice))}" />
           <div class="product-selected-hint">Choisis un produit actif ou déjà utilisé</div>
         </div>
 
         <div class="field-group">
           <label>Quantité</label>
-          <input type="number" class="quantite-input" min="0" value="${Number(prefill?.quantite || 0)}" />
+          <input type="number" class="quantite-input" min="0" value="${escapeHtml(quantiteValue)}" />
         </div>
 
         <div class="field-group">
@@ -1996,8 +1976,7 @@
 
         <div class="field-group">
           <label>Prix unit.</label>
-          <div class="price-box unit-price-box">${formatCurrency(initialPrice)}</div>
-          <input type="number" class="price-edit-input" step="0.01" min="0" value="${escapeHtml(initialPrice)}" />
+          <input type="number" class="price-edit-input" step="0.01" min="0" value="${escapeHtml(toPriceInputValue(initialPrice))}" />
         </div>
 
         <div class="field-group">
@@ -2039,11 +2018,28 @@
 
       row.querySelector(".price-edit-input").addEventListener("input", () => {
         const priceInput = row.querySelector(".prix-unitaire-input");
-        const nextPrice = Number(row.querySelector(".price-edit-input").value || 0);
-        priceInput.value = Number.isFinite(nextPrice) && nextPrice >= 0 ? String(nextPrice) : "0";
+        const nextRawValue = row.querySelector(".price-edit-input").value;
+        if (nextRawValue === "") {
+          priceInput.value = "";
+          row.dataset.frozenPrice = "true";
+          updateRowLineTotal(row);
+          updatePopupTotalCommande();
+          return;
+        }
+        const nextPrice = roundPrice(nextRawValue);
+        priceInput.value = toPriceInputValue(nextPrice);
         row.dataset.frozenPrice = "true";
         updateRowLineTotal(row);
         updatePopupTotalCommande();
+      });
+
+      row.querySelector(".price-edit-input").addEventListener("blur", () => {
+        const priceEditInput = row.querySelector(".price-edit-input");
+        const priceInput = row.querySelector(".prix-unitaire-input");
+        if (priceEditInput.value === "") return;
+        const normalized = toPriceInputValue(priceEditInput.value);
+        priceEditInput.value = normalized;
+        priceInput.value = normalized;
       });
 
       row.querySelector(".remove-product-row-btn").addEventListener("click", () => {
@@ -2165,7 +2161,7 @@
         const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
         const stockClient = parseInt(row.querySelector(".stock-input").value, 10) || 0;
         const couleur = row.querySelector(".color-picker")?.dataset.selected || "green";
-        const prixUnitaire = Number(row.querySelector(".prix-unitaire-input").value || 0);
+        const prixUnitaire = roundPrice(row.querySelector(".prix-unitaire-input").value || 0);
         const rowHasData = typedValue || quantite > 0 || stockClient > 0;
 
         if (rowHasData && !produitId) {
@@ -2179,7 +2175,7 @@
             quantite,
             stock_client: stockClient,
             couleur,
-            prix_unitaire: prixUnitaire
+            prix_unitaire: roundPrice(prixUnitaire)
           });
         }
       });
@@ -2197,15 +2193,15 @@
       const { commandes, invalidFilledRow } = collectCommandesFromForm();
       const saleVisit = isSaleVisitType(typeVisite);
 
-      if (!clientId) return showToast("Sélectionne un client avant d’enregistrer.", "warning");
+      if (!clientId) return showToast("Sélectionne un client avant d'enregistrer.", "warning");
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
       if (!note) return showToast("La note terrain est obligatoire pour enregistrer la visite.", "warning");
-      if (invalidFilledRow) return showToast("Une ligne produit est renseignée mais le produit n’est pas reconnu.", "warning");
+      if (invalidFilledRow) return showToast("Une ligne produit est renseignée mais le produit n'est pas reconnu.", "warning");
       if (saleVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantité ou stock.", "warning");
 
       const totalCommande = saleVisit
         ? commandes.reduce((sum, commande) => {
-            return sum + Number(commande.quantite || 0) * Number(commande.prix_unitaire || 0);
+            return sum + Number(commande.quantite || 0) * roundPrice(commande.prix_unitaire || 0);
           }, 0)
         : 0;
 
@@ -2278,8 +2274,8 @@
         await loadVisites();
       } catch (error) {
         console.error("Erreur saveVisit:", error);
-        setStatus("Erreur lors de l’enregistrement de la visite.", "error");
-        showToast("Impossible d’enregistrer la visite.", "error");
+        setStatus("Erreur lors de l'enregistrement de la visite.", "error");
+        showToast("Impossible d'enregistrer la visite.", "error");
       }
     }
 
@@ -2507,3 +2503,4 @@
   </script>
 </body>
 </html>
+
