@@ -2588,9 +2588,22 @@
           doc.text(note, marginLeft, afterTableY + 5, { maxWidth: pageWidth - marginLeft - marginRight });
         }
 
+        const totalLabel = `Total HT : ${formatAmountHt(totalHt)} EUR`;
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
-        doc.text(`Total HT : ${formatAmountHt(totalHt)} EUR`, pageWidth - marginRight, pageHeight - 18, { align: "right" });
+        const totalTextWidth = doc.getTextWidth(totalLabel);
+        const totalPaddingX = 5;
+        const totalBoxHeight = 9;
+        const totalBoxWidth = Math.max(62, totalTextWidth + totalPaddingX * 2);
+        const totalBoxX = pageWidth - marginRight - totalBoxWidth;
+        const totalBoxY = pageHeight - 28;
+
+        doc.setFillColor(30, 64, 175);
+        doc.setDrawColor(30, 64, 175);
+        doc.roundedRect(totalBoxX, totalBoxY, totalBoxWidth, totalBoxHeight, 2, 2, "FD");
+        doc.setTextColor(255, 255, 255);
+        doc.text(totalLabel, pageWidth - marginRight - totalPaddingX, totalBoxY + 6.2, { align: "right" });
+        doc.setTextColor(0, 0, 0);
 
         doc.save(filename);
 
