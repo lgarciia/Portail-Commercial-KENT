@@ -719,6 +719,7 @@
           </div>
           <div class="actions-inline">
             <button class="btn btn-secondary" id="cancelVisitBtn" type="button">Annuler</button>
+            <button class="btn btn-info" id="generateQuoteBtn" type="button">Generer un devis</button>
             <button class="btn btn-primary" id="saveVisitBtn" type="submit">Enregistrer</button>
           </div>
         </div>
@@ -793,6 +794,8 @@
   <datalist id="produitsDatalist"></datalist>
   <button class="fab" id="mobileAddVisitBtn" type="button">+ Visite</button>
 
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
@@ -813,6 +816,8 @@
 
     const dom = {};
     const VISIT_TYPE_SALE = "vente";
+    const VISIT_TYPE_NO_SALE = "passage_sans_vente";
+    const VISIT_TYPE_CLIENT_CLOSED = "client_ferme";
     const VISIT_TYPE_LABELS = {
       vente: "Vente",
       passage_sans_vente: "Passage sans vente",
@@ -820,7 +825,8 @@
     };
     const LOCAL_CACHE_KEYS = {
       produits: "kent_cache_produits",
-      tarifsPlaques: "kent_cache_tarifs_plaques"
+      tarifsPlaques: "kent_cache_tarifs_plaques",
+      devisCounterYearPrefix: "kent_devis_counter_year_"
     };
 
     function cacheDom() {
@@ -870,6 +876,7 @@
       dom.popupPricingHint = document.getElementById("popupPricingHint");
       dom.popupVisitTypeHint = document.getElementById("popupVisitTypeHint");
       dom.addProductRowBtn = document.getElementById("addProductRowBtn");
+      dom.generateQuoteBtn = document.getElementById("generateQuoteBtn");
       dom.saveVisitBtn = document.getElementById("saveVisitBtn");
       dom.topProduitsOverlay = document.getElementById("topProduitsOverlay");
       dom.topProduitsList = document.getElementById("topProduitsList");
@@ -1001,6 +1008,15 @@
       return resolveVisitType(value) === VISIT_TYPE_SALE;
     }
 
+    function isProductEntryVisitType(value) {
+      const normalized = resolveVisitType(value);
+      return normalized === VISIT_TYPE_SALE || normalized === VISIT_TYPE_NO_SALE;
+    }
+
+    function canGenerateQuoteForVisitType(value) {
+      return isProductEntryVisitType(value);
+    }
+
     function getVisitTypeLabel(value) {
       const key = resolveVisitType(value);
       return VISIT_TYPE_LABELS[key] || VISIT_TYPE_LABELS[VISIT_TYPE_SALE];
@@ -1046,6 +1062,47 @@
 
     function toPriceInputValue(value) {
       return roundPrice(value).toFixed(2);
+    }
+
+    function formatAmountHt(value) {
+      return Number(value || 0).toLocaleString("fr-FR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function getVisitYear(dateStr) {
+      return parseLocalDate(dateStr)?.getFullYear() || new Date().getFullYear();
+    }
+
+    function addDaysToIsoDate(dateStr, daysToAdd) {
+      const base = parseLocalDate(dateStr) || new Date();
+      base.setDate(base.getDate() + Number(daysToAdd || 0));
+      const year = base.getFullYear();
+      const month = String(base.getMonth() + 1).padStart(2, "0");
+      const day = String(base.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function buildDevisFilename(devisNumber, clientName, dateStr) {
+      const safeClient = String(clientName || "CLIENT")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zA-Z0-9_-]/g, "")
+        .toUpperCase() || "CLIENT";
+      const safeDate = String(dateStr || getTodayIsoLocal()).replace(/[^0-9]/g, "") || "DATE";
+      const safeNumber = String(devisNumber || "DEVIS-KENT").replace(/[\\/:*?"<>|]+/g, "-");
+      return `DEVIS_KENT_${safeClient}_${safeDate}_${safeNumber}.pdf`;
+    }
+
+    function getNextDevisNumber(dateStr) {
+      const year = getVisitYear(dateStr);
+      const storageKey = `${LOCAL_CACHE_KEYS.devisCounterYearPrefix}${year}`;
+      const current = Number(localStorage.getItem(storageKey) || 0);
+      const next = Number.isFinite(current) && current > 0 ? current + 1 : 1;
+      localStorage.setItem(storageKey, String(next));
+      return `DEVIS-KENT-${year}-${String(next).padStart(4, "0")}`;
     }
 
     function getTodayIsoLocal() {
@@ -1897,8 +1954,8 @@
     }
 
     function updatePopupPricingHint() {
-      if (!isSaleVisitType(getPopupVisitType())) {
-        dom.popupPricingHint.textContent = "Aucune saisie produit pour ce type de visite: le total est fixe a 0 EUR.";
+      if (!isProductEntryVisitType(getPopupVisitType())) {
+        dom.popupPricingHint.textContent = "Aucune saisie produit pour ce type de visite.";
         return;
       }
 
@@ -2018,7 +2075,7 @@
     }
 
     function addProductRow(prefill = null) {
-      if (!isSaleVisitType(getPopupVisitType())) return null;
+      if (!isProductEntryVisitType(getPopupVisitType())) return null;
 
       const popupClientId = getPopupSelectedClientId();
       const produit = prefill?.produit_id ? getProduitDisplay(prefill.produit_id) : null;
@@ -2137,7 +2194,7 @@
 
       row.querySelector(".remove-product-row-btn").addEventListener("click", () => {
         row.remove();
-        if (isSaleVisitType(getPopupVisitType()) && !dom.productsFormList.querySelector(".product-row")) addProductRow();
+        if (isProductEntryVisitType(getPopupVisitType()) && !dom.productsFormList.querySelector(".product-row")) addProductRow();
         updatePopupTotalCommande();
       });
 
@@ -2159,23 +2216,30 @@
     function applyVisitTypeUiState(options = {}) {
       const keepRows = Boolean(options.keepRows);
       const visitType = getPopupVisitType();
-      const saleVisit = isSaleVisitType(visitType);
+      const productEntryEnabled = isProductEntryVisitType(visitType);
+      const quoteEnabled = canGenerateQuoteForVisitType(visitType);
 
       dom.popupVisitType.value = visitType;
-      dom.productsFormList.classList.toggle("products-disabled", !saleVisit);
-      dom.addProductRowBtn.disabled = !saleVisit;
-      dom.addProductRowBtn.style.display = saleVisit ? "" : "none";
+      dom.productsFormList.classList.toggle("products-disabled", !productEntryEnabled);
+      dom.addProductRowBtn.disabled = !productEntryEnabled;
+      dom.addProductRowBtn.style.display = productEntryEnabled ? "" : "none";
+      dom.generateQuoteBtn.disabled = !quoteEnabled;
+      dom.generateQuoteBtn.style.display = quoteEnabled ? "" : "none";
 
-      if (saleVisit) {
+      if (productEntryEnabled) {
         refreshProductDatalist(getPopupSelectedClientId());
         if (!dom.productsFormList.querySelector(".product-row")) addProductRow();
         refreshAllPopupPrices();
-        dom.popupVisitTypeHint.textContent = state.produits.length
-          ? "La note terrain est obligatoire pour toute visite."
-          : "Aucun produit visible: verifie les imports tarifs/produits ou les droits de lecture Supabase.";
+        if (!state.produits.length) {
+          dom.popupVisitTypeHint.textContent = "Aucun produit visible: verifie les imports tarifs/produits ou les droits de lecture Supabase.";
+        } else if (resolveVisitType(visitType) === VISIT_TYPE_NO_SALE) {
+          dom.popupVisitTypeHint.textContent = "Passage sans vente: tu peux generer un devis sans enregistrer la visite.";
+        } else {
+          dom.popupVisitTypeHint.textContent = "La note terrain est obligatoire pour toute visite.";
+        }
       } else {
         if (!keepRows) dom.productsFormList.innerHTML = "";
-        dom.popupVisitTypeHint.textContent = "Visite sans vente: produits bloques, note obligatoire, total force a 0 EUR.";
+        dom.popupVisitTypeHint.textContent = "Client ferme: pas de devis ni de saisie produit. Note obligatoire pour enregistrer la visite.";
       }
 
       updatePopupPricingHint();
@@ -2204,9 +2268,9 @@
         dom.popupVisitType.value = resolveVisitType(visite.type_visite);
         dom.popupNote.value = visite.note || "";
 
-        if (isSaleVisitType(visite.type_visite) && (visite.commandes || []).length) {
+        if (isProductEntryVisitType(visite.type_visite) && (visite.commandes || []).length) {
           visite.commandes.forEach(addProductRow);
-        } else if (isSaleVisitType(visite.type_visite)) {
+        } else if (isProductEntryVisitType(visite.type_visite)) {
           addProductRow();
         }
       } else {
@@ -2228,8 +2292,8 @@
 
       setTimeout(() => {
         const firstInput = dom.productsFormList.querySelector(".produit-search-input");
-        if (isSaleVisitType(getPopupVisitType()) && firstInput) firstInput.focus();
-        if (!isSaleVisitType(getPopupVisitType())) dom.popupNote.focus();
+        if (isProductEntryVisitType(getPopupVisitType()) && firstInput) firstInput.focus();
+        if (!isProductEntryVisitType(getPopupVisitType())) dom.popupNote.focus();
       }, 30);
     }
 
@@ -2274,6 +2338,274 @@
       });
 
       return { commandes, invalidFilledRow };
+    }
+
+    function collectCommandesForQuoteFromForm() {
+      const rows = [...dom.productsFormList.querySelectorAll(".product-row")];
+      const lignes = [];
+      let invalidFilledRow = false;
+
+      rows.forEach(row => {
+        const produitId = row.querySelector(".produit-id-input").value;
+        const typedValue = row.querySelector(".produit-search-input").value.trim();
+        const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
+        const prixUnitaire = roundPrice(row.querySelector(".prix-unitaire-input").value || 0);
+        const rowHasData = typedValue || quantite > 0;
+
+        if (rowHasData && !produitId) {
+          invalidFilledRow = true;
+          return;
+        }
+
+        if (produitId && quantite > 0) {
+          const produit = getProduitDisplay(produitId);
+          lignes.push({
+            produit_id: produitId,
+            reference_produit: produit.reference_produit || "-",
+            designation: produit.nom || "Produit",
+            quantite,
+            prix_unitaire: roundPrice(prixUnitaire),
+            total_ligne: roundPrice(quantite * prixUnitaire)
+          });
+        }
+      });
+
+      return { lignes, invalidFilledRow };
+    }
+
+    const KENT_LEGAL_MENTIONS = {
+      societe: "KENT France SAS",
+      adresse: "29 rue Charles Edouard Jeanneret, CS7001 TECHNOPARC, 78306 Poissy Cedex",
+      telephone: "+33 (0)1.82.03.02.15",
+      email: "kent.frclients@kenteurope.com",
+      tva: "FR23732000351"
+    };
+
+    let cachedKentLogoDataUrl = "";
+
+    function blobToDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Lecture image impossible."));
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function getKentLogoDataUrl() {
+      if (cachedKentLogoDataUrl) return cachedKentLogoDataUrl;
+      const candidates = [
+        "./kent-logo-nouveau.jpg",
+        "./kent-logo.svg",
+        "./kent-logo-nouveau.ico",
+        "./logo_icon.ico"
+      ];
+
+      for (const candidate of candidates) {
+        try {
+          const response = await fetch(candidate, { cache: "force-cache" });
+          if (!response.ok) continue;
+          const blob = await response.blob();
+          if (!String(blob.type || "").startsWith("image/")) continue;
+          const dataUrl = await blobToDataUrl(blob);
+          if (dataUrl) {
+            cachedKentLogoDataUrl = dataUrl;
+            return dataUrl;
+          }
+        } catch (_) {
+          // Try next file candidate quietly.
+        }
+      }
+
+      return "";
+    }
+
+    function buildQuoteMailtoLink(clientName, devisNumber) {
+      const subject = `Devis Kent - ${clientName || "Client"} - ${devisNumber}`;
+      const body = [
+        "Bonjour,",
+        "",
+        `Veuillez trouver ci-joint notre devis ${devisNumber}.`,
+        "",
+        "Nous restons a votre disposition pour tout complement d'information.",
+        "",
+        "Cordialement,",
+        "KENT France SAS"
+      ].join("\n");
+
+      return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    async function generateQuoteFromVisitForm() {
+      const clientId = dom.popupClient.value;
+      const dateVisite = dom.popupDate.value || getTodayIsoLocal();
+      const typeVisite = getPopupVisitType();
+      const note = dom.popupNote.value.trim();
+      const canGenerateQuote = canGenerateQuoteForVisitType(typeVisite);
+
+      if (!clientId) return showToast("Selectionne un client avant de generer un devis.", "warning");
+      if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
+      if (!canGenerateQuote) return showToast("Le devis est disponible pour Vente et Passage sans vente, pas pour Client ferme.", "warning");
+
+      const { lignes, invalidFilledRow } = collectCommandesForQuoteFromForm();
+      if (invalidFilledRow) return showToast("Une ligne produit est renseignee mais le produit n'est pas reconnu.", "warning");
+      if (!lignes.length) return showToast("Ajoute au moins une ligne produit avec quantite pour generer le devis.", "warning");
+      if (!window.jspdf?.jsPDF) return showToast("Moteur PDF indisponible. Recharge la page puis reessaye.", "error");
+
+      const client = getClientById(clientId);
+      const clientName = client?.nom || "Client";
+      const clientPlaque = getClientPlaqueLabel(client);
+      const devisNumber = getNextDevisNumber(dateVisite);
+      const validUntilIso = addDaysToIsoDate(dateVisite, 21);
+      const totalHt = roundPrice(lignes.reduce((sum, ligne) => sum + Number(ligne.total_ligne || 0), 0));
+      const filename = buildDevisFilename(devisNumber, clientName, dateVisite);
+      const originalButtonLabel = dom.generateQuoteBtn.textContent;
+
+      try {
+        dom.generateQuoteBtn.disabled = true;
+        dom.generateQuoteBtn.textContent = "Generation...";
+        setStatus("Generation du devis PDF...", "info");
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+        if (typeof doc.autoTable !== "function") throw new Error("Plugin table PDF non charge.");
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const marginLeft = 14;
+        const marginRight = 14;
+
+        const logoDataUrl = await getKentLogoDataUrl();
+        if (logoDataUrl) {
+          try {
+            doc.addImage(logoDataUrl, "JPEG", marginLeft, 10, 34, 16);
+          } catch (_) {
+            // Keep PDF generation even if logo format is unsupported.
+          }
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text("DEVIS", pageWidth - marginRight, 16, { align: "right" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Numero : ${devisNumber}`, pageWidth - marginRight, 23, { align: "right" });
+        doc.text(`Date : ${formatDate(dateVisite)}`, pageWidth - marginRight, 28, { align: "right" });
+        doc.text(`Validite : jusqu'au ${formatDate(validUntilIso)} (3 semaines)`, pageWidth - marginRight, 33, { align: "right" });
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.text("KENT France SAS", marginLeft, 34);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.2);
+        doc.text(KENT_LEGAL_MENTIONS.adresse, marginLeft, 39);
+        doc.text(`Tel : ${KENT_LEGAL_MENTIONS.telephone}`, marginLeft, 44);
+        doc.text(`Email : ${KENT_LEGAL_MENTIONS.email}`, marginLeft, 49);
+        doc.text(`TVA : ${KENT_LEGAL_MENTIONS.tva}`, marginLeft, 54);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text("Client", marginLeft, 66);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.6);
+        const clientLines = [
+          clientName,
+          client?.numero_compte ? `Compte : ${client.numero_compte}` : "",
+          client?.adresse ? `Adresse : ${client.adresse}` : "",
+          client?.telephone ? `Telephone : ${client.telephone}` : "",
+          clientPlaque && clientPlaque !== "â€”" ? `Plaque tarif : ${clientPlaque}` : ""
+        ].filter(Boolean);
+        doc.text(clientLines, marginLeft, 71);
+
+        doc.setFontSize(9.6);
+        doc.setTextColor(95, 114, 137);
+        const contextLine = `Type de visite : ${getVisitTypeLabel(typeVisite)}`;
+        doc.text(contextLine, marginLeft, 90);
+        doc.setTextColor(238, 244, 255);
+
+        doc.autoTable({
+          startY: 95,
+          head: [[
+            "Ref",
+            "Designation",
+            "Qte",
+            "PU HT",
+            "Total HT"
+          ]],
+          body: lignes.map(ligne => ([
+            String(ligne.reference_produit || "-"),
+            String(ligne.designation || "Produit"),
+            String(ligne.quantite || 0),
+            `${formatAmountHt(ligne.prix_unitaire)} EUR`,
+            `${formatAmountHt(ligne.total_ligne)} EUR`
+          ])),
+          margin: { left: marginLeft, right: marginRight },
+          styles: {
+            font: "helvetica",
+            fontSize: 9,
+            cellPadding: 2.5,
+            textColor: [15, 23, 42],
+            lineColor: [220, 226, 233],
+            lineWidth: 0.1,
+            overflow: "linebreak"
+          },
+          headStyles: {
+            fillColor: [30, 64, 175],
+            textColor: [255, 255, 255],
+            fontStyle: "bold",
+            halign: "center"
+          },
+          columnStyles: {
+            0: { cellWidth: 28 },
+            1: { cellWidth: "auto" },
+            2: { cellWidth: 16, halign: "center" },
+            3: { cellWidth: 30, halign: "right" },
+            4: { cellWidth: 30, halign: "right" }
+          },
+          theme: "grid",
+          pageBreak: "auto",
+          rowPageBreak: "avoid",
+          didDrawPage: data => {
+            const footerY = pageHeight - 12;
+            doc.setFontSize(8.2);
+            doc.setTextColor(100, 116, 139);
+            doc.text("Conditions de reglement : paiement a 30 jours fin de mois par virement, sauf conditions particulieres convenues.", marginLeft, footerY - 2);
+            doc.text(`Page ${doc.internal.getNumberOfPages()}`, pageWidth - marginRight, footerY - 2, { align: "right" });
+            doc.setTextColor(0, 0, 0);
+          }
+        });
+
+        const afterTableY = (doc.lastAutoTable?.finalY || 100) + 8;
+        const availableSpace = pageHeight - afterTableY - 20;
+        if (note && availableSpace >= 14) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(9.6);
+          doc.text("Note terrain", marginLeft, afterTableY);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.text(note, marginLeft, afterTableY + 5, { maxWidth: pageWidth - marginLeft - marginRight });
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text(`Total HT : ${formatAmountHt(totalHt)} EUR`, pageWidth - marginRight, pageHeight - 18, { align: "right" });
+
+        doc.save(filename);
+
+        const mailtoLink = buildQuoteMailtoLink(clientName, devisNumber);
+        window.location.href = mailtoLink;
+
+        setStatus(`Devis genere : ${devisNumber}`, "success");
+        showToast(`Devis genere (${devisNumber}).`, "success");
+      } catch (error) {
+        console.error("Erreur generation devis:", error);
+        setStatus("Erreur lors de la generation du devis.", "error");
+        showToast("Impossible de generer le devis.", "error");
+      } finally {
+        dom.generateQuoteBtn.disabled = false;
+        dom.generateQuoteBtn.textContent = originalButtonLabel || "Generer un devis";
+      }
     }
 
     async function saveVisit(event) {
@@ -2493,12 +2825,13 @@
       dom.closeVisitModalBtn.addEventListener("click", closeVisitModal);
       dom.cancelVisitBtn.addEventListener("click", closeVisitModal);
       dom.addProductRowBtn.addEventListener("click", () => {
-        if (!isSaleVisitType(getPopupVisitType())) {
-          showToast("Passe le type de visite sur Vente pour saisir des produits.", "warning");
+        if (!isProductEntryVisitType(getPopupVisitType())) {
+          showToast("La saisie produit est disponible pour Vente et Passage sans vente.", "warning");
           return;
         }
         addProductRow();
       });
+      dom.generateQuoteBtn.addEventListener("click", generateQuoteFromVisitForm);
       dom.visitForm.addEventListener("submit", saveVisit);
       dom.popupClient.addEventListener("change", () => {
         refreshProductDatalist(getPopupSelectedClientId());
