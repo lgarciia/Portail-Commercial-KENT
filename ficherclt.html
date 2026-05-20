@@ -1065,10 +1065,11 @@
     }
 
     function formatAmountHt(value) {
-      return Number(value || 0).toLocaleString("fr-FR", {
+      const formatted = Number(value || 0).toLocaleString("fr-FR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
+      return formatted.replace(/\u202f/g, " ").replace(/\u00a0/g, " ");
     }
 
     function getVisitYear(dateStr) {
