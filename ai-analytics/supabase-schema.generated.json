@@ -1,0 +1,185 @@
+{
+  "generatedAt": "2026-05-21T00:00:00+02:00",
+  "source": {
+    "projectType": "static-html-on-vercel",
+    "supabaseUsageFiles": [
+      "ficherclt.html",
+      "gestionclients.html",
+      "gestionimportclients.html",
+      "gestiontarif.html",
+      "rappelclt.html",
+      "rapportjournalier.html",
+      "tdbactivite.html",
+      "supabase_fix_commerce_rls.sql"
+    ],
+    "notes": [
+      "Schema inferred from code usage (select/insert/update/delete) and SQL policy script.",
+      "Database introspection tables (information_schema/pg_catalog) were not queried from this codebase."
+    ]
+  },
+  "tables": [
+    {
+      "name": "clients",
+      "domain": "clients",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "nom", "type": "text", "nullable": false, "inferred": true },
+        { "name": "numero_compte", "type": "text", "nullable": false, "inferred": true },
+        { "name": "adresse", "type": "text", "nullable": true, "inferred": true },
+        { "name": "telephone", "type": "text", "nullable": true, "inferred": true },
+        { "name": "plaque_id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "created_at", "type": "timestamptz", "nullable": true, "inferred": true }
+      ],
+      "relations": [
+        {
+          "type": "many_to_one",
+          "fromColumn": "plaque_id",
+          "toTable": "plaques",
+          "toColumn": "id",
+          "inferred": true
+        }
+      ],
+      "constraints": [
+        { "type": "primary_key", "columns": ["id"], "inferred": true },
+        {
+          "type": "business_unique",
+          "columns": ["numero_compte", "plaque_id"],
+          "inferred": true,
+          "note": "Enforced in UI logic before insert/update."
+        }
+      ]
+    },
+    {
+      "name": "plaques",
+      "domain": "catalog",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "nom", "type": "text", "nullable": false, "inferred": true }
+      ],
+      "relations": [],
+      "constraints": [
+        { "type": "primary_key", "columns": ["id"], "inferred": true },
+        { "type": "unique", "columns": ["nom"], "inferred": true }
+      ]
+    },
+    {
+      "name": "produits",
+      "domain": "produits",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "nom", "type": "text", "nullable": false, "inferred": true },
+        { "name": "reference_produit", "type": "text", "nullable": false, "inferred": true },
+        { "name": "prix_vente", "type": "numeric", "nullable": false, "inferred": true },
+        { "name": "actif", "type": "boolean", "nullable": false, "inferred": true }
+      ],
+      "relations": [],
+      "constraints": [
+        { "type": "primary_key", "columns": ["id"], "inferred": true },
+        { "type": "unique", "columns": ["reference_produit"], "inferred": true }
+      ]
+    },
+    {
+      "name": "tarifs_plaques",
+      "domain": "tarifs",
+      "columns": [
+        { "name": "plaque_id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "produit_id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "prix_vente", "type": "numeric", "nullable": false, "inferred": true }
+      ],
+      "relations": [
+        {
+          "type": "many_to_one",
+          "fromColumn": "plaque_id",
+          "toTable": "plaques",
+          "toColumn": "id",
+          "inferred": true
+        },
+        {
+          "type": "many_to_one",
+          "fromColumn": "produit_id",
+          "toTable": "produits",
+          "toColumn": "id",
+          "inferred": true
+        }
+      ],
+      "constraints": [
+        {
+          "type": "composite_unique",
+          "columns": ["plaque_id", "produit_id"],
+          "inferred": true
+        }
+      ]
+    },
+    {
+      "name": "visites",
+      "domain": "visites",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "client_id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "date_visite", "type": "date", "nullable": false, "inferred": true },
+        { "name": "note", "type": "text", "nullable": true, "inferred": true },
+        { "name": "type_visite", "type": "text", "nullable": false, "inferred": true },
+        { "name": "total_commande", "type": "numeric", "nullable": false, "inferred": true }
+      ],
+      "relations": [
+        {
+          "type": "many_to_one",
+          "fromColumn": "client_id",
+          "toTable": "clients",
+          "toColumn": "id",
+          "inferred": true
+        }
+      ],
+      "constraints": [
+        { "type": "primary_key", "columns": ["id"], "inferred": true },
+        {
+          "type": "check",
+          "columns": ["type_visite"],
+          "inferred": true,
+          "values": ["vente", "passage_sans_vente", "client_ferme"]
+        }
+      ]
+    },
+    {
+      "name": "visite_commandes",
+      "domain": "ventes",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "visite_id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "produit_id", "type": "uuid", "nullable": false, "inferred": true },
+        { "name": "quantite", "type": "integer", "nullable": false, "inferred": true },
+        { "name": "stock_client", "type": "integer", "nullable": false, "inferred": true },
+        { "name": "couleur", "type": "text", "nullable": false, "inferred": true },
+        { "name": "prix_unitaire", "type": "numeric", "nullable": false, "inferred": true }
+      ],
+      "relations": [
+        {
+          "type": "many_to_one",
+          "fromColumn": "visite_id",
+          "toTable": "visites",
+          "toColumn": "id",
+          "inferred": true
+        },
+        {
+          "type": "many_to_one",
+          "fromColumn": "produit_id",
+          "toTable": "produits",
+          "toColumn": "id",
+          "inferred": true
+        }
+      ],
+      "constraints": [
+        { "type": "primary_key", "columns": ["id"], "inferred": true }
+      ]
+    }
+  ],
+  "identifiedDomains": {
+    "commercialTables": ["clients", "produits", "tarifs_plaques", "visites", "visite_commandes", "plaques"],
+    "ventes": ["visites", "visite_commandes"],
+    "clients": ["clients", "plaques"],
+    "produits": ["produits", "tarifs_plaques"],
+    "utilisateurs": [],
+    "historiques": ["visites", "visite_commandes"],
+    "visites": ["visites", "visite_commandes"]
+  }
+}

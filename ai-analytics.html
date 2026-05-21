@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IA Analytics - KENT</title>
+  <script src="./shared-ui.js"></script>
+  <link rel="stylesheet" href="./shared-theme.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#07101a;
+      --card:#0e1b2a;
+      --line:rgba(255,255,255,.09);
+      --text:#eef4ff;
+      --muted:#9fb2cb;
+      --accent:#2f7bf6;
+      --accent-2:#1d4ed8;
+      --danger:#ef4444;
+      --ok:#22c55e;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Aptos","Segoe UI",sans-serif;
+      background:
+        radial-gradient(circle at 15% 0%,rgba(47,123,246,.2),transparent 40%),
+        radial-gradient(circle at 100% 0%,rgba(34,197,94,.12),transparent 34%),
+        linear-gradient(150deg,#06101a,#0a1826);
+      color:var(--text);
+      min-height:100vh;
+      padding:22px;
+    }
+    .wrap{max-width:1300px;margin:0 auto}
+    .hero{
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:linear-gradient(160deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
+      padding:18px;
+      margin-bottom:16px;
+    }
+    .hero h1{margin:0;font-size:1.5rem;letter-spacing:-.02em}
+    .hero p{margin:8px 0 0;color:var(--muted)}
+    .card{
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:var(--card);
+      padding:16px;
+      margin-bottom:14px;
+    }
+    .q-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 130px 140px;
+      gap:10px;
+      align-items:end;
+    }
+    label{font-size:.85rem;color:var(--muted);display:block;margin-bottom:6px}
+    input,button{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      padding:11px 12px;
+      font-size:.95rem;
+      color:var(--text);
+      background:rgba(255,255,255,.04);
+      outline:none;
+    }
+    input:focus{border-color:rgba(47,123,246,.55);box-shadow:0 0 0 3px rgba(47,123,246,.15)}
+    button{
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      border:none;
+      font-weight:700;
+      cursor:pointer;
+    }
+    button[disabled]{opacity:.6;cursor:not-allowed}
+    .status{
+      margin-top:10px;
+      font-size:.9rem;
+      color:var(--muted);
+    }
+    .status.ok{color:#c7ffe1}
+    .status.err{color:#fecaca}
+    .summary{font-size:.95rem;color:#dbe7fb}
+    .json-box{
+      margin:12px 0;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:rgba(0,0,0,.2);
+      padding:10px;
+      color:#cfe2ff;
+      max-height:210px;
+      overflow:auto;
+      font-size:.78rem;
+      line-height:1.45;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .layout{
+      display:grid;
+      grid-template-columns:minmax(360px,480px) minmax(0,1fr);
+      gap:14px;
+    }
+    .table-shell{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:14px;
+      max-height:520px;
+    }
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th,td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;font-size:.86rem}
+    th{position:sticky;top:0;background:#10233a;color:#dbe7fb;text-transform:uppercase;letter-spacing:.06em;font-size:.74rem}
+    .muted{color:var(--muted)}
+    .loading{display:none;margin-top:10px}
+    .loading.active{display:block}
+    .loading-bar{
+      width:100%;
+      height:7px;
+      border-radius:999px;
+      background:rgba(255,255,255,.07);
+      overflow:hidden;
+    }
+    .loading-bar span{
+      display:block;
+      width:35%;
+      height:100%;
+      background:linear-gradient(90deg,#4f8df7,#74b0ff);
+      animation:move 1.1s linear infinite;
+    }
+    @keyframes move{
+      from{transform:translateX(-120%)}
+      to{transform:translateX(320%)}
+    }
+    @media (max-width:980px){
+      .q-grid{grid-template-columns:1fr}
+      .layout{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>IA Analytics</h1>
+      <p>Assistant conversationnel premium en lecture seule: question, interpretation JSON, tableau, graphe et resultat final.</p>
+    </section>
+
+    <section class="card">
+      <div class="q-grid">
+        <div>
+          <label for="questionInput">Question</label>
+          <input id="questionInput" type="text" value="Quel est mon top 10 produit sur ce mois ?" />
+        </div>
+        <div>
+          <label for="limitInput">Limite</label>
+          <input id="limitInput" type="number" min="1" max="1000" value="10" />
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="askBtn" type="button">Analyser</button>
+        </div>
+      </div>
+
+      <div class="loading" id="loadingBox">
+        <div class="loading-bar"><span></span></div>
+      </div>
+      <div class="status" id="statusBox">Pret.</div>
+    </section>
+
+    <section class="layout">
+      <article class="card">
+        <div class="summary" id="summaryBox">Aucune analyse lancee.</div>
+        <p class="muted" id="finalBox">-</p>
+        <pre class="json-box" id="planBox">{}</pre>
+        <p class="muted" id="metaBox">-</p>
+        <div class="table-shell">
+          <table>
+            <thead id="thead"></thead>
+            <tbody id="tbody">
+              <tr><td class="muted">Aucun resultat pour le moment.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card">
+        <canvas id="chartCanvas" height="250"></canvas>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    let chart = null;
+
+    const dom = {
+      questionInput: document.getElementById("questionInput"),
+      limitInput: document.getElementById("limitInput"),
+      askBtn: document.getElementById("askBtn"),
+      loadingBox: document.getElementById("loadingBox"),
+      statusBox: document.getElementById("statusBox"),
+      summaryBox: document.getElementById("summaryBox"),
+      finalBox: document.getElementById("finalBox"),
+      planBox: document.getElementById("planBox"),
+      metaBox: document.getElementById("metaBox"),
+      thead: document.getElementById("thead"),
+      tbody: document.getElementById("tbody"),
+      chartCanvas: document.getElementById("chartCanvas")
+    };
+
+    function esc(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setLoading(loading) {
+      dom.askBtn.disabled = loading;
+      dom.loadingBox.classList.toggle("active", loading);
+    }
+
+    function setStatus(message, kind = "") {
+      dom.statusBox.className = "status" + (kind ? " " + kind : "");
+      dom.statusBox.textContent = message;
+    }
+
+    function renderTable(columns, rows) {
+      if (!columns.length) {
+        dom.thead.innerHTML = "";
+        dom.tbody.innerHTML = `<tr><td class="muted">Aucune colonne.</td></tr>`;
+        return;
+      }
+      dom.thead.innerHTML = `<tr>${columns.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
+      if (!rows.length) {
+        dom.tbody.innerHTML = `<tr><td colspan="${columns.length}" class="muted">Aucune ligne retournee.</td></tr>`;
+        return;
+      }
+      dom.tbody.innerHTML = rows.map(row => {
+        return `<tr>${columns.map(col => `<td>${esc(row[col])}</td>`).join("")}</tr>`;
+      }).join("");
+    }
+
+    function buildChart(columns, rows, visualization) {
+      if (chart) {
+        chart.destroy();
+        chart = null;
+      }
+      if (!rows.length || !columns.length) return;
+
+      const labelColumn = columns.find(col => /nom|reference|date|periode/i.test(col)) || columns[0];
+      const numericColumns = columns.filter(col => rows.some(row => Number.isFinite(Number(row[col]))));
+      const valueColumn = numericColumns[0];
+      if (!valueColumn) return;
+
+      const labels = rows.map(row => String(row[labelColumn] ?? "-")).slice(0, 20);
+      const values = rows.map(row => Number(row[valueColumn] || 0)).slice(0, 20);
+      const chartType = /^(bar|line|pie)$/i.test(visualization || "") ? visualization : "bar";
+      const maxItems = chartType === "pie" ? 12 : 20;
+      const finalLabels = labels.slice(0, maxItems);
+      const finalValues = values.slice(0, maxItems);
+
+      chart = new Chart(dom.chartCanvas.getContext("2d"), {
+        type: chartType,
+        data: {
+          labels: finalLabels,
+          datasets: [{
+            label: valueColumn,
+            data: finalValues,
+            backgroundColor: "rgba(47,123,246,.65)",
+            borderColor: "rgba(116,176,255,1)",
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: "#dbe7fb" } }
+          },
+          scales: {
+            x: { ticks: { color: "#c6d7f3" }, grid: { color: "rgba(255,255,255,.08)" } },
+            y: { ticks: { color: "#c6d7f3" }, grid: { color: "rgba(255,255,255,.08)" } }
+          }
+        }
+      });
+    }
+
+    async function ask() {
+      const question = dom.questionInput.value.trim();
+      const limit = Math.min(1000, Math.max(1, Number(dom.limitInput.value || 10)));
+      if (!question) {
+        setStatus("Saisis une question.", "err");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setStatus("Analyse en cours...", "");
+
+        const res = await fetch("/api/ai-query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, limit })
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data?.ok) {
+          throw new Error(data?.message || "Requete impossible.");
+        }
+
+        renderTable(data.columns || [], data.rows || []);
+        buildChart(data.columns || [], data.rows || [], data.visualization || "bar");
+        dom.summaryBox.textContent = data.summary || "Analyse terminee.";
+        dom.finalBox.textContent = data.finalResult || "-";
+        dom.planBox.textContent = JSON.stringify(data.queryPlan || {}, null, 2);
+        dom.metaBox.textContent = `Intent: ${data.intent} | Lignes: ${(data.rows || []).length} | Tables: ${(data.meta?.sourceTables || []).join(", ")}`;
+        setStatus("Analyse terminee.", "ok");
+      } catch (error) {
+        console.error(error);
+        dom.planBox.textContent = "{}";
+        dom.finalBox.textContent = "-";
+        setStatus(error.message || "Erreur pendant l'analyse.", "err");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    dom.askBtn.addEventListener("click", ask);
+    dom.questionInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") ask();
+    });
+  </script>
+</body>
+</html>

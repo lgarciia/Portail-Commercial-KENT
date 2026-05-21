@@ -425,13 +425,13 @@
           <span>Paramétrage</span>
         </a>
 
-        <!-- ✅ Toggle thème (Material Symbols toggle_on/off) -->
-        <button class="toolBtn" id="btnTheme" type="button" title="Basculer thème">
+        <!-- ✅ IA Analytics -->
+        <a class="toolBtn" href="ai-analytics.html" title="Ouvrir AI Analytics">
           <span class="ico" aria-hidden="true">
-            <span class="material-symbols-outlined" id="themeIcon">toggle_off</span>
+            <span class="material-symbols-outlined">auto_awesome</span>
           </span>
-          <span id="themeTxt">Dark</span>
-        </button>
+          <span>IA</span>
+        </a>
       </div>
     </div>
 
@@ -459,9 +459,6 @@
               <div class="desc">Etablissement du budget N+1</div>
             </div>
             <div class="chev">›</div>
-          </a>
-
-         
           </a>
         </div>
       </section>
@@ -630,37 +627,6 @@
       e.preventDefault();
       search.focus();
     }
-  });
-
-  // ===== Theme toggle (Material symbols toggle_on/off) =====
-  const THEME_KEY = "APP_THEME";
-  const btnTheme = document.getElementById("btnTheme");
-  const themeIcon = document.getElementById("themeIcon");
-  const themeTxt  = document.getElementById("themeTxt");
-
-  function setTheme(theme){
-    const t = (theme === "light") ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", t);
-    try{ localStorage.setItem(THEME_KEY, t); }catch(e){}
-
-    // Light = toggle_on, Dark = toggle_off (comme tu voulais)
-    themeIcon.textContent = (t === "light") ? "toggle_on" : "toggle_off";
-    themeTxt.textContent  = (t === "light") ? "Light" : "Dark";
-  }
-
-  // init from storage (fallback dark)
-  let saved = "dark";
-  try{ saved = localStorage.getItem(THEME_KEY) || "dark"; }catch(e){}
-  setTheme(saved);
-
-  btnTheme.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme") || "dark";
-    setTheme(current === "dark" ? "light" : "dark");
-  });
-
-  // ✅ si tu changes le thème sur une autre page/onglet, celle-ci se met à jour
-  window.addEventListener("storage", (e) => {
-    if (e.key === THEME_KEY) setTheme(e.newValue || "dark");
   });
 
   // ===== Active year =====
