@@ -246,7 +246,10 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("[ai-query]", error);
-    return jsonError(res, 500, "Erreur pendant l'analyse IA.");
+    const classified = classifyRuntimeError(error);
+    return jsonError(res, classified.status, classified.message, {
+      errorCode: classified.code
+    });
   }
 }
 
@@ -340,6 +343,49 @@ function enforceRateLimit(key) {
   bucket.count += 1;
   RATE_LIMIT_STORE.set(key, bucket);
   return { ok: true, remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - bucket.count), retryAfterSeconds: 0 };
+}
+
+function classifyRuntimeError(error) {
+  const raw = String(error?.message || "").trim();
+  const lower = raw.toLowerCase();
+
+  if (lower.includes("mistral api error")) {
+    return {
+      status: 502,
+      code: "mistral_upstream_error",
+      message: "Le service IA distant (Mistral) a renvoye une erreur. Reessaie dans 30 secondes."
+    };
+  }
+
+  if (lower.includes("supabase error")) {
+    return {
+      status: 502,
+      code: "supabase_upstream_error",
+      message: "Le service de donnees a renvoye une erreur. Verifie Supabase puis reessaie."
+    };
+  }
+
+  if (lower.includes("fetch failed") || lower.includes("network")) {
+    return {
+      status: 503,
+      code: "network_error",
+      message: "Connexion temporairement indisponible vers un service externe."
+    };
+  }
+
+  if (lower.includes("json exploitable") || lower.includes("reponse mistral invalide")) {
+    return {
+      status: 502,
+      code: "mistral_invalid_payload",
+      message: "Reponse IA invalide. Reessaie avec une question plus precise."
+    };
+  }
+
+  return {
+    status: 500,
+    code: "internal_error",
+    message: "Erreur pendant l'analyse IA."
+  };
 }
 
 async function parseQuestionWithMistral({ question, limit, apiKey }) {

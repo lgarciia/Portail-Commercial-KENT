@@ -548,7 +548,9 @@
         const data = await res.json();
 
         if (!res.ok || !data?.ok) {
-          throw new Error(data?.message || "Requete impossible.");
+          const msg = data?.message || "Requete impossible.";
+          const code = data?.errorCode ? ` [${data.errorCode}]` : "";
+          throw new Error(msg + code);
         }
 
         renderTable(data.columns || [], data.rows || []);
