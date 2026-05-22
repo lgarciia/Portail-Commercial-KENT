@@ -194,6 +194,34 @@
       gap: 8px;
     }
 
+    .quick-questions[hidden] {
+      display: none;
+    }
+
+    .quick-actions {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .ghost-btn {
+      width: auto;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      box-shadow: none;
+    }
+
+    .ghost-btn:hover {
+      color: #d9ebff;
+      border-color: rgba(47, 167, 255, 0.45);
+      background: rgba(47, 167, 255, 0.12);
+    }
+
     .q-chip {
       width: auto;
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -261,6 +289,54 @@
     .analysis-grid {
       display: grid;
       gap: 12px;
+    }
+
+    .chat-panel {
+      padding-bottom: 10px;
+    }
+
+    .chat-thread {
+      display: grid;
+      gap: 10px;
+      max-height: 290px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .chat-row {
+      display: flex;
+    }
+
+    .chat-row.user {
+      justify-content: flex-end;
+    }
+
+    .chat-bubble {
+      max-width: 86%;
+      border-radius: 14px;
+      padding: 10px 12px;
+      line-height: 1.45;
+      font-size: 0.85rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .chat-row.user .chat-bubble {
+      background: rgba(47, 167, 255, 0.2);
+      border-color: rgba(47, 167, 255, 0.35);
+      color: #e4f4ff;
+    }
+
+    .chat-row.assistant .chat-bubble {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: #dbe9ff;
+    }
+
+    .chat-meta {
+      display: block;
+      margin-top: 5px;
+      font-size: 0.72rem;
+      color: var(--muted);
     }
 
     .metric-box {
@@ -345,10 +421,7 @@
     <section class="card hero">
       <div class="hero-badge">Analyse Co</div>
       <h1>Analyse Co</h1>
-      <p>
-        Version renforcee: pas d'affichage technique de requete, lecture tableau prioritaire, insights,
-        recommandations actionnables et questions de relance pour pousser l'analyse.
-      </p>
+      <p>Pose ta question, lis le resultat, puis affine avec les suggestions.</p>
     </section>
 
     <section class="card">
@@ -373,6 +446,9 @@
       <div class="status" id="statusBox">Pret.</div>
 
       <div class="quick-questions" id="quickQuestions"></div>
+      <div class="quick-actions">
+        <button type="button" class="ghost-btn" id="resetSeenQuestionsBtn">Reafficher les suggestions</button>
+      </div>
     </section>
 
     <section class="layout">
@@ -389,6 +465,17 @@
       </article>
 
       <aside class="analysis-grid">
+        <section class="card metric-box chat-panel">
+          <h3>Conversation</h3>
+          <div class="chat-thread" id="chatThread">
+            <div class="chat-row assistant">
+              <div class="chat-bubble">
+                Salut, je suis pret. Pose ta question metier.
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="card metric-box">
           <h3>Synthese</h3>
           <div class="summary" id="summaryBox">Aucune analyse lancee.</div>
@@ -426,6 +513,8 @@
       loadingBox: document.getElementById("loadingBox"),
       statusBox: document.getElementById("statusBox"),
       quickQuestions: document.getElementById("quickQuestions"),
+      resetSeenQuestionsBtn: document.getElementById("resetSeenQuestionsBtn"),
+      chatThread: document.getElementById("chatThread"),
       summaryBox: document.getElementById("summaryBox"),
       finalBox: document.getElementById("finalBox"),
       metaBox: document.getElementById("metaBox"),
@@ -436,6 +525,8 @@
       tbody: document.getElementById("tbody")
     };
 
+    const SEEN_QUESTIONS_KEY = "analyse_co_seen_questions_v1";
+
     const defaultQuickQuestions = [
       "Quel est mon top 10 produit sur ce mois ?",
       "Quels clients ont le plus fort CA sur ce mois ?",
@@ -444,6 +535,8 @@
       "Donne-moi les produits qui performent le moins cette periode.",
       "Quelles actions urgentes recommandes-tu cette semaine ?"
     ];
+
+    const seenQuestions = loadSeenQuestions();
 
     function esc(value) {
       return String(value ?? "")
@@ -464,15 +557,116 @@
       dom.statusBox.textContent = message;
     }
 
+    function normalizeQuestionKey(question) {
+      return String(question || "").trim().toLowerCase();
+    }
+
+    function loadSeenQuestions() {
+      try {
+        const raw = localStorage.getItem(SEEN_QUESTIONS_KEY);
+        if (!raw) return new Set();
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return new Set();
+        return new Set(parsed.map(normalizeQuestionKey).filter(Boolean));
+      } catch {
+        return new Set();
+      }
+    }
+
+    function saveSeenQuestions() {
+      try {
+        localStorage.setItem(SEEN_QUESTIONS_KEY, JSON.stringify(Array.from(seenQuestions)));
+      } catch {}
+    }
+
+    function markQuestionAsSeen(question) {
+      const key = normalizeQuestionKey(question);
+      if (!key) return;
+      seenQuestions.add(key);
+      saveSeenQuestions();
+    }
+
+    function isQuestionSeen(question) {
+      return seenQuestions.has(normalizeQuestionKey(question));
+    }
+
+    function addChatMessage(role, message, meta = "") {
+      const row = document.createElement("div");
+      row.className = "chat-row " + (role === "user" ? "user" : "assistant");
+      const safeMessage = esc(message || "-");
+      const safeMeta = meta ? `<span class="chat-meta">${esc(meta)}</span>` : "";
+      row.innerHTML = `<div class="chat-bubble">${safeMessage}${safeMeta}</div>`;
+      dom.chatThread.appendChild(row);
+
+      while (dom.chatThread.children.length > 24) {
+        dom.chatThread.removeChild(dom.chatThread.firstChild);
+      }
+      dom.chatThread.scrollTop = dom.chatThread.scrollHeight;
+    }
+
+    function formatCurrency(value) {
+      return Number(value || 0).toLocaleString("fr-FR", {
+        style: "currency",
+        currency: "EUR",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function formatNumber(value) {
+      return Number(value || 0).toLocaleString("fr-FR", {
+        minimumFractionDigits: Number.isInteger(Number(value)) ? 0 : 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function looksLikeMoneyColumn(columnName) {
+      return /(ca|chiffre|euro|eur|montant|prix|panier|total)/i.test(String(columnName || ""));
+    }
+
+    function looksLikeNumericText(value) {
+      if (typeof value !== "string") return false;
+      const trimmed = value.trim();
+      if (!trimmed) return false;
+      return /^-?\d+(?:[.,]\d+)?$/.test(trimmed);
+    }
+
+    function formatCellValue(columnName, rawValue) {
+      if (rawValue == null) return "";
+      const column = String(columnName || "");
+      if (/id|compte|numero|reference|ref/i.test(column)) {
+        return String(rawValue);
+      }
+
+      const numericCandidate =
+        typeof rawValue === "number"
+          ? rawValue
+          : looksLikeNumericText(rawValue)
+            ? Number(String(rawValue).replace(",", "."))
+            : NaN;
+
+      if (!Number.isFinite(numericCandidate)) return String(rawValue);
+      if (looksLikeMoneyColumn(column)) return formatCurrency(numericCandidate);
+      return formatNumber(numericCandidate);
+    }
+
     function renderQuickQuestionButtons(questions) {
       const list = Array.isArray(questions) && questions.length ? questions : defaultQuickQuestions;
-      dom.quickQuestions.innerHTML = list.slice(0, 8).map(question => {
+      const filtered = list.filter(question => !isQuestionSeen(question));
+      if (!filtered.length) {
+        dom.quickQuestions.hidden = true;
+        return;
+      }
+
+      dom.quickQuestions.hidden = false;
+      dom.quickQuestions.innerHTML = filtered.slice(0, 8).map(question => {
         return `<button type="button" class="q-chip" data-question="${esc(question)}">${esc(question)}</button>`;
       }).join("");
 
       dom.quickQuestions.querySelectorAll("[data-question]").forEach(button => {
         button.addEventListener("click", () => {
           const question = button.getAttribute("data-question") || "";
+          markQuestionAsSeen(question);
           dom.questionInput.value = question;
           ask();
         });
@@ -494,7 +688,7 @@
       }
 
       dom.tbody.innerHTML = rows.map(row => {
-        return `<tr>${columns.map(col => `<td>${esc(row[col])}</td>`).join("")}</tr>`;
+        return `<tr>${columns.map(col => `<td>${esc(formatCellValue(col, row[col]))}</td>`).join("")}</tr>`;
       }).join("");
     }
 
@@ -508,18 +702,20 @@
 
     function renderFollowUpButtons(questions) {
       const list = Array.isArray(questions) && questions.length ? questions : [];
-      if (!list.length) {
+      const filtered = list.filter(question => !isQuestionSeen(question));
+      if (!filtered.length) {
         dom.followUpList.innerHTML = `<button type="button">Pose une question plus specifique pour generer des relances.</button>`;
         return;
       }
 
-      dom.followUpList.innerHTML = list.slice(0, 8).map(question => {
+      dom.followUpList.innerHTML = filtered.slice(0, 8).map(question => {
         return `<button type="button" data-followup="${esc(question)}">${esc(question)}</button>`;
       }).join("");
 
       dom.followUpList.querySelectorAll("[data-followup]").forEach(button => {
         button.addEventListener("click", () => {
           const question = button.getAttribute("data-followup") || "";
+          markQuestionAsSeen(question);
           dom.questionInput.value = question;
           ask();
         });
@@ -538,6 +734,8 @@
       try {
         setLoading(true);
         setStatus("Analyse en cours...", "");
+        markQuestionAsSeen(question);
+        addChatMessage("user", question);
 
         const res = await fetch("/api/ai-query", {
           method: "POST",
@@ -559,6 +757,7 @@
         dom.summaryBox.textContent = data.summary || "Analyse terminee.";
         dom.finalBox.textContent = data.finalResult || "-";
         dom.metaBox.textContent = `Intent: ${data.intent || "-"} | Lignes: ${(data.rows || []).length} | Periode: ${data.meta?.period || "-"}`;
+        addChatMessage("assistant", data.summary || "Analyse terminee.", data.finalResult || "");
 
         renderList(dom.insightsList, analysis.insights || [], "Aucun insight disponible.");
         renderList(dom.recommendationsList, analysis.recommendations || [], "Aucune recommandation disponible.");
@@ -569,6 +768,7 @@
       } catch (error) {
         console.error(error);
         dom.finalBox.textContent = "-";
+        addChatMessage("assistant", "Je n'ai pas pu terminer l'analyse.", error.message || "Erreur technique");
         renderList(dom.insightsList, [], "Aucun insight disponible.");
         renderList(dom.recommendationsList, [], "Aucune recommandation disponible.");
         renderFollowUpButtons([]);
@@ -581,6 +781,12 @@
     renderQuickQuestionButtons(defaultQuickQuestions);
 
     dom.askBtn.addEventListener("click", ask);
+    dom.resetSeenQuestionsBtn.addEventListener("click", () => {
+      seenQuestions.clear();
+      saveSeenQuestions();
+      renderQuickQuestionButtons(defaultQuickQuestions);
+      setStatus("Suggestions reaffichees.", "");
+    });
     dom.questionInput.addEventListener("keydown", event => {
       if (event.key === "Enter") ask();
     });
