@@ -26,7 +26,8 @@ const ALLOWED_INTENTS = new Set([
   "client_summary",
   "product_performance",
   "sales_by_period",
-  "compare_periods"
+  "compare_periods",
+  "action_plan"
 ]);
 
 const ALLOWED_VISUALIZATIONS = new Set(["table", "bar", "line", "pie"]);
@@ -40,10 +41,12 @@ const DEFAULT_VISUALIZATION_BY_INTENT = {
   client_summary: "table",
   product_performance: "bar",
   sales_by_period: "bar",
-  compare_periods: "bar"
+  compare_periods: "bar",
+  action_plan: "table"
 };
 
-const FORBIDDEN_MUTATION_PATTERN = /\b(insert|update|delete|drop|alter|create|truncate|grant|revoke)\b/i;
+const FORBIDDEN_MUTATION_PATTERN =
+  /\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|ajouter|supprimer|modifier|ecrire|inserer)\b/i;
 const FORBIDDEN_PROMPT_INJECTION_PATTERN =
   /\b(ignore\s+all|ignore\s+previous|system\s+prompt|developer\s+message|reveal\s+prompt|api[_\s-]?key|secret|token)\b/i;
 const ALLOWED_FILTER_KEYS = new Set([
@@ -137,8 +140,9 @@ const SYSTEM_PROMPT = [
   "- Limite max resultat: 1000.",
   "FORMAT OBLIGATOIRE:",
   "{\"intent\":\"...\",\"filters\":{},\"limit\":10,\"visualization\":\"table|bar|line|pie\"}",
+  "- Si l'utilisateur demande un plan d'action priorise (urgent/important/suivi), utilise l'intent action_plan.",
   "INTENTS AUTORISES:",
-  "top_products, top_clients, sales_evolution, inactive_clients, visit_history, client_summary, product_performance, sales_by_period, compare_periods",
+  "top_products, top_clients, sales_evolution, inactive_clients, visit_history, client_summary, product_performance, sales_by_period, compare_periods, action_plan",
   "Tu ne dois jamais sortir du JSON."
 ].join("\n");
 
@@ -151,7 +155,8 @@ const INTENT_SOURCE_TABLES = {
   client_summary: ["visites", "visite_commandes", "clients", "plaques", "produits"],
   product_performance: ["visites", "visite_commandes", "produits", "clients", "plaques"],
   sales_by_period: ["visites", "clients", "plaques"],
-  compare_periods: ["visites", "clients", "plaques"]
+  compare_periods: ["visites", "clients", "plaques"],
+  action_plan: ["visites", "clients", "plaques", "visite_commandes", "produits"]
 };
 
 export default async function handler(req, res) {
@@ -205,11 +210,14 @@ export default async function handler(req, res) {
       return jsonError(res, 400, validationError, { error: validationError });
     }
 
-    const modelResponse = await parseQuestionWithMistral({
-      question,
-      limit: requestedLimit,
-      apiKey: mistralApiKey
-    });
+    const autoActionPlan = buildAutoActionPlanIntent(question, requestedLimit);
+    const modelResponse =
+      autoActionPlan ||
+      (await parseQuestionWithMistral({
+        question,
+        limit: requestedLimit,
+        apiKey: mistralApiKey
+      }));
 
     const normalizedPlan = normalizeIntentPlan(modelResponse, requestedLimit);
     if (normalizedPlan.error) {
@@ -304,6 +312,39 @@ function validateQuestion(question) {
     return "Requete refusee pour raison de securite.";
   }
   return "";
+}
+
+function buildAutoActionPlanIntent(question, requestedLimit) {
+  const normalized = normalizeLabel(question);
+  if (!normalized) return null;
+
+  const hasPlanKeyword = /plan d[' ]?action|plan action/.test(normalized);
+  const looksLikeActionPlan =
+    hasPlanKeyword &&
+    (normalized.includes("priorise") || normalized.includes("urgent") || normalized.includes("important"));
+
+  if (!looksLikeActionPlan) return null;
+
+  const period = inferPeriodTokenFromQuestion(normalized);
+  return {
+    intent: "action_plan",
+    filters: { period },
+    limit: clampLimit(Math.min(requestedLimit || DEFAULT_LIMIT, 9), 3),
+    visualization: "table"
+  };
+}
+
+function inferPeriodTokenFromQuestion(normalizedQuestion) {
+  const text = String(normalizedQuestion || "");
+  if (!text) return "this_month";
+  if (text.includes("aujourd")) return "today";
+  if (text.includes("hier")) return "yesterday";
+  if (text.includes("semaine derniere") || text.includes("semaine precedente")) return "last_week";
+  if (text.includes("cette semaine")) return "this_week";
+  if (text.includes("mois dernier") || text.includes("mois precedent")) return "last_month";
+  if (text.includes("cette annee")) return "this_year";
+  if (text.includes("annee derniere") || text.includes("annee precedente")) return "last_year";
+  return "this_month";
 }
 
 function getRequestKey(req, sessionValue) {
@@ -596,6 +637,8 @@ async function runReadOnlyAnalytics(plan) {
       return buildSalesByPeriod({ plan, period, normalizedFilters, clientsById, plaquesById, visites });
     case "compare_periods":
       return buildComparePeriods({ plan, normalizedFilters, clientsById, plaquesById, visites });
+    case "action_plan":
+      return buildActionPlan({ plan, period, normalizedFilters, clients, clientsById, plaquesById, visites });
     default:
       return {
         columns: ["message"],
@@ -708,6 +751,14 @@ function buildRecommendations(intent, rows, columns, periodLabel) {
     ];
   }
 
+  if (intent === "action_plan") {
+    return [
+      "Lancer l'axe urgent dans les 7 prochains jours avec un owner nomme.",
+      "Mesurer chaque action avec un KPI cible avant execution.",
+      "Revue hebdomadaire pour ajuster les priorites urgent/important/suivi."
+    ];
+  }
+
   return baseRecommendations;
 }
 
@@ -740,6 +791,16 @@ function buildFollowUpQuestions(intent, periodLabel) {
       "Quelle plaque tire le plus la croissance sur la periode ?",
       ...common
     ].slice(0, 5);
+  }
+
+  if (intent === "action_plan") {
+    return [
+      "Peux-tu detailler le niveau urgent en checklist operationnelle sur 7 jours ?",
+      "Quels KPI dois-je suivre pour chaque niveau du plan ?",
+      "Peux-tu adapter ce plan par plaque commerciale ?",
+      "Quel est le risque business si je decale le niveau urgent de 2 semaines ?",
+      "Peux-tu generer un plan d'action 30-60-90 jours ?"
+    ];
   }
 
   return common.slice(0, 5);
@@ -1257,6 +1318,103 @@ function buildComparePeriods({ plan, normalizedFilters, clientsById, visites }) 
         ? "Periode B a un CA nul, pourcentage non calcule."
         : `Variation CA HT: ${formatNumberFr(variationPct)} %.`,
     periodLabel: `${periodA.label} vs ${periodB.label}`
+  };
+}
+
+function buildActionPlan({ plan, period, normalizedFilters, clients, clientsById, plaquesById, visites }) {
+  const scopedVisits = filterVisits(visites, {
+    clientsById,
+    plaqueIdSet: normalizedFilters.plaqueIdSet,
+    clientIdSet: normalizedFilters.clientIdSet,
+    period,
+    onlySales: false
+  });
+
+  const salesVisits = scopedVisits.filter(isSaleVisit);
+  const noSaleVisits = scopedVisits.length - salesVisits.length;
+  const salesMetrics = summarizeVisits(salesVisits);
+  const noSaleRate = scopedVisits.length ? round2((noSaleVisits / scopedVisits.length) * 100) : 0;
+
+  const scopedAllTimeVisits = filterVisits(visites, {
+    clientsById,
+    plaqueIdSet: normalizedFilters.plaqueIdSet,
+    clientIdSet: normalizedFilters.clientIdSet,
+    period: null,
+    onlySales: false
+  });
+
+  const eligibleClientIds = resolveEligibleClientIds(clients, normalizedFilters) || new Set(
+    clients.map(client => String(client?.id || "")).filter(Boolean)
+  );
+
+  const lastVisitByClient = new Map();
+  for (const visit of scopedAllTimeVisits) {
+    const clientId = String(visit?.client_id || "");
+    const dateIso = normalizeDate(visit?.date_visite);
+    if (!clientId || !dateIso) continue;
+    const previous = lastVisitByClient.get(clientId);
+    if (!previous || dateIso > previous) {
+      lastVisitByClient.set(clientId, dateIso);
+    }
+  }
+
+  const todayIso = toIsoDate(getTodayDateParis());
+  let inactiveOver60 = 0;
+  for (const clientId of eligibleClientIds) {
+    const lastDate = lastVisitByClient.get(clientId);
+    if (!lastDate) {
+      inactiveOver60 += 1;
+      continue;
+    }
+    const days = daysBetween(lastDate, todayIso);
+    if (days != null && days > 60) inactiveOver60 += 1;
+  }
+
+  const plaqueSales = new Map();
+  for (const visit of salesVisits) {
+    const client = clientsById.get(String(visit?.client_id || "")) || {};
+    const plaqueLabel = getPlaqueLabel(client?.plaque_id, plaquesById);
+    if (!plaqueSales.has(plaqueLabel)) plaqueSales.set(plaqueLabel, 0);
+    plaqueSales.set(plaqueLabel, round2(plaqueSales.get(plaqueLabel) + toNumber(visit?.total_commande)));
+  }
+
+  const topPlaque = Array.from(plaqueSales.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
+  const urgentAction = inactiveOver60 > 0 || noSaleRate >= 30
+    ? `Relancer sous 7 jours ${inactiveOver60} client(s) inactif(s) >60j et traiter ${noSaleVisits} visite(s) sans vente.`
+    : "Maintenir la cadence commerciale et traiter immediatement toute visite sans vente.";
+
+  const importantAction = `Concentrer les actions commerciales sur la plaque ${topPlaque} et viser une hausse de panier moyen de 8 a 12 %.`;
+  const followAction = "Mettre en place un rituel hebdomadaire de suivi (KPI, relances, ecarts vs objectif).";
+
+  const rows = [
+    {
+      niveau: "urgent",
+      priorite: 1,
+      action: urgentAction,
+      impact_attendu: "Reduction du risque de perte client et recuperation rapide du CA."
+    },
+    {
+      niveau: "important",
+      priorite: 2,
+      action: importantAction,
+      impact_attendu: "Amelioration du chiffre d'affaires et du panier moyen."
+    },
+    {
+      niveau: "suivi",
+      priorite: 3,
+      action: followAction,
+      impact_attendu: "Pilotage stable et continu de la performance commerciale."
+    }
+  ].slice(0, plan.limit);
+
+  return {
+    columns: ["niveau", "priorite", "action", "impact_attendu"],
+    rows,
+    summary: `Plan d'action priorise genere sur ${period.label}.`,
+    finalResult:
+      `Base analysee: ${scopedVisits.length} visites, CA ${formatNumberFr(salesMetrics.ca)} EUR, ` +
+      `${inactiveOver60} client(s) inactif(s) >60j, ${formatNumberFr(noSaleRate)} % de visites sans vente.`,
+    periodLabel: period.label
   };
 }
 
