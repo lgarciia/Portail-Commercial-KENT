@@ -6,6 +6,11 @@ const MAX_RESPONSE_ROWS = 1000;
 const DEFAULT_LIMIT = 10;
 const PAGE_SIZE = 1000;
 const MAX_FETCH_ROWS = 50000;
+const MAX_QUESTION_LENGTH = 600;
+const MAX_BODY_LENGTH = 12000;
+const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 18;
+const RATE_LIMIT_STORE = new Map();
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -39,6 +44,35 @@ const DEFAULT_VISUALIZATION_BY_INTENT = {
 };
 
 const FORBIDDEN_MUTATION_PATTERN = /\b(insert|update|delete|drop|alter|create|truncate|grant|revoke)\b/i;
+const FORBIDDEN_PROMPT_INJECTION_PATTERN =
+  /\b(ignore\s+all|ignore\s+previous|system\s+prompt|developer\s+message|reveal\s+prompt|api[_\s-]?key|secret|token)\b/i;
+const ALLOWED_FILTER_KEYS = new Set([
+  "plaque",
+  "plaques",
+  "entity",
+  "entities",
+  "client_id",
+  "client_ids",
+  "client",
+  "client_name",
+  "nom_client",
+  "numero_compte",
+  "account",
+  "product",
+  "product_name",
+  "product_ref",
+  "reference",
+  "ref",
+  "period",
+  "period_a",
+  "period_b",
+  "start_date",
+  "end_date",
+  "date_start",
+  "date_end",
+  "inactive_since",
+  "granularity"
+]);
 
 const PLAQUE_ALIAS_TO_CANONICAL = new Map([
   ["psa", "PSA Tarif Revente"],
@@ -122,6 +156,8 @@ const INTENT_SOURCE_TABLES = {
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "same-origin");
 
   if (req.method !== "POST") {
     return jsonError(res, 405, "Method not allowed");
@@ -139,6 +175,13 @@ export default async function handler(req, res) {
       return jsonError(res, 401, "Session invalide. Reconnecte-toi.");
     }
 
+    const requestKey = getRequestKey(req, sessionValue);
+    const rateLimit = enforceRateLimit(requestKey);
+    if (!rateLimit.ok) {
+      res.setHeader("Retry-After", String(rateLimit.retryAfterSeconds));
+      return jsonError(res, 429, "Trop de requetes. Reessaie dans quelques instants.");
+    }
+
     const mistralApiKey = String(process.env.MISTRAL_API_KEY || "").trim();
     if (!mistralApiKey) {
       return jsonError(res, 500, "MISTRAL_API_KEY manquante dans les variables d'environnement.");
@@ -151,15 +194,15 @@ export default async function handler(req, res) {
     const payload = normalizeBody(req.body);
     const question = String(payload?.question || "").trim();
     const requestedLimit = clampLimit(payload?.limit, DEFAULT_LIMIT);
+    const rawPayloadLength = estimatePayloadSize(req.body, payload);
 
-    if (!question) {
-      return jsonError(res, 400, "Question obligatoire.");
+    if (rawPayloadLength > MAX_BODY_LENGTH) {
+      return jsonError(res, 413, "Charge trop volumineuse.");
     }
 
-    if (FORBIDDEN_MUTATION_PATTERN.test(question)) {
-      return jsonError(res, 400, "Modification de donnees interdite", {
-        error: "Modification de donnees interdite"
-      });
+    const validationError = validateQuestion(question);
+    if (validationError) {
+      return jsonError(res, 400, validationError, { error: validationError });
     }
 
     const modelResponse = await parseQuestionWithMistral({
@@ -180,23 +223,25 @@ export default async function handler(req, res) {
     }
 
     const analytics = await runReadOnlyAnalytics(normalizedPlan);
+    const analysisPack = buildAdvancedAnalysis({ plan: normalizedPlan, analytics });
 
     return res.status(200).json({
       ok: true,
       question,
       intent: normalizedPlan.intent,
       visualization: normalizedPlan.visualization,
-      queryPlan: normalizedPlan,
       summary: analytics.summary,
       finalResult: analytics.finalResult,
       columns: analytics.columns,
       rows: analytics.rows,
+      analysis: analysisPack,
       meta: {
         sourceTables: INTENT_SOURCE_TABLES[normalizedPlan.intent] || [],
         limitApplied: normalizedPlan.limit,
         rowCount: analytics.rows.length,
         period: analytics.periodLabel || null,
-        scope: "global_read_only"
+        scope: "global_read_only",
+        safeguards: ["session_guard", "read_only_flow", "intent_whitelist", "rate_limit", "filter_sanitization"]
       }
     });
   } catch (error) {
@@ -233,6 +278,68 @@ function clampLimit(value, fallback = DEFAULT_LIMIT) {
   if (rounded < 1) return 1;
   if (rounded > MAX_RESPONSE_ROWS) return MAX_RESPONSE_ROWS;
   return rounded;
+}
+
+function estimatePayloadSize(rawBody, parsedBody) {
+  if (typeof rawBody === "string") return rawBody.length;
+  try {
+    return JSON.stringify(parsedBody || {}).length;
+  } catch {
+    return 0;
+  }
+}
+
+function validateQuestion(question) {
+  if (!question) return "Question obligatoire.";
+  if (question.length > MAX_QUESTION_LENGTH) {
+    return `Question trop longue (${MAX_QUESTION_LENGTH} caracteres max).`;
+  }
+  if (FORBIDDEN_MUTATION_PATTERN.test(question)) {
+    return "Modification de donnees interdite";
+  }
+  if (FORBIDDEN_PROMPT_INJECTION_PATTERN.test(question)) {
+    return "Requete refusee pour raison de securite.";
+  }
+  return "";
+}
+
+function getRequestKey(req, sessionValue) {
+  const xff = String(req.headers?.["x-forwarded-for"] || "").split(",")[0].trim();
+  const realIp = String(req.headers?.["x-real-ip"] || "").trim();
+  const ip = xff || realIp || "unknown";
+  const sessionHash = signValue(String(sessionValue || ""), "session-salt").slice(0, 16);
+  return `${ip}:${sessionHash}`;
+}
+
+function enforceRateLimit(key) {
+  const now = Date.now();
+  if (RATE_LIMIT_STORE.size > 2000) {
+    for (const [storedKey, item] of RATE_LIMIT_STORE.entries()) {
+      if (now - Number(item?.startedAt || 0) > RATE_LIMIT_WINDOW_MS) {
+        RATE_LIMIT_STORE.delete(storedKey);
+      }
+    }
+  }
+
+  const bucket = RATE_LIMIT_STORE.get(key);
+
+  if (!bucket || now - bucket.startedAt > RATE_LIMIT_WINDOW_MS) {
+    RATE_LIMIT_STORE.set(key, { startedAt: now, count: 1 });
+    return { ok: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1, retryAfterSeconds: 0 };
+  }
+
+  if (bucket.count >= RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfterMs = RATE_LIMIT_WINDOW_MS - (now - bucket.startedAt);
+    return {
+      ok: false,
+      remaining: 0,
+      retryAfterSeconds: Math.max(1, Math.ceil(retryAfterMs / 1000))
+    };
+  }
+
+  bucket.count += 1;
+  RATE_LIMIT_STORE.set(key, bucket);
+  return { ok: true, remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - bucket.count), retryAfterSeconds: 0 };
 }
 
 async function parseQuestionWithMistral({ question, limit, apiKey }) {
@@ -342,7 +449,7 @@ function normalizeIntentPlan(rawPlan, requestLimit) {
     return { error: "Demande ambigue" };
   }
 
-  const filters = rawPlan.filters && typeof rawPlan.filters === "object" ? rawPlan.filters : {};
+  const filters = sanitizeFilters(rawPlan.filters);
   const limitedByModel = clampLimit(rawPlan.limit, requestLimit);
   const limit = clampLimit(Math.min(requestLimit, limitedByModel), requestLimit);
 
@@ -357,6 +464,46 @@ function normalizeIntentPlan(rawPlan, requestLimit) {
     limit,
     visualization
   };
+}
+
+function sanitizeFilters(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return {};
+  const result = {};
+
+  for (const [key, value] of Object.entries(input)) {
+    if (!ALLOWED_FILTER_KEYS.has(key)) continue;
+
+    if (value == null) continue;
+
+    if (Array.isArray(value)) {
+      const cleanedArray = value
+        .slice(0, 20)
+        .map(item => sanitizeScalar(item))
+        .filter(item => item !== null);
+
+      if (cleanedArray.length) result[key] = cleanedArray;
+      continue;
+    }
+
+    const cleanedValue = sanitizeScalar(value);
+    if (cleanedValue !== null) result[key] = cleanedValue;
+  }
+
+  return result;
+}
+
+function sanitizeScalar(value) {
+  if (typeof value === "boolean") return value;
+
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null;
+    return value;
+  }
+
+  const str = String(value || "").trim();
+  if (!str) return null;
+  if (str.length > 120) return str.slice(0, 120);
+  return str;
 }
 
 async function runReadOnlyAnalytics(plan) {
@@ -412,6 +559,160 @@ async function runReadOnlyAnalytics(plan) {
         periodLabel: period.label
       };
   }
+}
+
+function buildAdvancedAnalysis({ plan, analytics }) {
+  const rows = Array.isArray(analytics?.rows) ? analytics.rows : [];
+  const columns = Array.isArray(analytics?.columns) ? analytics.columns : [];
+  const periodLabel = String(analytics?.periodLabel || "periode analysee");
+  const insights = buildInsightsFromRows(rows, columns, periodLabel);
+  const recommendations = buildRecommendations(plan.intent, rows, columns, periodLabel);
+  const followUpQuestions = buildFollowUpQuestions(plan.intent, periodLabel);
+
+  return {
+    confidence: rows.length ? "high" : "medium",
+    insights,
+    recommendations,
+    followUpQuestions,
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function buildInsightsFromRows(rows, columns, periodLabel) {
+  if (!rows.length) {
+    return [
+      `Aucune ligne retournee sur ${periodLabel}.`,
+      "Elargis la periode ou retire un filtre pour enrichir l'analyse."
+    ];
+  }
+
+  const labelColumn = findLabelColumn(columns);
+  const valueColumn = findPrimaryNumericColumn(columns, rows);
+  const insights = [];
+
+  insights.push(`${rows.length} ligne(s) exploitable(s) sur ${periodLabel}.`);
+
+  if (valueColumn) {
+    const sorted = rows
+      .map(row => ({ row, value: toNumber(row?.[valueColumn]) }))
+      .sort((a, b) => b.value - a.value);
+
+    const top = sorted[0];
+    const topLabel = labelColumn ? String(top?.row?.[labelColumn] || "-") : "Top resultat";
+    insights.push(`Leader actuel: ${topLabel} avec ${formatNumberFr(top.value)} (${valueColumn}).`);
+
+    if (sorted.length >= 2 && sorted[1].value > 0) {
+      const gapPct = round2(((top.value - sorted[1].value) / sorted[1].value) * 100);
+      insights.push(`Ecart vs 2eme position: ${formatNumberFr(gapPct)} %.`);
+    }
+
+    const total = round2(sorted.reduce((sum, item) => sum + item.value, 0));
+    const average = round2(total / sorted.length);
+    insights.push(`Volume total observe: ${formatNumberFr(total)} | moyenne: ${formatNumberFr(average)}.`);
+  }
+
+  if (!valueColumn) {
+    insights.push("Aucune mesure numerique detectee: analyse qualitative privilegiee.");
+  }
+
+  return insights.slice(0, 5);
+}
+
+function buildRecommendations(intent, rows, columns, periodLabel) {
+  const valueColumn = findPrimaryNumericColumn(columns, rows);
+  const labelColumn = findLabelColumn(columns);
+  const topRows = rows.slice(0, 3);
+  const topNames = labelColumn ? topRows.map(row => String(row?.[labelColumn] || "-")).filter(Boolean) : [];
+
+  const baseRecommendations = [
+    "Valider les 3 premiers resultats avec les equipes terrain avant diffusion large.",
+    `Suivre cette meme analyse chaque semaine pour comparer la tendance sur ${periodLabel}.`,
+    "Ajouter un seuil d'alerte automatique sur les indicateurs en baisse."
+  ];
+
+  if (intent === "top_clients" && topNames.length) {
+    return [
+      `Lancer une action de fidelisation sur: ${topNames.join(", ")}.`,
+      "Preparer une offre de cross-sell ciblee pour les comptes les plus rentables.",
+      "Mettre en place un suivi hebdo des clients a fort panier moyen."
+    ];
+  }
+
+  if (intent === "top_products" && topNames.length) {
+    return [
+      `Prioriser le stock et la visibilite commerciale sur: ${topNames.join(", ")}.`,
+      "Construire une offre pack avec les produits en tete pour augmenter le panier moyen.",
+      "Suivre les ruptures et delais d'approvisionnement sur ces references."
+    ];
+  }
+
+  if (intent === "sales_evolution" && valueColumn) {
+    return [
+      `Mettre en place un point de pilotage sur ${valueColumn} pour detecter les variations rapides.`,
+      "Segmenter ensuite la tendance par plaque pour isoler les poches de croissance.",
+      "Definir une action immediate si la tendance baisse sur 2 periodes consecutives."
+    ];
+  }
+
+  if (intent === "inactive_clients") {
+    return [
+      "Declencher une campagne de relance par priorite (inactifs les plus anciens d'abord).",
+      "Associer un motif de non-achat pour chaque client relance afin d'ajuster l'offre.",
+      "Fixer un objectif de reactivation mensuel avec suivi dans le tableau de bord."
+    ];
+  }
+
+  return baseRecommendations;
+}
+
+function buildFollowUpQuestions(intent, periodLabel) {
+  const common = [
+    `Peux-tu comparer cette analyse avec la periode precedente de ${periodLabel} ?`,
+    "Quels sont les 5 elements qui baissent le plus et pourquoi ?",
+    "Peux-tu me sortir un plan d'action priorise en 3 niveaux (urgent, important, suivi) ?"
+  ];
+
+  if (intent === "top_clients") {
+    return [
+      "Qui sont les clients a fort CA mais faible frequence de visite ?",
+      "Quels clients ont le plus fort potentiel de croissance sur 30 jours ?",
+      ...common
+    ].slice(0, 5);
+  }
+
+  if (intent === "top_products") {
+    return [
+      "Quels produits du top ont une marge potentielle la plus elevee ?",
+      "Quels produits sont souvent achetes ensemble dans les visites ?",
+      ...common
+    ].slice(0, 5);
+  }
+
+  if (intent === "sales_evolution") {
+    return [
+      "A quelle date la variation la plus forte apparait-elle ?",
+      "Quelle plaque tire le plus la croissance sur la periode ?",
+      ...common
+    ].slice(0, 5);
+  }
+
+  return common.slice(0, 5);
+}
+
+function findLabelColumn(columns) {
+  if (!Array.isArray(columns) || !columns.length) return "";
+  return (
+    columns.find(col => /nom|designation|reference|client|plaque|periode|date/i.test(String(col || ""))) ||
+    String(columns[0] || "")
+  );
+}
+
+function findPrimaryNumericColumn(columns, rows) {
+  if (!Array.isArray(columns) || !Array.isArray(rows)) return "";
+  return (
+    columns.find(col => rows.some(row => Number.isFinite(Number(row?.[col])))) ||
+    ""
+  );
 }
 
 function buildTopProducts({ plan, period, normalizedFilters, clientsById, produitsById, visites, commandes }) {

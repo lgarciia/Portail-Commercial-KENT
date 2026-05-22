@@ -4,150 +4,357 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>IA Analytics - KENT</title>
+  <title>IA Analytics Pro - KENT</title>
   <script src="./shared-ui.js"></script>
   <link rel="stylesheet" href="./shared-theme.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <style>
-    :root{
-      --bg:#07101a;
-      --card:#0e1b2a;
-      --line:rgba(255,255,255,.09);
-      --text:#eef4ff;
-      --muted:#9fb2cb;
-      --accent:#2f7bf6;
-      --accent-2:#1d4ed8;
-      --danger:#ef4444;
-      --ok:#22c55e;
+    :root {
+      --bg: #071019;
+      --panel: rgba(8, 18, 30, 0.78);
+      --panel-strong: rgba(11, 26, 43, 0.96);
+      --line: rgba(255, 255, 255, 0.11);
+      --text: #ebf3ff;
+      --muted: #97aec8;
+      --accent: #2fa7ff;
+      --accent-2: #1b77f2;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --err: #ef4444;
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --shadow: 0 24px 52px rgba(2, 8, 19, 0.45);
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:"Aptos","Segoe UI",sans-serif;
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Aptos", "Segoe UI", sans-serif;
+      color: var(--text);
+      min-height: 100vh;
       background:
-        radial-gradient(circle at 15% 0%,rgba(47,123,246,.2),transparent 40%),
-        radial-gradient(circle at 100% 0%,rgba(34,197,94,.12),transparent 34%),
-        linear-gradient(150deg,#06101a,#0a1826);
-      color:var(--text);
-      min-height:100vh;
-      padding:22px;
+        radial-gradient(circle at 10% -5%, rgba(47, 167, 255, 0.24), transparent 36%),
+        radial-gradient(circle at 92% 8%, rgba(34, 197, 94, 0.15), transparent 30%),
+        radial-gradient(circle at 50% 115%, rgba(245, 158, 11, 0.14), transparent 35%),
+        linear-gradient(150deg, #050d16 0%, #081422 58%, #091a2b 100%);
+      padding: 22px;
     }
-    .wrap{max-width:1300px;margin:0 auto}
-    .hero{
-      border:1px solid var(--line);
-      border-radius:22px;
-      background:linear-gradient(160deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
-      padding:18px;
-      margin-bottom:16px;
+
+    .wrap {
+      max-width: 1480px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
     }
-    .hero h1{margin:0;font-size:1.5rem;letter-spacing:-.02em}
-    .hero p{margin:8px 0 0;color:var(--muted)}
-    .card{
-      border:1px solid var(--line);
-      border-radius:18px;
-      background:var(--card);
-      padding:16px;
-      margin-bottom:14px;
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      padding: 18px;
     }
-    .q-grid{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) 130px 140px;
-      gap:10px;
-      align-items:end;
+
+    .hero {
+      background:
+        linear-gradient(145deg, rgba(10, 21, 35, 0.9), rgba(10, 25, 42, 0.84)),
+        var(--panel);
+      overflow: hidden;
+      position: relative;
     }
-    label{font-size:.85rem;color:var(--muted);display:block;margin-bottom:6px}
-    input,button{
-      width:100%;
-      border-radius:12px;
-      border:1px solid var(--line);
-      padding:11px 12px;
-      font-size:.95rem;
-      color:var(--text);
-      background:rgba(255,255,255,.04);
-      outline:none;
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 999px;
+      right: -88px;
+      top: -95px;
+      background: radial-gradient(circle, rgba(47, 167, 255, 0.3), transparent 66%);
+      pointer-events: none;
     }
-    input:focus{border-color:rgba(47,123,246,.55);box-shadow:0 0 0 3px rgba(47,123,246,.15)}
-    button{
-      background:linear-gradient(135deg,var(--accent),var(--accent-2));
-      border:none;
-      font-weight:700;
-      cursor:pointer;
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 2.8vw, 2rem);
+      letter-spacing: -0.03em;
     }
-    button[disabled]{opacity:.6;cursor:not-allowed}
-    .status{
-      margin-top:10px;
-      font-size:.9rem;
-      color:var(--muted);
+
+    .hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 78ch;
+      line-height: 1.5;
+      font-size: 0.95rem;
     }
-    .status.ok{color:#c7ffe1}
-    .status.err{color:#fecaca}
-    .summary{font-size:.95rem;color:#dbe7fb}
-    .json-box{
-      margin:12px 0;
-      border:1px solid var(--line);
-      border-radius:12px;
-      background:rgba(0,0,0,.2);
-      padding:10px;
-      color:#cfe2ff;
-      max-height:210px;
-      overflow:auto;
-      font-size:.78rem;
-      line-height:1.45;
-      white-space:pre-wrap;
-      word-break:break-word;
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(47, 167, 255, 0.3);
+      background: rgba(47, 167, 255, 0.12);
+      color: #dff2ff;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
     }
-    .layout{
-      display:grid;
-      grid-template-columns:minmax(360px,480px) minmax(0,1fr);
-      gap:14px;
+
+    .query-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 128px 150px;
+      gap: 10px;
+      align-items: end;
     }
-    .table-shell{
-      overflow:auto;
-      border:1px solid var(--line);
-      border-radius:14px;
-      max-height:520px;
+
+    label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
     }
-    table{width:100%;border-collapse:collapse;min-width:760px}
-    th,td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;font-size:.86rem}
-    th{position:sticky;top:0;background:#10233a;color:#dbe7fb;text-transform:uppercase;letter-spacing:.06em;font-size:.74rem}
-    .muted{color:var(--muted)}
-    .loading{display:none;margin-top:10px}
-    .loading.active{display:block}
-    .loading-bar{
-      width:100%;
-      height:7px;
-      border-radius:999px;
-      background:rgba(255,255,255,.07);
-      overflow:hidden;
+
+    input,
+    button {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 11px 12px;
+      font-size: 0.93rem;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+      outline: none;
     }
-    .loading-bar span{
-      display:block;
-      width:35%;
-      height:100%;
-      background:linear-gradient(90deg,#4f8df7,#74b0ff);
-      animation:move 1.1s linear infinite;
+
+    input:focus {
+      border-color: rgba(47, 167, 255, 0.65);
+      box-shadow: 0 0 0 4px rgba(47, 167, 255, 0.14);
     }
-    @keyframes move{
-      from{transform:translateX(-120%)}
-      to{transform:translateX(320%)}
+
+    button {
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 12px 26px rgba(47, 167, 255, 0.3);
     }
-    @media (max-width:980px){
-      .q-grid{grid-template-columns:1fr}
-      .layout{grid-template-columns:1fr}
+
+    button[disabled] {
+      opacity: 0.58;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      min-height: 20px;
+    }
+
+    .status.ok { color: #bef6cf; }
+    .status.err { color: #fecaca; }
+
+    .loading {
+      margin-top: 10px;
+      display: none;
+    }
+
+    .loading.active { display: block; }
+
+    .loading-line {
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .loading-line span {
+      display: block;
+      width: 30%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #50c3ff, #68f5c0);
+      animation: move 1.1s linear infinite;
+    }
+
+    .quick-questions {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .q-chip {
+      width: auto;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      padding: 8px 11px;
+      font-size: 0.79rem;
+      color: #d9e8fb;
+      box-shadow: none;
+    }
+
+    .q-chip:hover {
+      background: rgba(47, 167, 255, 0.14);
+      border-color: rgba(47, 167, 255, 0.38);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(340px, 0.95fr);
+      gap: 14px;
+    }
+
+    .section-title {
+      margin: 0 0 10px;
+      font-size: 1.03rem;
+      letter-spacing: -0.01em;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      overflow: auto;
+      background: var(--panel-strong);
+      max-height: 70vh;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    th,
+    td {
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: left;
+      font-size: 0.84rem;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #0f2338;
+      color: #dbe7fb;
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      z-index: 2;
+    }
+
+    .muted { color: var(--muted); }
+
+    .analysis-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .metric-box {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 12px;
+    }
+
+    .metric-box h3 {
+      margin: 0 0 8px;
+      font-size: 0.93rem;
+      color: #dce9ff;
+    }
+
+    .summary {
+      font-size: 0.95rem;
+      line-height: 1.55;
+      color: #dce9ff;
+    }
+
+    .final-result {
+      margin: 10px 0 0;
+      color: #b7d7ff;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 7px;
+      color: #dbe7fb;
+      line-height: 1.45;
+      font-size: 0.87rem;
+    }
+
+    .follow-up {
+      display: grid;
+      gap: 8px;
+    }
+
+    .follow-up button {
+      text-align: left;
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      padding: 10px 11px;
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 0.84rem;
+      color: #deecff;
+      box-shadow: none;
+    }
+
+    .follow-up button:hover {
+      border-color: rgba(104, 245, 192, 0.38);
+      background: rgba(104, 245, 192, 0.12);
+    }
+
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.77rem;
+      line-height: 1.45;
+    }
+
+    @keyframes move {
+      from { transform: translateX(-120%); }
+      to { transform: translateX(340%); }
+    }
+
+    @media (max-width: 1060px) {
+      .query-grid { grid-template-columns: 1fr; }
+      .layout { grid-template-columns: 1fr; }
+      table { min-width: 740px; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <section class="hero">
-      <h1>IA Analytics</h1>
-      <p>Assistant conversationnel premium en lecture seule: question, interpretation JSON, tableau, graphe et resultat final.</p>
+    <section class="card hero">
+      <div class="hero-badge">IA analytics pro</div>
+      <h1>Pilotage analytique securise et oriente decision</h1>
+      <p>
+        Version renforcee: pas d'affichage technique de requete, lecture tableau prioritaire, insights,
+        recommandations actionnables et questions de relance pour pousser l'analyse.
+      </p>
     </section>
 
     <section class="card">
-      <div class="q-grid">
+      <div class="query-grid">
         <div>
-          <label for="questionInput">Question</label>
+          <label for="questionInput">Question metier</label>
           <input id="questionInput" type="text" value="Quel est mon top 10 produit sur ce mois ?" />
         </div>
         <div>
@@ -161,18 +368,17 @@
       </div>
 
       <div class="loading" id="loadingBox">
-        <div class="loading-bar"><span></span></div>
+        <div class="loading-line"><span></span></div>
       </div>
       <div class="status" id="statusBox">Pret.</div>
+
+      <div class="quick-questions" id="quickQuestions"></div>
     </section>
 
     <section class="layout">
       <article class="card">
-        <div class="summary" id="summaryBox">Aucune analyse lancee.</div>
-        <p class="muted" id="finalBox">-</p>
-        <pre class="json-box" id="planBox">{}</pre>
-        <p class="muted" id="metaBox">-</p>
-        <div class="table-shell">
+        <h2 class="section-title">Tableau de resultat</h2>
+        <div class="table-wrap">
           <table>
             <thead id="thead"></thead>
             <tbody id="tbody">
@@ -182,29 +388,62 @@
         </div>
       </article>
 
-      <article class="card">
-        <canvas id="chartCanvas" height="250"></canvas>
-      </article>
+      <aside class="analysis-grid">
+        <section class="card metric-box">
+          <h3>Synthese</h3>
+          <div class="summary" id="summaryBox">Aucune analyse lancee.</div>
+          <p class="final-result" id="finalBox">-</p>
+          <div class="meta" id="metaBox">-</div>
+        </section>
+
+        <section class="card metric-box">
+          <h3>Insights cles</h3>
+          <ul class="list" id="insightsList">
+            <li class="muted">Les insights apparaitront ici.</li>
+          </ul>
+        </section>
+
+        <section class="card metric-box">
+          <h3>Recommandations</h3>
+          <ul class="list" id="recommendationsList">
+            <li class="muted">Les recommandations apparaitront ici.</li>
+          </ul>
+        </section>
+
+        <section class="card metric-box">
+          <h3>Questions a poser ensuite</h3>
+          <div class="follow-up" id="followUpList"></div>
+        </section>
+      </aside>
     </section>
   </div>
 
   <script>
-    let chart = null;
-
     const dom = {
       questionInput: document.getElementById("questionInput"),
       limitInput: document.getElementById("limitInput"),
       askBtn: document.getElementById("askBtn"),
       loadingBox: document.getElementById("loadingBox"),
       statusBox: document.getElementById("statusBox"),
+      quickQuestions: document.getElementById("quickQuestions"),
       summaryBox: document.getElementById("summaryBox"),
       finalBox: document.getElementById("finalBox"),
-      planBox: document.getElementById("planBox"),
       metaBox: document.getElementById("metaBox"),
+      insightsList: document.getElementById("insightsList"),
+      recommendationsList: document.getElementById("recommendationsList"),
+      followUpList: document.getElementById("followUpList"),
       thead: document.getElementById("thead"),
-      tbody: document.getElementById("tbody"),
-      chartCanvas: document.getElementById("chartCanvas")
+      tbody: document.getElementById("tbody")
     };
+
+    const defaultQuickQuestions = [
+      "Quel est mon top 10 produit sur ce mois ?",
+      "Quels clients ont le plus fort CA sur ce mois ?",
+      "Compare ce mois avec le mois dernier.",
+      "Quels clients sont inactifs depuis 2 mois ?",
+      "Donne-moi les produits qui performent le moins cette periode.",
+      "Quelles actions urgentes recommandes-tu cette semaine ?"
+    ];
 
     function esc(value) {
       return String(value ?? "")
@@ -225,70 +464,72 @@
       dom.statusBox.textContent = message;
     }
 
+    function renderQuickQuestionButtons(questions) {
+      const list = Array.isArray(questions) && questions.length ? questions : defaultQuickQuestions;
+      dom.quickQuestions.innerHTML = list.slice(0, 8).map(question => {
+        return `<button type="button" class="q-chip" data-question="${esc(question)}">${esc(question)}</button>`;
+      }).join("");
+
+      dom.quickQuestions.querySelectorAll("[data-question]").forEach(button => {
+        button.addEventListener("click", () => {
+          const question = button.getAttribute("data-question") || "";
+          dom.questionInput.value = question;
+          ask();
+        });
+      });
+    }
+
     function renderTable(columns, rows) {
       if (!columns.length) {
         dom.thead.innerHTML = "";
         dom.tbody.innerHTML = `<tr><td class="muted">Aucune colonne.</td></tr>`;
         return;
       }
+
       dom.thead.innerHTML = `<tr>${columns.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
+
       if (!rows.length) {
         dom.tbody.innerHTML = `<tr><td colspan="${columns.length}" class="muted">Aucune ligne retournee.</td></tr>`;
         return;
       }
+
       dom.tbody.innerHTML = rows.map(row => {
         return `<tr>${columns.map(col => `<td>${esc(row[col])}</td>`).join("")}</tr>`;
       }).join("");
     }
 
-    function buildChart(columns, rows, visualization) {
-      if (chart) {
-        chart.destroy();
-        chart = null;
+    function renderList(target, items, fallback) {
+      if (!Array.isArray(items) || !items.length) {
+        target.innerHTML = `<li class="muted">${esc(fallback)}</li>`;
+        return;
       }
-      if (!rows.length || !columns.length) return;
+      target.innerHTML = items.map(item => `<li>${esc(item)}</li>`).join("");
+    }
 
-      const labelColumn = columns.find(col => /nom|reference|date|periode/i.test(col)) || columns[0];
-      const numericColumns = columns.filter(col => rows.some(row => Number.isFinite(Number(row[col]))));
-      const valueColumn = numericColumns[0];
-      if (!valueColumn) return;
+    function renderFollowUpButtons(questions) {
+      const list = Array.isArray(questions) && questions.length ? questions : [];
+      if (!list.length) {
+        dom.followUpList.innerHTML = `<button type="button">Pose une question plus specifique pour generer des relances.</button>`;
+        return;
+      }
 
-      const labels = rows.map(row => String(row[labelColumn] ?? "-")).slice(0, 20);
-      const values = rows.map(row => Number(row[valueColumn] || 0)).slice(0, 20);
-      const chartType = /^(bar|line|pie)$/i.test(visualization || "") ? visualization : "bar";
-      const maxItems = chartType === "pie" ? 12 : 20;
-      const finalLabels = labels.slice(0, maxItems);
-      const finalValues = values.slice(0, maxItems);
+      dom.followUpList.innerHTML = list.slice(0, 8).map(question => {
+        return `<button type="button" data-followup="${esc(question)}">${esc(question)}</button>`;
+      }).join("");
 
-      chart = new Chart(dom.chartCanvas.getContext("2d"), {
-        type: chartType,
-        data: {
-          labels: finalLabels,
-          datasets: [{
-            label: valueColumn,
-            data: finalValues,
-            backgroundColor: "rgba(47,123,246,.65)",
-            borderColor: "rgba(116,176,255,1)",
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { labels: { color: "#dbe7fb" } }
-          },
-          scales: {
-            x: { ticks: { color: "#c6d7f3" }, grid: { color: "rgba(255,255,255,.08)" } },
-            y: { ticks: { color: "#c6d7f3" }, grid: { color: "rgba(255,255,255,.08)" } }
-          }
-        }
+      dom.followUpList.querySelectorAll("[data-followup]").forEach(button => {
+        button.addEventListener("click", () => {
+          const question = button.getAttribute("data-followup") || "";
+          dom.questionInput.value = question;
+          ask();
+        });
       });
     }
 
     async function ask() {
       const question = dom.questionInput.value.trim();
       const limit = Math.min(1000, Math.max(1, Number(dom.limitInput.value || 10)));
+
       if (!question) {
         setStatus("Saisis une question.", "err");
         return;
@@ -303,6 +544,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question, limit })
         });
+
         const data = await res.json();
 
         if (!res.ok || !data?.ok) {
@@ -310,21 +552,31 @@
         }
 
         renderTable(data.columns || [], data.rows || []);
-        buildChart(data.columns || [], data.rows || [], data.visualization || "bar");
+
+        const analysis = data.analysis || {};
         dom.summaryBox.textContent = data.summary || "Analyse terminee.";
         dom.finalBox.textContent = data.finalResult || "-";
-        dom.planBox.textContent = JSON.stringify(data.queryPlan || {}, null, 2);
-        dom.metaBox.textContent = `Intent: ${data.intent} | Lignes: ${(data.rows || []).length} | Tables: ${(data.meta?.sourceTables || []).join(", ")}`;
+        dom.metaBox.textContent = `Intent: ${data.intent || "-"} | Lignes: ${(data.rows || []).length} | Periode: ${data.meta?.period || "-"}`;
+
+        renderList(dom.insightsList, analysis.insights || [], "Aucun insight disponible.");
+        renderList(dom.recommendationsList, analysis.recommendations || [], "Aucune recommandation disponible.");
+        renderFollowUpButtons(analysis.followUpQuestions || []);
+        renderQuickQuestionButtons([...(analysis.followUpQuestions || []), ...defaultQuickQuestions]);
+
         setStatus("Analyse terminee.", "ok");
       } catch (error) {
         console.error(error);
-        dom.planBox.textContent = "{}";
         dom.finalBox.textContent = "-";
+        renderList(dom.insightsList, [], "Aucun insight disponible.");
+        renderList(dom.recommendationsList, [], "Aucune recommandation disponible.");
+        renderFollowUpButtons([]);
         setStatus(error.message || "Erreur pendant l'analyse.", "err");
       } finally {
         setLoading(false);
       }
     }
+
+    renderQuickQuestionButtons(defaultQuickQuestions);
 
     dom.askBtn.addEventListener("click", ask);
     dom.questionInput.addEventListener("keydown", event => {
