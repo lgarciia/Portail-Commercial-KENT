@@ -252,10 +252,10 @@
       scroll-snap-type: x proximity;
     }
 
-    .tariff-tab {
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 14px;
-      background: rgba(255,255,255,0.05);
+      .tariff-tab {
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        background: rgba(255,255,255,0.05);
       color: var(--text);
       padding: 12px 14px;
       min-width: 210px;
@@ -283,21 +283,23 @@
       margin-bottom: 4px;
     }
 
-    .tab-meta {
-      color: var(--muted);
-      font-size: 0.78rem;
-    }
+      .tab-meta {
+        color: var(--muted);
+        font-size: 0.78rem;
+        display: grid;
+        gap: 3px;
+      }
 
-    .tariff-tab.active .tab-meta {
-      color: #dbeafe;
-    }
+      .tariff-tab.active .tab-meta {
+        color: #dbeafe;
+      }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-    }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
 
     .stat-box {
       padding: 15px;
@@ -515,6 +517,10 @@
         <div class="stat-label">Produits actifs</div>
         <div class="stat-value" id="statActive">0</div>
       </div>
+      <div class="stat-box">
+        <div class="stat-label">Dernier import</div>
+        <div class="stat-value" id="statLastImport">-</div>
+      </div>
     </section>
 
     <section class="glass table-card">
@@ -556,12 +562,23 @@
       plaques: [],
       produits: [],
       productById: new Map(),
+      allTarifs: [],
+      tariffsByPlaque: new Map(),
+      tariffMetaByPlaque: new Map(),
       activePlaqueId: "",
       activeTarifs: []
     };
 
     const dom = {};
     let eventsAttached = false;
+    const IMPORT_DATE_KEYS = [
+      "last_import_at",
+      "imported_at",
+      "date_import",
+      "import_at",
+      "created_at",
+      "updated_at"
+    ];
 
     function cacheDom() {
       dom.refreshBtn = document.getElementById("refreshBtn");
@@ -576,6 +593,7 @@
       dom.statProducts = document.getElementById("statProducts");
       dom.statAverage = document.getElementById("statAverage");
       dom.statActive = document.getElementById("statActive");
+      dom.statLastImport = document.getElementById("statLastImport");
     }
 
     function setStatus(message) {
@@ -610,6 +628,36 @@
       return /prix|tarif|vente|achat|montant|price/i.test(String(key || ""));
     }
 
+    function isDateKey(key) {
+      return /date|created_at|updated_at|import/i.test(String(key || ""));
+    }
+
+    function parseDateValue(value) {
+      if (!value) return null;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function formatDateTime(value) {
+      const parsed = parseDateValue(value);
+      if (!parsed) return "Date non disponible";
+      return parsed.toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function getRowImportDate(row) {
+      for (const key of IMPORT_DATE_KEYS) {
+        const parsed = parseDateValue(row?.[key]);
+        if (parsed) return parsed;
+      }
+      return null;
+    }
+
     function formatValue(value, key) {
       if (value === null || value === undefined || value === "") {
         return '<span class="empty-cell">-</span>';
@@ -627,6 +675,9 @@
         return escapeHtml(JSON.stringify(value));
       }
       const raw = String(value);
+      if (isDateKey(key)) {
+        return escapeHtml(formatDateTime(raw));
+      }
       const numeric = Number(raw);
       if (raw !== "" && Number.isFinite(numeric) && isMoneyKey(key)) {
         return `<span class="money">${escapeHtml(formatCurrency(numeric))}</span>`;
@@ -678,6 +729,54 @@
       return map;
     }
 
+    function indexTariffsByPlaque(rows) {
+      const map = new Map();
+      rows.forEach(row => {
+        const plaqueId = String(row?.plaque_id || "");
+        if (!plaqueId) return;
+        if (!map.has(plaqueId)) map.set(plaqueId, []);
+        map.get(plaqueId).push(row);
+      });
+      return map;
+    }
+
+    function buildTariffMetaByPlaque(rows) {
+      const metaByPlaque = new Map();
+      rows.forEach(row => {
+        const plaqueId = String(row?.plaque_id || "");
+        if (!plaqueId) return;
+        const current = metaByPlaque.get(plaqueId) || {
+          count: 0,
+          lastImportAt: null,
+          dateAvailable: false
+        };
+        const rowImportDate = getRowImportDate(row);
+        current.count += 1;
+        if (rowImportDate) {
+          current.dateAvailable = true;
+          if (!current.lastImportAt || rowImportDate > current.lastImportAt) {
+            current.lastImportAt = rowImportDate;
+          }
+        }
+        metaByPlaque.set(plaqueId, current);
+      });
+      return metaByPlaque;
+    }
+
+    function getTariffMeta(plaqueId) {
+      return state.tariffMetaByPlaque.get(String(plaqueId || "")) || {
+        count: 0,
+        lastImportAt: null,
+        dateAvailable: false
+      };
+    }
+
+    function formatLastImport(meta) {
+      return meta?.dateAvailable && meta.lastImportAt
+        ? formatDateTime(meta.lastImportAt)
+        : "Date non disponible";
+    }
+
     function collectKeys(rows, preferred = []) {
       const keys = new Set();
       rows.forEach(row => {
@@ -707,10 +806,14 @@
 
       dom.tariffTabs.innerHTML = state.plaques.map(plaque => {
         const active = String(plaque.id) === String(state.activePlaqueId);
+        const meta = getTariffMeta(plaque.id);
         return `
           <button class="tariff-tab ${active ? "active" : ""}" type="button" data-plaque-id="${escapeHtml(plaque.id)}">
             <span class="tab-name">${escapeHtml(plaque.nom || "Tarif sans nom")}</span>
-            <span class="tab-meta">${escapeHtml(plaque.id || "")}</span>
+            <span class="tab-meta">
+              <span>${escapeHtml(meta.count.toLocaleString("fr-FR"))} ligne(s)</span>
+              <span>Dernier import: ${escapeHtml(formatLastImport(meta))}</span>
+            </span>
           </button>
         `;
       }).join("");
@@ -727,11 +830,13 @@
       const average = prices.length
         ? prices.reduce((sum, value) => sum + value, 0) / prices.length
         : 0;
+      const activeMeta = getTariffMeta(state.activePlaqueId);
 
       dom.statRows.textContent = state.activeTarifs.length.toLocaleString("fr-FR");
       dom.statProducts.textContent = productIds.size.toLocaleString("fr-FR");
       dom.statAverage.textContent = formatCurrency(average);
       dom.statActive.textContent = activeProducts.toLocaleString("fr-FR");
+      dom.statLastImport.textContent = formatLastImport(activeMeta);
     }
 
     function renderTableLoading(message) {
@@ -753,8 +858,9 @@
     function renderTable() {
       const activePlaque = getActivePlaque();
       dom.currentTariffTitle.textContent = activePlaque?.nom || "Aucun tarif selectionne";
+      const activeMeta = getTariffMeta(state.activePlaqueId);
       dom.currentTariffMeta.textContent = activePlaque?.id
-        ? `plaque_id: ${activePlaque.id}`
+        ? `Dernier import: ${formatLastImport(activeMeta)} - plaque_id: ${activePlaque.id}`
         : "Aucune plaque chargee.";
 
       renderStats();
@@ -804,13 +910,10 @@
       setStatus("Lecture des lignes tarifs...");
 
       const activePlaque = getActivePlaque();
-      state.activeTarifs = await fetchAllRows("tarifs_plaques", "*", {
-        eq: [["plaque_id", state.activePlaqueId]],
-        order: "produit_id"
-      });
+      state.activeTarifs = state.tariffsByPlaque.get(state.activePlaqueId) || [];
 
       renderTable();
-      setStatus(`${state.activeTarifs.length.toLocaleString("fr-FR")} ligne(s) chargee(s) pour ${activePlaque?.nom || "ce tarif"}.`);
+      setStatus(`${state.activeTarifs.length.toLocaleString("fr-FR")} ligne(s) chargee(s) pour ${activePlaque?.nom || "ce tarif"}. Dernier import: ${formatLastImport(getTariffMeta(state.activePlaqueId))}.`);
     }
 
     function attachEvents() {
@@ -837,14 +940,18 @@
       setStatus("Connexion a Supabase...");
 
       try {
-        const [plaques, produits] = await Promise.all([
+        const [plaques, produits, tarifs] = await Promise.all([
           fetchAllRows("plaques", "*", { order: "nom" }),
-          fetchAllRows("produits", "*", { order: "reference_produit" })
+          fetchAllRows("produits", "*", { order: "reference_produit" }),
+          fetchAllRows("tarifs_plaques", "*", { order: "produit_id" })
         ]);
 
         state.plaques = plaques.sort(sortByName);
         state.produits = produits;
         state.productById = buildProductIndex(produits);
+        state.allTarifs = tarifs;
+        state.tariffsByPlaque = indexTariffsByPlaque(tarifs);
+        state.tariffMetaByPlaque = buildTariffMetaByPlaque(tarifs);
         state.activePlaqueId = state.plaques[0]?.id ? String(state.plaques[0].id) : "";
 
         renderTabs();

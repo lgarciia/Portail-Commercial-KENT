@@ -583,6 +583,7 @@
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const TARIFF_IMPORT_META_KEY = "kent_tariff_import_meta_v1";
 
     const IMPORT_TYPES = [
       { id: "GUEUDET", label: "Gueudet Tarif revente", plaqueName: "Gueudet Tarif revente" },
@@ -672,6 +673,31 @@
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, " ")
         .trim();
+    }
+
+    function saveTariffImportMetadata(entry) {
+      try {
+        const raw = localStorage.getItem(TARIFF_IMPORT_META_KEY);
+        const meta = raw ? JSON.parse(raw) : {};
+        const safeEntry = {
+          plaqueId: String(entry.plaqueId || ""),
+          plaqueName: String(entry.plaqueName || ""),
+          label: String(entry.label || entry.plaqueName || ""),
+          importedAt: String(entry.importedAt || new Date().toISOString()),
+          rowsImported: Number(entry.rowsImported || 0),
+          oldRows: Number(entry.oldRows || 0)
+        };
+
+        [safeEntry.plaqueId, normalizeComparable(safeEntry.plaqueName), normalizeComparable(safeEntry.label)]
+          .filter(Boolean)
+          .forEach(key => {
+            meta[key] = safeEntry;
+          });
+
+        localStorage.setItem(TARIFF_IMPORT_META_KEY, JSON.stringify(meta));
+      } catch (error) {
+        console.warn("Date dernier import non enregistree localement:", error);
+      }
     }
 
     function normalizeHeaderToken(value) {
@@ -1554,6 +1580,17 @@
         if (finalMissingProgress > 0) step(finalMissingProgress, "Tarifs: finalisation...");
 
         const hasErrors = productFailed > 0 || tarifFailed > 0;
+        const importedAt = new Date().toISOString();
+        if (tarifsInserted > 0) {
+          saveTariffImportMetadata({
+            plaqueId: plaque.id,
+            plaqueName: type.plaqueName,
+            label: type.label,
+            importedAt,
+            rowsImported: tarifsInserted,
+            oldRows: oldTarifsCount
+          });
+        }
         setStatus(
           hasErrors
             ? `Import ${type.label} termine avec erreurs.`
@@ -1572,6 +1609,7 @@
             `Erreurs produits: ${productFailed}`,
             `Anciens tarifs supprimes: ${oldTarifsCount}`,
             `Tarifs inserts/mis a jour: ${tarifsInserted}`,
+            `Date import: ${new Date(importedAt).toLocaleString("fr-FR")}`,
             `Erreurs tarifs: ${tarifFailed}`,
             ...(productErrorSamples.length
               ? ["Details erreurs produits:", ...productErrorSamples]
