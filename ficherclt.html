@@ -2075,6 +2075,59 @@
       updatePopupPricingHint();
     }
 
+    function getProductRowKeyboardState(row) {
+      return {
+        produitId: row.querySelector(".produit-id-input")?.value || "",
+        typedValue: row.querySelector(".produit-search-input")?.value.trim() || "",
+        quantite: parseInt(row.querySelector(".quantite-input")?.value, 10) || 0,
+        stockClient: parseInt(row.querySelector(".stock-input")?.value, 10) || 0
+      };
+    }
+
+    function hasProductRowKeyboardData(row) {
+      const { typedValue, quantite, stockClient } = getProductRowKeyboardState(row);
+      return Boolean(typedValue || quantite > 0 || stockClient > 0);
+    }
+
+    function isProductRowReadyForKeyboardAdd(row) {
+      const { produitId, quantite, stockClient } = getProductRowKeyboardState(row);
+      return Boolean(produitId && (quantite > 0 || stockClient > 0));
+    }
+
+    function getNextProductRow(row) {
+      let next = row.nextElementSibling;
+      while (next && !next.classList.contains("product-row")) {
+        next = next.nextElementSibling;
+      }
+      return next || null;
+    }
+
+    function focusProductRowSearch(row) {
+      const input = row?.querySelector(".produit-search-input");
+      if (!input) return;
+      setTimeout(() => input.focus(), 0);
+    }
+
+    function handleProductRowEnter(event, row) {
+      if (event.key !== "Enter" || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      syncProductRow(row);
+      updatePopupTotalCommande();
+
+      if (!isProductRowReadyForKeyboardAdd(row)) {
+        if (hasProductRowKeyboardData(row)) {
+          showToast("Renseigne un produit reconnu avec quantite ou stock avant d'ajouter une ligne.", "warning");
+        }
+        return;
+      }
+
+      const targetRow = getNextProductRow(row) || addProductRow();
+      focusProductRowSearch(targetRow);
+    }
+
     function addProductRow(prefill = null) {
       if (!isProductEntryVisitType(getPopupVisitType())) return null;
 
@@ -2193,6 +2246,10 @@
         priceInput.value = normalized;
       });
 
+      row.querySelectorAll(".produit-search-input, .line-plaque-select, .quantite-input, .stock-input, .price-edit-input").forEach(control => {
+        control.addEventListener("keydown", event => handleProductRowEnter(event, row));
+      });
+
       row.querySelector(".remove-product-row-btn").addEventListener("click", () => {
         row.remove();
         if (isProductEntryVisitType(getPopupVisitType()) && !dom.productsFormList.querySelector(".product-row")) addProductRow();
@@ -2202,6 +2259,7 @@
       dom.productsFormList.appendChild(row);
       syncProductRow(row);
       updatePopupTotalCommande();
+      return row;
     }
 
     function updatePopupClientOptions() {
