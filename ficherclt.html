@@ -720,6 +720,7 @@
           <div class="actions-inline">
             <button class="btn btn-secondary" id="cancelVisitBtn" type="button">Annuler</button>
             <button class="btn btn-info" id="generateQuoteBtn" type="button">Generer un devis</button>
+            <button class="btn btn-info" id="generateBdcBtn" type="button">G&eacute;n&eacute;rer un BDC</button>
             <button class="btn btn-primary" id="saveVisitBtn" type="submit">Enregistrer</button>
           </div>
         </div>
@@ -809,6 +810,8 @@
       visites: [],
       plaques: [],
       tarifsPlaques: [],
+      conditionnements: [],
+      conditionnementsByRef5: new Map(),
       currentView: "timeline",
       activeVisitId: null,
       lastAddedClientNumero: ""
@@ -826,6 +829,7 @@
     const LOCAL_CACHE_KEYS = {
       produits: "kent_cache_produits",
       tarifsPlaques: "kent_cache_tarifs_plaques",
+      conditionnements: "kent_cache_conditionnements",
       devisCounterYearPrefix: "kent_devis_counter_year_"
     };
 
@@ -877,6 +881,7 @@
       dom.popupVisitTypeHint = document.getElementById("popupVisitTypeHint");
       dom.addProductRowBtn = document.getElementById("addProductRowBtn");
       dom.generateQuoteBtn = document.getElementById("generateQuoteBtn");
+      dom.generateBdcBtn = document.getElementById("generateBdcBtn");
       dom.saveVisitBtn = document.getElementById("saveVisitBtn");
       dom.topProduitsOverlay = document.getElementById("topProduitsOverlay");
       dom.topProduitsList = document.getElementById("topProduitsList");
@@ -926,6 +931,14 @@
 
     function normalizeText(value) {
       return String(value ?? "").trim().toLowerCase();
+    }
+
+    function normalizeBdcRef(value) {
+      return String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
     }
 
     function parseClientNumberValue(value) {
@@ -1097,6 +1110,17 @@
       return `DEVIS_KENT_${safeClient}_${safeDate}_${safeNumber}.pdf`;
     }
 
+    function buildBdcFilename(clientName, dateStr) {
+      const safeClient = String(clientName || "CLIENT")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zA-Z0-9_-]/g, "")
+        .toUpperCase() || "CLIENT";
+      const safeDate = String(dateStr || getTodayIsoLocal()).replace(/[^0-9]/g, "") || "DATE";
+      return `BDC_KENT_${safeClient}_${safeDate}.pdf`;
+    }
+
     function getNextDevisNumber(dateStr) {
       const year = getVisitYear(dateStr);
       const storageKey = `${LOCAL_CACHE_KEYS.devisCounterYearPrefix}${year}`;
@@ -1118,6 +1142,19 @@
 
     function getProduitById(id) {
       return state.produits.find(produit => String(produit.id) === String(id));
+    }
+
+    function buildConditionnementIndex(rows = []) {
+      const index = new Map();
+      rows.forEach(row => {
+        const key = normalizeBdcRef(row?.ref_5);
+        if (key) index.set(key, row);
+      });
+      return index;
+    }
+
+    function getConditionnementByRef5(ref5) {
+      return state.conditionnementsByRef5.get(normalizeBdcRef(ref5)) || null;
     }
 
     function getProduitDisplay(id) {
@@ -1236,6 +1273,40 @@
       }
 
       return all;
+    }
+
+    async function fetchConditionnements() {
+      const pageSize = 1000;
+      let from = 0;
+      const all = [];
+
+      try {
+        while (true) {
+          const to = from + pageSize - 1;
+          const { data, error } = await supabaseClient
+            .from("conditionnements_produits")
+            .select("ref_5, code_produit, categorie, famille, sous_famille, description, grains, emballage, tarif_revente")
+            .order("ref_5", { ascending: true })
+            .range(from, to);
+
+          if (error) throw error;
+          const batch = data || [];
+          all.push(...batch);
+          if (batch.length < pageSize) break;
+          from += pageSize;
+        }
+
+        if (all.length) saveLocalCache(LOCAL_CACHE_KEYS.conditionnements, all);
+        if (!all.length) {
+          const cached = loadLocalCache(LOCAL_CACHE_KEYS.conditionnements);
+          if (cached.length) return cached;
+        }
+
+        return all;
+      } catch (error) {
+        console.warn("Conditionnements indisponibles:", error);
+        return loadLocalCache(LOCAL_CACHE_KEYS.conditionnements);
+      }
     }
 
     async function fetchPlaques() {
@@ -2432,6 +2503,51 @@
       return { lignes, invalidFilledRow };
     }
 
+    function collectCommandesForBdcFromForm() {
+      const rows = [...dom.productsFormList.querySelectorAll(".product-row")];
+      const lignes = [];
+      let invalidFilledRow = false;
+      let missingConditionnements = 0;
+
+      rows.forEach(row => {
+        const produitId = row.querySelector(".produit-id-input").value;
+        const typedValue = row.querySelector(".produit-search-input").value.trim();
+        const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
+        const prixUnitaire = roundPrice(row.querySelector(".prix-unitaire-input").value || 0);
+        const rowHasData = typedValue || quantite > 0;
+
+        if (rowHasData && !produitId) {
+          invalidFilledRow = true;
+          return;
+        }
+
+        if (produitId && quantite > 0) {
+          const produit = getProduitDisplay(produitId);
+          const ref5 = produit.reference_produit || typedValue || "-";
+          const conditionnement = getConditionnementByRef5(ref5);
+          if (!conditionnement) missingConditionnements += 1;
+
+          lignes.push({
+            produit_id: produitId,
+            ref_5: ref5,
+            code_produit: conditionnement?.code_produit || "",
+            categorie: conditionnement?.categorie || "",
+            famille: conditionnement?.famille || "",
+            sous_famille: conditionnement?.sous_famille || "",
+            emballage: conditionnement?.emballage || "",
+            grains: conditionnement?.grains || "",
+            designation: produit.nom || "Produit",
+            quantite,
+            prix_unitaire: roundPrice(prixUnitaire),
+            total_ligne: roundPrice(quantite * prixUnitaire),
+            conditionnement_found: Boolean(conditionnement)
+          });
+        }
+      });
+
+      return { lignes, invalidFilledRow, missingConditionnements };
+    }
+
     const KENT_LEGAL_MENTIONS = {
       societe: "KENT France SAS",
       adresse: "29 rue Charles Edouard Jeanneret, CS7001 TECHNOPARC, 78306 Poissy Cedex",
@@ -2493,6 +2609,88 @@
       ].join("\n");
 
       return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    function buildBdcMailContent(clientName, dateVisite) {
+      const subject = `Bon de commande - ${clientName || "Client"} - ${formatDate(dateVisite)}`;
+      const body = [
+        "Bonjour,",
+        "",
+        `Veuillez trouver ci-joint le bon de commande du client ${clientName || "Client"} du ${formatDate(dateVisite)}.`,
+        "",
+        "Nous restons a votre disposition pour tout complement d'information.",
+        "",
+        "Cordialement,",
+        "KENT France SAS"
+      ].join("\n");
+
+      return { subject, body };
+    }
+
+    function buildBdcMailtoLink(clientName, dateVisite) {
+      const { subject, body } = buildBdcMailContent(clientName, dateVisite);
+      return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    function bytesToBase64(bytes) {
+      let binary = "";
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    function textToBase64(text) {
+      return bytesToBase64(new TextEncoder().encode(String(text || "")));
+    }
+
+    function foldBase64(value) {
+      return String(value || "").match(/.{1,76}/g)?.join("\r\n") || "";
+    }
+
+    function encodeMimeHeader(value) {
+      return `=?UTF-8?B?${textToBase64(value)}?=`;
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    function buildBdcEml({ subject, body, filename, pdfBase64 }) {
+      const boundary = `----=_KENT_BDC_${Date.now()}`;
+      const bodyBase64 = foldBase64(textToBase64(body));
+      const attachmentBase64 = foldBase64(pdfBase64);
+
+      return [
+        `Subject: ${encodeMimeHeader(subject)}`,
+        "To: ",
+        "MIME-Version: 1.0",
+        `Content-Type: multipart/mixed; boundary="${boundary}"`,
+        "",
+        `--${boundary}`,
+        "Content-Type: text/plain; charset=\"utf-8\"",
+        "Content-Transfer-Encoding: base64",
+        "",
+        bodyBase64,
+        "",
+        `--${boundary}`,
+        `Content-Type: application/pdf; name="${filename}"`,
+        "Content-Transfer-Encoding: base64",
+        `Content-Disposition: attachment; filename="${filename}"`,
+        "",
+        attachmentBase64,
+        "",
+        `--${boundary}--`,
+        ""
+      ].join("\r\n");
     }
 
     async function generateQuoteFromVisitForm() {
@@ -2677,6 +2875,216 @@
       } finally {
         dom.generateQuoteBtn.disabled = false;
         dom.generateQuoteBtn.textContent = originalButtonLabel || "Generer un devis";
+      }
+    }
+
+    async function generateBdcFromVisitForm() {
+      const clientId = dom.popupClient.value;
+      const dateVisite = dom.popupDate.value || getTodayIsoLocal();
+      const typeVisite = getPopupVisitType();
+      const note = dom.popupNote.value.trim();
+
+      if (!clientId) return showToast("Selectionne un client avant de generer un BDC.", "warning");
+      if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
+
+      const { lignes, invalidFilledRow, missingConditionnements } = collectCommandesForBdcFromForm();
+      if (invalidFilledRow) return showToast("Une ligne produit est renseignee mais le produit n'est pas reconnu.", "warning");
+      if (!lignes.length) return showToast("Ajoute au moins une ligne produit avec quantite pour generer le BDC.", "warning");
+      if (!window.jspdf?.jsPDF) return showToast("Moteur PDF indisponible. Recharge la page puis reessaye.", "error");
+
+      const client = getClientById(clientId);
+      const clientName = client?.nom || "Client";
+      const clientPlaque = getClientPlaqueLabel(client);
+      const totalHt = roundPrice(lignes.reduce((sum, ligne) => sum + Number(ligne.total_ligne || 0), 0));
+      const filename = buildBdcFilename(clientName, dateVisite);
+      const emlFilename = filename.replace(/\.pdf$/i, ".eml");
+      const originalButtonLabel = dom.generateBdcBtn.textContent;
+
+      try {
+        dom.generateBdcBtn.disabled = true;
+        dom.generateBdcBtn.textContent = "Generation...";
+        setStatus("Generation du BDC PDF...", "info");
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+        if (typeof doc.autoTable !== "function") throw new Error("Plugin table PDF non charge.");
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const marginLeft = 10;
+        const marginRight = 10;
+
+        const logoDataUrl = await getKentLogoDataUrl();
+        if (logoDataUrl) {
+          try {
+            doc.addImage(logoDataUrl, "JPEG", marginLeft, 8, 36, 17);
+          } catch (_) {
+            // Keep PDF generation even if logo format is unsupported.
+          }
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text("BON DE COMMANDE CLIENT", pageWidth - marginRight, 15, { align: "right" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.6);
+        doc.text(`Date : ${formatDate(dateVisite)}`, pageWidth - marginRight, 22, { align: "right" });
+        doc.text(`Type : ${getVisitTypeLabel(typeVisite)}`, pageWidth - marginRight, 27, { align: "right" });
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("KENT France SAS", marginLeft, 33);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.7);
+        doc.text(KENT_LEGAL_MENTIONS.adresse, marginLeft, 38);
+        doc.text(`Tel : ${KENT_LEGAL_MENTIONS.telephone}`, marginLeft, 43);
+        doc.text(`Email : ${KENT_LEGAL_MENTIONS.email}`, marginLeft, 48);
+        doc.text(`TVA : ${KENT_LEGAL_MENTIONS.tva}`, marginLeft, 53);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.text("Client", 160, 33);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        const clientLines = [
+          clientName,
+          client?.numero_compte ? `Compte : ${client.numero_compte}` : "",
+          client?.adresse ? `Adresse : ${client.adresse}` : "",
+          client?.telephone ? `Telephone : ${client.telephone}` : "",
+          clientPlaque ? `Plaque tarif : ${clientPlaque}` : ""
+        ].filter(Boolean);
+        doc.text(clientLines, 160, 38, { maxWidth: pageWidth - 170 - marginRight });
+
+        if (missingConditionnements > 0) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(8.5);
+          doc.setTextColor(180, 83, 9);
+          doc.text(`${missingConditionnements} ligne(s) sans correspondance conditionnement: colonnes Code Produit / Conditionnement / Grains laissees vides.`, marginLeft, 64);
+          doc.setTextColor(0, 0, 0);
+        }
+
+        doc.autoTable({
+          startY: 70,
+          head: [[
+            "Ref 5",
+            "Code Produit",
+            "Categorie / Famille",
+            "Qte",
+            "Conditionnement",
+            "Designation produits KENT",
+            "Grains",
+            "PU Client HT",
+            "Total Achat Client HT"
+          ]],
+          body: lignes.map(ligne => {
+            const family = [ligne.categorie, ligne.famille, ligne.sous_famille].filter(Boolean).join(" / ");
+            return [
+              String(ligne.ref_5 || ""),
+              String(ligne.code_produit || ""),
+              family,
+              String(ligne.quantite || 0),
+              String(ligne.emballage || ""),
+              String(ligne.designation || "Produit"),
+              String(ligne.grains || ""),
+              `${formatAmountHt(ligne.prix_unitaire)} EUR`,
+              `${formatAmountHt(ligne.total_ligne)} EUR`
+            ];
+          }),
+          margin: { left: marginLeft, right: marginRight },
+          styles: {
+            font: "helvetica",
+            fontSize: 7.8,
+            cellPadding: 2,
+            textColor: [15, 23, 42],
+            lineColor: [215, 226, 238],
+            lineWidth: 0.1,
+            overflow: "linebreak",
+            valign: "middle"
+          },
+          headStyles: {
+            fillColor: [14, 165, 206],
+            textColor: [255, 255, 255],
+            fontStyle: "bold",
+            halign: "center"
+          },
+          alternateRowStyles: {
+            fillColor: [246, 249, 252]
+          },
+          columnStyles: {
+            0: { cellWidth: 23 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 36 },
+            3: { cellWidth: 13, halign: "center" },
+            4: { cellWidth: 27 },
+            5: { cellWidth: 70 },
+            6: { cellWidth: 18, halign: "center" },
+            7: { cellWidth: 26, halign: "right" },
+            8: { cellWidth: 30, halign: "right" }
+          },
+          theme: "grid",
+          pageBreak: "auto",
+          rowPageBreak: "avoid",
+          didDrawPage: () => {
+            const footerY = pageHeight - 10;
+            doc.setFontSize(7.8);
+            doc.setTextColor(100, 116, 139);
+            doc.text("Bon de commande genere depuis la fiche client KENT.", marginLeft, footerY);
+            doc.text(`Page ${doc.internal.getNumberOfPages()}`, pageWidth - marginRight, footerY, { align: "right" });
+            doc.setTextColor(0, 0, 0);
+          }
+        });
+
+        const afterTableY = (doc.lastAutoTable?.finalY || 76) + 7;
+        if (note && afterTableY < pageHeight - 32) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(8.8);
+          doc.text("Note terrain", marginLeft, afterTableY);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8.2);
+          doc.text(note, marginLeft, afterTableY + 5, { maxWidth: pageWidth - marginLeft - marginRight - 78 });
+        }
+
+        const totalLabel = `Total HT : ${formatAmountHt(totalHt)} EUR`;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        const totalTextWidth = doc.getTextWidth(totalLabel);
+        const totalPaddingX = 5;
+        const totalBoxHeight = 9;
+        const totalBoxWidth = Math.max(64, totalTextWidth + totalPaddingX * 2);
+        const totalBoxX = pageWidth - marginRight - totalBoxWidth;
+        const totalBoxY = pageHeight - 25;
+
+        doc.setFillColor(30, 64, 175);
+        doc.setDrawColor(30, 64, 175);
+        doc.roundedRect(totalBoxX, totalBoxY, totalBoxWidth, totalBoxHeight, 2, 2, "FD");
+        doc.setTextColor(255, 255, 255);
+        doc.text(totalLabel, pageWidth - marginRight - totalPaddingX, totalBoxY + 6.2, { align: "right" });
+        doc.setTextColor(0, 0, 0);
+
+        const pdfArrayBuffer = doc.output("arraybuffer");
+        const pdfBlob = new Blob([pdfArrayBuffer], { type: "application/pdf" });
+        const pdfBase64 = bytesToBase64(new Uint8Array(pdfArrayBuffer));
+        const { subject, body } = buildBdcMailContent(clientName, dateVisite);
+        const eml = buildBdcEml({ subject, body, filename, pdfBase64 });
+
+        downloadBlob(pdfBlob, filename);
+        downloadBlob(new Blob([eml], { type: "message/rfc822;charset=utf-8" }), emlFilename);
+        window.location.href = buildBdcMailtoLink(clientName, dateVisite);
+
+        if (missingConditionnements > 0) {
+          showToast(`${missingConditionnements} ligne(s) sans conditionnement. Ouvre le .eml pour la PJ.`, "warning");
+        } else {
+          showToast("BDC + brouillon mail .eml generes avec PJ.", "success");
+        }
+        setStatus(`BDC genere : ${filename}`, "success");
+      } catch (error) {
+        console.error("Erreur generation BDC:", error);
+        setStatus("Erreur lors de la generation du BDC.", "error");
+        showToast("Impossible de generer le BDC.", "error");
+      } finally {
+        dom.generateBdcBtn.disabled = false;
+        dom.generateBdcBtn.textContent = originalButtonLabel || "Generer un BDC";
       }
     }
 
@@ -2904,6 +3312,7 @@
         addProductRow();
       });
       dom.generateQuoteBtn.addEventListener("click", generateQuoteFromVisitForm);
+      dom.generateBdcBtn.addEventListener("click", generateBdcFromVisitForm);
       dom.visitForm.addEventListener("submit", saveVisit);
       dom.popupClient.addEventListener("change", () => {
         refreshProductDatalist(getPopupSelectedClientId());
@@ -2949,11 +3358,12 @@
       try {
         setStatus("Connexion à Supabase...", "info");
 
-        const [clients, produits, tarifsPlaques, plaques] = await Promise.all([
+        const [clients, produits, tarifsPlaques, plaques, conditionnements] = await Promise.all([
           fetchClients(),
           fetchProduits(),
           fetchTarifsPlaques(),
-          fetchPlaques()
+          fetchPlaques(),
+          fetchConditionnements()
         ]);
 
         state.clients = clients;
@@ -2961,6 +3371,8 @@
         state.produitsActifs = produits.filter(produit => Boolean(produit.actif));
         state.tarifsPlaques = tarifsPlaques;
         state.plaques = plaques;
+        state.conditionnements = conditionnements;
+        state.conditionnementsByRef5 = buildConditionnementIndex(conditionnements);
         updateClientNumberHint();
 
         const noProductsVisible = state.produits.length === 0;
