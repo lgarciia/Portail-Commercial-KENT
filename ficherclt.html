@@ -2611,86 +2611,27 @@
       return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
 
-    function buildBdcMailContent(clientName, dateVisite) {
+    function buildBdcMailContent(client, dateVisite) {
+      const clientName = client?.nom || "Client";
+      const clientCompte = String(client?.numero_compte || "").trim();
       const subject = `Bon de commande - ${clientName || "Client"} - ${formatDate(dateVisite)}`;
+      const accountLine = clientCompte
+        ? `Ci joint une cde pour le cpte ${clientCompte}`
+        : "Ci joint une cde pour le cpte";
       const body = [
         "Bonjour,",
         "",
-        `Veuillez trouver ci-joint le bon de commande du client ${clientName || "Client"} du ${formatDate(dateVisite)}.`,
+        accountLine,
         "",
-        "Nous restons a votre disposition pour tout complement d'information.",
-        "",
-        "Cordialement,",
-        "KENT France SAS"
+        "Par avance merci"
       ].join("\n");
 
       return { subject, body };
     }
 
-    function buildBdcMailtoLink(clientName, dateVisite) {
-      const { subject, body } = buildBdcMailContent(clientName, dateVisite);
+    function buildBdcMailtoLink(client, dateVisite) {
+      const { subject, body } = buildBdcMailContent(client, dateVisite);
       return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    }
-
-    function bytesToBase64(bytes) {
-      let binary = "";
-      const chunkSize = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-      }
-      return btoa(binary);
-    }
-
-    function textToBase64(text) {
-      return bytesToBase64(new TextEncoder().encode(String(text || "")));
-    }
-
-    function foldBase64(value) {
-      return String(value || "").match(/.{1,76}/g)?.join("\r\n") || "";
-    }
-
-    function encodeMimeHeader(value) {
-      return `=?UTF-8?B?${textToBase64(value)}?=`;
-    }
-
-    function downloadBlob(blob, filename) {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }
-
-    function buildBdcEml({ subject, body, filename, pdfBase64 }) {
-      const boundary = `----=_KENT_BDC_${Date.now()}`;
-      const bodyBase64 = foldBase64(textToBase64(body));
-      const attachmentBase64 = foldBase64(pdfBase64);
-
-      return [
-        `Subject: ${encodeMimeHeader(subject)}`,
-        "To: ",
-        "MIME-Version: 1.0",
-        `Content-Type: multipart/mixed; boundary="${boundary}"`,
-        "",
-        `--${boundary}`,
-        "Content-Type: text/plain; charset=\"utf-8\"",
-        "Content-Transfer-Encoding: base64",
-        "",
-        bodyBase64,
-        "",
-        `--${boundary}`,
-        `Content-Type: application/pdf; name="${filename}"`,
-        "Content-Transfer-Encoding: base64",
-        `Content-Disposition: attachment; filename="${filename}"`,
-        "",
-        attachmentBase64,
-        "",
-        `--${boundary}--`,
-        ""
-      ].join("\r\n");
     }
 
     async function generateQuoteFromVisitForm() {
@@ -2897,7 +2838,6 @@
       const clientPlaque = getClientPlaqueLabel(client);
       const totalHt = roundPrice(lignes.reduce((sum, ligne) => sum + Number(ligne.total_ligne || 0), 0));
       const filename = buildBdcFilename(clientName, dateVisite);
-      const emlFilename = filename.replace(/\.pdf$/i, ".eml");
       const originalButtonLabel = dom.generateBdcBtn.textContent;
 
       try {
@@ -3062,20 +3002,13 @@
         doc.text(totalLabel, pageWidth - marginRight - totalPaddingX, totalBoxY + 6.2, { align: "right" });
         doc.setTextColor(0, 0, 0);
 
-        const pdfArrayBuffer = doc.output("arraybuffer");
-        const pdfBlob = new Blob([pdfArrayBuffer], { type: "application/pdf" });
-        const pdfBase64 = bytesToBase64(new Uint8Array(pdfArrayBuffer));
-        const { subject, body } = buildBdcMailContent(clientName, dateVisite);
-        const eml = buildBdcEml({ subject, body, filename, pdfBase64 });
-
-        downloadBlob(pdfBlob, filename);
-        downloadBlob(new Blob([eml], { type: "message/rfc822;charset=utf-8" }), emlFilename);
-        window.location.href = buildBdcMailtoLink(clientName, dateVisite);
+        doc.save(filename);
+        window.location.href = buildBdcMailtoLink(client, dateVisite);
 
         if (missingConditionnements > 0) {
-          showToast(`${missingConditionnements} ligne(s) sans conditionnement. Ouvre le .eml pour la PJ.`, "warning");
+          showToast(`${missingConditionnements} ligne(s) sans conditionnement. PDF telecharge, mail ouvert.`, "warning");
         } else {
-          showToast("BDC + brouillon mail .eml generes avec PJ.", "success");
+          showToast("BDC telecharge et mail ouvert.", "success");
         }
         setStatus(`BDC genere : ${filename}`, "success");
       } catch (error) {
