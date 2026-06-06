@@ -212,6 +212,28 @@
       background:rgba(245,158,11,.16);
       color:#fde68a;
     }
+    .visit-type-badge.phone-order{
+      border-color:rgba(56,189,248,.34);
+      background:rgba(56,189,248,.18);
+      color:#bae6fd;
+    }
+    .visit-type-badge.closed{
+      border-color:rgba(148,163,184,.28);
+      background:rgba(148,163,184,.14);
+      color:#cbd5e1;
+    }
+    .visit-card.phone-order{
+      border-color:rgba(56,189,248,.22);
+      background:linear-gradient(180deg,rgba(14,165,233,.08),rgba(255,255,255,.025));
+    }
+    .visit-card.phone-order::before{
+      background:radial-gradient(circle,rgba(56,189,248,.24),transparent 70%);
+    }
+    .visit-row-phone td,
+    .visit-row-phone .sticky-col{
+      background:rgba(14,165,233,.08);
+    }
+    .table-date-stack{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
     .plaque-pill strong,.metric-chip strong{color:var(--text)}
     .meta-grid,.highlight-grid,.stats-grid{display:grid;gap:12px}
     .meta-grid,.highlight-grid{grid-template-columns:repeat(2,minmax(0,1fr));position:relative;z-index:1}
@@ -584,7 +606,7 @@
 
         <div class="highlight-grid">
           <div class="highlight-card">
-            <span>Dernière visite</span>
+            <span>Derniere visite terrain</span>
             <strong id="clientLastVisit">—</strong>
           </div>
           <div class="highlight-card">
@@ -599,7 +621,7 @@
       <div class="section-kicker">Indicateurs</div>
       <div class="stats-grid">
         <div class="stat-card">
-          <span>Nombre de visites</span>
+          <span>Visites terrain</span>
           <strong id="statNbVisites">0</strong>
         </div>
         <div class="stat-card">
@@ -615,11 +637,11 @@
           <strong id="statNbProduits">0</strong>
         </div>
         <div class="stat-card">
-          <span>Visites avec vente</span>
+          <span>Terrain avec vente</span>
           <strong id="statVisitsWithSale">0</strong>
         </div>
         <div class="stat-card">
-          <span>Visites sans vente</span>
+          <span>Terrain sans vente</span>
           <strong id="statVisitsWithoutSale">0</strong>
         </div>
         <div class="stat-card">
@@ -684,6 +706,7 @@
             <label for="popupVisitType">Type de visite</label>
             <select id="popupVisitType">
               <option value="vente">Vente</option>
+              <option value="commande_telephone">Commande t&eacute;l&eacute;phone</option>
               <option value="passage_sans_vente">Passage sans vente</option>
               <option value="client_ferme">Client ferme</option>
             </select>
@@ -819,10 +842,12 @@
 
     const dom = {};
     const VISIT_TYPE_SALE = "vente";
+    const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
     const VISIT_TYPE_NO_SALE = "passage_sans_vente";
     const VISIT_TYPE_CLIENT_CLOSED = "client_ferme";
     const VISIT_TYPE_LABELS = {
       vente: "Vente",
+      commande_telephone: "Commande telephone",
       passage_sans_vente: "Passage sans vente",
       client_ferme: "Client ferme"
     };
@@ -1008,6 +1033,7 @@
     function normalizeVisitType(value) {
       const normalized = normalizeText(value).replaceAll("-", "_").replaceAll(" ", "_");
       if (normalized === "vente") return "vente";
+      if (["commande_telephone", "commande_tel", "appel_telephonique", "telephone", "tel"].includes(normalized)) return "commande_telephone";
       if (normalized === "passage_sans_vente") return "passage_sans_vente";
       if (normalized === "client_ferme") return "client_ferme";
       return "";
@@ -1021,9 +1047,22 @@
       return resolveVisitType(value) === VISIT_TYPE_SALE;
     }
 
+    function isPhoneOrderVisitType(value) {
+      return resolveVisitType(value) === VISIT_TYPE_PHONE_ORDER;
+    }
+
+    function isOrderVisitType(value) {
+      const normalized = resolveVisitType(value);
+      return normalized === VISIT_TYPE_SALE || normalized === VISIT_TYPE_PHONE_ORDER;
+    }
+
+    function isTerrainVisitType(value) {
+      return !isPhoneOrderVisitType(value);
+    }
+
     function isProductEntryVisitType(value) {
       const normalized = resolveVisitType(value);
-      return normalized === VISIT_TYPE_SALE || normalized === VISIT_TYPE_NO_SALE;
+      return normalized === VISIT_TYPE_SALE || normalized === VISIT_TYPE_PHONE_ORDER || normalized === VISIT_TYPE_NO_SALE;
     }
 
     function canGenerateQuoteForVisitType(value) {
@@ -1037,7 +1076,10 @@
 
     function buildVisitTypeBadgeHtml(value) {
       const key = resolveVisitType(value);
-      const badgeClass = key === VISIT_TYPE_SALE ? "sale" : "no-sale";
+      let badgeClass = "no-sale";
+      if (key === VISIT_TYPE_SALE) badgeClass = "sale";
+      if (key === VISIT_TYPE_PHONE_ORDER) badgeClass = "phone-order";
+      if (key === VISIT_TYPE_CLIENT_CLOSED) badgeClass = "closed";
       return `<span class="visit-type-badge ${badgeClass}">${escapeHtml(getVisitTypeLabel(key))}</span>`;
     }
 
@@ -1483,18 +1525,23 @@
     function isVisitWithSale(visite) {
       const normalizedType = normalizeVisitType(visite?.type_visite);
       if (normalizedType === VISIT_TYPE_SALE) return true;
+      if (normalizedType === VISIT_TYPE_PHONE_ORDER) return false;
       if (normalizedType && normalizedType !== VISIT_TYPE_SALE) return false;
       if (Number(visite?.total_commande || 0) > 0) return true;
       return (visite?.commandes || []).length > 0;
     }
 
     function updateStats(currentVisites) {
-      const nbVisites = currentVisites.length;
+      const terrainVisites = currentVisites.filter(visite => isTerrainVisitType(visite.type_visite));
+      const orderRecords = currentVisites.filter(visite =>
+        isOrderVisitType(visite.type_visite) || Number(visite.total_commande || 0) > 0 || (visite.commandes || []).length
+      );
+      const nbVisites = terrainVisites.length;
       const caCumule = currentVisites.reduce((sum, visite) => sum + Number(visite.total_commande || 0), 0);
-      const panierMoyen = nbVisites ? caCumule / nbVisites : 0;
+      const panierMoyen = orderRecords.length ? caCumule / orderRecords.length : 0;
       const produitIds = new Set();
 
-      const visitsWithSale = currentVisites.filter(isVisitWithSale).length;
+      const visitsWithSale = terrainVisites.filter(isVisitWithSale).length;
       const visitsWithoutSale = Math.max(0, nbVisites - visitsWithSale);
       const transformRate = nbVisites ? (visitsWithSale / nbVisites) * 100 : 0;
 
@@ -1515,12 +1562,15 @@
 
     function updateClientInsights(currentVisites) {
       if (!currentVisites.length) {
-        dom.clientLastVisit.textContent = "Aucune visite";
+        dom.clientLastVisit.textContent = "Aucune visite terrain";
         dom.clientTopProduct.textContent = "Aucun historique";
         return;
       }
 
-      dom.clientLastVisit.textContent = formatDateLong(currentVisites[0].date_visite);
+      const terrainVisites = currentVisites.filter(visite => isTerrainVisitType(visite.type_visite));
+      dom.clientLastVisit.textContent = terrainVisites[0]
+        ? formatDateLong(terrainVisites[0].date_visite)
+        : "Aucune visite terrain";
 
       const aggregation = {};
       currentVisites.forEach(visite => {
@@ -1745,6 +1795,9 @@
     }
 
     function renderTimelineCard(visite) {
+      const visitType = resolveVisitType(visite.type_visite);
+      const isPhoneOrder = isPhoneOrderVisitType(visitType);
+      const timelineLabel = isPhoneOrder ? "Commande telephone" : "Visite terrain";
       const commandes = [...(visite.commandes || [])].sort((a, b) => {
         const produitA = getProduitDisplay(a.produit_id);
         const produitB = getProduitDisplay(b.produit_id);
@@ -1779,12 +1832,13 @@
         : `<div class="note-card"><span>Produits</span><p>Aucune ligne produit pour ce type de visite.</p></div>`;
 
       return `
-        <article class="visit-card">
+        <article class="visit-card ${isPhoneOrder ? "phone-order" : ""}">
           <div class="visit-card-head">
             <div>
-              <div class="visit-date-label">Visite</div>
+              <div class="visit-date-label">${escapeHtml(timelineLabel)}</div>
               <div class="visit-date-value">${escapeHtml(formatDateLong(visite.date_visite))}</div>
               <div class="visit-badges">
+                ${buildVisitTypeBadgeHtml(visitType)}
                 <div class="mini-badge">${commandes.length} produit(s)</div>
                 <div class="mini-badge">${totalUnites} unité(s)</div>
               </div>
@@ -1860,9 +1914,15 @@
       }
 
       dom.visitesTableBody.innerHTML = state.visites.map(visite => {
+        const isPhoneOrder = isPhoneOrderVisitType(visite.type_visite);
         let rowHtml = `
-          <tr>
-            <td class="sticky-col sticky-col-1">${escapeHtml(formatDate(visite.date_visite))}</td>
+          <tr class="${isPhoneOrder ? "visit-row-phone" : ""}">
+            <td class="sticky-col sticky-col-1">
+              <div class="table-date-stack">
+                <span>${escapeHtml(formatDate(visite.date_visite))}</span>
+                ${buildVisitTypeBadgeHtml(visite.type_visite)}
+              </div>
+            </td>
             <td class="sticky-col sticky-col-2 table-total">${formatCurrency(visite.total_commande || 0)}</td>
         `;
 
@@ -2362,6 +2422,8 @@
         refreshAllPopupPrices();
         if (!state.produits.length) {
           dom.popupVisitTypeHint.textContent = "Aucun produit visible: verifie les imports tarifs/produits ou les droits de lecture Supabase.";
+        } else if (resolveVisitType(visitType) === VISIT_TYPE_PHONE_ORDER) {
+          dom.popupVisitTypeHint.textContent = "Commande telephone: saisie produits active, CA conserve, sans compter comme visite terrain.";
         } else if (resolveVisitType(visitType) === VISIT_TYPE_NO_SALE) {
           dom.popupVisitTypeHint.textContent = "Passage sans vente: tu peux generer un devis sans enregistrer la visite.";
         } else {
@@ -2434,7 +2496,7 @@
     }
 
     function collectCommandesFromForm() {
-      if (!isSaleVisitType(getPopupVisitType())) {
+      if (!isOrderVisitType(getPopupVisitType())) {
         return { commandes: [], invalidFilledRow: false };
       }
 
@@ -2643,7 +2705,7 @@
 
       if (!clientId) return showToast("Selectionne un client avant de generer un devis.", "warning");
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
-      if (!canGenerateQuote) return showToast("Le devis est disponible pour Vente et Passage sans vente, pas pour Client ferme.", "warning");
+      if (!canGenerateQuote) return showToast("Le devis est disponible pour Vente, Commande telephone et Passage sans vente, pas pour Client ferme.", "warning");
 
       const { lignes, invalidFilledRow } = collectCommandesForQuoteFromForm();
       if (invalidFilledRow) return showToast("Une ligne produit est renseignee mais le produit n'est pas reconnu.", "warning");
@@ -3029,15 +3091,15 @@
       const typeVisite = getPopupVisitType();
       const note = dom.popupNote.value.trim();
       const { commandes, invalidFilledRow } = collectCommandesFromForm();
-      const saleVisit = isSaleVisitType(typeVisite);
+      const orderVisit = isOrderVisitType(typeVisite);
 
       if (!clientId) return showToast("Sélectionne un client avant d'enregistrer.", "warning");
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
       if (!note) return showToast("La note terrain est obligatoire pour enregistrer la visite.", "warning");
       if (invalidFilledRow) return showToast("Une ligne produit est renseignée mais le produit n'est pas reconnu.", "warning");
-      if (saleVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantité ou stock.", "warning");
+      if (orderVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantité ou stock.", "warning");
 
-      const totalCommande = saleVisit
+      const totalCommande = orderVisit
         ? commandes.reduce((sum, commande) => {
             return sum + Number(commande.quantite || 0) * roundPrice(commande.prix_unitaire || 0);
           }, 0)
@@ -3061,7 +3123,7 @@
             .eq("visite_id", visiteId);
           if (deleteCommandesError) throw deleteCommandesError;
 
-          if (saleVisit && commandes.length) {
+          if (orderVisit && commandes.length) {
             const lignes = commandes.map(commande => ({
               visite_id: visiteId,
               produit_id: commande.produit_id,
@@ -3086,7 +3148,7 @@
             .single();
           if (visiteError) throw visiteError;
 
-          if (saleVisit && commandes.length) {
+          if (orderVisit && commandes.length) {
             const lignes = commandes.map(commande => ({
               visite_id: visiteData.id,
               produit_id: commande.produit_id,

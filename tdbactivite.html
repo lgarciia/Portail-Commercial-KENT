@@ -586,7 +586,8 @@
       </div>
 
       <div class="header-actions">
-          <a class="btn btn-danger" href="rappelclt.html">Mes rappels</a>
+        <a class="btn btn-danger" href="rappelclt.html">Mes rappels</a>
+        <a class="btn btn-secondary" href="mes-ventes.html">Mes ventes</a>
         <a class="btn btn-info" href="ficherclt.html">Fiche client</a>
         <button class="btn btn-primary" type="button" onclick="refreshDashboard()">Actualiser</button>
       </div>
@@ -644,7 +645,7 @@
         <h2>Vue rapide</h2>
         <div class="hero-main-grid">
           <div class="hero-kpi">
-            <div class="hero-kpi-label">Visites période</div>
+            <div class="hero-kpi-label">Visites terrain periode</div>
             <div class="hero-kpi-value" id="heroVisites">0</div>
             <div class="hero-kpi-sub" id="heroClients">0 client visité</div>
           </div>
@@ -654,7 +655,7 @@
             <div class="hero-kpi-sub" id="heroPanier">Panier moyen : 0,00 €</div>
           </div>
           <div class="hero-kpi">
-            <div class="hero-kpi-label">Visites aujourd’hui</div>
+            <div class="hero-kpi-label">Visites terrain aujourd'hui</div>
             <div class="hero-kpi-value" id="heroToday">0</div>
             <div class="hero-kpi-sub" id="heroTodayCa">CA jour : 0,00 €</div>
           </div>
@@ -745,7 +746,7 @@
               <tr>
                 <th>Client</th>
                 <th>Compte</th>
-                <th class="number">Visites</th>
+                <th class="number">Visites terrain</th>
                 <th class="number">CA</th>
                 <th class="number">Panier moyen</th>
                 <th>Action</th>
@@ -845,6 +846,7 @@
     let lignesCommandes = [];
     let filteredContext = null;
     const REMINDER_COLORS = new Set(["red", "yellow", "green", "blue"]);
+    const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
 
     function setStatus(message) {
       document.getElementById("statusBar").textContent = message;
@@ -904,9 +906,35 @@
     function normalizeVisitType(value) {
       const normalized = String(value || "").trim().toLowerCase().replaceAll("-", "_").replaceAll(" ", "_");
       if (normalized === "vente") return "vente";
+      if (["commande_telephone", "commande_tel", "appel_telephonique", "telephone", "tel"].includes(normalized)) return VISIT_TYPE_PHONE_ORDER;
       if (normalized === "passage_sans_vente") return "passage_sans_vente";
       if (normalized === "client_ferme") return "client_ferme";
       return "";
+    }
+
+    function isPhoneOrderVisit(visite) {
+      return normalizeVisitType(visite?.type_visite) === VISIT_TYPE_PHONE_ORDER;
+    }
+
+    function isTerrainVisit(visite) {
+      return !isPhoneOrderVisit(visite);
+    }
+
+    function isOrderRecord(visite, lineCountByVisit = null) {
+      const visitType = normalizeVisitType(visite?.type_visite);
+      if (visitType === "vente" || visitType === VISIT_TYPE_PHONE_ORDER) return true;
+      if (visitType) return false;
+      if (Number(visite?.total_commande || 0) > 0) return true;
+      if (lineCountByVisit) return (lineCountByVisit.get(String(visite?.id)) || 0) > 0;
+      return false;
+    }
+
+    function getVisitTypeLabel(value) {
+      const visitType = normalizeVisitType(value);
+      if (visitType === VISIT_TYPE_PHONE_ORDER) return "Commande telephone";
+      if (visitType === "passage_sans_vente") return "Passage sans vente";
+      if (visitType === "client_ferme") return "Client ferme";
+      return "Visite terrain";
     }
 
     function buildLineCountByVisitId(lignesFiltered) {
@@ -1056,6 +1084,8 @@
       const lignesFiltered = lignesCommandes.filter(ligne =>
         visiteIds.has(String(ligne.visite_id))
       );
+      const terrainVisitesFiltered = visitesFiltered.filter(isTerrainVisit);
+      const phoneOrdersFiltered = visitesFiltered.filter(isPhoneOrderVisit);
 
       const reminderLinesInPeriod = lignesFiltered.filter(ligne =>
         lineMatchesReminderFilter(ligne, reminderColorFilter)
@@ -1067,6 +1097,8 @@
         clientSearch,
         reminderColorFilter,
         visitesFiltered,
+        terrainVisitesFiltered,
+        phoneOrdersFiltered,
         lignesFiltered,
         reminderLinesInPeriod,
         matchingClientIds
@@ -1079,11 +1111,14 @@
         const d = visite.date_visite ? new Date(visite.date_visite + "T00:00:00") : null;
         return d && d >= range.start && d < range.end;
       });
+      const terrainVisitesToday = visitesToday.filter(isTerrainVisit);
+      const phoneOrdersToday = visitesToday.filter(isPhoneOrderVisit);
 
       const caToday = visitesToday.reduce((sum, v) => sum + Number(v.total_commande || 0), 0);
 
       return {
-        visitesToday,
+        visitesToday: terrainVisitesToday,
+        phoneOrdersToday,
         caToday
       };
     }
@@ -1102,18 +1137,22 @@
             nom: client.nom || "Client",
             numero_compte: client.numero_compte || "—",
             visites: 0,
+            commandesTelephone: 0,
+            commandes: 0,
             ca: 0
           });
         }
 
         const item = map.get(key);
-        item.visites += 1;
+        if (isTerrainVisit(visite)) item.visites += 1;
+        if (isPhoneOrderVisit(visite)) item.commandesTelephone += 1;
+        if (isOrderRecord(visite)) item.commandes += 1;
         item.ca += Number(visite.total_commande || 0);
       });
 
       return [...map.values()].map(item => ({
         ...item,
-        panierMoyen: item.visites ? item.ca / item.visites : 0
+        panierMoyen: item.commandes ? item.ca / item.commandes : 0
       }));
     }
 
@@ -1211,7 +1250,7 @@
 
       return clients.map(client => {
         const visitesClient = visites
-          .filter(v => String(v.client_id) === String(client.id))
+          .filter(v => String(v.client_id) === String(client.id) && isTerrainVisit(v))
           .sort((a, b) => new Date(b.date_visite) - new Date(a.date_visite));
 
         const lastVisite = visitesClient[0] || null;
@@ -1237,13 +1276,16 @@
 
     function buildVisitsWithoutOrders(visitesFiltered, lignesFiltered) {
       const lineCountByVisit = buildLineCountByVisitId(lignesFiltered);
-      return visitesFiltered.filter(visite => !isSaleVisit(visite, lineCountByVisit));
+      return visitesFiltered.filter(isTerrainVisit).filter(visite => !isSaleVisit(visite, lineCountByVisit));
     }
 
     function renderHero(context) {
-      const { visitesFiltered, reminderLinesInPeriod, reminderColorFilter } = context;
+      const { visitesFiltered, terrainVisitesFiltered, reminderLinesInPeriod, reminderColorFilter } = context;
       const todayMetrics = getTodayMetrics();
-      const clientIds = new Set(visitesFiltered.map(v => String(v.client_id)));
+      const terrainVisits = terrainVisitesFiltered || visitesFiltered.filter(isTerrainVisit);
+      const lineCountByVisit = buildLineCountByVisitId(context.lignesFiltered || []);
+      const orderRecords = visitesFiltered.filter(visite => isOrderRecord(visite, lineCountByVisit));
+      const clientIds = new Set(terrainVisits.map(v => String(v.client_id)));
       const reminderClientIds = new Set(
         reminderLinesInPeriod.map(l => {
           const visite = visites.find(v => String(v.id) === String(l.visite_id));
@@ -1252,14 +1294,14 @@
       );
 
       const ca = visitesFiltered.reduce((sum, v) => sum + Number(v.total_commande || 0), 0);
-      const panier = visitesFiltered.length ? ca / visitesFiltered.length : 0;
+      const panier = orderRecords.length ? ca / orderRecords.length : 0;
 
-      document.getElementById("heroVisites").textContent = visitesFiltered.length;
+      document.getElementById("heroVisites").textContent = terrainVisits.length;
       document.getElementById("heroClients").textContent = `${clientIds.size} client${clientIds.size > 1 ? "s" : ""} visite${clientIds.size > 1 ? "s" : ""}`;
       document.getElementById("heroCa").textContent = formatCurrency(ca);
-      document.getElementById("heroPanier").textContent = `Panier moyen : ${formatCurrency(panier)}`;
+      document.getElementById("heroPanier").textContent = `Panier moyen commande : ${formatCurrency(panier)}`;
       document.getElementById("heroToday").textContent = todayMetrics.visitesToday.length;
-      document.getElementById("heroTodayCa").textContent = `CA jour : ${formatCurrency(todayMetrics.caToday)}`;
+      document.getElementById("heroTodayCa").textContent = `CA jour : ${formatCurrency(todayMetrics.caToday)}${todayMetrics.phoneOrdersToday.length ? ` + ${todayMetrics.phoneOrdersToday.length} tel` : ""}`;
 
       const reminderLabelEl = document.getElementById("heroReminderLabel");
       if (reminderLabelEl) {
@@ -1268,7 +1310,6 @@
       document.getElementById("heroRed").textContent = reminderLinesInPeriod.length;
       document.getElementById("heroRedClients").textContent = `${reminderClientIds.size} client${reminderClientIds.size > 1 ? "s" : ""} concerne${reminderClientIds.size > 1 ? "s" : ""}`;
     }
-
     function renderAlerts(context) {
       const inactiveClients = buildInactiveClients(30);
       const visitsWithoutOrders = buildVisitsWithoutOrders(context.visitesFiltered, context.lignesFiltered);
@@ -1290,24 +1331,28 @@
 
     function renderActivityKpis(context) {
       const body = document.getElementById("activityKpis");
-      const { visitesFiltered, lignesFiltered } = context;
+      const { visitesFiltered, terrainVisitesFiltered, phoneOrdersFiltered, lignesFiltered } = context;
+      const terrainVisits = terrainVisitesFiltered || visitesFiltered.filter(isTerrainVisit);
+      const phoneOrders = phoneOrdersFiltered || visitesFiltered.filter(isPhoneOrderVisit);
       const ca = visitesFiltered.reduce((sum, v) => sum + Number(v.total_commande || 0), 0);
-      const clientIds = new Set(visitesFiltered.map(v => String(v.client_id)));
-      const panier = visitesFiltered.length ? ca / visitesFiltered.length : 0;
+      const clientIds = new Set(terrainVisits.map(v => String(v.client_id)));
+      const lineCountByVisit = buildLineCountByVisitId(lignesFiltered);
+      const orderRecords = visitesFiltered.filter(visite => isOrderRecord(visite, lineCountByVisit));
+      const panier = orderRecords.length ? ca / orderRecords.length : 0;
       const qty = lignesFiltered.reduce((sum, l) => sum + Number(l.quantite || 0), 0);
-      const visitsWithoutOrders = buildVisitsWithoutOrders(visitesFiltered, lignesFiltered);
-      const visitsWithSale = Math.max(0, visitesFiltered.length - visitsWithoutOrders.length);
-      const tauxTransformation = visitesFiltered.length ? (visitsWithSale / visitesFiltered.length) * 100 : 0;
+      const visitsWithoutOrders = buildVisitsWithoutOrders(terrainVisits, lignesFiltered);
+      const visitsWithSale = Math.max(0, terrainVisits.length - visitsWithoutOrders.length);
+      const tauxTransformation = terrainVisits.length ? (visitsWithSale / terrainVisits.length) * 100 : 0;
 
       const kpis = [
-        { title: "Clients visités", value: clientIds.size, foot: "sur la période filtrée" },
+        { title: "Clients visites terrain", value: clientIds.size, foot: "sur la periode filtree" },
         { title: "Nombre de lignes", value: lignesFiltered.length, foot: "lignes produits saisies" },
-        { title: "Quantité vendue", value: qty, foot: "total quantités commandées" },
-        { title: "Panier moyen", value: formatCurrency(panier), foot: "CA moyen par visite" },
-        { title: "CA par client", value: formatCurrency(clientIds.size ? ca / clientIds.size : 0), foot: "moyenne par client visité" },
-        { title: "Taux transformation", value: `${tauxTransformation.toFixed(0)} %`, foot: `${visitsWithSale} visite(s) avec vente` },
-        { title: "Note moyenne / visite", value: (visitesFiltered.filter(v => (v.note || "").trim()).length / (visitesFiltered.length || 1)).toFixed(2), foot: "niveau de saisie terrain" },
-        { title: "Dernière visite", value: visitesFiltered[0] ? formatDate(visitesFiltered[0].date_visite) : "—", foot: "sur la période" }
+        { title: "Quantite vendue", value: qty, foot: "total quantites commandees" },
+        { title: "Panier moyen", value: formatCurrency(panier), foot: "CA moyen par commande" },
+        { title: "CA par client terrain", value: formatCurrency(clientIds.size ? ca / clientIds.size : 0), foot: "moyenne par client visite" },
+        { title: "Taux transformation", value: `${tauxTransformation.toFixed(0)} %`, foot: `${visitsWithSale} visite(s) terrain avec vente` },
+        { title: "Commandes telephone", value: phoneOrders.length, foot: "hors visites terrain" },
+        { title: "Derniere visite terrain", value: terrainVisits[0] ? formatDate(terrainVisits[0].date_visite) : "-", foot: "sur la periode" }
       ];
 
       body.innerHTML = kpis.map(item => `
@@ -1318,7 +1363,6 @@
         </div>
       `).join("");
     }
-
     function renderColorProgress(context) {
       const body = document.getElementById("colorProgress");
       const stats = buildColorStats(context.lignesFiltered);
@@ -1508,26 +1552,28 @@
       const rows = [...context.visitesFiltered].slice(0, 8);
 
       if (!rows.length) {
-        body.innerHTML = `<div class="empty-state">Aucune visite sur la période.</div>`;
+        body.innerHTML = `<div class="empty-state">Aucune activite sur la periode.</div>`;
         return;
       }
 
       body.innerHTML = rows.map(visite => {
         const client = getClientById(visite.client_id);
+        const typeLabel = getVisitTypeLabel(visite.type_visite);
+        const typeBadgeClass = isPhoneOrderVisit(visite) ? "badge-info" : (isSaleVisit(visite) ? "badge-success" : "badge-warning");
         return `
           <div class="action-item">
             <div class="action-main">
               <strong>${escapeHtml(client?.nom || "Client")}</strong>
-              <span>${formatDate(visite.date_visite)} • ${formatCurrency(visite.total_commande || 0)}${visite.note ? " • " + escapeHtml(visite.note) : ""}</span>
+              <span>${formatDate(visite.date_visite)} - ${formatCurrency(visite.total_commande || 0)}${visite.note ? " - " + escapeHtml(visite.note) : ""}</span>
             </div>
             <div class="action-right">
+              <span class="badge ${typeBadgeClass}">${escapeHtml(typeLabel)}</span>
               <button class="link-btn" onclick="goToClient('${String(client?.id || "").replace(/'/g, "\\'")}')">Voir fiche</button>
             </div>
           </div>
         `;
       }).join("");
     }
-
     function renderOpportunityList(context) {
       const body = document.getElementById("opportunityList");
       const products = aggregateProductStats(context.lignesFiltered, context.reminderColorFilter)
@@ -1590,9 +1636,7 @@
       renderOpportunityList(context);
       renderProductsDetail(context);
 
-      setStatus(
-        `Dashboard à jour • ${context.visitesFiltered.length} visite(s) • ${context.lignesFiltered.length} ligne(s) • ${clients.length} client(s) • ${produits.length} produit(s)`
-      );
+      setStatus(`Dashboard a jour - ${context.terrainVisitesFiltered.length} visite(s) terrain - ${context.phoneOrdersFiltered.length} commande(s) telephone - ${context.lignesFiltered.length} ligne(s) - ${clients.length} client(s) - ${produits.length} produit(s)`);
     }
 
     function applyFilters() {
