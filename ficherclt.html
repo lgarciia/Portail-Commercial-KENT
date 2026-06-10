@@ -845,6 +845,7 @@
     const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
     const VISIT_TYPE_NO_SALE = "passage_sans_vente";
     const VISIT_TYPE_CLIENT_CLOSED = "client_ferme";
+    const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
     const VISIT_TYPE_LABELS = {
       vente: "Vente",
       commande_telephone: "Commande telephone",
@@ -1037,6 +1038,28 @@
       if (normalized === "passage_sans_vente") return "passage_sans_vente";
       if (normalized === "client_ferme") return "client_ferme";
       return "";
+    }
+
+    function hasPhoneOrderNoteMarker(note) {
+      return String(note || "").includes(PHONE_ORDER_NOTE_MARKER);
+    }
+
+    function stripPhoneOrderNoteMarker(note) {
+      return String(note || "")
+        .replace(PHONE_ORDER_NOTE_MARKER, "")
+        .replace(/^\s+/, "")
+        .trim();
+    }
+
+    function addPhoneOrderNoteMarker(note) {
+      const cleanedNote = stripPhoneOrderNoteMarker(note);
+      return cleanedNote ? `${PHONE_ORDER_NOTE_MARKER}\n${cleanedNote}` : PHONE_ORDER_NOTE_MARKER;
+    }
+
+    function resolveVisitTypeFromRecord(visite) {
+      const normalized = normalizeVisitType(visite?.type_visite);
+      if (normalized === VISIT_TYPE_SALE && hasPhoneOrderNoteMarker(visite?.note)) return VISIT_TYPE_PHONE_ORDER;
+      return normalized;
     }
 
     function resolveVisitType(value) {
@@ -1419,7 +1442,8 @@
 
         return {
           ...visite,
-          type_visite: normalizeVisitType(visite.type_visite),
+          note: stripPhoneOrderNoteMarker(visite.note || ""),
+          type_visite: resolveVisitTypeFromRecord(visite),
           commandes
         };
       });
@@ -3083,6 +3107,81 @@
       }
     }
 
+    function shouldRetryPhoneOrderAsSale(error, typeVisite) {
+      if (!isPhoneOrderVisitType(typeVisite)) return false;
+      const message = String(error?.message || error?.details || error?.hint || "").toLowerCase();
+      return (
+        message.includes("type_visite") ||
+        message.includes("check") ||
+        message.includes("constraint") ||
+        message.includes("violates") ||
+        message.includes("invalid")
+      );
+    }
+
+    function buildVisitPayload(clientId, dateVisite, typeVisite, note, totalCommande, forcePhoneFallback = false) {
+      const fallbackPhoneOrder = forcePhoneFallback && isPhoneOrderVisitType(typeVisite);
+      return {
+        client_id: clientId,
+        date_visite: dateVisite,
+        type_visite: fallbackPhoneOrder ? VISIT_TYPE_SALE : typeVisite,
+        note: fallbackPhoneOrder ? addPhoneOrderNoteMarker(note) : stripPhoneOrderNoteMarker(note),
+        total_commande: totalCommande
+      };
+    }
+
+    async function updateVisitRecordWithPhoneFallback(visiteId, payload, originalTypeVisite) {
+      const updatePayload = {
+        date_visite: payload.date_visite,
+        type_visite: payload.type_visite,
+        note: payload.note,
+        total_commande: payload.total_commande
+      };
+
+      const { error } = await supabaseClient
+        .from("visites")
+        .update(updatePayload)
+        .eq("id", visiteId);
+
+      if (!error) return { usedFallback: false };
+      if (!shouldRetryPhoneOrderAsSale(error, originalTypeVisite)) throw error;
+
+      const fallbackPayload = buildVisitPayload(payload.client_id, payload.date_visite, originalTypeVisite, payload.note, payload.total_commande, true);
+      const { error: fallbackError } = await supabaseClient
+        .from("visites")
+        .update({
+          date_visite: fallbackPayload.date_visite,
+          type_visite: fallbackPayload.type_visite,
+          note: fallbackPayload.note,
+          total_commande: fallbackPayload.total_commande
+        })
+        .eq("id", visiteId);
+
+      if (fallbackError) throw fallbackError;
+      return { usedFallback: true };
+    }
+
+    async function insertVisitRecordWithPhoneFallback(payload, originalTypeVisite) {
+      const { data, error } = await supabaseClient
+        .from("visites")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (!error) return { data, usedFallback: false };
+      if (!shouldRetryPhoneOrderAsSale(error, originalTypeVisite)) throw error;
+
+      const fallbackPayload = buildVisitPayload(payload.client_id, payload.date_visite, originalTypeVisite, payload.note, payload.total_commande, true);
+      const { data: fallbackData, error: fallbackError } = await supabaseClient
+        .from("visites")
+        .insert(fallbackPayload)
+        .select()
+        .single();
+
+      if (fallbackError) throw fallbackError;
+      return { data: fallbackData, usedFallback: true };
+    }
+
     async function saveVisit(event) {
       event.preventDefault();
 
@@ -3093,29 +3192,25 @@
       const { commandes, invalidFilledRow } = collectCommandesFromForm();
       const orderVisit = isOrderVisitType(typeVisite);
 
-      if (!clientId) return showToast("Sélectionne un client avant d'enregistrer.", "warning");
+      if (!clientId) return showToast("Selectionne un client avant d'enregistrer.", "warning");
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
       if (!note) return showToast("La note terrain est obligatoire pour enregistrer la visite.", "warning");
-      if (invalidFilledRow) return showToast("Une ligne produit est renseignée mais le produit n'est pas reconnu.", "warning");
-      if (orderVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantité ou stock.", "warning");
+      if (invalidFilledRow) return showToast("Une ligne produit est renseignee mais le produit n'est pas reconnu.", "warning");
+      if (orderVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantite ou stock.", "warning");
 
       const totalCommande = orderVisit
         ? commandes.reduce((sum, commande) => {
             return sum + Number(commande.quantite || 0) * roundPrice(commande.prix_unitaire || 0);
           }, 0)
         : 0;
+      const visitPayload = buildVisitPayload(clientId, dateVisite, typeVisite, note, totalCommande);
 
       try {
-        setStatus(state.activeVisitId ? "Mise à jour de la visite..." : "Enregistrement de la visite...", "info");
+        setStatus(state.activeVisitId ? "Mise a jour de la visite..." : "Enregistrement de la visite...", "info");
 
         if (state.activeVisitId) {
           const visiteId = state.activeVisitId;
-
-          const { error: updateVisiteError } = await supabaseClient
-            .from("visites")
-            .update({ date_visite: dateVisite, type_visite: typeVisite, note, total_commande: totalCommande })
-            .eq("id", visiteId);
-          if (updateVisiteError) throw updateVisiteError;
+          const { usedFallback } = await updateVisitRecordWithPhoneFallback(visiteId, visitPayload, typeVisite);
 
           const { error: deleteCommandesError } = await supabaseClient
             .from("visite_commandes")
@@ -3139,14 +3234,12 @@
             if (insertCommandesError) throw insertCommandesError;
           }
 
-          showToast("Visite mise à jour avec succès.", "success");
+          showToast(
+            usedFallback ? "Commande telephone mise a jour en mode compatibilite." : "Visite mise a jour avec succes.",
+            usedFallback ? "info" : "success"
+          );
         } else {
-          const { data: visiteData, error: visiteError } = await supabaseClient
-            .from("visites")
-            .insert({ client_id: clientId, date_visite: dateVisite, type_visite: typeVisite, note, total_commande: totalCommande })
-            .select()
-            .single();
-          if (visiteError) throw visiteError;
+          const { data: visiteData, usedFallback } = await insertVisitRecordWithPhoneFallback(visitPayload, typeVisite);
 
           if (orderVisit && commandes.length) {
             const lignes = commandes.map(commande => ({
@@ -3164,7 +3257,10 @@
             if (insertCommandesError) throw insertCommandesError;
           }
 
-          showToast("Visite enregistrée avec succès.", "success");
+          showToast(
+            usedFallback ? "Commande telephone enregistree en mode compatibilite." : "Visite enregistree avec succes.",
+            usedFallback ? "info" : "success"
+          );
         }
 
         dom.clientSearch.value = "";

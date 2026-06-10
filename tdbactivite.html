@@ -847,6 +847,7 @@
     let filteredContext = null;
     const REMINDER_COLORS = new Set(["red", "yellow", "green", "blue"]);
     const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
+    const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
 
     function setStatus(message) {
       document.getElementById("statusBar").textContent = message;
@@ -912,8 +913,22 @@
       return "";
     }
 
+    function hasPhoneOrderNoteMarker(note) {
+      return String(note || "").includes(PHONE_ORDER_NOTE_MARKER);
+    }
+
+    function stripPhoneOrderNoteMarker(note) {
+      return String(note || "").replace(PHONE_ORDER_NOTE_MARKER, "").replace(/^\s+/, "").trim();
+    }
+
+    function resolveVisitTypeFromRecord(visite) {
+      const visitType = normalizeVisitType(visite?.type_visite);
+      if (visitType === "vente" && hasPhoneOrderNoteMarker(visite?.note)) return VISIT_TYPE_PHONE_ORDER;
+      return visitType;
+    }
+
     function isPhoneOrderVisit(visite) {
-      return normalizeVisitType(visite?.type_visite) === VISIT_TYPE_PHONE_ORDER;
+      return resolveVisitTypeFromRecord(visite) === VISIT_TYPE_PHONE_ORDER;
     }
 
     function isTerrainVisit(visite) {
@@ -921,7 +936,7 @@
     }
 
     function isOrderRecord(visite, lineCountByVisit = null) {
-      const visitType = normalizeVisitType(visite?.type_visite);
+      const visitType = resolveVisitTypeFromRecord(visite);
       if (visitType === "vente" || visitType === VISIT_TYPE_PHONE_ORDER) return true;
       if (visitType) return false;
       if (Number(visite?.total_commande || 0) > 0) return true;
@@ -930,7 +945,7 @@
     }
 
     function getVisitTypeLabel(value) {
-      const visitType = normalizeVisitType(value);
+      const visitType = typeof value === "object" ? resolveVisitTypeFromRecord(value) : normalizeVisitType(value);
       if (visitType === VISIT_TYPE_PHONE_ORDER) return "Commande telephone";
       if (visitType === "passage_sans_vente") return "Passage sans vente";
       if (visitType === "client_ferme") return "Client ferme";
@@ -947,7 +962,7 @@
     }
 
     function isSaleVisit(visite, lineCountByVisit = null) {
-      const visitType = normalizeVisitType(visite?.type_visite);
+      const visitType = resolveVisitTypeFromRecord(visite);
       if (visitType === "vente") return true;
       if (visitType) return false;
       if (Number(visite?.total_commande || 0) > 0) return true;
@@ -1237,7 +1252,7 @@
             numero_compte: client?.numero_compte || "—",
             produit_nom: produit?.nom || "Produit",
             date_visite: visite?.date_visite || "",
-            note: visite?.note || ""
+            note: stripPhoneOrderNoteMarker(visite?.note || "")
           };
         })
         .sort((a, b) => new Date(b.date_visite) - new Date(a.date_visite));
@@ -1558,13 +1573,13 @@
 
       body.innerHTML = rows.map(visite => {
         const client = getClientById(visite.client_id);
-        const typeLabel = getVisitTypeLabel(visite.type_visite);
+        const typeLabel = getVisitTypeLabel(visite);
         const typeBadgeClass = isPhoneOrderVisit(visite) ? "badge-info" : (isSaleVisit(visite) ? "badge-success" : "badge-warning");
         return `
           <div class="action-item">
             <div class="action-main">
               <strong>${escapeHtml(client?.nom || "Client")}</strong>
-              <span>${formatDate(visite.date_visite)} - ${formatCurrency(visite.total_commande || 0)}${visite.note ? " - " + escapeHtml(visite.note) : ""}</span>
+              <span>${formatDate(visite.date_visite)} - ${formatCurrency(visite.total_commande || 0)}${stripPhoneOrderNoteMarker(visite.note) ? " - " + escapeHtml(stripPhoneOrderNoteMarker(visite.note)) : ""}</span>
             </div>
             <div class="action-right">
               <span class="badge ${typeBadgeClass}">${escapeHtml(typeLabel)}</span>

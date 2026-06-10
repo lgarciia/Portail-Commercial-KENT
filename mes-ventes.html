@@ -409,6 +409,7 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
+    const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
 
     let clients = [];
     let produits = [];
@@ -470,16 +471,32 @@
       return "";
     }
 
+    function hasPhoneOrderNoteMarker(note) {
+      return String(note || "").includes(PHONE_ORDER_NOTE_MARKER);
+    }
+
+    function stripPhoneOrderNoteMarker(note) {
+      return String(note || "").replace(PHONE_ORDER_NOTE_MARKER, "").replace(/^\s+/, "").trim();
+    }
+
+    function resolveVisitTypeFromRecord(visite) {
+      const visitType = normalizeVisitType(visite?.type_visite);
+      if (visitType === "vente" && hasPhoneOrderNoteMarker(visite?.note)) return VISIT_TYPE_PHONE_ORDER;
+      return visitType;
+    }
+
     function isPhoneOrderVisit(visite) {
-      return normalizeVisitType(visite?.type_visite) === VISIT_TYPE_PHONE_ORDER;
+      return resolveVisitTypeFromRecord(visite) === VISIT_TYPE_PHONE_ORDER;
     }
 
     function getVisitTypeLabel(value) {
-      return normalizeVisitType(value) === VISIT_TYPE_PHONE_ORDER ? "Commande telephone" : "Vente terrain";
+      const visitType = typeof value === "object" ? resolveVisitTypeFromRecord(value) : normalizeVisitType(value);
+      return visitType === VISIT_TYPE_PHONE_ORDER ? "Commande telephone" : "Vente terrain";
     }
 
     function getVisitTypeBadge(value) {
-      const phone = normalizeVisitType(value) === VISIT_TYPE_PHONE_ORDER;
+      const visitType = typeof value === "object" ? resolveVisitTypeFromRecord(value) : normalizeVisitType(value);
+      const phone = visitType === VISIT_TYPE_PHONE_ORDER;
       return `<span class="badge ${phone ? "badge-phone" : "badge-sale"}">${phone ? "Telephone" : "Terrain"}</span>`;
     }
 
@@ -605,7 +622,7 @@
     }
 
     function isOrderVisit(visite) {
-      const visitType = normalizeVisitType(visite?.type_visite);
+      const visitType = resolveVisitTypeFromRecord(visite);
       return visitType === "vente" || visitType === VISIT_TYPE_PHONE_ORDER || Number(visite?.total_commande || 0) > 0;
     }
 
@@ -625,7 +642,7 @@
 
         if (!isOrderVisit(visite)) return;
 
-        const visitType = normalizeVisitType(visite.type_visite) || "vente";
+        const visitType = resolveVisitTypeFromRecord(visite) || "vente";
         if (typeFilter !== "all" && visitType !== typeFilter) return;
 
         const d = visite.date_visite ? new Date(visite.date_visite + "T00:00:00") : null;
@@ -661,7 +678,7 @@
           stock_client: Number(ligne.stock_client || 0),
           prix_unitaire: prixUnitaire,
           total_ligne: quantite * prixUnitaire,
-          note: visite.note || ""
+          note: stripPhoneOrderNoteMarker(visite.note || "")
         });
       });
 
