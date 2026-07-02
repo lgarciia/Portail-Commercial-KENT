@@ -579,17 +579,14 @@
 
     async function fetchAllData() {
       const [clientsRes, produitsRes, visitesRes, lignesRes] = await Promise.all([
-        supabaseClient.from("clients").select("id, nom, numero_compte, adresse, telephone, plaque_id, plaques(id, nom)").order("nom"),
-        supabaseClient.from("produits").select("id, nom, actif, reference_produit, prix_vente").order("nom"),
+        fetchPaged("clients", "id, nom, numero_compte, adresse, telephone, plaque_id, plaques(id, nom)", { order: { column: "nom", ascending: true } }),
+        fetchPaged("produits", "id, nom, actif, reference_produit, prix_vente", { order: { column: "nom", ascending: true } }),
         fetchPaged("visites", "id, client_id, date_visite, note, type_visite, total_commande", { order: { column: "date_visite", ascending: false } }),
         fetchPaged("visite_commandes", "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire")
       ]);
 
-      if (clientsRes.error) throw new Error("clients: " + clientsRes.error.message);
-      if (produitsRes.error) throw new Error("produits: " + produitsRes.error.message);
-
-      clients = clientsRes.data || [];
-      produits = (produitsRes.data || []).filter(p => p.actif !== false);
+      clients = clientsRes || [];
+      produits = produitsRes || [];
       visites = visitesRes || [];
       lignesCommandes = lignesRes || [];
     }
