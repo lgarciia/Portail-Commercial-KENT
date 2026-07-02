@@ -271,6 +271,24 @@
     }
     .view-panel{display:none}
     .view-panel.active{display:block;animation:rise-in .3s ease}
+    .quick-reco-panel{
+      display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+      margin-bottom:14px;padding:14px;border-radius:18px;
+      background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(34,197,94,.08));
+      border:1px solid rgba(56,189,248,.18);
+    }
+    .quick-reco-copy{display:flex;flex-direction:column;gap:5px;min-width:240px;flex:1}
+    .quick-reco-eyebrow{
+      color:#b6e8ff;font-size:.7rem;text-transform:uppercase;letter-spacing:.11em;font-weight:800;
+    }
+    .quick-reco-copy strong{font-size:1rem;letter-spacing:-.02em}
+    .quick-reco-copy p{color:var(--muted);font-size:.82rem;line-height:1.45}
+    .quick-reco-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .quick-reco-summary{
+      padding:10px 12px;border-radius:14px;
+      background:rgba(2,6,23,.28);border:1px solid rgba(255,255,255,.08);
+      color:#d8f3ff;font-weight:800;font-size:.84rem;white-space:nowrap;
+    }
     .timeline-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
     .visit-card{
       display:flex;flex-direction:column;gap:16px;padding:18px;border-radius:22px;
@@ -339,10 +357,27 @@
     .sticky-col-2{left:112px;min-width:120px;width:120px}
     .note-col{min-width:260px}
     .actions-col{min-width:130px;width:130px}
-    .product-col{min-width:92px;width:92px}
+    .product-col{min-width:126px;width:126px}
     .table-product-head{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;line-height:1.18}
     .table-product-head strong{font-size:.73rem;text-transform:none;letter-spacing:0}
     .table-product-head span{color:var(--muted-2);font-size:.66rem;text-transform:none;letter-spacing:0}
+    .quick-product-control{
+      margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);
+      display:grid;gap:6px;justify-items:center;
+    }
+    .quick-product-check{
+      display:inline-flex;align-items:center;gap:6px;
+      color:#d8f3ff;font-size:.68rem;text-transform:none;letter-spacing:0;font-weight:800;
+      cursor:pointer;
+    }
+    .quick-product-check input{width:16px;height:16px;accent-color:#38bdf8}
+    .quick-product-qty{
+      width:62px;border:1px solid rgba(148,163,184,.26);
+      background:rgba(15,23,42,.72);color:var(--text);
+      border-radius:10px;padding:7px 8px;text-align:center;font-size:.78rem;font-weight:800;outline:none;
+    }
+    .quick-product-qty:focus{border-color:rgba(56,189,248,.62);box-shadow:0 0 0 3px rgba(56,189,248,.12)}
+    .quick-product-last{color:var(--muted-2);font-size:.62rem;text-transform:none;letter-spacing:0;font-weight:600}
     .table-product-cell{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;min-height:58px}
     .table-product-cell strong{color:#d8f3ff;font-size:.83rem}
     .table-product-cell span{color:var(--muted);font-size:.72rem}
@@ -670,6 +705,18 @@
       </div>
 
       <div id="matrixView" class="view-panel">
+        <div class="quick-reco-panel" id="quickRecoPanel">
+          <div class="quick-reco-copy">
+            <div class="quick-reco-eyebrow">Recommande rapide</div>
+            <strong>Selectionne les produits a reprendre</strong>
+            <p>Coche un produit ou saisis une quantite, puis prepare la commande dans la fenetre de visite existante.</p>
+          </div>
+          <div class="quick-reco-actions">
+            <div class="quick-reco-summary" id="quickRecoSummary">0 produit selectionne</div>
+            <button class="btn btn-info btn-sm" id="prepareQuickRecoBtn" type="button" disabled>Preparer la commande</button>
+            <button class="btn btn-secondary btn-sm" id="clearQuickRecoBtn" type="button" disabled>Vider</button>
+          </div>
+        </div>
         <div class="table-shell">
           <table>
             <thead id="visitesTableHead"></thead>
@@ -837,6 +884,8 @@
       conditionnementsByRef5: new Map(),
       currentView: "timeline",
       activeVisitId: null,
+      recommendationCart: new Map(),
+      recommendationClientId: "",
       lastAddedClientNumero: ""
     };
 
@@ -884,6 +933,10 @@
       dom.timelineView = document.getElementById("timelineView");
       dom.timelineList = document.getElementById("timelineList");
       dom.matrixView = document.getElementById("matrixView");
+      dom.quickRecoPanel = document.getElementById("quickRecoPanel");
+      dom.quickRecoSummary = document.getElementById("quickRecoSummary");
+      dom.prepareQuickRecoBtn = document.getElementById("prepareQuickRecoBtn");
+      dom.clearQuickRecoBtn = document.getElementById("clearQuickRecoBtn");
       dom.visitesTableHead = document.getElementById("visitesTableHead");
       dom.visitesTableBody = document.getElementById("visitesTableBody");
       dom.viewButtons = [...document.querySelectorAll(".view-switch [data-view]")];
@@ -1529,6 +1582,7 @@
       dom.clientTerrainStatus.textContent = "Sélectionne un client pour démarrer";
       dom.clientLastVisit.textContent = "—";
       dom.clientTopProduct.textContent = "—";
+      if (dom.quickRecoSummary) clearRecommendationCart({ silent: true });
     }
 
     function updateClientHeader() {
@@ -1818,6 +1872,139 @@
         .sort((a, b) => (a.nom || "").localeCompare(b.nom || "", "fr"));
     }
 
+    function syncRecommendationClientScope() {
+      const currentClientId = getSelectedClientId() || "";
+      if (state.recommendationClientId && state.recommendationClientId !== currentClientId) {
+        state.recommendationCart.clear();
+      }
+      state.recommendationClientId = currentClientId;
+    }
+
+    function getRecommendationCartItems() {
+      return [...state.recommendationCart.values()]
+        .filter(item => item && Number(item.quantite || 0) > 0 && getProduitById(item.produit_id))
+        .sort((a, b) => {
+          const produitA = getProduitDisplay(a.produit_id);
+          const produitB = getProduitDisplay(b.produit_id);
+          return (produitA.nom || "").localeCompare(produitB.nom || "", "fr");
+        });
+    }
+
+    function renderRecommendationCartSummary() {
+      const items = getRecommendationCartItems();
+      const totalQty = items.reduce((sum, item) => sum + Number(item.quantite || 0), 0);
+      const label = items.length
+        ? `${items.length} produit(s) - ${totalQty.toLocaleString("fr-FR")} unite(s)`
+        : "0 produit selectionne";
+
+      dom.quickRecoSummary.textContent = label;
+      dom.prepareQuickRecoBtn.disabled = !items.length;
+      dom.clearQuickRecoBtn.disabled = !items.length;
+    }
+
+    function syncRecommendationHeaderControls() {
+      if (!dom.visitesTableHead) return;
+      dom.visitesTableHead.querySelectorAll("[data-reco-product-id]").forEach(control => {
+        const productId = String(control.dataset.recoProductId || "");
+        const item = state.recommendationCart.get(productId);
+        if (control.classList.contains("quick-reco-check-input")) {
+          control.checked = Boolean(item);
+        }
+        if (control.classList.contains("quick-product-qty")) {
+          control.value = item ? String(item.quantite || "") : "";
+        }
+      });
+    }
+
+    function renderRecommendationCartState() {
+      syncRecommendationClientScope();
+      renderRecommendationCartSummary();
+      syncRecommendationHeaderControls();
+    }
+
+    function clearRecommendationCart(options = {}) {
+      state.recommendationCart.clear();
+      state.recommendationClientId = getSelectedClientId() || "";
+      renderRecommendationCartState();
+      if (!options.silent) showToast("Panier de recommande vide.", "info");
+    }
+
+    function parseRecommendationQuantity(value) {
+      const quantity = Number(String(value ?? "").replace(",", "."));
+      return Number.isFinite(quantity) && quantity > 0 ? quantity : 0;
+    }
+
+    function setRecommendationCartItem(productId, quantity, selected) {
+      syncRecommendationClientScope();
+      const produit = getProduitById(productId);
+      if (!produit) return;
+
+      const normalizedProductId = String(productId);
+      const nextQuantity = parseRecommendationQuantity(quantity);
+
+      if (selected || nextQuantity > 0) {
+        state.recommendationCart.set(normalizedProductId, {
+          produit_id: normalizedProductId,
+          quantite: nextQuantity > 0 ? nextQuantity : 1
+        });
+      } else {
+        state.recommendationCart.delete(normalizedProductId);
+      }
+
+      renderRecommendationCartState();
+    }
+
+    function getLastCommandeForProduct(productId) {
+      const orderedVisits = [...state.visites].sort((a, b) => String(b.date_visite || "").localeCompare(String(a.date_visite || "")));
+      for (const visite of orderedVisits) {
+        const commande = (visite.commandes || []).find(item => String(item.produit_id) === String(productId));
+        if (commande) return commande;
+      }
+      return null;
+    }
+
+    function handleRecommendationControlChange(event) {
+      const control = event.target.closest("[data-reco-product-id]");
+      if (!control) return;
+
+      const productId = control.dataset.recoProductId;
+      const header = control.closest(".table-product-head");
+      const checkbox = header?.querySelector(".quick-reco-check-input");
+      const quantityInput = header?.querySelector(".quick-product-qty");
+      if (!productId || !checkbox || !quantityInput) return;
+
+      if (control.classList.contains("quick-reco-check-input")) {
+        if (checkbox.checked && !parseRecommendationQuantity(quantityInput.value)) quantityInput.value = "1";
+        if (!checkbox.checked) quantityInput.value = "";
+      }
+
+      if (control.classList.contains("quick-product-qty")) {
+        const quantity = parseRecommendationQuantity(quantityInput.value);
+        checkbox.checked = quantity > 0;
+        if (!quantity) quantityInput.value = "";
+      }
+
+      setRecommendationCartItem(productId, quantityInput.value, checkbox.checked);
+    }
+
+    function openVisitModalFromRecommendationCart() {
+      const clientId = getSelectedClientId();
+      const items = getRecommendationCartItems();
+      if (!clientId) return showToast("Selectionne un client avant de preparer une commande.", "warning");
+      if (!items.length) return showToast("Selectionne au moins un produit a recommander.", "warning");
+
+      openVisitModal(null, {
+        source: "recommendation",
+        prefills: items.map(item => ({
+          produit_id: item.produit_id,
+          quantite: item.quantite,
+          stock_client: 0,
+          couleur: "green"
+        }))
+      });
+      showToast(`${items.length} produit(s) precharges dans la commande.`, "success");
+    }
+
     function renderTimelineCard(visite) {
       const visitType = resolveVisitType(visite.type_visite);
       const isPhoneOrder = isPhoneOrderVisitType(visitType);
@@ -1908,11 +2095,22 @@
       `;
 
       produitsDynamiques.forEach(produit => {
+        const productId = String(produit.id || "");
+        const cartItem = state.recommendationCart.get(productId);
+        const lastCommande = getLastCommandeForProduct(productId);
         headHtml += `
           <th class="product-col">
             <div class="table-product-head">
               <strong>${escapeHtml(produit.nom || "Produit")}</strong>
               <span>${escapeHtml(produit.reference_produit || "") || "&nbsp;"}</span>
+              <div class="quick-product-control">
+                <label class="quick-product-check">
+                  <input class="quick-reco-check-input" type="checkbox" data-reco-product-id="${escapeHtml(productId)}" ${cartItem ? "checked" : ""}>
+                  Ajouter
+                </label>
+                <input class="quick-product-qty" type="number" min="0" placeholder="Qte" data-reco-product-id="${escapeHtml(productId)}" value="${escapeHtml(cartItem?.quantite || "")}">
+                ${lastCommande ? `<span class="quick-product-last">Dern. Q ${escapeHtml(Number(lastCommande.quantite || 0).toLocaleString("fr-FR"))}</span>` : ""}
+              </div>
             </div>
           </th>
         `;
@@ -1925,6 +2123,7 @@
       `;
 
       dom.visitesTableHead.innerHTML = headHtml;
+      renderRecommendationCartState();
 
       if (!state.visites.length) {
         dom.visitesTableBody.innerHTML = `
@@ -2462,7 +2661,7 @@
       updatePopupTotalCommande();
     }
 
-    function openVisitModal(visiteId = null) {
+    function openVisitModal(visiteId = null, options = {}) {
       updatePopupClientOptions();
       dom.productsFormList.innerHTML = "";
       dom.popupTotalCommande.textContent = formatCurrency(0);
@@ -2490,16 +2689,23 @@
           addProductRow();
         }
       } else {
+        const prefills = Array.isArray(options.prefills) ? options.prefills : [];
         state.activeVisitId = null;
-        dom.visitModalTitle.textContent = "Nouvelle visite";
-        dom.visitModalSubtitle.textContent = "Saisie rapide terrain: note, produits, stock client et total calculé immédiatement.";
+        dom.visitModalTitle.textContent = options.source === "recommendation" ? "Nouvelle commande" : "Nouvelle visite";
+        dom.visitModalSubtitle.textContent = options.source === "recommendation"
+          ? "Produits precharges depuis la recommande rapide. Tu peux tout verifier, ajuster les quantites, prix et couleurs avant validation."
+          : "Saisie rapide terrain: note, produits, stock client et total calcule immediatement.";
         dom.saveVisitBtn.textContent = "Enregistrer";
         dom.popupClient.disabled = false;
         dom.popupClient.value = getSelectedClientId() || (state.clients[0]?.id ? String(state.clients[0].id) : "");
         dom.popupDate.value = getTodayIsoLocal();
-        dom.popupVisitType.value = VISIT_TYPE_SALE;
-        dom.popupNote.value = "";
-        addProductRow();
+        dom.popupVisitType.value = options.visitType || VISIT_TYPE_SALE;
+        dom.popupNote.value = options.note || "";
+        if (prefills.length) {
+          prefills.forEach(addProductRow);
+        } else {
+          addProductRow();
+        }
       }
 
       refreshProductDatalist(getPopupSelectedClientId());
@@ -2507,7 +2713,9 @@
       dom.visitModalOverlay.classList.add("active");
 
       setTimeout(() => {
-        const firstInput = dom.productsFormList.querySelector(".produit-search-input");
+        const firstInput = options.source === "recommendation"
+          ? dom.productsFormList.querySelector(".quantite-input")
+          : dom.productsFormList.querySelector(".produit-search-input");
         if (isProductEntryVisitType(getPopupVisitType()) && firstInput) firstInput.focus();
         if (!isProductEntryVisitType(getPopupVisitType())) dom.popupNote.focus();
       }, 30);
@@ -3255,6 +3463,7 @@
         dom.clientSearch.value = "";
         renderClientOptions(clientId);
         dom.clientSelect.value = String(clientId);
+        clearRecommendationCart({ silent: true });
         closeVisitModal();
         await loadVisites();
       } catch (error) {
@@ -3382,6 +3591,8 @@
       dom.openClientModalBtn.addEventListener("click", openClientModal);
       dom.openVisitModalBtn.addEventListener("click", () => openVisitModal());
       dom.mobileAddVisitBtn.addEventListener("click", () => openVisitModal());
+      dom.prepareQuickRecoBtn.addEventListener("click", openVisitModalFromRecommendationCart);
+      dom.clearQuickRecoBtn.addEventListener("click", () => clearRecommendationCart());
       dom.closeVisitModalBtn.addEventListener("click", closeVisitModal);
       dom.cancelVisitBtn.addEventListener("click", closeVisitModal);
       dom.addProductRowBtn.addEventListener("click", () => {
@@ -3406,6 +3617,8 @@
       dom.clientForm.addEventListener("submit", saveClient);
       dom.timelineList.addEventListener("click", handleVisitActionClick);
       dom.visitesTableBody.addEventListener("click", handleVisitActionClick);
+      dom.visitesTableHead.addEventListener("input", handleRecommendationControlChange);
+      dom.visitesTableHead.addEventListener("change", handleRecommendationControlChange);
 
       dom.visitModalOverlay.addEventListener("click", event => {
         if (event.target === dom.visitModalOverlay) closeVisitModal();
