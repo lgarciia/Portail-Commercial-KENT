@@ -2909,7 +2909,6 @@
       const clientId = dom.popupClient.value;
       const dateVisite = dom.popupDate.value || getTodayIsoLocal();
       const typeVisite = getPopupVisitType();
-      const note = dom.popupNote.value.trim();
 
       if (!clientId) return showToast("Selectionne un client avant de generer un BDC.", "warning");
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
@@ -3060,16 +3059,6 @@
             doc.setTextColor(0, 0, 0);
           }
         });
-
-        const afterTableY = (doc.lastAutoTable?.finalY || 76) + 7;
-        if (note && afterTableY < pageHeight - 32) {
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(8.8);
-          doc.text("Note terrain", marginLeft, afterTableY);
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(8.2);
-          doc.text(note, marginLeft, afterTableY + 5, { maxWidth: pageWidth - marginLeft - marginRight - 78 });
-        }
 
         const totalLabel = `Total HT : ${formatAmountHt(totalHt)} EUR`;
         doc.setFont("helvetica", "bold");
