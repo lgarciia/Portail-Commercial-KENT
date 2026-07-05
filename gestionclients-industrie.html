@@ -573,6 +573,7 @@
       const plaque = state.plaqueById.get(String(client?.plaque_id || ""));
       return plaque?.nom || "—";
     }
+
     async function fetchClients() {
       const { data, error } = await supabaseClient
         .from("industrie_clients")
@@ -771,9 +772,7 @@
       refreshPlaqueIndex();
       updateStats();
       buildPlaqueFilterOptions();
-      if (dom.clientModalOverlay?.classList.contains("active")) {
-        buildPlaqueSelectOptions(dom.clientPlaqueSelect.value || "");
-      }
+      buildPlaqueSelectOptions(dom.clientPlaqueSelect.value || "");
       renderClientsTable();
       updateClientNumberHint();
     }
@@ -886,7 +885,7 @@
       try {
         setStatus("Connexion a Supabase...", "info");
         await refreshData();
-        setStatus(`${state.clients.length} client(s) industrie charges.`, "success");
+        setStatus(`${state.clients.length} client(s) industrie et ${state.plaques.length} plaque(s) charges.`, "success");
         showToast("Gestion clients industrie prete.", "success");
       } catch (error) {
         console.error("Erreur initApp:", error);
@@ -899,5 +898,4 @@
   </script>
 </body>
 </html>
-
 
