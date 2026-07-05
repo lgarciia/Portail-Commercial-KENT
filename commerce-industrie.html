@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Commerce Automobile - Pilotage commercial</title>
+  <title>Commerce Industrie - Hub KENT</title>
   <script src="./shared-ui.js"></script>
   <style>
     * {
@@ -481,6 +481,18 @@
         font-size: 1.55rem;
       }
     }
+  
+    .card-link.disabled,
+    .card-link[aria-disabled="true"] {
+      opacity: 0.48;
+      cursor: not-allowed;
+      pointer-events: none;
+      box-shadow: none;
+    }
+    .card.soon::after {
+      background: radial-gradient(circle, rgba(20, 184, 166, 0.16), transparent 68%);
+    }
+
   </style>
   <link rel="stylesheet" href="./shared-theme.css">
 </head>
@@ -488,29 +500,25 @@
   <div class="container">
     <nav class="glass navbar">
       <div class="nav-left">
-        <div class="brand-mark">KC</div>
+        <div class="brand-mark">KI</div>
         <div class="brand">
-          <div class="brand-title">Commerce Automobile</div>
-          <div class="brand-subtitle">Hub auto et outils rapides</div>
+          <div class="brand-title">Commerce Industrie</div>
+          <div class="brand-subtitle">Hub industrie separe du commerce automobile</div>
         </div>
       </div>
 
       <div class="nav-right">
         <button class="menu-btn" id="paramBtn" type="button" aria-expanded="false" aria-haspopup="true">
           <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
-            <path d="M480-120q-151 0-255.5-46.5T120-280v-400q0-66 105.5-113T480-840q149 0 254.5 47T840-680v400q0 67-104.5 113.5T480-120Zm0-479q89 0 179-25.5T760-679q-11-29-100.5-55T480-760q-91 0-178.5 25.5T200-679q14 30 101.5 55T480-599Zm0 199q42 0 81-4t74.5-11.5q35.5-7.5 67-18.5t57.5-25v-120q-26 14-57.5 25t-67 18.5Q600-528 561-524t-81 4q-42 0-82-4t-75.5-11.5Q287-543 256-554t-56-25v120q25 14 56 25t66.5 18.5Q358-408 398-404t82 4Zm0 200q46 0 93.5-7t87.5-18.5q40-11.5 67-26t32-29.5v-98q-26 14-57.5 25t-67 18.5Q600-328 561-324t-81 4q-42 0-82-4t-75.5-11.5Q287-343 256-354t-56-25v99q5 15 31.5 29t66.5 25.5q40 11.5 88 18.5t94 7Z"/>
+            <path d="M480-120q-151 0-255.5-46.5T120-280v-400q0-66 105.5-113T480-840q149 0 254.5 47T840-680v400q0 67-104.5 113.5T480-120Zm0-479q89 0 179-25.5T760-679q-11-29-100.5-55T480-760q-91 0-178.5 25.5T200-679q14 30 101.5 55T480-599Zm0 199q42 0 81-4t74.5-11.5q35.5-7.5 67-18.5t57.5-25v-120q-26 14-57.5 25t-67 18.5Q600-528 561-524t-81-4q-42 0-82-4t-75.5-11.5Q287-543 256-554t-56-25v120q25 14 56 25t66.5 18.5Q358-408 398-404t82-4Zm0 200q46 0 93.5-7t87.5-18.5q40-11.5 67-26t32-29.5v-98q-26 14-57.5 25t-67 18.5Q600-328 561-324t-81-4q-42 0-82-4t-75.5-11.5Q287-343 256-354t-56-25v99q5 15 31.5 29t66.5 25.5q40 11.5 88 18.5t94 7Z"/>
           </svg>
           Outils
         </button>
 
         <div class="glass dropdown" id="paramDropdown">
           <div class="dropdown-list">
-            <a href="mes-tarifs.html">Mes tarifs</a>
-            <a href="gestiontarif.html">Import tarifs</a>
-            <a href="mes-conditionnements.html">Mes conditionnements</a>
-            <a href="import-conditionnement.html">Import conditionnement</a>
-            <a href="gestionclients.html">Gestion clients</a>
-            <a href="gestionimportclients.html">Import clients</a>
+            <a href="commerce.html">Commerce Automobile</a>
+            <a href="gestionclients-industrie.html">Gestion clients Industrie</a>
           </div>
         </div>
       </div>
@@ -521,152 +529,15 @@
     <section class="section apps-shell glass">
       <div class="section-head">
         <div>
-          <div class="section-kicker">Portail commercial KENT</div>
-          <h1>Commerce Automobile</h1>
-          <p>Ouvre les outils du commerce automobile: clients auto, ventes auto, tarifs auto et suivi terrain.</p>
+          <div class="section-kicker">Nouveau perimetre KENT</div>
+          <h1>Commerce Industrie</h1>
+          <p>Clients, produits, tarifs et ventes industrie dans un environnement separe des donnees automobile.</p>
         </div>
-        <div class="section-badge">Auto</div>
+        <div class="section-badge">Tables industrie dediees</div>
       </div>
 
       <div class="cards-grid">
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M234-276q51-39 114-61.5T480-360q69 0 132 22.5T726-276q43-54 66.5-120.5T816-540q0-146-95-241t-241-95q-146 0-241 95t-95 241q0 77 23.5 143.5T234-276Zm246-204q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0 480q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Client</div>
-          </div>
-          <h3>Fiches client</h3>
-          <p>Historique client, visites, produits, tarifs et &eacute;l&eacute;ments de suivi terrain.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="ficherclt.html">Ouvrir</a>
-          </div>
-        </article>
 
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M280-600v-80h400v80H280Zm0 160v-80h240v80H280Zm-80 320q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Pilotage</div>
-          </div>
-          <h3>Tableau de bord activit&eacute;</h3>
-          <p>Indicateurs cl&eacute;s, tendances d'activit&eacute; et priorit&eacute;s de la semaine pour piloter rapidement.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="tdbactivite.html">Ouvrir</a>
-          </div>
-        </article>
-
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M120-160v-80h720v80H120Zm80-160v-280h120v280H200Zm220 0v-440h120v440H420Zm220 0v-200h120v200H640Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Ventes</div>
-          </div>
-          <h3>Mes ventes</h3>
-          <p>R&eacute;cap global des lignes vendues par p&eacute;riode, client, produit et type de commande.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="mes-ventes.html">Ouvrir</a>
-          </div>
-        </article>
-
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80Zm-80 360q-33 0-56.5-23.5T160-120v-720l160 120 160-120 160 120 160-120v720q0 33-23.5 56.5T720-40H240Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Compte rendu</div>
-          </div>
-          <h3>Rapport journalier</h3>
-          <p>Pr&eacute;pare le compte rendu du jour avec les visites, notes et commandes &agrave; diffuser.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="rapportjournalier.html">Ouvrir</a>
-          </div>
-        </article>
-
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M480-80 280-280l56-56 104 104v-248h80v248l104-104 56 56L480-80Zm-280-520v-200q0-33 23.5-56.5T280-880h400q33 0 56.5 23.5T760-800v200h-80v-200H280v200h-80Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Relances</div>
-          </div>
-          <h3>Rappels clients</h3>
-          <p>Relances &agrave; traiter avec lien direct vers la fiche et les informations utiles.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="rappelclt.html">Ouvrir</a>
-          </div>
-        </article>
-
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M240-160q-33 0-56.5-23.5T160-240v-480q0-33 23.5-56.5T240-800h480q33 0 56.5 23.5T800-720v480q0 33-23.5 56.5T720-160H240Zm0-80h480v-480H240v480Zm80-80h320v-80H320v80Zm0-120h160v-80H320v80Zm-80-160h480-480Zm80-40h320v-80H320v80Zm-80 280h480-480Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Etude</div>
-          </div>
-          <h3>Etude co&ucirc;t de lavage</h3>
-          <p>Monte une &eacute;tude client pr&ecirc;te &agrave; envoyer avec lecture commerciale et export PDF KENT.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="etude-cout-lavage.html">Ouvrir</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section apps-shell glass">
-      <div class="section-head">
-        <div>
-          <div class="section-kicker">Nouveau secteur</div>
-          <h2>Commerce Industrie</h2>
-          <p>Accede au nouveau hub industrie, separe des clients, produits, tarifs et ventes automobile.</p>
-        </div>
-        <div class="section-badge">Industrie</div>
-      </div>
-
-      <div class="cards-grid">
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h280v80H160v560h640v-280h80v280q0 33-23.5 56.5T800-120H160Zm160-200v-80h320v80H320Zm0-160v-80h200v80H320Zm360-80v-120H560v-80h120v-120h80v120h120v80H760v120h-80Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Industrie</div>
-          </div>
-          <h3>Commerce Industrie</h3>
-          <p>Clients industrie, tarifs industrie et futurs outils industrie dans un espace dedie.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="commerce-industrie.html">Ouvrir</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section apps-shell glass">
-      <div class="section-head">
-        <div>
-          <div class="section-kicker">Param&eacute;trage / imports</div>
-          <h2>Outils de configuration</h2>
-          <p>Tout ce qui sert &agrave; pr&eacute;parer, importer ou contr&ocirc;ler les bases de donn&eacute;es commerciales.</p>
-        </div>
-        <div class="section-badge">Administration</div>
-      </div>
-
-      <div class="cards-grid">
         <article class="glass card">
           <div class="card-top">
             <div class="card-icon">
@@ -676,66 +547,158 @@
             </div>
             <div class="card-tag">Base</div>
           </div>
-          <h3>Gestion clients</h3>
-          <p>Liste compl&egrave;te des clients, ajout rapide, &eacute;dition directe et acc&egrave;s fiche client en un clic.</p>
+          <h3>Gestion clients Industrie</h3>
+          <p>Cree et pilote les clients industrie dans la table dediee industrie_clients.</p>
           <div class="card-actions">
-            <a class="card-link primary" href="gestionclients.html">Ouvrir</a>
+            <a class="card-link primary" href="gestionclients-industrie.html">Ouvrir</a>
           </div>
         </article>
 
-        <article class="glass card">
+        <article class="glass card soon">
           <div class="card-top">
             <div class="card-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h520q33 0 56.5 23.5T760-760v160h120v80H760v120h120v80H760v120q0 33-23.5 56.5T680-120H160Zm0-80h520v-560H160v560Zm120-80h280v-80H280v80Zm0-160h280v-80H280v80Zm0-160h200v-80H280v80Zm-120 400v-560 560Z"/>
+                <path d="M234-276q51-39 114-61.5T480-360q69 0 132 22.5T726-276q43-54 66.5-120.5T816-540q0-146-95-241t-241-95q-146 0-241 95t-95 241q0 77 23.5 143.5T234-276Zm246-204q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Client</div>
+          </div>
+          <h3>Fiches client Industrie</h3>
+          <p>Historique, visites, recommande rapide, devis et BDC industrie. Prochaine brique apres le socle client.</p>
+          <div class="card-actions">
+            <span class="card-link disabled" aria-disabled="true">Bientot disponible</span>
+          </div>
+        </article>
+
+        <article class="glass card soon">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h520q33 0 56.5 23.5T760-760v160h120v80H760v120h120v80H760v120q0 33-23.5 56.5T680-120H160Z"/>
               </svg>
             </div>
             <div class="card-tag">Import</div>
           </div>
-          <h3>Import tarifs multi-entit&eacute;s</h3>
-          <p>Importe PSA, Gueudet, Ford ou Direct et synchronise automatiquement produits + tarifs plaques.</p>
+          <h3>Import tarifs Industrie</h3>
+          <p>Import dedie aux produits, plaques et tarifs industrie, sans ecriture dans les tables auto.</p>
           <div class="card-actions">
-            <a class="card-link primary" href="gestiontarif.html">Ouvrir</a>
+            <span class="card-link disabled" aria-disabled="true">Bientot disponible</span>
           </div>
         </article>
 
-        <article class="glass card">
+        <article class="glass card soon">
           <div class="card-top">
             <div class="card-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h680v80H160v560h680v80H160Zm160-160h80v-280h-80v280Zm160 0h80v-440h-80v440Zm160 0h80v-200h-80v200Zm-420 80v-560 560Z"/>
+                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h680v80H160v560h680v80H160Zm160-160h80v-280h-80v280Zm160 0h80v-440h-80v440Zm160 0h80v-200h-80v200Z"/>
               </svg>
             </div>
             <div class="card-tag">Tarifs</div>
           </div>
-          <h3>Mes tarifs</h3>
-          <p>Visualisation directe des tarifs Supabase par plaque, en lecture seule, avec les donn&eacute;es produit associ&eacute;es.</p>
+          <h3>Mes tarifs Industrie</h3>
+          <p>Visualisation lecture seule des tarifs industrie par plaque dediee.</p>
           <div class="card-actions">
-            <a class="card-link primary" href="mes-tarifs.html">Ouvrir</a>
+            <span class="card-link disabled" aria-disabled="true">Bientot disponible</span>
           </div>
         </article>
 
-        <article class="glass card">
+        <article class="glass card soon">
           <div class="card-top">
             <div class="card-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm80-80h400v-80H280v80Zm0-160h120v-200H280v200Zm160 0h240v-80H440v80Zm0-120h240v-80H440v80ZM200-200v-560 560Z"/>
+                <path d="M120-160v-80h720v80H120Zm80-160v-280h120v280H200Zm220 0v-440h120v440H420Zm220 0v-200h120v200H640Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Ventes</div>
+          </div>
+          <h3>Mes ventes Industrie</h3>
+          <p>Recap global des lignes vendues industrie, separe du chiffre automobile.</p>
+          <div class="card-actions">
+            <span class="card-link disabled" aria-disabled="true">Bientot disponible</span>
+          </div>
+        </article>
+
+        <article class="glass card soon">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M280-600v-80h400v80H280Zm0 160v-80h240v80H280Zm-80 320q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Pilotage</div>
+          </div>
+          <h3>Tableau de bord Industrie</h3>
+          <p>Indicateurs clients, CA, commandes et suivi terrain industrie.</p>
+          <div class="card-actions">
+            <span class="card-link disabled" aria-disabled="true">Bientot disponible</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section apps-shell glass">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">A construire ensuite</div>
+          <h2>Outils industrie avances</h2>
+          <p>Ces modules seront ajoutes progressivement apres validation du socle clients industrie.</p>
+        </div>
+        <div class="section-badge">Progressif et securise</div>
+      </div>
+      <div class="cards-grid">
+
+        <article class="glass card soon">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm80-80h400v-80H240v80Zm0-160h280v-80H240v80Zm0-160h400v-80H240v80Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Rapport</div>
+          </div>
+          <h3>Rapport journalier Industrie</h3>
+          <p>Compte rendu quotidien dedie aux visites et ventes industrie.</p>
+          <div class="card-actions">
+            <span class="card-link disabled" aria-disabled="true">Bientot disponible</span>
+          </div>
+        </article>
+
+        <article class="glass card soon">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm80-80h400v-80H240v80Zm0-160h280v-80H240v80Zm0-160h400v-80H240v80Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Rappels</div>
+          </div>
+          <h3>Rappels clients Industrie</h3>
+          <p>Relances industrie separees des relances automobile.</p>
+          <div class="card-actions">
+            <span class="card-link disabled" aria-disabled="true">Bientot disponible</span>
+          </div>
+        </article>
+
+        <article class="glass card soon">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm80-80h400v-80H240v80Zm0-160h280v-80H240v80Zm0-160h400v-80H240v80Z"/>
               </svg>
             </div>
             <div class="card-tag">BDC</div>
           </div>
-          <h3>Conditionnement BDC</h3>
-          <p>Importe et contr&ocirc;le les correspondances Ref 5, Code Produit, emballage et grains pour les bons de commande.</p>
+          <h3>Conditionnement BDC Industrie</h3>
+          <p>Import et visualisation conditionnement dedies aux bons de commande industrie.</p>
           <div class="card-actions">
-            <a class="card-link primary" href="import-conditionnement.html">Importer</a>
-            <a class="card-link" href="mes-conditionnements.html">Visualiser</a>
+            <span class="card-link disabled" aria-disabled="true">Bientot disponible</span>
           </div>
         </article>
       </div>
-
     </section>
+
     <div class="footer-note">
-      Portail central des applications terrain, des suivis clients et des études commerciales.
+      Module industrie isole: aucune page de ce hub ne doit ecrire dans les tables automobile.
     </div>
   </div>
 

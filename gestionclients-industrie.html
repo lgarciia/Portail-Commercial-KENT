@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestion clients Industrie - Supabase</title>
+  <script src="./shared-ui.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#07121b;
+      --bg-soft:#0c1a29;
+      --panel:rgba(10,20,34,.8);
+      --panel-border:rgba(255,255,255,.08);
+      --panel-strong:rgba(255,255,255,.12);
+      --text:#eef4ff;
+      --muted:#9fb2c8;
+      --muted-2:#70849a;
+      --accent:#38bdf8;
+      --accent-strong:#2563eb;
+      --success:#22c55e;
+      --warning:#f59e0b;
+      --danger:#ef4444;
+      --shadow:0 28px 70px rgba(2,6,23,.44);
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:16px;
+    }
+    *::-webkit-scrollbar{width:10px;height:10px}
+    *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px}
+    body{
+      min-height:100vh;
+      font-family:"Aptos","Segoe UI",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left,rgba(56,189,248,.18),transparent 28%),
+        radial-gradient(circle at top right,rgba(37,99,235,.14),transparent 26%),
+        radial-gradient(circle at bottom left,rgba(245,158,11,.12),transparent 28%),
+        linear-gradient(145deg,var(--bg),var(--bg-soft));
+      padding:26px;
+      overflow-x:hidden;
+    }
+    .app-shell{max-width:1500px;margin:0 auto}
+    .glass{
+      background:var(--panel);
+      border:1px solid var(--panel-border);
+      border-radius:var(--radius-lg);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      box-shadow:var(--shadow);
+    }
+    .hero{
+      padding:24px;
+      display:grid;
+      grid-template-columns:minmax(0,1.7fr) minmax(300px,.9fr);
+      gap:18px;
+      margin-bottom:18px;
+      background:
+        linear-gradient(135deg,rgba(13,24,40,.9),rgba(7,16,27,.86)),
+        radial-gradient(circle at top right,rgba(56,189,248,.16),transparent 44%);
+    }
+    .hero h1{font-size:clamp(2rem,4vw,3rem);line-height:1;letter-spacing:-.04em;margin-bottom:10px}
+    .hero p{color:var(--muted);line-height:1.6;max-width:760px}
+    .hero-eyebrow{
+      display:inline-flex;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      color:#d9ecff;
+      font-size:.75rem;
+      text-transform:uppercase;
+      letter-spacing:.11em;
+      margin-bottom:14px;
+    }
+    .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .sync-card{
+      padding:18px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .status{
+      min-height:74px;
+      padding:14px 16px;
+      border-radius:14px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      color:#dce8ff;
+      display:flex;
+      align-items:center;
+      line-height:1.5;
+    }
+    .status[data-tone="success"]{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.24);color:#d1fae5}
+    .status[data-tone="warning"]{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.24);color:#fde68a}
+    .status[data-tone="error"]{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.24);color:#fecaca}
+    .meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .meta{
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+      padding:12px 14px;
+    }
+    .meta span{display:block;color:var(--muted-2);font-size:.75rem;margin-bottom:4px}
+    .meta strong{font-size:1.05rem}
+    .section{
+      padding:20px;
+      margin-bottom:18px;
+    }
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    .section-head h2{font-size:1.2rem;letter-spacing:-.02em}
+    .section-head p{color:var(--muted);font-size:.92rem}
+    .toolbar{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(230px,.7fr);
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .field{display:flex;flex-direction:column;gap:8px}
+    label{color:var(--muted);font-size:.84rem;font-weight:600}
+    input,select,textarea{
+      width:100%;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border-radius:14px;
+      padding:12px 14px;
+      font-size:.93rem;
+      outline:none;
+      transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;
+    }
+    input:focus,select:focus,textarea:focus{
+      border-color:rgba(56,189,248,.6);
+      box-shadow:0 0 0 4px rgba(56,189,248,.16);
+      transform:translateY(-1px);
+    }
+    select option{color:#0f172a;background:#fff}
+    textarea{min-height:110px;resize:vertical;line-height:1.5}
+    .table-shell{
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.08);
+      overflow:auto;
+      background:rgba(255,255,255,.02);
+    }
+    table{width:100%;border-collapse:collapse;min-width:1050px}
+    th,td{padding:11px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:middle}
+    th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      background:rgba(8,15,26,.96);
+      font-size:.76rem;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:#dce7f9;
+    }
+    td{font-size:.86rem}
+    .muted{color:var(--muted)}
+    .empty{
+      padding:28px 18px;
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed rgba(255,255,255,.1);
+      border-radius:16px;
+      margin:12px;
+      background:rgba(255,255,255,.03);
+    }
+    .btn{
+      border:none;
+      cursor:pointer;
+      border-radius:14px;
+      padding:11px 15px;
+      font-weight:700;
+      font-size:.9rem;
+      transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;
+      white-space:nowrap;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .btn-primary{
+      color:#fff;
+      background:linear-gradient(135deg,var(--accent),var(--accent-strong));
+      box-shadow:0 14px 28px rgba(37,99,235,.25);
+    }
+    .btn-secondary{color:var(--text);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+    .btn-info{color:#d8f3ff;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.16)}
+    .btn-danger{color:#fecaca;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2)}
+    .btn-sm{padding:8px 11px;border-radius:12px;font-size:.79rem}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .action-cell{display:flex;gap:8px;flex-wrap:wrap}
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(2,8,18,.68);
+      backdrop-filter:blur(8px);
+      z-index:1000;
+    }
+    .modal-overlay.active{display:flex}
+    .modal{
+      width:min(760px,100%);
+      max-height:92vh;
+      overflow:auto;
+      padding:24px;
+      border-radius:var(--radius-xl);
+      border:1px solid var(--panel-strong);
+      background:linear-gradient(180deg,rgba(9,17,29,.96),rgba(6,12,22,.95));
+      box-shadow:0 36px 90px rgba(0,0,0,.45);
+    }
+    .modal-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .modal-head h3{font-size:1.34rem;letter-spacing:-.02em}
+    .modal-head p{color:var(--muted);line-height:1.5;margin-top:6px}
+    #clientModalOverlay .modal-head{
+      position:relative;
+      padding-right:56px;
+    }
+    #clientModalOverlay .modal-head .close-btn{
+      position:absolute;
+      top:0;
+      right:0;
+    }
+    .close-btn{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      color:#fff;
+      cursor:pointer;
+      flex-shrink:0;
+    }
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    .full{grid-column:1/-1}
+    .modal-actions{
+      margin-top:20px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .helper{color:var(--muted);font-size:.84rem;line-height:1.45}
+    .client-number-hint{color:var(--muted-2);font-size:.78rem;line-height:1.35;margin-top:2px}
+    .toast-wrap{
+      position:fixed;
+      right:18px;
+      bottom:18px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      pointer-events:none;
+      z-index:1300;
+    }
+    .toast{
+      min-width:260px;
+      max-width:420px;
+      padding:13px 16px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(8,15,26,.96);
+      color:var(--text);
+      box-shadow:0 24px 50px rgba(2,6,23,.35);
+      opacity:0;
+      transform:translateY(10px);
+      transition:opacity .2s ease,transform .2s ease;
+    }
+    .toast.visible{opacity:1;transform:translateY(0)}
+    .toast.success{border-color:rgba(34,197,94,.24);background:rgba(9,30,18,.96)}
+    .toast.warning{border-color:rgba(245,158,11,.24);background:rgba(40,25,6,.96)}
+    .toast.error{border-color:rgba(239,68,68,.24);background:rgba(39,10,10,.96)}
+    @media (max-width:1080px){
+      .hero{grid-template-columns:1fr}
+      .toolbar{grid-template-columns:1fr}
+    }
+    @media (max-width:760px){
+      body{padding:16px}
+      .hero,.section,.modal{padding:18px}
+      .form-grid{grid-template-columns:1fr}
+      .modal-actions{flex-direction:column;align-items:stretch}
+    }
+  </style>
+  <link rel="stylesheet" href="./shared-theme.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="glass hero">
+      <div>
+        <div class="hero-eyebrow">Gestion base clients industrie</div>
+        <h1>Gestion clients Industrie</h1>
+        <p>Gestion separ?e des clients industrie avec edition en temps reel et isolation complete des donnees automobile.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="openCreateClientBtn" type="button">+ Ajouter client</button>
+          <a class="btn btn-secondary" href="commerce-industrie.html">Retour Commerce Industrie</a>
+        </div>
+      </div>
+      <div class="sync-card">
+        <div id="statusBar" class="status" data-tone="info">Connexion a Supabase en cours...</div>
+        <div class="meta-grid">
+          <div class="meta">
+            <span>Clients</span>
+            <strong id="statClients">0</strong>
+          </div>
+          <div class="meta">
+            <span>Plaques</span>
+            <strong id="statPlaques">0</strong>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="glass section">
+      <div class="section-head">
+        <div>
+          <h2>Liste complete des clients industrie</h2>
+          <p>Nom, compte, telephone, adresse et plaque industrie.</p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="field">
+          <label for="searchInput">Recherche client industrie</label>
+          <input type="text" id="searchInput" placeholder="Nom, compte, telephone, adresse, plaque industrie..." />
+        </div>
+        <div class="field">
+          <label for="plaqueFilter">Filtre plaque industrie</label>
+          <select id="plaqueFilter"></select>
+        </div>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>Nom client</th>
+              <th>Compte</th>
+              <th>Telephone</th>
+              <th>Adresse</th>
+              <th>Plaque</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="clientsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="clientModalOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h3 id="clientModalTitle">Ajouter client</h3>
+          <p id="clientModalSubtitle">Renseigne les informations puis valide pour enregistrer dans la table industrie_clients.</p>
+        </div>
+        <button class="close-btn" id="closeClientModalBtn" type="button">x</button>
+      </div>
+
+      <form id="clientForm">
+        <input type="hidden" id="editingClientId" />
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="clientNomInput">Nom client</label>
+            <input type="text" id="clientNomInput" placeholder="Nom client" />
+          </div>
+
+          <div class="field">
+            <label for="clientNumeroCompteInput">Numero client / compte</label>
+            <input type="text" id="clientNumeroCompteInput" placeholder="Compte ou numero client" />
+            <div class="client-number-hint" id="clientNumeroHint">Chargement du dernier numero...</div>
+          </div>
+
+          <div class="field">
+            <label for="clientTelephoneInput">Telephone</label>
+            <input type="text" id="clientTelephoneInput" placeholder="Telephone" />
+          </div>
+
+          <div class="field">
+            <label for="clientPlaqueSelect">Plaque</label>
+            <select id="clientPlaqueSelect"></select>
+          </div>
+
+          <div class="field full">
+            <label for="clientAdresseInput">Adresse</label>
+            <textarea id="clientAdresseInput" placeholder="Adresse du client"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <div class="helper">Les informations sont enregistrees uniquement dans la base clients industrie.</div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="cancelClientBtn" type="button">Annuler</button>
+            <button class="btn btn-primary" id="saveClientBtn" type="submit">Enregistrer client</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="deleteModalOverlay">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-head">
+        <div>
+          <h3>Confirmation suppression</h3>
+          <p id="deleteModalMessage">Confirmer la suppression de ce client industrie ?</p>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top:10px;">
+        <div class="helper">Cette action est definitive et concerne uniquement les clients industrie.</div>
+        <div class="actions">
+          <button class="btn btn-secondary" id="cancelDeleteBtn" type="button">Annuler</button>
+          <button class="btn btn-danger" id="confirmDeleteBtn" type="button">Supprimer client industrie</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastWrap" class="toast-wrap"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const state = {
+      clients: [],
+      plaques: [],
+      pendingDeleteClientId: null,
+      lastAddedClientNumero: ""
+    };
+
+    const dom = {};
+
+    function cacheDom() {
+      dom.statusBar = document.getElementById("statusBar");
+      dom.statClients = document.getElementById("statClients");
+      dom.statPlaques = document.getElementById("statPlaques");
+      dom.searchInput = document.getElementById("searchInput");
+      dom.plaqueFilter = document.getElementById("plaqueFilter");
+      dom.clientsTableBody = document.getElementById("clientsTableBody");
+      dom.openCreateClientBtn = document.getElementById("openCreateClientBtn");
+      dom.clientModalOverlay = document.getElementById("clientModalOverlay");
+      dom.clientModalTitle = document.getElementById("clientModalTitle");
+      dom.clientModalSubtitle = document.getElementById("clientModalSubtitle");
+      dom.closeClientModalBtn = document.getElementById("closeClientModalBtn");
+      dom.cancelClientBtn = document.getElementById("cancelClientBtn");
+      dom.clientForm = document.getElementById("clientForm");
+      dom.editingClientId = document.getElementById("editingClientId");
+      dom.clientNomInput = document.getElementById("clientNomInput");
+      dom.clientNumeroCompteInput = document.getElementById("clientNumeroCompteInput");
+      dom.clientNumeroHint = document.getElementById("clientNumeroHint");
+      dom.clientTelephoneInput = document.getElementById("clientTelephoneInput");
+      dom.clientAdresseInput = document.getElementById("clientAdresseInput");
+      dom.clientPlaqueSelect = document.getElementById("clientPlaqueSelect");
+      dom.saveClientBtn = document.getElementById("saveClientBtn");
+      dom.deleteModalOverlay = document.getElementById("deleteModalOverlay");
+      dom.deleteModalMessage = document.getElementById("deleteModalMessage");
+      dom.cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+      dom.confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+      dom.toastWrap = document.getElementById("toastWrap");
+    }
+
+    function setStatus(message, tone = "info") {
+      dom.statusBar.textContent = message;
+      dom.statusBar.dataset.tone = tone;
+    }
+
+    function showToast(message, tone = "info") {
+      const toast = document.createElement("div");
+      toast.className = `toast ${tone}`;
+      toast.textContent = message;
+      dom.toastWrap.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add("visible"));
+      setTimeout(() => {
+        toast.classList.remove("visible");
+        setTimeout(() => toast.remove(), 220);
+      }, 3200);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeText(value) {
+      return String(value ?? "").trim().toLowerCase();
+    }
+
+    function parseClientNumberValue(value) {
+      const raw = String(value ?? "").trim().replace(/\s+/g, "");
+      if (!/^\d+$/.test(raw)) return null;
+      const numericValue = Number.parseInt(raw, 10);
+      if (!Number.isFinite(numericValue)) return null;
+      return { numericValue, width: raw.length };
+    }
+
+    async function fetchLastAddedClientNumeroCompte() {
+      const { data, error } = await supabaseClient
+        .from("industrie_clients")
+        .select("numero_compte, created_at")
+        .order("created_at", { ascending: false })
+        .limit(25);
+
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      const found = rows.find(row => String(row?.numero_compte ?? "").trim() !== "");
+      return found ? String(found.numero_compte).trim() : "";
+    }
+
+    function formatClientNumberHint(lastNumeroCompte) {
+      const raw = String(lastNumeroCompte ?? "").trim();
+      if (!raw) return "Aucun numero client trouve pour le moment (exemple conseille: 0001).";
+      const parsed = parseClientNumberValue(raw);
+      if (!parsed) return `Dernier numero ajoute en base: ${raw} | Prochain conseille: manuel`;
+      const next = String(parsed.numericValue + 1).padStart(parsed.width, "0");
+      return `Dernier numero ajoute en base: ${raw} | Prochain conseille: ${next}`;
+    }
+
+    async function updateClientNumberHint() {
+      if (!dom.clientNumeroHint) return;
+      dom.clientNumeroHint.textContent = "Lecture du dernier numero ajoute en base...";
+      try {
+        const lastNumeroCompte = await fetchLastAddedClientNumeroCompte();
+        state.lastAddedClientNumero = lastNumeroCompte;
+        dom.clientNumeroHint.textContent = formatClientNumberHint(lastNumeroCompte);
+      } catch (error) {
+        console.error("Erreur lecture dernier numero client:", error);
+        dom.clientNumeroHint.textContent = state.lastAddedClientNumero
+          ? formatClientNumberHint(state.lastAddedClientNumero)
+          : "Dernier numero ajoute indisponible pour le moment.";
+      }
+    }
+
+    function getPlaqueName(client) {
+      return client?.industrie_plaques?.nom || "—";
+    }
+
+    async function fetchClients() {
+      const { data, error } = await supabaseClient
+        .from("industrie_clients")
+        .select(`
+          id,
+          nom,
+          numero_compte,
+          adresse,
+          telephone,
+          plaque_id,
+          industrie_plaques ( id, nom )
+        `)
+        .order("nom", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchPlaques() {
+      const { data, error } = await supabaseClient
+        .from("industrie_plaques")
+        .select("id, nom")
+        .order("nom", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    function updateStats() {
+      dom.statClients.textContent = String(state.clients.length);
+      dom.statPlaques.textContent = String(state.plaques.length);
+    }
+
+    function buildPlaqueFilterOptions() {
+      const options = ['<option value="">Toutes les plaques</option>'];
+      state.plaques.forEach(plaque => {
+        options.push(`<option value="${escapeHtml(plaque.id)}">${escapeHtml(plaque.nom || "Plaque")}</option>`);
+      });
+      dom.plaqueFilter.innerHTML = options.join("");
+    }
+
+    function buildPlaqueSelectOptions(selectedPlaqueId = "") {
+      const selected = selectedPlaqueId ? String(selectedPlaqueId) : "";
+      if (!state.plaques.length) {
+        dom.clientPlaqueSelect.innerHTML = '<option value="">Aucune plaque disponible</option>';
+        return;
+      }
+
+      const options = ['<option value="">Selectionner une plaque</option>'];
+      state.plaques.forEach(plaque => {
+        const isSelected = String(plaque.id) === selected ? " selected" : "";
+        options.push(`<option value="${escapeHtml(plaque.id)}"${isSelected}>${escapeHtml(plaque.nom || "Plaque")}</option>`);
+      });
+      dom.clientPlaqueSelect.innerHTML = options.join("");
+    }
+
+    function getFilteredClients() {
+      const query = normalizeText(dom.searchInput.value);
+      const plaqueFilter = dom.plaqueFilter.value;
+
+      return state.clients.filter(client => {
+        const matchesPlaque = !plaqueFilter || String(client.plaque_id) === String(plaqueFilter);
+        if (!matchesPlaque) return false;
+
+        if (!query) return true;
+        const candidates = [
+          client.nom,
+          client.numero_compte,
+          client.telephone,
+          client.adresse,
+          getPlaqueName(client)
+        ];
+        return candidates.some(value => normalizeText(value).includes(query));
+      });
+    }
+
+    function renderClientsTable() {
+      const clients = getFilteredClients();
+      if (!clients.length) {
+        dom.clientsTableBody.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="empty">Aucun client industrie industrie trouvé avec ces filtres.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      dom.clientsTableBody.innerHTML = clients.map(client => `
+        <tr>
+          <td>${escapeHtml(client.nom || "Client sans nom")}</td>
+          <td>${escapeHtml(client.numero_compte || "—")}</td>
+          <td>${escapeHtml(client.telephone || "—")}</td>
+          <td>${escapeHtml(client.adresse || "—")}</td>
+          <td>${escapeHtml(getPlaqueName(client))}</td>
+          <td class="action-cell">
+            <button class="btn btn-info btn-sm" type="button" data-action="edit" data-client-id="${escapeHtml(client.id)}">Modifier</button>
+            <button class="btn btn-danger btn-sm" type="button" data-action="delete" data-client-id="${escapeHtml(client.id)}">Supprimer</button>
+            <span class="btn btn-secondary btn-sm" title="Disponible a l'etape fiche client industrie">Fiche bientot</span>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function resetClientForm() {
+      dom.editingClientId.value = "";
+      dom.clientModalTitle.textContent = "Ajouter client";
+      dom.clientModalSubtitle.textContent = "Renseigne les informations puis valide pour enregistrer dans la table industrie_clients.";
+      dom.saveClientBtn.textContent = "Enregistrer client";
+      dom.clientNomInput.value = "";
+      dom.clientNumeroCompteInput.value = "";
+      dom.clientTelephoneInput.value = "";
+      dom.clientAdresseInput.value = "";
+      buildPlaqueSelectOptions();
+      updateClientNumberHint();
+    }
+
+    function openClientModal(client = null) {
+      if (client) {
+        dom.editingClientId.value = String(client.id);
+        dom.clientModalTitle.textContent = "Modifier client";
+        dom.clientModalSubtitle.textContent = "Modifie les informations puis valide pour enregistrer les changements.";
+        dom.saveClientBtn.textContent = "Enregistrer modifications";
+        dom.clientNomInput.value = client.nom || "";
+        dom.clientNumeroCompteInput.value = client.numero_compte || "";
+        dom.clientTelephoneInput.value = client.telephone || "";
+        dom.clientAdresseInput.value = client.adresse || "";
+        buildPlaqueSelectOptions(client.plaque_id || "");
+        updateClientNumberHint();
+      } else {
+        resetClientForm();
+      }
+
+      dom.clientModalOverlay.classList.add("active");
+      setTimeout(() => dom.clientNomInput.focus(), 30);
+    }
+
+    function closeClientModal() {
+      dom.clientModalOverlay.classList.remove("active");
+    }
+
+    function openDeleteModal(client) {
+      state.pendingDeleteClientId = client?.id ? String(client.id) : null;
+      dom.deleteModalMessage.textContent = `Confirmer la suppression de "${client?.nom || "ce client"}" ?`;
+      dom.deleteModalOverlay.classList.add("active");
+    }
+
+    function closeDeleteModal() {
+      dom.deleteModalOverlay.classList.remove("active");
+      state.pendingDeleteClientId = null;
+    }
+
+    async function confirmDeleteClient() {
+      const clientId = state.pendingDeleteClientId;
+      if (!clientId) return;
+
+      try {
+        dom.confirmDeleteBtn.disabled = true;
+        setStatus("Suppression du client...", "info");
+        const { error } = await supabaseClient
+          .from("industrie_clients")
+          .delete()
+          .eq("id", clientId);
+        if (error) throw error;
+
+        await refreshData();
+        closeDeleteModal();
+        setStatus("Client industrie supprime avec succes.", "success");
+        showToast("Client industrie supprime.", "success");
+      } catch (error) {
+        console.error("Erreur confirmDeleteClient:", error);
+        setStatus("Erreur lors de la suppression du client.", "error");
+        showToast("Impossible de supprimer ce client (verifie les visites liees).", "error");
+      } finally {
+        dom.confirmDeleteBtn.disabled = false;
+      }
+    }
+
+    function findClientByCompteAndPlaque(numeroCompte, plaqueId, excludeId = "") {
+      const excluded = excludeId ? String(excludeId) : "";
+      return state.clients.find(client =>
+        normalizeText(client.numero_compte) === normalizeText(numeroCompte) &&
+        String(client.plaque_id) === String(plaqueId) &&
+        String(client.id) !== excluded
+      ) || null;
+    }
+
+    async function refreshData() {
+      const [clients, plaques] = await Promise.all([
+        fetchClients(),
+        fetchPlaques()
+      ]);
+
+      state.clients = clients;
+      state.plaques = plaques;
+      updateStats();
+      buildPlaqueFilterOptions();
+      renderClientsTable();
+      updateClientNumberHint();
+    }
+
+    async function saveClient(event) {
+      event.preventDefault();
+
+      const editingId = String(dom.editingClientId.value || "").trim();
+      const nom = String(dom.clientNomInput.value || "").trim();
+      const numeroCompte = String(dom.clientNumeroCompteInput.value || "").trim();
+      const telephone = String(dom.clientTelephoneInput.value || "").trim();
+      const adresse = String(dom.clientAdresseInput.value || "").trim();
+      const plaqueId = dom.clientPlaqueSelect.value;
+
+      if (!nom) return showToast("Renseigne le nom du client.", "warning");
+      if (!numeroCompte) return showToast("Renseigne le numero client / compte.", "warning");
+      if (!plaqueId) return showToast("Selectionne une plaque.", "warning");
+
+      const duplicateClient = findClientByCompteAndPlaque(numeroCompte, plaqueId, editingId);
+      if (duplicateClient) {
+        showToast("Ce client industrie existe deja pour cette plaque.", "warning");
+        return;
+      }
+
+      const payload = {
+        nom,
+        numero_compte: numeroCompte,
+        telephone: telephone || null,
+        adresse: adresse || null,
+        plaque_id: plaqueId
+      };
+
+      try {
+        dom.saveClientBtn.disabled = true;
+        setStatus(editingId ? "Mise a jour du client..." : "Creation du client...", "info");
+
+        if (editingId) {
+          const { error } = await supabaseClient
+            .from("industrie_clients")
+            .update(payload)
+            .eq("id", editingId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseClient
+            .from("industrie_clients")
+            .insert(payload);
+          if (error) throw error;
+        }
+
+        await refreshData();
+        closeClientModal();
+        setStatus(editingId ? "Client industrie modifie avec succes." : "Client industrie ajoute avec succes.", "success");
+        showToast(editingId ? "Client industrie modifie." : "Client industrie ajoute.", "success");
+      } catch (error) {
+        console.error("Erreur saveClient:", error);
+        setStatus("Erreur pendant l'enregistrement du client.", "error");
+        showToast("Impossible d'enregistrer le client.", "error");
+      } finally {
+        dom.saveClientBtn.disabled = false;
+      }
+    }
+
+    function getClientById(id) {
+      return state.clients.find(client => String(client.id) === String(id)) || null;
+    }
+
+    function handleTableClick(event) {
+      const btn = event.target.closest("[data-action][data-client-id]");
+      if (!btn) return;
+      const client = getClientById(btn.dataset.clientId);
+      if (!client) {
+        showToast("Client introuvable.", "warning");
+        return;
+      }
+      if (btn.dataset.action === "edit") openClientModal(client);
+      if (btn.dataset.action === "delete") openDeleteModal(client);
+    }
+
+    function attachEvents() {
+      dom.searchInput.addEventListener("input", renderClientsTable);
+      dom.plaqueFilter.addEventListener("change", renderClientsTable);
+      dom.openCreateClientBtn.addEventListener("click", () => openClientModal());
+      dom.clientsTableBody.addEventListener("click", handleTableClick);
+      dom.closeClientModalBtn.addEventListener("click", closeClientModal);
+      dom.cancelClientBtn.addEventListener("click", closeClientModal);
+      dom.clientForm.addEventListener("submit", saveClient);
+      dom.cancelDeleteBtn.addEventListener("click", closeDeleteModal);
+      dom.confirmDeleteBtn.addEventListener("click", confirmDeleteClient);
+
+      dom.clientModalOverlay.addEventListener("click", event => {
+        if (event.target === dom.clientModalOverlay) closeClientModal();
+      });
+      dom.deleteModalOverlay.addEventListener("click", event => {
+        if (event.target === dom.deleteModalOverlay) closeDeleteModal();
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeClientModal();
+          closeDeleteModal();
+        }
+      });
+    }
+
+    async function initApp() {
+      cacheDom();
+      attachEvents();
+      resetClientForm();
+
+      try {
+        setStatus("Connexion a Supabase...", "info");
+        await refreshData();
+        setStatus(`${state.clients.length} client(s) industrie charges.`, "success");
+        showToast("Gestion clients industrie prete.", "success");
+      } catch (error) {
+        console.error("Erreur initApp:", error);
+        setStatus("Erreur de connexion a Supabase.", "error");
+        showToast("Impossible de charger les clients industrie.", "error");
+      }
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
+
+
