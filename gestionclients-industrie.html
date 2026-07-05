@@ -450,6 +450,7 @@
     const state = {
       clients: [],
       plaques: [],
+      plaqueById: new Map(),
       pendingDeleteClientId: null,
       lastAddedClientNumero: ""
     };
@@ -560,10 +561,18 @@
       }
     }
 
-    function getPlaqueName(client) {
-      return client?.industrie_plaques?.nom || "—";
+    function refreshPlaqueIndex() {
+      state.plaqueById = new Map(
+        state.plaques.map(plaque => [String(plaque.id), plaque])
+      );
     }
 
+    function getPlaqueName(client) {
+      const joinedName = client?.industrie_plaques?.nom || client?.plaques?.nom;
+      if (joinedName) return joinedName;
+      const plaque = state.plaqueById.get(String(client?.plaque_id || ""));
+      return plaque?.nom || "—";
+    }
     async function fetchClients() {
       const { data, error } = await supabaseClient
         .from("industrie_clients")
@@ -573,8 +582,7 @@
           numero_compte,
           adresse,
           telephone,
-          plaque_id,
-          industrie_plaques ( id, nom )
+          plaque_id
         `)
         .order("nom", { ascending: true });
 
@@ -753,15 +761,19 @@
     }
 
     async function refreshData() {
-      const [clients, plaques] = await Promise.all([
-        fetchClients(),
-        fetchPlaques()
+      const [plaques, clients] = await Promise.all([
+        fetchPlaques(),
+        fetchClients()
       ]);
 
       state.clients = clients;
       state.plaques = plaques;
+      refreshPlaqueIndex();
       updateStats();
       buildPlaqueFilterOptions();
+      if (dom.clientModalOverlay?.classList.contains("active")) {
+        buildPlaqueSelectOptions(dom.clientPlaqueSelect.value || "");
+      }
       renderClientsTable();
       updateClientNumberHint();
     }
