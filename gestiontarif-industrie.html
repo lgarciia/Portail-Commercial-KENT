@@ -1486,10 +1486,29 @@
         });
 
         if (!tariffRows.length) {
-          throw new Error(
-            "Aucun tarif a inserer: aucun produit associe aux references importees. " +
-            "Verifie les droits d'ecriture sur la table industrie_produits ou les references du fichier."
-          );
+          const diagnosticLines = [
+            `References analysees: ${importRows.length}`,
+            `Produits a creer: ${createdCountTarget}`,
+            `Produits crees: ${createdCount}`,
+            `Produits a mettre a jour: ${updatedCountTarget}`,
+            `Produits mis a jour: ${updatedCount}`,
+            `Erreurs produits: ${productFailed}`,
+            `Produits visibles apres synchronisation: ${produits.length}`,
+            `Tarifs preparables: ${tariffRows.length}`,
+            productFailed > 0
+              ? "Cause probable: droits Supabase/RLS insuffisants sur industrie_produits."
+              : "Cause probable: les references importees ne correspondent pas aux produits visibles apres import.",
+            ...(productErrorSamples.length
+              ? ["Details erreurs produits:", ...productErrorSamples]
+              : [])
+          ];
+          setStatus("Import interrompu: aucun produit industrie exploitable apres synchronisation.");
+          openResultModal({
+            title: "Import interrompu",
+            summary: "Aucun tarif industrie ne peut etre cree car aucun produit associe n'est visible apres la synchronisation.",
+            lines: diagnosticLines
+          });
+          return;
         }
 
         setStatus(`Import ${type.label}: suppression des anciens tarifs ${type.plaqueName}...`);
