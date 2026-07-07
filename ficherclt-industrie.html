@@ -999,6 +999,16 @@
       }, 3200);
     }
 
+    function getSupabaseErrorMessage(error) {
+      const parts = [
+        error?.message,
+        error?.details,
+        error?.hint,
+        error?.code ? `code ${error.code}` : ""
+      ].filter(Boolean);
+      return parts.join(" | ") || "Erreur Supabase inconnue";
+    }
+
     function escapeHtml(value) {
       return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -3462,8 +3472,9 @@
         await loadVisites();
       } catch (error) {
         console.error("Erreur saveVisit:", error);
-        setStatus("Erreur lors de l'enregistrement de la visite.", "error");
-        showToast("Impossible d'enregistrer la visite.", "error");
+        const details = getSupabaseErrorMessage(error);
+        setStatus(`Erreur lors de l'enregistrement de la visite: ${details}`, "error");
+        showToast(`Impossible d'enregistrer la visite: ${details}`, "error");
       }
     }
 
@@ -3479,8 +3490,9 @@
         showToast("Visite supprimée.", "success");
       } catch (error) {
         console.error("Erreur deleteVisit:", error);
-        setStatus("Erreur lors de la suppression.", "error");
-        showToast("Impossible de supprimer la visite.", "error");
+        const details = getSupabaseErrorMessage(error);
+        setStatus(`Erreur lors de la suppression: ${details}`, "error");
+        showToast(`Impossible de supprimer la visite: ${details}`, "error");
       }
     }
 
