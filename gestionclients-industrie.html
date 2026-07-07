@@ -672,7 +672,7 @@
           <td class="action-cell">
             <button class="btn btn-info btn-sm" type="button" data-action="edit" data-client-id="${escapeHtml(client.id)}">Modifier</button>
             <button class="btn btn-danger btn-sm" type="button" data-action="delete" data-client-id="${escapeHtml(client.id)}">Supprimer</button>
-            <span class="btn btn-secondary btn-sm" title="Disponible a l'etape fiche client industrie">Fiche bientot</span>
+            <a class="btn btn-secondary btn-sm" href="ficherclt-industrie.html?client_id=${encodeURIComponent(String(client.id))}">Voir fiche</a>
           </td>
         </tr>
       `).join("");
