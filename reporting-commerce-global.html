@@ -119,12 +119,13 @@
 
     .filters-grid {
       display: grid;
-      grid-template-columns: 220px 220px auto 1fr;
+      grid-template-columns: 190px 190px 190px 210px 140px minmax(260px, 1fr);
       gap: 12px;
       align-items: end;
     }
 
     .field { display: flex; flex-direction: column; gap: 7px; }
+    [hidden] { display: none !important; }
     label {
       color: var(--muted);
       font-size: 0.78rem;
@@ -142,6 +143,32 @@
       padding: 12px 13px;
       font-size: 0.92rem;
       outline: none;
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 5px;
+      border-radius: 15px;
+      background: rgba(2, 6, 23, 0.32);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .mode-btn {
+      border: none;
+      border-radius: 11px;
+      padding: 9px 10px;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 900;
+      transition: background .18s ease, color .18s ease, transform .18s ease;
+    }
+    .mode-btn:hover { transform: translateY(-1px); color: var(--text); }
+    .mode-btn.active {
+      color: #08111f;
+      background: linear-gradient(135deg, #fde68a, var(--gold));
+      box-shadow: 0 12px 24px rgba(245, 158, 11, 0.18);
     }
 
     .status {
@@ -391,6 +418,78 @@
     }
 
     .analysis { margin-top: 18px; padding: 18px; }
+    .year-view { display: grid; gap: 18px; }
+    .annual-panel { padding: 18px; }
+    .annual-chart {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(72px, 1fr));
+      gap: 10px;
+      align-items: end;
+      overflow-x: auto;
+      padding: 8px 2px 2px;
+    }
+    .month-bar {
+      min-width: 72px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(2, 6, 23, 0.26);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 10px 8px;
+      cursor: pointer;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+    .month-bar:hover, .month-bar.active {
+      transform: translateY(-2px);
+      border-color: rgba(245, 158, 11, 0.42);
+      background: rgba(15, 23, 42, 0.82);
+    }
+    .month-bar.active { box-shadow: 0 18px 38px rgba(245, 158, 11, 0.14); }
+    .bar-track {
+      height: 210px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .bar-stack {
+      width: 100%;
+      max-width: 42px;
+      min-height: 0;
+      border-radius: 12px 12px 6px 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column-reverse;
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+    .bar-segment.auto { background: linear-gradient(180deg, var(--auto), var(--auto-2)); }
+    .bar-segment.indus { background: linear-gradient(180deg, var(--indus), var(--indus-2)); }
+    .month-name {
+      display: block;
+      font-size: .77rem;
+      color: var(--muted);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+    .month-value {
+      display: block;
+      font-size: .82rem;
+      font-weight: 900;
+      line-height: 1.25;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: .82rem;
+    }
     .quick-actions {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -416,6 +515,7 @@
     @media (max-width: 1180px) {
       .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .filters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .annual-chart { grid-template-columns: repeat(6, minmax(84px, 1fr)); }
       .quick-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 720px) {
@@ -424,6 +524,8 @@
       .header-top { flex-direction: column; }
       .panel, .analysis { padding: 15px; }
       .filters-grid, .kpis, .detail-grid, .quick-actions { grid-template-columns: 1fr; }
+      .annual-chart { grid-template-columns: repeat(3, minmax(84px, 1fr)); }
+      .bar-track { height: 160px; }
       .actions { justify-content: flex-start; }
     }
   </style>
@@ -436,7 +538,7 @@
         <div>
           <div class="eyebrow">Commerce global</div>
           <h1>Reporting Commerce Global</h1>
-          <p>Synthese du CA HT Auto + Industrie, calculee depuis les lignes vendues. Choisis un mois, lis le cumul, puis clique une semaine pour voir la repartition et les meilleurs clients.</p>
+          <p>Synthese du CA HT Auto + Industrie, calculee depuis les lignes vendues. Choisis un mois ou une annee, lis le cumul, puis clique une semaine ou un mois pour voir le detail.</p>
         </div>
         <div class="actions">
           <a class="btn" href="index.html">Portail</a>
@@ -448,8 +550,19 @@
       <div class="filters">
         <div class="filters-grid">
           <div class="field">
+            <label>Vue</label>
+            <div class="mode-switch" role="tablist" aria-label="Mode de reporting">
+              <button class="mode-btn active" id="monthModeBtn" type="button">Mois</button>
+              <button class="mode-btn" id="yearModeBtn" type="button">Annee</button>
+            </div>
+          </div>
+          <div class="field" id="monthField">
             <label for="monthSelect">Mois analyse</label>
             <input type="month" id="monthSelect">
+          </div>
+          <div class="field" id="yearField" hidden>
+            <label for="yearSelect">Annee analyse</label>
+            <input type="number" id="yearSelect" min="2020" max="2100" step="1">
           </div>
           <div class="field">
             <label for="sectorFilter">Secteur</label>
@@ -475,7 +588,7 @@
       </div>
     </header>
 
-    <section class="kpis">
+    <section class="kpis monthly-section">
       <div class="kpi total">
         <span>CA total HT</span>
         <strong id="kpiTotal">0,00 EUR</strong>
@@ -489,7 +602,7 @@
       <div class="kpi"><span>Telephone</span><strong id="kpiPhone">0</strong><small>Commandes tel incluses</small></div>
     </section>
 
-    <section class="main-grid">
+    <section class="main-grid monthly-section">
       <div class="glass panel">
         <div class="panel-head">
           <div>
@@ -506,19 +619,19 @@
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-head">
           <div>
-            <div class="eyebrow">Detail semaine</div>
-            <h2 id="modalTitle">Detail semaine</h2>
-            <p id="modalSubtitle">Clique une semaine pour analyser le CA.</p>
+            <div class="eyebrow">Detail CA</div>
+            <h2 id="modalTitle">Detail periode</h2>
+            <p id="modalSubtitle">Clique une semaine ou un mois pour analyser le CA.</p>
           </div>
           <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Fermer">x</button>
         </div>
         <div class="detail-grid" id="modalDetailGrid"></div>
-        <h3 class="modal-section-title">Top clients semaine</h3>
+        <h3 class="modal-section-title">Top clients periode</h3>
         <div class="top-list" id="modalTopClientsList"></div>
       </div>
     </div>
 
-    <section class="glass analysis">
+    <section class="glass analysis monthly-section">
       <div class="panel-head">
         <div>
           <h2>Analyse rapide</h2>
@@ -548,6 +661,64 @@
         </table>
       </div>
     </section>
+
+    <section class="year-view" id="yearView" hidden>
+      <section class="kpis">
+        <div class="kpi total">
+          <span>CA annuel HT</span>
+          <strong id="yearKpiTotal">0,00 EUR</strong>
+          <small id="yearKpiTotalSub">Auto + Industrie</small>
+          <div class="meter" id="yearMainMeter"><div class="auto-fill" style="width:50%"></div><div class="indus-fill" style="width:50%"></div></div>
+        </div>
+        <div class="kpi auto"><span>CA Auto annuel</span><strong id="yearKpiAuto">0,00 EUR</strong><small id="yearKpiAutoSub">0 ligne</small></div>
+        <div class="kpi indus"><span>CA Industrie annuel</span><strong id="yearKpiIndus">0,00 EUR</strong><small id="yearKpiIndusSub">0 ligne</small></div>
+        <div class="kpi"><span>Clients</span><strong id="yearKpiClients">0</strong><small>Clients uniques</small></div>
+        <div class="kpi"><span>Commandes</span><strong id="yearKpiOrders">0</strong><small>Visites avec vente</small></div>
+        <div class="kpi"><span>Meilleur mois</span><strong id="yearKpiBestMonth">-</strong><small id="yearKpiBestMonthSub">CA le plus fort</small></div>
+      </section>
+
+      <section class="glass annual-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Vue annuelle par mois</h2>
+            <p>CA HT cumule Auto + Industrie, avec une barre empilee par activite. Clique un mois pour voir le detail.</p>
+          </div>
+          <div class="legend"><span class="pill auto">Auto</span><span class="pill indus">Industrie</span></div>
+        </div>
+        <div class="annual-chart" id="annualChart"></div>
+      </section>
+
+      <section class="glass analysis">
+        <div class="panel-head">
+          <div>
+            <h2>Analyse annuelle</h2>
+            <p id="yearAnalysisText">Les insights annuels se rempliront apres chargement.</p>
+          </div>
+        </div>
+        <div class="quick-actions">
+          <a class="btn btn-primary" href="tdbactivite.html">Approfondir Auto</a>
+          <a class="btn btn-indus" href="tdbactivite-industrie.html">Approfondir Industrie</a>
+          <a class="btn" href="mes-ventes.html">Detail ventes Auto</a>
+          <a class="btn" href="mes-ventes-industrie.html">Detail ventes Industrie</a>
+        </div>
+        <div class="table-shell">
+          <table>
+            <thead>
+              <tr>
+                <th>Mois</th>
+                <th class="number">CA total HT</th>
+                <th class="number">CA Auto</th>
+                <th class="number">CA Industrie</th>
+                <th class="number">Clients</th>
+                <th class="number">Commandes</th>
+                <th class="number">Lignes</th>
+              </tr>
+            </thead>
+            <tbody id="yearSummaryBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -562,11 +733,13 @@
       { key: "auto", label: "Auto", tables: { clients: "clients", visites: "visites", lignes: "visite_commandes" } },
       { key: "industrie", label: "Industrie", tables: { clients: "industrie_clients", visites: "industrie_visites", lignes: "industrie_visite_commandes" } }
     ];
+    const MONTH_LABELS = ["Janv.", "Fevr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Aout", "Sept.", "Oct.", "Nov.", "Dec."];
     const dom = {};
-    const state = { rows: [], weeks: [], selectedWeekIndex: 0 };
+    const state = { rows: [], weeks: [], selectedWeekIndex: 0, selectedMonthIndex: null, viewMode: "month" };
 
     function cacheDom() {
-      ["monthSelect","sectorFilter","reloadBtn","statusBar","weekGrid","summaryBody","weekModal","modalTitle","modalSubtitle","modalDetailGrid","modalTopClientsList","modalCloseBtn","analysisText","kpiTotal","kpiTotalSub","kpiAuto","kpiAutoSub","kpiIndus","kpiIndusSub","kpiClients","kpiOrders","kpiPhone","mainMeter"].forEach(id => dom[id] = document.getElementById(id));
+      ["monthModeBtn","yearModeBtn","monthField","yearField","monthSelect","yearSelect","sectorFilter","reloadBtn","statusBar","weekGrid","summaryBody","weekModal","modalTitle","modalSubtitle","modalDetailGrid","modalTopClientsList","modalCloseBtn","analysisText","kpiTotal","kpiTotalSub","kpiAuto","kpiAutoSub","kpiIndus","kpiIndusSub","kpiClients","kpiOrders","kpiPhone","mainMeter","yearView","annualChart","yearSummaryBody","yearAnalysisText","yearKpiTotal","yearKpiTotalSub","yearKpiAuto","yearKpiAutoSub","yearKpiIndus","yearKpiIndusSub","yearKpiClients","yearKpiOrders","yearKpiBestMonth","yearKpiBestMonthSub","yearMainMeter"].forEach(id => dom[id] = document.getElementById(id));
+      dom.monthlySections = [...document.querySelectorAll(".monthly-section")];
     }
     function setStatus(message) { dom.statusBar.textContent = message; }
     function escapeHtml(value) { return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
@@ -583,6 +756,7 @@
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     }
+    function getCurrentYearValue() { return String(new Date().getFullYear()); }
     function getMonthBounds(monthValue) {
       const [yearRaw, monthRaw] = String(monthValue || getCurrentMonthValue()).split("-").map(Number);
       const year = yearRaw || new Date().getFullYear();
@@ -590,6 +764,12 @@
       const start = new Date(year, month - 1, 1);
       const end = new Date(year, month, 0);
       return { start, end, startStr: toInputDate(start), endStr: toInputDate(end) };
+    }
+    function getYearBounds(yearValue) {
+      const year = Number(yearValue) || new Date().getFullYear();
+      const start = new Date(year, 0, 1);
+      const end = new Date(year, 11, 31);
+      return { year, start, end, startStr: toInputDate(start), endStr: toInputDate(end) };
     }
     function buildMonthWeeks(monthValue) {
       const { start, end } = getMonthBounds(monthValue);
@@ -606,6 +786,14 @@
         cursor.setDate(weekEnd.getDate() + 1);
       }
       return weeks;
+    }
+    function buildYearMonths(yearValue) {
+      const { year } = getYearBounds(yearValue);
+      return MONTH_LABELS.map((label, index) => {
+        const start = new Date(year, index, 1);
+        const end = new Date(year, index + 1, 0);
+        return { index, label, startStr: toInputDate(start), endStr: toInputDate(end) };
+      });
     }
     function normalizeVisitType(value) {
       const normalized = String(value || "").trim().toLowerCase();
@@ -690,7 +878,8 @@
       if (sector === "industrie") return state.rows.filter(row => row.source === "industrie");
       return state.rows;
     }
-    function rowsForWeek(rows, week) { return rows.filter(row => row.date_visite >= week.startStr && row.date_visite <= week.endStr); }
+    function rowsForPeriod(rows, period) { return rows.filter(row => row.date_visite >= period.startStr && row.date_visite <= period.endStr); }
+    function rowsForWeek(rows, week) { return rowsForPeriod(rows, week); }
     function summarizeRows(rows) {
       const total = rows.reduce((sum, row) => sum + row.total_ligne, 0);
       const auto = rows.filter(row => row.source === "auto").reduce((sum, row) => sum + row.total_ligne, 0);
@@ -761,18 +950,83 @@
       dom.weekModal.setAttribute("aria-hidden", "true");
       document.body.classList.remove("modal-open");
     }
+    function fillPeriodModal(rows, period, title) {
+      const periodRows = period ? rowsForPeriod(rows, period) : [];
+      const summary = summarizeRows(periodRows);
+      const topClients = aggregateTopClients(periodRows, 5);
+      dom.modalTitle.textContent = title || "Detail";
+      dom.modalSubtitle.textContent = period ? `${formatShortDate(period.startStr)} au ${formatShortDate(period.endStr)}` : "Aucune periode selectionnee.";
+      dom.modalDetailGrid.innerHTML = `<div class="chip"><span>CA total</span><strong>${formatCurrency(summary.total)}</strong></div><div class="chip"><span>CA Auto</span><strong>${formatCurrency(summary.auto)}</strong></div><div class="chip"><span>CA Industrie</span><strong>${formatCurrency(summary.industrie)}</strong></div><div class="chip"><span>Clients</span><strong>${formatNumber(summary.clients)}</strong></div><div class="chip"><span>Commandes</span><strong>${formatNumber(summary.orders)}</strong></div><div class="chip"><span>Telephone</span><strong>${formatNumber(summary.phoneOrders)}</strong></div>`;
+      dom.modalTopClientsList.innerHTML = topClients.length ? topClients.map(client => `<div class="top-row"><div><strong>${escapeHtml(client.nom)}</strong><span>Compte ${escapeHtml(client.compte)} - ${formatNumber(client.ordersCount)} commande(s) - ${formatNumber(client.lines)} ligne(s)</span><span class="pill ${client.source === "auto" ? "auto" : "indus"}">${escapeHtml(client.sourceLabel)}</span></div><div class="amount">${formatCurrency(client.ca)}</div></div>`).join("") : '<div class="empty">Aucun client avec CA sur cette periode.</div>';
+      openModal();
+    }
     function openWeekModal(rows, weekIndex) {
       state.selectedWeekIndex = weekIndex;
       renderWeeks(rows);
       const week = state.weeks[state.selectedWeekIndex] || state.weeks[0];
-      const weekRows = week ? rowsForWeek(rows, week) : [];
-      const summary = summarizeRows(weekRows);
-      const topClients = aggregateTopClients(weekRows, 5);
-      dom.modalTitle.textContent = week ? `Detail ${week.label}` : "Detail semaine";
-      dom.modalSubtitle.textContent = week ? `${formatShortDate(week.startStr)} au ${formatShortDate(week.endStr)}` : "Aucune semaine selectionnee.";
-      dom.modalDetailGrid.innerHTML = `<div class="chip"><span>CA total</span><strong>${formatCurrency(summary.total)}</strong></div><div class="chip"><span>CA Auto</span><strong>${formatCurrency(summary.auto)}</strong></div><div class="chip"><span>CA Industrie</span><strong>${formatCurrency(summary.industrie)}</strong></div><div class="chip"><span>Clients</span><strong>${formatNumber(summary.clients)}</strong></div><div class="chip"><span>Commandes</span><strong>${formatNumber(summary.orders)}</strong></div><div class="chip"><span>Telephone</span><strong>${formatNumber(summary.phoneOrders)}</strong></div>`;
-      dom.modalTopClientsList.innerHTML = topClients.length ? topClients.map(client => `<div class="top-row"><div><strong>${escapeHtml(client.nom)}</strong><span>Compte ${escapeHtml(client.compte)} - ${formatNumber(client.ordersCount)} commande(s) - ${formatNumber(client.lines)} ligne(s)</span><span class="pill ${client.source === "auto" ? "auto" : "indus"}">${escapeHtml(client.sourceLabel)}</span></div><div class="amount">${formatCurrency(client.ca)}</div></div>`).join("") : '<div class="empty">Aucun client avec CA sur cette semaine.</div>';
-      openModal();
+      fillPeriodModal(rows, week, week ? `Detail ${week.label}` : "Detail semaine");
+    }
+    function openYearMonthModal(rows, monthIndex) {
+      state.selectedMonthIndex = monthIndex;
+      const months = buildYearMonths(dom.yearSelect.value);
+      renderAnnualChart(getYearMonthSummaries(rows, months), rows);
+      const month = months[state.selectedMonthIndex] || months[0];
+      fillPeriodModal(rows, month, month ? `Detail ${month.label} ${dom.yearSelect.value}` : "Detail mois");
+    }
+    function getYearMonthSummaries(rows, months = buildYearMonths(dom.yearSelect.value)) {
+      return months.map(period => ({ period, summary: summarizeRows(rowsForPeriod(rows, period)) }));
+    }
+    function renderYearKpis(rows, monthSummaries) {
+      const summary = summarizeRows(rows);
+      const bestMonth = monthSummaries.reduce((best, item) => item.summary.total > best.summary.total ? item : best, monthSummaries[0]);
+      dom.yearKpiTotal.textContent = formatCurrency(summary.total);
+      dom.yearKpiTotalSub.textContent = `${formatNumber(summary.lines)} ligne(s) - ${formatNumber(summary.quantity)} unite(s)`;
+      dom.yearKpiAuto.textContent = formatCurrency(summary.auto);
+      dom.yearKpiAutoSub.textContent = `${formatNumber(rows.filter(row => row.source === "auto").length)} ligne(s) auto`;
+      dom.yearKpiIndus.textContent = formatCurrency(summary.industrie);
+      dom.yearKpiIndusSub.textContent = `${formatNumber(rows.filter(row => row.source === "industrie").length)} ligne(s) industrie`;
+      dom.yearKpiClients.textContent = formatNumber(summary.clients);
+      dom.yearKpiOrders.textContent = formatNumber(summary.orders);
+      dom.yearKpiBestMonth.textContent = bestMonth?.summary.total ? bestMonth.period.label : "-";
+      dom.yearKpiBestMonthSub.textContent = bestMonth?.summary.total ? formatCurrency(bestMonth.summary.total) : "Aucun CA";
+      renderMeter(dom.yearMainMeter, summary);
+    }
+    function renderAnnualChart(monthSummaries, rows) {
+      const maxTotal = Math.max(...monthSummaries.map(item => item.summary.total), 0);
+      dom.annualChart.innerHTML = monthSummaries.map(({ period, summary }) => {
+        const total = summary.total;
+        const height = maxTotal ? Math.max((total / maxTotal) * 100, total > 0 ? 4 : 0) : 0;
+        const autoPart = total ? (summary.auto / total) * 100 : 0;
+        const indusPart = total ? (summary.industrie / total) * 100 : 0;
+        const active = period.index === state.selectedMonthIndex ? " active" : "";
+        return `<button class="month-bar${active}" type="button" data-month-index="${period.index}" title="${escapeHtml(period.label)} ${escapeHtml(dom.yearSelect.value)} - ${formatCurrency(total)}">
+          <div class="bar-track"><div class="bar-stack" style="height:${height}%"><div class="bar-segment auto" style="height:${autoPart}%"></div><div class="bar-segment indus" style="height:${indusPart}%"></div></div></div>
+          <span class="month-name">${escapeHtml(period.label)}</span>
+          <span class="month-value">${formatCurrency(total)}</span>
+        </button>`;
+      }).join("");
+      dom.annualChart.querySelectorAll(".month-bar").forEach(card => card.addEventListener("click", () => openYearMonthModal(rows, Number(card.dataset.monthIndex || 0))));
+    }
+    function renderYearSummaryTable(monthSummaries) {
+      dom.yearSummaryBody.innerHTML = monthSummaries.map(({ period, summary }) => `<tr><td>${escapeHtml(period.label)}</td><td class="number">${formatCurrency(summary.total)}</td><td class="number">${formatCurrency(summary.auto)}</td><td class="number">${formatCurrency(summary.industrie)}</td><td class="number">${formatNumber(summary.clients)}</td><td class="number">${formatNumber(summary.orders)}</td><td class="number">${formatNumber(summary.lines)}</td></tr>`).join("");
+    }
+    function renderYearAnalysis(rows, monthSummaries) {
+      const summary = summarizeRows(rows);
+      if (!summary.lines) { dom.yearAnalysisText.textContent = "Aucune vente trouvee sur l'annee selectionnee pour le filtre choisi."; return; }
+      const bestMonth = monthSummaries.reduce((best, item) => item.summary.total > best.summary.total ? item : best, monthSummaries[0]);
+      const activeMonths = monthSummaries.filter(item => item.summary.lines).length;
+      const leader = summary.auto >= summary.industrie ? "Auto" : "Industrie";
+      const leaderValue = Math.max(summary.auto, summary.industrie);
+      const topClient = aggregateTopClients(rows, 1)[0];
+      dom.yearAnalysisText.textContent = `Sur ${dom.yearSelect.value}, le CA HT cumule est de ${formatCurrency(summary.total)} sur ${formatNumber(activeMonths)} mois actif(s). Le secteur dominant est ${leader} avec ${formatCurrency(leaderValue)}. Meilleur mois: ${bestMonth.period.label} (${formatCurrency(bestMonth.summary.total)}). Top client annuel: ${topClient ? `${topClient.nom} - ${formatCurrency(topClient.ca)}` : "-"}.`;
+    }
+    function renderYearView(rows) {
+      const months = buildYearMonths(dom.yearSelect.value);
+      const monthSummaries = getYearMonthSummaries(rows, months);
+      renderYearKpis(rows, monthSummaries);
+      renderAnnualChart(monthSummaries, rows);
+      renderYearSummaryTable(monthSummaries);
+      renderYearAnalysis(rows, monthSummaries);
     }
     function renderSummaryTable(rows) {
       dom.summaryBody.innerHTML = state.weeks.map(week => {
@@ -789,8 +1043,35 @@
       const leaderValue = Math.max(summary.auto, summary.industrie);
       dom.analysisText.textContent = `Sur ce mois, le CA HT cumule est de ${formatCurrency(summary.total)}. Le secteur dominant est ${leader} avec ${formatCurrency(leaderValue)}. Meilleure semaine: ${bestWeek.week.label} (${formatCurrency(bestWeek.summary.total)}). Top client: ${topClient ? `${topClient.nom} - ${formatCurrency(topClient.ca)}` : "-"}.`;
     }
+    function updateViewModeUi() {
+      const isYearMode = state.viewMode === "year";
+      dom.monthModeBtn.classList.toggle("active", !isYearMode);
+      dom.yearModeBtn.classList.toggle("active", isYearMode);
+      dom.monthModeBtn.setAttribute("aria-selected", String(!isYearMode));
+      dom.yearModeBtn.setAttribute("aria-selected", String(isYearMode));
+      dom.monthField.hidden = isYearMode;
+      dom.yearField.hidden = !isYearMode;
+      dom.monthlySections.forEach(section => { section.hidden = isYearMode; });
+      dom.yearView.hidden = !isYearMode;
+    }
+    function setViewMode(mode) {
+      if (state.viewMode === mode) return;
+      state.viewMode = mode;
+      state.selectedWeekIndex = 0;
+      state.selectedMonthIndex = null;
+      closeWeekModal();
+      updateViewModeUi();
+      refreshData();
+    }
     function applyView() {
+      updateViewModeUi();
       const rows = getFilteredRows();
+      if (state.viewMode === "year") {
+        renderYearView(rows);
+        const summary = summarizeRows(rows);
+        setStatus(`Reporting annuel a jour - ${formatCurrency(summary.total)} HT - ${formatNumber(summary.lines)} ligne(s) - ${formatNumber(summary.clients)} client(s).`);
+        return;
+      }
       renderKpis(rows);
       renderWeeks(rows);
       renderSummaryTable(rows);
@@ -801,12 +1082,14 @@
     async function refreshData() {
       try {
         dom.reloadBtn.disabled = true;
-        const monthBounds = getMonthBounds(dom.monthSelect.value);
-        state.weeks = buildMonthWeeks(dom.monthSelect.value);
+        const isYearMode = state.viewMode === "year";
+        const periodBounds = isYearMode ? getYearBounds(dom.yearSelect.value) : getMonthBounds(dom.monthSelect.value);
+        state.weeks = isYearMode ? [] : buildMonthWeeks(dom.monthSelect.value);
         state.selectedWeekIndex = 0;
+        state.selectedMonthIndex = null;
         closeWeekModal();
-        setStatus("Chargement des ventes Auto + Industrie...");
-        const sourceRows = await Promise.all(SOURCES.map(source => loadSourceRows(source, monthBounds)));
+        setStatus(isYearMode ? "Chargement de l'annee Auto + Industrie..." : "Chargement des ventes Auto + Industrie...");
+        const sourceRows = await Promise.all(SOURCES.map(source => loadSourceRows(source, periodBounds)));
         state.rows = sourceRows.flat().sort((a, b) => String(a.date_visite).localeCompare(String(b.date_visite)));
         applyView();
       } catch (error) {
@@ -815,13 +1098,18 @@
         setStatus(`Erreur de chargement: ${error.message || "erreur inconnue"}`);
         dom.weekGrid.innerHTML = '<div class="empty">Impossible de charger les ventes.</div>';
         dom.summaryBody.innerHTML = "";
+        dom.annualChart.innerHTML = '<div class="empty">Impossible de charger les ventes annuelles.</div>';
+        dom.yearSummaryBody.innerHTML = "";
       } finally {
         dom.reloadBtn.disabled = false;
       }
     }
     function bindEvents() {
-      dom.monthSelect.addEventListener("change", refreshData);
-      dom.sectorFilter.addEventListener("change", () => { state.selectedWeekIndex = 0; closeWeekModal(); applyView(); });
+      dom.monthModeBtn.addEventListener("click", () => setViewMode("month"));
+      dom.yearModeBtn.addEventListener("click", () => setViewMode("year"));
+      dom.monthSelect.addEventListener("change", () => { if (state.viewMode === "month") refreshData(); });
+      dom.yearSelect.addEventListener("change", () => { if (state.viewMode === "year") refreshData(); });
+      dom.sectorFilter.addEventListener("change", () => { state.selectedWeekIndex = 0; state.selectedMonthIndex = null; closeWeekModal(); applyView(); });
       dom.reloadBtn.addEventListener("click", refreshData);
       dom.modalCloseBtn.addEventListener("click", closeWeekModal);
       dom.weekModal.addEventListener("click", event => { if (event.target === dom.weekModal) closeWeekModal(); });
@@ -830,6 +1118,8 @@
     function init() {
       cacheDom();
       dom.monthSelect.value = getCurrentMonthValue();
+      dom.yearSelect.value = getCurrentYearValue();
+      updateViewModeUi();
       bindEvents();
       refreshData();
     }
