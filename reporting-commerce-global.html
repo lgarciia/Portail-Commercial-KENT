@@ -119,7 +119,7 @@
 
     .filters-grid {
       display: grid;
-      grid-template-columns: 190px 190px 190px 210px 140px minmax(260px, 1fr);
+      grid-template-columns: minmax(260px, .9fr) 190px 230px minmax(330px, 1.1fr);
       gap: 12px;
       align-items: end;
     }
@@ -147,7 +147,7 @@
 
     .mode-switch {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 6px;
       padding: 5px;
       border-radius: 15px;
@@ -170,6 +170,8 @@
       background: linear-gradient(135deg, #fde68a, var(--gold));
       box-shadow: 0 12px 24px rgba(245, 158, 11, 0.18);
     }
+    .filters .inline-actions { justify-content: flex-start; }
+    .filters .inline-actions .btn { min-width: 165px; }
 
     .status {
       margin-top: 14px;
@@ -187,6 +189,9 @@
       grid-template-columns: 1.35fr repeat(5, minmax(0, 1fr));
       gap: 12px;
       margin-bottom: 18px;
+    }
+    .daily-kpis {
+      grid-template-columns: 1.35fr repeat(2, minmax(0, 1fr));
     }
 
     .kpi {
@@ -523,7 +528,7 @@
       .header { padding: 16px; }
       .header-top { flex-direction: column; }
       .panel, .analysis { padding: 15px; }
-      .filters-grid, .kpis, .detail-grid, .quick-actions { grid-template-columns: 1fr; }
+      .filters-grid, .kpis, .daily-kpis, .detail-grid, .quick-actions { grid-template-columns: 1fr; }
       .annual-chart { grid-template-columns: repeat(3, minmax(84px, 1fr)); }
       .bar-track { height: 160px; }
       .actions { justify-content: flex-start; }
@@ -538,7 +543,7 @@
         <div>
           <div class="eyebrow">Commerce global</div>
           <h1>Reporting Commerce Global</h1>
-          <p>Synthese du CA HT Auto + Industrie, calculee depuis les lignes vendues. Choisis un mois ou une annee, lis le cumul, puis clique une semaine ou un mois pour voir le detail.</p>
+          <p>Synthese du CA HT Auto + Industrie, calculee depuis les lignes vendues. Suis le jour par defaut, puis bascule en mois ou annee pour prendre du recul.</p>
         </div>
         <div class="actions">
           <a class="btn" href="index.html">Portail</a>
@@ -552,11 +557,16 @@
           <div class="field">
             <label>Vue</label>
             <div class="mode-switch" role="tablist" aria-label="Mode de reporting">
-              <button class="mode-btn active" id="monthModeBtn" type="button">Mois</button>
+              <button class="mode-btn active" id="dayModeBtn" type="button">Jour</button>
+              <button class="mode-btn" id="monthModeBtn" type="button">Mois</button>
               <button class="mode-btn" id="yearModeBtn" type="button">Annee</button>
             </div>
           </div>
-          <div class="field" id="monthField">
+          <div class="field" id="dayField">
+            <label for="daySelect">Date analyse</label>
+            <input type="date" id="daySelect">
+          </div>
+          <div class="field" id="monthField" hidden>
             <label for="monthSelect">Mois analyse</label>
             <input type="month" id="monthSelect">
           </div>
@@ -573,10 +583,6 @@
             </select>
           </div>
           <div class="field">
-            <label>&nbsp;</label>
-            <button class="btn btn-gold" id="reloadBtn" type="button">Actualiser</button>
-          </div>
-          <div class="field">
             <label>Raccourcis</label>
             <div class="inline-actions">
               <a class="btn" href="mes-ventes.html">Mes ventes Auto</a>
@@ -587,6 +593,17 @@
         <div class="status" id="statusBar">Connexion a Supabase...</div>
       </div>
     </header>
+
+    <section class="kpis daily-kpis" id="dayView">
+      <div class="kpi total">
+        <span>Total jour HT</span>
+        <strong id="dayKpiTotal">0,00 EUR</strong>
+        <small id="dayKpiTotalSub">Cumul Auto + Industrie</small>
+        <div class="meter" id="dayMainMeter"><div class="auto-fill" style="width:50%"></div><div class="indus-fill" style="width:50%"></div></div>
+      </div>
+      <div class="kpi auto"><span>Auto du jour</span><strong id="dayKpiAuto">0,00 EUR</strong><small id="dayKpiAutoSub">0 ligne auto</small></div>
+      <div class="kpi indus"><span>Industrie du jour</span><strong id="dayKpiIndus">0,00 EUR</strong><small id="dayKpiIndusSub">0 ligne industrie</small></div>
+    </section>
 
     <section class="kpis monthly-section">
       <div class="kpi total">
@@ -735,10 +752,10 @@
     ];
     const MONTH_LABELS = ["Janv.", "Fevr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Aout", "Sept.", "Oct.", "Nov.", "Dec."];
     const dom = {};
-    const state = { rows: [], weeks: [], selectedWeekIndex: 0, selectedMonthIndex: null, viewMode: "month" };
+    const state = { rows: [], weeks: [], selectedWeekIndex: 0, selectedMonthIndex: null, viewMode: "day" };
 
     function cacheDom() {
-      ["monthModeBtn","yearModeBtn","monthField","yearField","monthSelect","yearSelect","sectorFilter","reloadBtn","statusBar","weekGrid","summaryBody","weekModal","modalTitle","modalSubtitle","modalDetailGrid","modalTopClientsList","modalCloseBtn","analysisText","kpiTotal","kpiTotalSub","kpiAuto","kpiAutoSub","kpiIndus","kpiIndusSub","kpiClients","kpiOrders","kpiPhone","mainMeter","yearView","annualChart","yearSummaryBody","yearAnalysisText","yearKpiTotal","yearKpiTotalSub","yearKpiAuto","yearKpiAutoSub","yearKpiIndus","yearKpiIndusSub","yearKpiClients","yearKpiOrders","yearKpiBestMonth","yearKpiBestMonthSub","yearMainMeter"].forEach(id => dom[id] = document.getElementById(id));
+      ["dayModeBtn","monthModeBtn","yearModeBtn","dayField","monthField","yearField","daySelect","monthSelect","yearSelect","sectorFilter","statusBar","dayView","dayKpiTotal","dayKpiTotalSub","dayKpiAuto","dayKpiAutoSub","dayKpiIndus","dayKpiIndusSub","dayMainMeter","weekGrid","summaryBody","weekModal","modalTitle","modalSubtitle","modalDetailGrid","modalTopClientsList","modalCloseBtn","analysisText","kpiTotal","kpiTotalSub","kpiAuto","kpiAutoSub","kpiIndus","kpiIndusSub","kpiClients","kpiOrders","kpiPhone","mainMeter","yearView","annualChart","yearSummaryBody","yearAnalysisText","yearKpiTotal","yearKpiTotalSub","yearKpiAuto","yearKpiAutoSub","yearKpiIndus","yearKpiIndusSub","yearKpiClients","yearKpiOrders","yearKpiBestMonth","yearKpiBestMonthSub","yearMainMeter"].forEach(id => dom[id] = document.getElementById(id));
       dom.monthlySections = [...document.querySelectorAll(".monthly-section")];
     }
     function setStatus(message) { dom.statusBar.textContent = message; }
@@ -752,11 +769,19 @@
       const date = new Date(y, m - 1, d);
       return Number.isNaN(date.getTime()) ? dateStr : date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
     }
+    function getCurrentDayValue() { return toInputDate(new Date()); }
     function getCurrentMonthValue() {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     }
     function getCurrentYearValue() { return String(new Date().getFullYear()); }
+    function getDayBounds(dayValue) {
+      const day = String(dayValue || getCurrentDayValue());
+      const [yearRaw, monthRaw, dayRaw] = day.split("-").map(Number);
+      const date = new Date(yearRaw || new Date().getFullYear(), (monthRaw || 1) - 1, dayRaw || 1);
+      const dateStr = toInputDate(date);
+      return { start: date, end: date, startStr: dateStr, endStr: dateStr };
+    }
     function getMonthBounds(monthValue) {
       const [yearRaw, monthRaw] = String(monthValue || getCurrentMonthValue()).split("-").map(Number);
       const year = yearRaw || new Date().getFullYear();
@@ -924,6 +949,18 @@
       dom.kpiPhone.textContent = formatNumber(summary.phoneOrders);
       renderMeter(dom.mainMeter, summary);
     }
+    function renderDayView(rows) {
+      const summary = summarizeRows(rows);
+      const autoLines = rows.filter(row => row.source === "auto").length;
+      const indusLines = rows.filter(row => row.source === "industrie").length;
+      dom.dayKpiTotal.textContent = formatCurrency(summary.total);
+      dom.dayKpiTotalSub.textContent = `${formatNumber(summary.lines)} ligne(s) - cumul Auto + Industrie`;
+      dom.dayKpiAuto.textContent = formatCurrency(summary.auto);
+      dom.dayKpiAutoSub.textContent = `${formatNumber(autoLines)} ligne(s) auto`;
+      dom.dayKpiIndus.textContent = formatCurrency(summary.industrie);
+      dom.dayKpiIndusSub.textContent = `${formatNumber(indusLines)} ligne(s) industrie`;
+      renderMeter(dom.dayMainMeter, summary);
+    }
     function renderWeeks(rows) {
       if (!state.weeks[state.selectedWeekIndex]) state.selectedWeekIndex = 0;
       dom.weekGrid.innerHTML = state.weeks.map(week => {
@@ -1044,14 +1081,20 @@
       dom.analysisText.textContent = `Sur ce mois, le CA HT cumule est de ${formatCurrency(summary.total)}. Le secteur dominant est ${leader} avec ${formatCurrency(leaderValue)}. Meilleure semaine: ${bestWeek.week.label} (${formatCurrency(bestWeek.summary.total)}). Top client: ${topClient ? `${topClient.nom} - ${formatCurrency(topClient.ca)}` : "-"}.`;
     }
     function updateViewModeUi() {
+      const isDayMode = state.viewMode === "day";
+      const isMonthMode = state.viewMode === "month";
       const isYearMode = state.viewMode === "year";
-      dom.monthModeBtn.classList.toggle("active", !isYearMode);
+      dom.dayModeBtn.classList.toggle("active", isDayMode);
+      dom.monthModeBtn.classList.toggle("active", isMonthMode);
       dom.yearModeBtn.classList.toggle("active", isYearMode);
-      dom.monthModeBtn.setAttribute("aria-selected", String(!isYearMode));
+      dom.dayModeBtn.setAttribute("aria-selected", String(isDayMode));
+      dom.monthModeBtn.setAttribute("aria-selected", String(isMonthMode));
       dom.yearModeBtn.setAttribute("aria-selected", String(isYearMode));
-      dom.monthField.hidden = isYearMode;
+      dom.dayField.hidden = !isDayMode;
+      dom.monthField.hidden = !isMonthMode;
       dom.yearField.hidden = !isYearMode;
-      dom.monthlySections.forEach(section => { section.hidden = isYearMode; });
+      dom.dayView.hidden = !isDayMode;
+      dom.monthlySections.forEach(section => { section.hidden = !isMonthMode; });
       dom.yearView.hidden = !isYearMode;
     }
     function setViewMode(mode) {
@@ -1066,6 +1109,12 @@
     function applyView() {
       updateViewModeUi();
       const rows = getFilteredRows();
+      if (state.viewMode === "day") {
+        renderDayView(rows);
+        const summary = summarizeRows(rows);
+        setStatus(`Reporting journalier a jour - ${formatCurrency(summary.total)} HT - Auto ${formatCurrency(summary.auto)} - Industrie ${formatCurrency(summary.industrie)}.`);
+        return;
+      }
       if (state.viewMode === "year") {
         renderYearView(rows);
         const summary = summarizeRows(rows);
@@ -1081,14 +1130,14 @@
     }
     async function refreshData() {
       try {
-        dom.reloadBtn.disabled = true;
+        const isDayMode = state.viewMode === "day";
         const isYearMode = state.viewMode === "year";
-        const periodBounds = isYearMode ? getYearBounds(dom.yearSelect.value) : getMonthBounds(dom.monthSelect.value);
-        state.weeks = isYearMode ? [] : buildMonthWeeks(dom.monthSelect.value);
+        const periodBounds = isDayMode ? getDayBounds(dom.daySelect.value) : isYearMode ? getYearBounds(dom.yearSelect.value) : getMonthBounds(dom.monthSelect.value);
+        state.weeks = state.viewMode === "month" ? buildMonthWeeks(dom.monthSelect.value) : [];
         state.selectedWeekIndex = 0;
         state.selectedMonthIndex = null;
         closeWeekModal();
-        setStatus(isYearMode ? "Chargement de l'annee Auto + Industrie..." : "Chargement des ventes Auto + Industrie...");
+        setStatus(isDayMode ? "Chargement du jour Auto + Industrie..." : isYearMode ? "Chargement de l'annee Auto + Industrie..." : "Chargement des ventes Auto + Industrie...");
         const sourceRows = await Promise.all(SOURCES.map(source => loadSourceRows(source, periodBounds)));
         state.rows = sourceRows.flat().sort((a, b) => String(a.date_visite).localeCompare(String(b.date_visite)));
         applyView();
@@ -1100,23 +1149,23 @@
         dom.summaryBody.innerHTML = "";
         dom.annualChart.innerHTML = '<div class="empty">Impossible de charger les ventes annuelles.</div>';
         dom.yearSummaryBody.innerHTML = "";
-      } finally {
-        dom.reloadBtn.disabled = false;
       }
     }
     function bindEvents() {
+      dom.dayModeBtn.addEventListener("click", () => setViewMode("day"));
       dom.monthModeBtn.addEventListener("click", () => setViewMode("month"));
       dom.yearModeBtn.addEventListener("click", () => setViewMode("year"));
+      dom.daySelect.addEventListener("change", () => { if (state.viewMode === "day") refreshData(); });
       dom.monthSelect.addEventListener("change", () => { if (state.viewMode === "month") refreshData(); });
       dom.yearSelect.addEventListener("change", () => { if (state.viewMode === "year") refreshData(); });
       dom.sectorFilter.addEventListener("change", () => { state.selectedWeekIndex = 0; state.selectedMonthIndex = null; closeWeekModal(); applyView(); });
-      dom.reloadBtn.addEventListener("click", refreshData);
       dom.modalCloseBtn.addEventListener("click", closeWeekModal);
       dom.weekModal.addEventListener("click", event => { if (event.target === dom.weekModal) closeWeekModal(); });
       window.addEventListener("keydown", event => { if (event.key === "Escape") closeWeekModal(); });
     }
     function init() {
       cacheDom();
+      dom.daySelect.value = getCurrentDayValue();
       dom.monthSelect.value = getCurrentMonthValue();
       dom.yearSelect.value = getCurrentYearValue();
       updateViewModeUi();
