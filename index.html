@@ -328,6 +328,11 @@
       margin-top: 8px;
     }
 
+    .links.split-links{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .link{
       display:flex;
       align-items:center;
@@ -565,7 +570,7 @@
             <div class="chev">›</div>
           </a>
         </div>
-        <div class="links">
+        <div class="links split-links">
           <a class="link app" href="ficherclt.html" data-tags="Fiche client auto automobile fiches clients">
             <div class="left">
               <div class="name">Fiche client Auto</div>
