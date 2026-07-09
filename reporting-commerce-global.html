@@ -45,8 +45,12 @@
     }
 
     .header {
-      padding: 24px;
+      padding: 18px;
       margin-bottom: 18px;
+      display: block;
+    }
+
+    .header-top {
       display: flex;
       justify-content: space-between;
       gap: 18px;
@@ -64,17 +68,17 @@
       font-weight: 900;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     h1 {
-      font-size: clamp(2rem, 4vw, 3.25rem);
+      font-size: clamp(1.75rem, 3vw, 2.65rem);
       line-height: 0.95;
       letter-spacing: -0.05em;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
-    .header p, .panel-head p { color: var(--muted); line-height: 1.55; }
+    .header p, .panel-head p { color: var(--muted); line-height: 1.45; }
     .header p { max-width: 820px; }
 
     .actions, .inline-actions {
@@ -108,8 +112,9 @@
     .btn-gold { color: #111827; border: none; background: linear-gradient(135deg, #fde68a, var(--gold)); }
 
     .filters {
-      padding: 18px;
-      margin-bottom: 18px;
+      padding-top: 15px;
+      margin-top: 16px;
+      border-top: 1px solid rgba(148, 163, 184, 0.14);
     }
 
     .filters-grid {
@@ -415,8 +420,9 @@
     }
     @media (max-width: 720px) {
       body { padding: 14px; }
-      .header { flex-direction: column; padding: 16px; }
-      .filters, .panel, .analysis { padding: 15px; }
+      .header { padding: 16px; }
+      .header-top { flex-direction: column; }
+      .panel, .analysis { padding: 15px; }
       .filters-grid, .kpis, .detail-grid, .quick-actions { grid-template-columns: 1fr; }
       .actions { justify-content: flex-start; }
     }
@@ -426,46 +432,48 @@
 <body>
   <div class="container">
     <header class="glass header">
-      <div>
-        <div class="eyebrow">Commerce global</div>
-        <h1>Reporting Commerce Global</h1>
-        <p>Synthese du CA HT Auto + Industrie, calculee depuis les lignes vendues. Choisis un mois, lis le cumul, puis clique une semaine pour voir la repartition et les meilleurs clients.</p>
+      <div class="header-top">
+        <div>
+          <div class="eyebrow">Commerce global</div>
+          <h1>Reporting Commerce Global</h1>
+          <p>Synthese du CA HT Auto + Industrie, calculee depuis les lignes vendues. Choisis un mois, lis le cumul, puis clique une semaine pour voir la repartition et les meilleurs clients.</p>
+        </div>
+        <div class="actions">
+          <a class="btn" href="index.html">Portail</a>
+          <a class="btn btn-primary" href="tdbactivite.html">Dashboard Auto</a>
+          <a class="btn btn-indus" href="tdbactivite-industrie.html">Dashboard Industrie</a>
+        </div>
       </div>
-      <div class="actions">
-        <a class="btn" href="index.html">Portail</a>
-        <a class="btn btn-primary" href="tdbactivite.html">Dashboard Auto</a>
-        <a class="btn btn-indus" href="tdbactivite-industrie.html">Dashboard Industrie</a>
-      </div>
-    </header>
 
-    <section class="glass filters">
-      <div class="filters-grid">
-        <div class="field">
-          <label for="monthSelect">Mois analyse</label>
-          <input type="month" id="monthSelect">
-        </div>
-        <div class="field">
-          <label for="sectorFilter">Secteur</label>
-          <select id="sectorFilter">
-            <option value="all" selected>Auto + Industrie</option>
-            <option value="auto">Automobile uniquement</option>
-            <option value="industrie">Industrie uniquement</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="btn btn-gold" id="reloadBtn" type="button">Actualiser</button>
-        </div>
-        <div class="field">
-          <label>Raccourcis</label>
-          <div class="inline-actions">
-            <a class="btn" href="mes-ventes.html">Mes ventes Auto</a>
-            <a class="btn" href="mes-ventes-industrie.html">Mes ventes Industrie</a>
+      <div class="filters">
+        <div class="filters-grid">
+          <div class="field">
+            <label for="monthSelect">Mois analyse</label>
+            <input type="month" id="monthSelect">
+          </div>
+          <div class="field">
+            <label for="sectorFilter">Secteur</label>
+            <select id="sectorFilter">
+              <option value="all" selected>Auto + Industrie</option>
+              <option value="auto">Automobile uniquement</option>
+              <option value="industrie">Industrie uniquement</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="btn btn-gold" id="reloadBtn" type="button">Actualiser</button>
+          </div>
+          <div class="field">
+            <label>Raccourcis</label>
+            <div class="inline-actions">
+              <a class="btn" href="mes-ventes.html">Mes ventes Auto</a>
+              <a class="btn" href="mes-ventes-industrie.html">Mes ventes Industrie</a>
+            </div>
           </div>
         </div>
+        <div class="status" id="statusBar">Connexion a Supabase...</div>
       </div>
-      <div class="status" id="statusBar">Connexion a Supabase...</div>
-    </section>
+    </header>
 
     <section class="kpis">
       <div class="kpi total">
