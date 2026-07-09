@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Import conditionnement Industrie - KENT</title>
+  <script src="./shared-ui.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0b1020;--bg2:#11162a;--card:rgba(255,255,255,.08);--card-border:rgba(255,255,255,.12);
+      --text:#f3f4f6;--muted:#b8bfd3;--muted-2:#94a3b8;--accent:#7c3aed;--accent-2:#2563eb;
+      --success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--input:rgba(255,255,255,.06);
+      --shadow:0 20px 50px rgba(0,0,0,.35);--radius:16px
+    }
+    *::-webkit-scrollbar{width:10px;height:10px}
+    *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:999px}
+    body{
+      min-height:100vh;font-family:"Segoe UI",Roboto,sans-serif;color:var(--text);
+      background:
+        radial-gradient(circle at top left,rgba(124,58,237,.22),transparent 28%),
+        radial-gradient(circle at top right,rgba(37,99,235,.18),transparent 25%),
+        radial-gradient(circle at bottom,rgba(34,197,94,.10),transparent 30%),
+        linear-gradient(135deg,var(--bg),var(--bg2));
+      padding:24px
+    }
+    .container{max-width:1600px;margin:0 auto}
+    .glass{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:var(--shadow)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 18px;margin-bottom:20px;position:sticky;top:0;z-index:40}
+    .brand-block{display:flex;align-items:center;gap:14px;min-width:0}
+    .brand-mark{width:46px;height:46px;border-radius:15px;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(124,58,237,.96),rgba(37,99,235,.84));box-shadow:0 16px 34px rgba(37,99,235,.22);font-weight:850;letter-spacing:.08em;flex-shrink:0}
+    .brand-title{font-size:1.08rem;font-weight:850;letter-spacing:-.02em}
+    .brand-subtitle{color:var(--muted);font-size:.82rem;margin-top:2px}
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .btn,.link-btn{border:none;text-decoration:none;cursor:pointer;border-radius:12px;padding:11px 14px;font-weight:750;transition:.2s ease;font-size:.88rem;color:var(--text);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09);display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap}
+    .btn:hover,.link-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .btn-primary{background:linear-gradient(135deg,var(--accent-2),var(--accent));border:none;box-shadow:0 14px 32px rgba(37,99,235,.2)}
+    .btn-success{background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.24);color:#dcfce7}
+    .btn-danger{background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.22);color:#fecaca}
+    .hero{padding:22px;margin-bottom:18px;background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.04)),linear-gradient(90deg,rgba(37,99,235,.10),rgba(34,197,94,.08))}
+    .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+    .kicker{color:#c4b5fd;text-transform:uppercase;letter-spacing:.16em;font-size:.74rem;font-weight:850;margin-bottom:8px}
+    h1{font-size:clamp(1.7rem,3vw,2.35rem);letter-spacing:-.04em;line-height:1.05;margin-bottom:8px}
+    .hero p{color:var(--muted);font-size:.95rem;line-height:1.55;max-width:920px}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;margin-bottom:18px}
+    .card{padding:16px}
+    .card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .card-head h2{font-size:1.02rem;letter-spacing:-.01em}
+    .muted{color:var(--muted);font-size:.86rem;line-height:1.45}
+    .form-grid{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:end}
+    .field{display:grid;gap:8px}
+    label{color:var(--muted);font-size:.84rem;font-weight:700}
+    input{width:100%;background:var(--input);border:1px solid rgba(255,255,255,.09);color:var(--text);padding:11px 13px;border-radius:12px;outline:none;font-size:.92rem}
+    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,.18)}
+    .status-bar{margin-top:12px;color:var(--muted);font-size:.86rem;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+    .helper{padding:13px;border-radius:14px;background:rgba(37,99,235,.10);border:1px solid rgba(37,99,235,.18);color:#dbeafe;font-size:.86rem;line-height:1.5}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .stat-box{padding:14px;min-height:88px;display:flex;flex-direction:column;justify-content:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px}
+    .stat-label{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;font-weight:850}
+    .stat-value{font-size:1.35rem;font-weight:850;letter-spacing:-.03em}
+    .table-card{padding:16px;overflow:hidden}
+    .table-wrapper{width:100%;overflow:auto;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:rgba(3,7,18,.28);max-height:62vh}
+    table{width:100%;min-width:1180px;border-collapse:collapse}
+    th,td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.07);text-align:left;font-size:.84rem;vertical-align:top;white-space:nowrap}
+    th{position:sticky;top:0;z-index:5;background:rgba(15,23,42,.98);color:#dbeafe;font-size:.75rem;text-transform:uppercase;letter-spacing:.07em}
+    tbody tr:hover{background:rgba(255,255,255,.045)}
+    .empty-state{padding:28px;color:var(--muted);text-align:center;line-height:1.5}
+    .warning{color:#fde68a}
+    .success{color:#bbf7d0}
+    .price{color:#bbf7d0;font-weight:850}
+    .modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,.72);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
+    .modal-overlay.active{display:flex}
+    .modal-card{width:min(680px,100%);background:#11162a;border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}
+    .modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .modal-head h3{font-size:1rem}
+    .modal-close{border:none;background:transparent;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:4px;line-height:1}
+    .modal-body{padding:14px 16px;display:grid;gap:10px}
+    .modal-summary{color:var(--text);font-size:.92rem}
+    .result-list{margin:0;padding-left:18px;color:var(--muted);font-size:.86rem;display:grid;gap:6px}
+    .modal-actions{padding:0 16px 16px;display:flex;justify-content:flex-end}
+    @media(max-width:1100px){.grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid{grid-template-columns:1fr}}
+    @media(max-width:640px){body{padding:16px}.topbar{align-items:flex-start;flex-direction:column}.top-actions,.btn,.link-btn{width:100%}.hero,.card,.table-card{padding:14px}.stats-grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="./shared-theme.css">
+</head>
+<body>
+  <div class="container">
+    <nav class="glass topbar">
+      <div class="brand-block">
+        <div class="brand-mark">IC</div>
+        <div>
+          <div class="brand-title">Import conditionnement Industrie</div>
+          <div class="brand-subtitle">Base de correspondance Industrie pour les BDC</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a class="link-btn" href="commerce-industrie.html">Retour hub Industrie</a>
+        <a class="link-btn" href="mes-conditionnements-industrie.html">Visualiser Industrie</a>
+      </div>
+    </nav>
+
+    <section class="glass hero">
+      <div class="hero-top">
+        <div>
+          <div class="kicker">Bon de commande</div>
+          <h1>Import conditionnement Industrie</h1>
+          <p>Importe ton fichier Excel ou CSV. Les lignes valides remplacent toute la table Supabase <strong>industrie_conditionnements_produits</strong>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="glass card">
+        <div class="card-head">
+          <div>
+            <h2>Fichier</h2>
+            <div class="muted">Colonnes attendues: Ref 5, Code Produit, Categorie, Famille, Sous-Famille, Description, Grains, Emballage, Tarif Revente.</div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="fileInput">Excel / CSV</label>
+            <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" />
+          </div>
+          <button class="btn btn-primary" id="analyzeBtn" type="button">Analyser</button>
+          <button class="btn btn-success" id="importBtn" type="button" disabled>Importer</button>
+        </div>
+        <div class="status-bar" id="statusBar">En attente d'un fichier Industrie.</div>
+      </div>
+
+      <div class="glass card">
+        <div class="card-head">
+          <div>
+            <h2>Remplacement total</h2>
+            <div class="muted">L'import supprime les anciennes lignes puis insere les nouvelles references valides.</div>
+          </div>
+        </div>
+        <div class="helper">
+          Si Supabase renvoie une erreur de table introuvable, lance d'abord le fichier <strong>supabase_industrie_conditionnements_produits.sql</strong> dans l'editeur SQL Supabase.
+        </div>
+      </div>
+    </section>
+
+    <section class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">Lignes lues</div>
+        <div class="stat-value" id="statRead">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Lignes valides</div>
+        <div class="stat-value" id="statValid">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Refs uniques</div>
+        <div class="stat-value" id="statUnique">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Doublons</div>
+        <div class="stat-value" id="statDuplicates">0</div>
+      </div>
+    </section>
+
+    <section class="glass table-card">
+      <div class="card-head">
+        <div>
+          <h2>Previsualisation</h2>
+          <div class="muted" id="previewInfo">Aucune donnee chargee.</div>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Ref 5</th>
+              <th>Code Produit</th>
+              <th>Categorie</th>
+              <th>Famille</th>
+              <th>Sous-Famille</th>
+              <th>Description</th>
+              <th>Grains</th>
+              <th>Emballage</th>
+              <th>Tarif Revente</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody">
+            <tr>
+              <td colspan="11">
+                <div class="empty-state">Charge un fichier pour voir la previsualisation.</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="resultModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="resultModalTitle">Resultat import</h3>
+        <button class="modal-close" id="closeModalBtn" type="button">x</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-summary" id="resultModalSummary"></div>
+        <ul class="result-list" id="resultModalList"></ul>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="modalOkBtn" type="button">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const TABLE_NAME = "industrie_conditionnements_produits";
+    const CHUNK_SIZE = 500;
+
+    const HEADER_ALIASES = {
+      ref_5: ["ref 5", "ref5", "reference 5", "reference5"],
+      code_produit: ["code produit", "codeproduit", "ref kent", "ref. kent", "ref kent"],
+      categorie: ["categorie", "categorie produit", "category"],
+      famille: ["famille", "famille produit"],
+      sous_famille: ["sous famille", "sous-famille", "sousfamille"],
+      description: ["description", "designation", "designation produit", "designation produits kent"],
+      grains: ["grains", "grain"],
+      emballage: ["emballage", "conditionnement", "packaging"],
+      tarif_revente: ["tarif revente", "tarif", "prix revente", "pu client", "prix"]
+    };
+
+    const state = {
+      rows: [],
+      importRows: [],
+      meta: {
+        read: 0,
+        valid: 0,
+        unique: 0,
+        duplicates: 0
+      }
+    };
+
+    const dom = {};
+
+    function cacheDom() {
+      dom.fileInput = document.getElementById("fileInput");
+      dom.analyzeBtn = document.getElementById("analyzeBtn");
+      dom.importBtn = document.getElementById("importBtn");
+      dom.statusBar = document.getElementById("statusBar");
+      dom.previewInfo = document.getElementById("previewInfo");
+      dom.previewBody = document.getElementById("previewBody");
+      dom.statRead = document.getElementById("statRead");
+      dom.statValid = document.getElementById("statValid");
+      dom.statUnique = document.getElementById("statUnique");
+      dom.statDuplicates = document.getElementById("statDuplicates");
+      dom.resultModal = document.getElementById("resultModal");
+      dom.resultModalTitle = document.getElementById("resultModalTitle");
+      dom.resultModalSummary = document.getElementById("resultModalSummary");
+      dom.resultModalList = document.getElementById("resultModalList");
+      dom.closeModalBtn = document.getElementById("closeModalBtn");
+      dom.modalOkBtn = document.getElementById("modalOkBtn");
+    }
+
+    function setStatus(message) {
+      dom.statusBar.textContent = message;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeText(value) {
+      return String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    }
+
+    function normalizeRef(value) {
+      return String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+    }
+
+    function parsePrice(value) {
+      if (value === null || value === undefined || value === "") return null;
+      if (typeof value === "number") return Number.isFinite(value) ? value : null;
+      let cleaned = String(value)
+        .trim()
+        .replace(/\s/g, "")
+        .replace(/[\u20AC\u00A3$]/g, "")
+        .replace(/[^0-9,.\-]/g, "");
+      if (!cleaned) return null;
+      const hasComma = cleaned.includes(",");
+      const hasDot = cleaned.includes(".");
+      if (hasComma && hasDot) {
+        if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+          cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+        } else {
+          cleaned = cleaned.replace(/,/g, "");
+        }
+      } else if (hasComma) {
+        cleaned = cleaned.replace(",", ".");
+      }
+      const numeric = Number(cleaned);
+      return Number.isFinite(numeric) ? Math.round(numeric * 100) / 100 : null;
+    }
+
+    function formatCurrency(value) {
+      if (value === null || value === undefined || value === "") return "";
+      return Number(value || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+    }
+
+    function findHeaderMap(headers) {
+      const normalizedHeaders = headers.map(header => normalizeText(header));
+      const map = {};
+      Object.entries(HEADER_ALIASES).forEach(([field, aliases]) => {
+        const normalizedAliases = aliases.map(alias => normalizeText(alias));
+        const index = normalizedHeaders.findIndex(header => normalizedAliases.includes(header));
+        if (index >= 0) map[field] = headers[index];
+      });
+      return map;
+    }
+
+    function getCell(row, header) {
+      if (!header) return "";
+      return row[header] ?? "";
+    }
+
+    function readWorkbookRows(workbook) {
+      const rows = [];
+      workbook.SheetNames.forEach(sheetName => {
+        const sheet = workbook.Sheets[sheetName];
+        const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
+        if (!jsonRows.length) return;
+        const headers = Object.keys(jsonRows[0] || {});
+        const headerMap = findHeaderMap(headers);
+        jsonRows.forEach((rawRow, rowIndex) => {
+          rows.push(normalizeImportRow(rawRow, headerMap, sheetName, rowIndex + 2));
+        });
+      });
+      return rows;
+    }
+
+    function normalizeImportRow(rawRow, headerMap, sheetName, rowNumber) {
+      const ref5 = String(getCell(rawRow, headerMap.ref_5)).trim();
+      const price = parsePrice(getCell(rawRow, headerMap.tarif_revente));
+      const row = {
+        sheet: sheetName,
+        rowNumber,
+        ref_5: ref5,
+        code_produit: String(getCell(rawRow, headerMap.code_produit)).trim(),
+        categorie: String(getCell(rawRow, headerMap.categorie)).trim(),
+        famille: String(getCell(rawRow, headerMap.famille)).trim(),
+        sous_famille: String(getCell(rawRow, headerMap.sous_famille)).trim(),
+        description: String(getCell(rawRow, headerMap.description)).trim(),
+        grains: String(getCell(rawRow, headerMap.grains)).trim(),
+        emballage: String(getCell(rawRow, headerMap.emballage)).trim(),
+        tarif_revente: price,
+        status: "ok",
+        detail: "Pret a importer"
+      };
+
+      const hasAnyValue = Object.keys(headerMap).some(field => String(getCell(rawRow, headerMap[field])).trim());
+      if (!hasAnyValue) {
+        row.status = "empty";
+        row.detail = "Ligne vide ignoree";
+      } else if (!ref5) {
+        row.status = "error";
+        row.detail = "Ref 5 manquante";
+      }
+
+      return row;
+    }
+
+    function analyzeRows(rows) {
+      const seen = new Set();
+      const latestByRef = new Map();
+      let valid = 0;
+      let duplicates = 0;
+
+      rows.forEach(row => {
+        if (row.status !== "ok") return;
+        const key = normalizeRef(row.ref_5);
+        if (!key) {
+          row.status = "error";
+          row.detail = "Ref 5 invalide";
+          return;
+        }
+        valid += 1;
+        if (seen.has(key)) {
+          duplicates += 1;
+          row.detail = "Doublon: derniere ligne conservee";
+        }
+        seen.add(key);
+        latestByRef.set(key, row);
+      });
+
+      const importRows = Array.from(latestByRef.values()).map(row => ({
+        ref_5: row.ref_5,
+        code_produit: row.code_produit || null,
+        categorie: row.categorie || null,
+        famille: row.famille || null,
+        sous_famille: row.sous_famille || null,
+        description: row.description || null,
+        grains: row.grains || null,
+        emballage: row.emballage || null,
+        tarif_revente: row.tarif_revente,
+        imported_at: new Date().toISOString()
+      }));
+
+      return {
+        importRows,
+        meta: {
+          read: rows.filter(row => row.status !== "empty").length,
+          valid,
+          unique: importRows.length,
+          duplicates
+        }
+      };
+    }
+
+    function renderStats() {
+      dom.statRead.textContent = state.meta.read.toLocaleString("fr-FR");
+      dom.statValid.textContent = state.meta.valid.toLocaleString("fr-FR");
+      dom.statUnique.textContent = state.meta.unique.toLocaleString("fr-FR");
+      dom.statDuplicates.textContent = state.meta.duplicates.toLocaleString("fr-FR");
+      dom.importBtn.disabled = state.importRows.length === 0;
+      dom.previewInfo.textContent = state.importRows.length
+        ? `${state.importRows.length.toLocaleString("fr-FR")} reference(s) unique(s) pretes a importer`
+        : "Aucune ligne importable.";
+    }
+
+    function renderPreview() {
+      const visibleRows = state.rows.filter(row => row.status !== "empty").slice(0, 500);
+      if (!visibleRows.length) {
+        dom.previewBody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Aucune ligne a afficher.</div></td></tr>';
+        return;
+      }
+
+      dom.previewBody.innerHTML = visibleRows.map((row, index) => {
+        const statusClass = row.status === "error" ? "warning" : "success";
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHtml(row.ref_5)}</td>
+            <td>${escapeHtml(row.code_produit)}</td>
+            <td>${escapeHtml(row.categorie)}</td>
+            <td>${escapeHtml(row.famille)}</td>
+            <td>${escapeHtml(row.sous_famille)}</td>
+            <td>${escapeHtml(row.description)}</td>
+            <td>${escapeHtml(row.grains)}</td>
+            <td>${escapeHtml(row.emballage)}</td>
+            <td class="price">${escapeHtml(formatCurrency(row.tarif_revente))}</td>
+            <td class="${statusClass}">${escapeHtml(row.detail)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function openResultModal({ title, summary, lines = [] }) {
+      dom.resultModalTitle.textContent = title || "Resultat import";
+      dom.resultModalSummary.textContent = summary || "";
+      dom.resultModalList.innerHTML = lines.map(line => `<li>${escapeHtml(line)}</li>`).join("");
+      dom.resultModal.classList.add("active");
+    }
+
+    function closeResultModal() {
+      dom.resultModal.classList.remove("active");
+    }
+
+    async function analyzeFile() {
+      const file = dom.fileInput.files?.[0];
+      if (!file) {
+        setStatus("Selectionne un fichier Excel ou CSV.");
+        return;
+      }
+
+      dom.analyzeBtn.disabled = true;
+      dom.importBtn.disabled = true;
+      setStatus("Analyse du fichier...");
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const rows = readWorkbookRows(workbook);
+        const analyzed = analyzeRows(rows);
+        state.rows = rows;
+        state.importRows = analyzed.importRows;
+        state.meta = analyzed.meta;
+        renderStats();
+        renderPreview();
+        setStatus(`${state.meta.read.toLocaleString("fr-FR")} ligne(s) lue(s), ${state.importRows.length.toLocaleString("fr-FR")} reference(s) prete(s).`);
+      } catch (error) {
+        console.error("Erreur analyse conditionnement:", error);
+        setStatus(`Erreur analyse: ${error.message || error}`);
+      } finally {
+        dom.analyzeBtn.disabled = false;
+      }
+    }
+
+    async function insertInChunks(rows) {
+      let inserted = 0;
+      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        const chunk = rows.slice(i, i + CHUNK_SIZE);
+        const { error } = await supabaseClient.from(TABLE_NAME).insert(chunk);
+        if (error) throw error;
+        inserted += chunk.length;
+        setStatus(`Insertion conditionnement Industrie: ${inserted.toLocaleString("fr-FR")} / ${rows.length.toLocaleString("fr-FR")}`);
+      }
+      return inserted;
+    }
+
+    async function importData() {
+      if (!state.importRows.length) {
+        openResultModal({
+          title: "Import impossible",
+          summary: "Aucune ligne valide a importer.",
+          lines: ["Analyse un fichier valide avant de lancer l'import."]
+        });
+        return;
+      }
+
+      if (!confirm(`Remplacer toute la table conditionnement Industrie par ${state.importRows.length} reference(s) ?`)) {
+        return;
+      }
+
+      dom.importBtn.disabled = true;
+      dom.analyzeBtn.disabled = true;
+      setStatus("Suppression des anciens conditionnements Industrie...");
+
+      try {
+        const deleteRes = await supabaseClient
+          .from(TABLE_NAME)
+          .delete()
+          .neq("ref_5", "__KENT_NO_MATCH__");
+        if (deleteRes.error) throw deleteRes.error;
+
+        setStatus("Insertion des nouvelles lignes...");
+        const inserted = await insertInChunks(state.importRows);
+        setStatus(`Import termine: ${inserted.toLocaleString("fr-FR")} ligne(s) inseree(s).`);
+        openResultModal({
+          title: "Import conditionnement Industrie termine",
+          summary: `${inserted.toLocaleString("fr-FR")} reference(s) inseree(s) dans Supabase.`,
+          lines: [
+            `Lignes lues: ${state.meta.read}`,
+            `Lignes valides: ${state.meta.valid}`,
+            `References uniques importees: ${state.meta.unique}`,
+            `Doublons ignores: ${state.meta.duplicates}`
+          ]
+        });
+      } catch (error) {
+        console.error("Erreur import conditionnement Industrie:", error);
+        setStatus("Erreur pendant l'import conditionnement Industrie.");
+        openResultModal({
+          title: "Import en echec",
+          summary: "Une erreur a interrompu l'import.",
+          lines: [
+            error?.message || "Erreur inconnue",
+            "Si la table n'existe pas encore, lance supabase_industrie_conditionnements_produits.sql dans Supabase."
+          ]
+        });
+      } finally {
+        dom.importBtn.disabled = state.importRows.length === 0;
+        dom.analyzeBtn.disabled = false;
+      }
+    }
+
+    function attachEvents() {
+      dom.analyzeBtn.addEventListener("click", analyzeFile);
+      dom.importBtn.addEventListener("click", importData);
+      dom.fileInput.addEventListener("change", () => {
+        state.rows = [];
+        state.importRows = [];
+        state.meta = { read: 0, valid: 0, unique: 0, duplicates: 0 };
+        renderStats();
+        dom.previewBody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Clique sur Analyser pour charger la previsualisation.</div></td></tr>';
+        setStatus("Fichier selectionne. Lance l'analyse.");
+      });
+      dom.closeModalBtn.addEventListener("click", closeResultModal);
+      dom.modalOkBtn.addEventListener("click", closeResultModal);
+      dom.resultModal.addEventListener("click", event => {
+        if (event.target === dom.resultModal) closeResultModal();
+      });
+    }
+
+    function init() {
+      cacheDom();
+      attachEvents();
+      renderStats();
+    }
+
+    init();
+  </script>
+</body>
+</html>

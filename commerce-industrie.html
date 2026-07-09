@@ -423,6 +423,13 @@
       box-shadow: 0 14px 32px rgba(37, 99, 235, 0.2);
     }
 
+    .card-link.secondary {
+      width: 100%;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
     .footer-note {
       margin-top: 8px;
       color: var(--muted-2);
@@ -525,6 +532,8 @@
             <a href="tdbactivite-industrie.html">Tableau de bord Industrie</a>
             <a href="rappelclt-industrie.html">Rappels clients Industrie</a>
             <a href="rapportjournalier-industrie.html">Rapport journalier Industrie</a>
+            <a href="import-conditionnement-industrie.html">Import conditionnement Industrie</a>
+            <a href="mes-conditionnements-industrie.html">Mes conditionnements Industrie</a>
           </div>
         </div>
       </div>
@@ -535,31 +544,14 @@
     <section class="section apps-shell glass">
       <div class="section-head">
         <div>
-          <div class="section-kicker">Nouveau perimetre KENT</div>
+          <div class="section-kicker">Portail commercial KENT</div>
           <h1>Commerce Industrie</h1>
-          <p>Clients, produits, tarifs et ventes industrie dans un environnement separe des donnees automobile.</p>
+          <p>Ouvre les outils du commerce industrie: clients industrie, ventes industrie, tarifs industrie et suivi terrain.</p>
         </div>
-        <div class="section-badge">Tables industrie dediees</div>
+        <div class="section-badge">Industrie</div>
       </div>
 
       <div class="cards-grid">
-
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M80-200v-80h440v80H80Zm0-160v-80h280v80H80Zm0-160v-80h440v80H80Zm520 320v-560l280 280-280 280Zm80-193 87-87-87-87v174Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Base</div>
-          </div>
-          <h3>Gestion clients Industrie</h3>
-          <p>Cree et pilote les clients industrie dans la table dediee industrie_clients.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="gestionclients-industrie.html">Ouvrir</a>
-          </div>
-        </article>
-
         <article class="glass card">
           <div class="card-top">
             <div class="card-icon">
@@ -573,6 +565,99 @@
           <p>Historique, visites, recommande rapide, devis et BDC industrie, separes du commerce automobile.</p>
           <div class="card-actions">
             <a class="card-link primary" href="ficherclt-industrie.html">Ouvrir</a>
+          </div>
+        </article>
+
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M280-600v-80h400v80H280Zm0 160v-80h240v80H280Zm-80 320q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Pilotage</div>
+          </div>
+          <h3>Tableau de bord Industrie</h3>
+          <p>Indicateurs clients, CA, commandes et suivi terrain industrie.</p>
+          <div class="card-actions">
+            <a class="card-link primary" href="tdbactivite-industrie.html">Ouvrir</a>
+          </div>
+        </article>
+
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M120-160v-80h720v80H120Zm80-160v-280h120v280H200Zm220 0v-440h120v440H420Zm220 0v-200h120v200H640Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Ventes</div>
+          </div>
+          <h3>Mes ventes Industrie</h3>
+          <p>Recap global des lignes vendues industrie, separe du chiffre automobile.</p>
+          <div class="card-actions">
+            <a class="card-link primary" href="mes-ventes-industrie.html">Ouvrir</a>
+          </div>
+        </article>
+
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm80-80h400v-80H240v80Zm0-160h280v-80H240v80Zm0-160h400v-80H240v80Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Rapport</div>
+          </div>
+          <h3>Rapport journalier Industrie</h3>
+          <p>Compte rendu quotidien dedie aux visites et ventes industrie.</p>
+          <div class="card-actions">
+            <a class="card-link primary" href="rapportjournalier-industrie.html">Ouvrir</a>
+          </div>
+        </article>
+
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm80-80h400v-80H240v80Zm0-160h280v-80H240v80Zm0-160h400v-80H240v80Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Rappels</div>
+          </div>
+          <h3>Rappels clients Industrie</h3>
+          <p>Relances industrie separees des relances automobile.</p>
+          <div class="card-actions">
+            <a class="card-link primary" href="rappelclt-industrie.html">Ouvrir</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section apps-shell glass">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Parametrage / imports</div>
+          <h2>Outils de configuration</h2>
+          <p>Tout ce qui sert a preparer, importer ou controler les bases de donnees commerciales industrie.</p>
+        </div>
+        <div class="section-badge">Administration</div>
+      </div>
+
+      <div class="cards-grid">
+        <article class="glass card">
+          <div class="card-top">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M80-200v-80h440v80H80Zm0-160v-80h280v80H80Zm0-160v-80h440v80H80Zm520 320v-560l280 280-280 280Zm80-193 87-87-87-87v174Z"/>
+              </svg>
+            </div>
+            <div class="card-tag">Base</div>
+          </div>
+          <h3>Gestion clients Industrie</h3>
+          <p>Cree et pilote les clients industrie dans la table dediee industrie_clients.</p>
+          <div class="card-actions">
+            <a class="card-link primary" href="gestionclients-industrie.html">Ouvrir</a>
           </div>
         </article>
 
@@ -612,83 +697,6 @@
           <div class="card-top">
             <div class="card-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M120-160v-80h720v80H120Zm80-160v-280h120v280H200Zm220 0v-440h120v440H420Zm220 0v-200h120v200H640Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Ventes</div>
-          </div>
-          <h3>Mes ventes Industrie</h3>
-          <p>Recap global des lignes vendues industrie, separe du chiffre automobile.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="mes-ventes-industrie.html">Ouvrir</a>
-          </div>
-        </article>
-
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M280-600v-80h400v80H280Zm0 160v-80h240v80H280Zm-80 320q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Pilotage</div>
-          </div>
-          <h3>Tableau de bord Industrie</h3>
-          <p>Indicateurs clients, CA, commandes et suivi terrain industrie.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="tdbactivite-industrie.html">Ouvrir</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section apps-shell glass">
-      <div class="section-head">
-        <div>
-          <div class="section-kicker">Suivi terrain industrie</div>
-          <h2>Outils industrie avances</h2>
-          <p>Modules de suivi, rapport et rappels industrie, separes du commerce automobile.</p>
-        </div>
-        <div class="section-badge">Progressif et securise</div>
-      </div>
-      <div class="cards-grid">
-
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm80-80h400v-80H240v80Zm0-160h280v-80H240v80Zm0-160h400v-80H240v80Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Rapport</div>
-          </div>
-          <h3>Rapport journalier Industrie</h3>
-          <p>Compte rendu quotidien dedie aux visites et ventes industrie.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="rapportjournalier-industrie.html">Ouvrir</a>
-          </div>
-        </article>
-
-        <article class="glass card">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm80-80h400v-80H240v80Zm0-160h280v-80H240v80Zm0-160h400v-80H240v80Z"/>
-              </svg>
-            </div>
-            <div class="card-tag">Rappels</div>
-          </div>
-          <h3>Rappels clients Industrie</h3>
-          <p>Relances industrie separees des relances automobile.</p>
-          <div class="card-actions">
-            <a class="card-link primary" href="rappelclt-industrie.html">Ouvrir</a>
-          </div>
-        </article>
-
-        <article class="glass card soon">
-          <div class="card-top">
-            <div class="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
                 <path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm80-80h400v-80H240v80Zm0-160h280v-80H240v80Zm0-160h400v-80H240v80Z"/>
               </svg>
             </div>
@@ -697,7 +705,8 @@
           <h3>Conditionnement BDC Industrie</h3>
           <p>Import et visualisation conditionnement dedies aux bons de commande industrie.</p>
           <div class="card-actions">
-            <span class="card-link disabled" aria-disabled="true">Bientot disponible</span>
+            <a class="card-link primary" href="import-conditionnement-industrie.html">Importer</a>
+            <a class="card-link secondary" href="mes-conditionnements-industrie.html">Visualiser</a>
           </div>
         </article>
       </div>

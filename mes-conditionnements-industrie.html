@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mes conditionnements Industrie - KENT</title>
+  <script src="./shared-ui.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0b1020;--bg2:#11162a;--card:rgba(255,255,255,.08);--card-border:rgba(255,255,255,.12);
+      --text:#f3f4f6;--muted:#b8bfd3;--muted-2:#94a3b8;--accent:#7c3aed;--accent-2:#2563eb;
+      --success:#22c55e;--input:rgba(255,255,255,.06);--shadow:0 20px 50px rgba(0,0,0,.35);--radius:16px
+    }
+    *::-webkit-scrollbar{width:10px;height:10px}
+    *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:999px}
+    body{
+      min-height:100vh;font-family:"Segoe UI",Roboto,sans-serif;color:var(--text);
+      background:
+        radial-gradient(circle at top left,rgba(124,58,237,.22),transparent 28%),
+        radial-gradient(circle at top right,rgba(37,99,235,.18),transparent 25%),
+        radial-gradient(circle at bottom,rgba(34,197,94,.10),transparent 30%),
+        linear-gradient(135deg,var(--bg),var(--bg2));
+      padding:24px
+    }
+    .container{max-width:1600px;margin:0 auto}
+    .glass{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:var(--shadow)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 18px;margin-bottom:20px;position:sticky;top:0;z-index:40}
+    .brand-block{display:flex;align-items:center;gap:14px;min-width:0}
+    .brand-mark{width:46px;height:46px;border-radius:15px;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(124,58,237,.96),rgba(37,99,235,.84));box-shadow:0 16px 34px rgba(37,99,235,.22);font-weight:850;letter-spacing:.08em;flex-shrink:0}
+    .brand-title{font-size:1.08rem;font-weight:850;letter-spacing:-.02em}
+    .brand-subtitle{color:var(--muted);font-size:.82rem;margin-top:2px}
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .btn,.link-btn{border:none;text-decoration:none;cursor:pointer;border-radius:12px;padding:11px 14px;font-weight:750;transition:.2s ease;font-size:.88rem;color:var(--text);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09);display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap}
+    .btn:hover,.link-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11)}
+    .btn-primary{background:linear-gradient(135deg,var(--accent-2),var(--accent));border:none;box-shadow:0 14px 32px rgba(37,99,235,.2)}
+    .hero{padding:22px;margin-bottom:18px;background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.04)),linear-gradient(90deg,rgba(37,99,235,.10),rgba(34,197,94,.08))}
+    .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+    .kicker{color:#c4b5fd;text-transform:uppercase;letter-spacing:.16em;font-size:.74rem;font-weight:850;margin-bottom:8px}
+    h1{font-size:clamp(1.7rem,3vw,2.35rem);letter-spacing:-.04em;line-height:1.05;margin-bottom:8px}
+    .hero p{color:var(--muted);font-size:.95rem;line-height:1.55;max-width:920px}
+    .status-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 13px;background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.24);color:#dcfce7;font-size:.82rem;font-weight:850;white-space:nowrap}
+    .status-dot{width:8px;height:8px;border-radius:999px;background:var(--success);box-shadow:0 0 0 5px rgba(34,197,94,.14)}
+    .stats-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px}
+    .stat-box{padding:14px;min-height:88px;display:flex;flex-direction:column;justify-content:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px}
+    .stat-label{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;font-weight:850}
+    .stat-value{font-size:1.35rem;font-weight:850;letter-spacing:-.03em}
+    .table-card{padding:16px;overflow:hidden}
+    .table-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .table-head h2{font-size:1.02rem;letter-spacing:-.01em}
+    .muted{color:var(--muted);font-size:.86rem;line-height:1.45}
+    .status-bar{color:var(--muted);font-size:.86rem;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+    .table-wrapper{width:100%;overflow:auto;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:rgba(3,7,18,.28);max-height:68vh}
+    table{width:100%;min-width:1220px;border-collapse:collapse}
+    th,td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.07);text-align:left;font-size:.84rem;vertical-align:top;white-space:nowrap}
+    th{position:sticky;top:0;z-index:5;background:rgba(15,23,42,.98);color:#dbeafe;font-size:.75rem;text-transform:uppercase;letter-spacing:.07em}
+    tbody tr:hover{background:rgba(255,255,255,.045)}
+    .empty-state{padding:28px;color:var(--muted);text-align:center;line-height:1.5}
+    .price{color:#bbf7d0;font-weight:850}
+    .empty-cell{color:var(--muted-2)}
+    @media(max-width:1100px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:640px){body{padding:16px}.topbar{align-items:flex-start;flex-direction:column}.top-actions,.btn,.link-btn{width:100%}.hero,.table-card{padding:14px}.stats-grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="./shared-theme.css">
+</head>
+<body>
+  <div class="container">
+    <nav class="glass topbar">
+      <div class="brand-block">
+        <div class="brand-mark">MC</div>
+        <div>
+          <div class="brand-title">Mes conditionnements Industrie</div>
+          <div class="brand-subtitle">Visualisation Supabase en lecture seule</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a class="link-btn" href="commerce-industrie.html">Retour hub Industrie</a>
+        <a class="link-btn" href="import-conditionnement-industrie.html">Import conditionnement Industrie</a>
+        <button class="btn btn-primary" id="refreshBtn" type="button">Actualiser</button>
+      </div>
+    </nav>
+
+    <section class="glass hero">
+      <div class="hero-top">
+        <div>
+          <div class="kicker">Bon de commande</div>
+          <h1>Mes conditionnements Industrie</h1>
+          <p>Controle les correspondances Industrie Ref 5, Code Produit, famille, grains et emballage utilisees pour les futurs bons de commande Industrie.</p>
+        </div>
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          Lecture seule
+        </div>
+      </div>
+    </section>
+
+    <section class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">References</div>
+        <div class="stat-value" id="statRows">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Codes produit</div>
+        <div class="stat-value" id="statCodes">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Categories</div>
+        <div class="stat-value" id="statCategories">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Emballages</div>
+        <div class="stat-value" id="statEmballages">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Dernier import</div>
+        <div class="stat-value" id="statLastImport">-</div>
+      </div>
+    </section>
+
+    <section class="glass table-card">
+      <div class="table-head">
+        <div>
+          <h2>Table industrie_conditionnements_produits</h2>
+          <div class="muted" id="tableMeta">Chargement des donnees...</div>
+        </div>
+        <div class="status-bar" id="statusBar">Connexion a Supabase...</div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Ref 5</th>
+              <th>Code Produit</th>
+              <th>Categorie</th>
+              <th>Famille</th>
+              <th>Sous-Famille</th>
+              <th>Description</th>
+              <th>Grains</th>
+              <th>Emballage</th>
+              <th>Tarif Revente</th>
+              <th>Importe le</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr>
+              <td colspan="11">
+                <div class="empty-state">Chargement des donnees...</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const PAGE_SIZE = 1000;
+    const TABLE_NAME = "industrie_conditionnements_produits";
+
+    const state = {
+      rows: []
+    };
+
+    const dom = {};
+
+    function cacheDom() {
+      dom.refreshBtn = document.getElementById("refreshBtn");
+      dom.statusBar = document.getElementById("statusBar");
+      dom.tableMeta = document.getElementById("tableMeta");
+      dom.tableBody = document.getElementById("tableBody");
+      dom.statRows = document.getElementById("statRows");
+      dom.statCodes = document.getElementById("statCodes");
+      dom.statCategories = document.getElementById("statCategories");
+      dom.statEmballages = document.getElementById("statEmballages");
+      dom.statLastImport = document.getElementById("statLastImport");
+    }
+
+    function setStatus(message) {
+      dom.statusBar.textContent = message;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatCurrency(value) {
+      if (value === null || value === undefined || value === "") return "";
+      return Number(value || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+    }
+
+    function parseDate(value) {
+      if (!value) return null;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function formatDateTime(value) {
+      const parsed = parseDate(value);
+      if (!parsed) return "-";
+      return parsed.toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    async function fetchAllRows() {
+      const rows = [];
+      let from = 0;
+
+      while (true) {
+        const { data, error } = await supabaseClient
+          .from(TABLE_NAME)
+          .select("*")
+          .order("ref_5", { ascending: true })
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        const page = Array.isArray(data) ? data : [];
+        rows.push(...page);
+        if (page.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+
+      return rows;
+    }
+
+    function uniqueCount(key) {
+      return new Set(state.rows.map(row => String(row[key] || "").trim()).filter(Boolean)).size;
+    }
+
+    function getLastImport() {
+      const dates = state.rows
+        .map(row => parseDate(row.imported_at || row.created_at))
+        .filter(Boolean)
+        .sort((a, b) => b - a);
+      return dates[0] || null;
+    }
+
+    function renderStats() {
+      dom.statRows.textContent = state.rows.length.toLocaleString("fr-FR");
+      dom.statCodes.textContent = uniqueCount("code_produit").toLocaleString("fr-FR");
+      dom.statCategories.textContent = uniqueCount("categorie").toLocaleString("fr-FR");
+      dom.statEmballages.textContent = uniqueCount("emballage").toLocaleString("fr-FR");
+      dom.statLastImport.textContent = formatDateTime(getLastImport());
+      dom.tableMeta.textContent = `${state.rows.length.toLocaleString("fr-FR")} ligne(s) chargee(s) depuis Supabase.`;
+    }
+
+    function renderTable() {
+      if (!state.rows.length) {
+        dom.tableBody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Aucun conditionnement Industrie charge.</div></td></tr>';
+        return;
+      }
+
+      dom.tableBody.innerHTML = state.rows.map((row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(row.ref_5)}</td>
+          <td>${escapeHtml(row.code_produit)}</td>
+          <td>${escapeHtml(row.categorie)}</td>
+          <td>${escapeHtml(row.famille)}</td>
+          <td>${escapeHtml(row.sous_famille)}</td>
+          <td>${escapeHtml(row.description)}</td>
+          <td>${escapeHtml(row.grains)}</td>
+          <td>${escapeHtml(row.emballage)}</td>
+          <td class="price">${escapeHtml(formatCurrency(row.tarif_revente))}</td>
+          <td>${escapeHtml(formatDateTime(row.imported_at || row.created_at))}</td>
+        </tr>
+      `).join("");
+    }
+
+    async function loadData() {
+      setStatus("Lecture des conditionnements Industrie...");
+      dom.tableBody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Chargement des donnees...</div></td></tr>';
+
+      try {
+        state.rows = await fetchAllRows();
+        renderStats();
+        renderTable();
+        setStatus(`${state.rows.length.toLocaleString("fr-FR")} ligne(s) chargee(s).`);
+      } catch (error) {
+        console.error("Erreur conditionnements Industrie:", error);
+        state.rows = [];
+        renderStats();
+        dom.tableBody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Impossible de charger la table industrie_conditionnements_produits.</div></td></tr>';
+        setStatus(`Erreur Supabase: ${error.message || error}`);
+      }
+    }
+
+    function init() {
+      cacheDom();
+      dom.refreshBtn.addEventListener("click", loadData);
+      loadData();
+    }
+
+    init();
+  </script>
+</body>
+</html>
