@@ -221,10 +221,7 @@
     .indus-fill { background: linear-gradient(90deg, var(--indus), var(--indus-2)); }
 
     .main-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(360px, .75fr);
-      gap: 18px;
-      align-items: start;
+      display: block;
     }
 
     .panel { padding: 18px; }
@@ -326,6 +323,68 @@
     .amount { font-weight: 900; white-space: nowrap; text-align: right; }
     .empty { padding: 18px; border-radius: 16px; background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid rgba(255,255,255,.08); line-height: 1.5; }
 
+    body.modal-open { overflow: hidden; }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(12px);
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      width: min(820px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      padding: 20px;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.16), transparent 34%),
+        radial-gradient(circle at 88% 8%, rgba(34, 197, 94, 0.12), transparent 30%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(8, 15, 28, 0.98));
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      box-shadow: 0 32px 100px rgba(0, 0, 0, 0.58);
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .modal-head h2 {
+      font-size: 1.45rem;
+      letter-spacing: -0.04em;
+      margin-bottom: 6px;
+    }
+    .modal-head p { color: var(--muted); line-height: 1.5; }
+    .modal-close {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 900;
+      transition: transform .18s ease, background .18s ease;
+      flex: 0 0 auto;
+    }
+    .modal-close:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.14);
+    }
+    .modal-section-title {
+      font-size: 1.02rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+
     .analysis { margin-top: 18px; padding: 18px; }
     .quick-actions {
       display: grid;
@@ -351,7 +410,6 @@
 
     @media (max-width: 1180px) {
       .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .main-grid { grid-template-columns: 1fr; }
       .filters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .quick-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -434,19 +492,23 @@
         </div>
         <div class="week-grid" id="weekGrid"></div>
       </div>
-
-      <aside class="glass panel">
-        <div class="panel-head">
-          <div>
-            <h2 id="detailTitle">Detail semaine</h2>
-            <p id="detailSubtitle">Clique une semaine pour analyser le CA.</p>
-          </div>
-        </div>
-        <div class="detail-grid" id="detailGrid"></div>
-        <h2 style="font-size:1.02rem;margin-bottom:10px;">Top clients semaine</h2>
-        <div class="top-list" id="topClientsList"></div>
-      </aside>
     </section>
+
+    <div class="modal-backdrop" id="weekModal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+          <div>
+            <div class="eyebrow">Detail semaine</div>
+            <h2 id="modalTitle">Detail semaine</h2>
+            <p id="modalSubtitle">Clique une semaine pour analyser le CA.</p>
+          </div>
+          <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Fermer">x</button>
+        </div>
+        <div class="detail-grid" id="modalDetailGrid"></div>
+        <h3 class="modal-section-title">Top clients semaine</h3>
+        <div class="top-list" id="modalTopClientsList"></div>
+      </div>
+    </div>
 
     <section class="glass analysis">
       <div class="panel-head">
@@ -496,7 +558,7 @@
     const state = { rows: [], weeks: [], selectedWeekIndex: 0 };
 
     function cacheDom() {
-      ["monthSelect","sectorFilter","reloadBtn","statusBar","weekGrid","summaryBody","detailTitle","detailSubtitle","detailGrid","topClientsList","analysisText","kpiTotal","kpiTotalSub","kpiAuto","kpiAutoSub","kpiIndus","kpiIndusSub","kpiClients","kpiOrders","kpiPhone","mainMeter"].forEach(id => dom[id] = document.getElementById(id));
+      ["monthSelect","sectorFilter","reloadBtn","statusBar","weekGrid","summaryBody","weekModal","modalTitle","modalSubtitle","modalDetailGrid","modalTopClientsList","modalCloseBtn","analysisText","kpiTotal","kpiTotalSub","kpiAuto","kpiAutoSub","kpiIndus","kpiIndusSub","kpiClients","kpiOrders","kpiPhone","mainMeter"].forEach(id => dom[id] = document.getElementById(id));
     }
     function setStatus(message) { dom.statusBar.textContent = message; }
     function escapeHtml(value) { return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
@@ -679,17 +741,30 @@
           <div class="week-split"><span>Auto ${formatCurrency(summary.auto)}</span><span>Indus ${formatCurrency(summary.industrie)}</span></div>
         </article>`;
       }).join("");
-      dom.weekGrid.querySelectorAll(".week").forEach(card => card.addEventListener("click", () => { state.selectedWeekIndex = Number(card.dataset.weekIndex || 0); applyView(); }));
+      dom.weekGrid.querySelectorAll(".week").forEach(card => card.addEventListener("click", () => openWeekModal(rows, Number(card.dataset.weekIndex || 0))));
     }
-    function renderDetail(rows) {
+    function openModal() {
+      dom.weekModal.classList.add("open");
+      dom.weekModal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+    }
+    function closeWeekModal() {
+      dom.weekModal.classList.remove("open");
+      dom.weekModal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    }
+    function openWeekModal(rows, weekIndex) {
+      state.selectedWeekIndex = weekIndex;
+      renderWeeks(rows);
       const week = state.weeks[state.selectedWeekIndex] || state.weeks[0];
       const weekRows = week ? rowsForWeek(rows, week) : [];
       const summary = summarizeRows(weekRows);
       const topClients = aggregateTopClients(weekRows, 5);
-      dom.detailTitle.textContent = week ? `Detail ${week.label}` : "Detail semaine";
-      dom.detailSubtitle.textContent = week ? `${formatShortDate(week.startStr)} au ${formatShortDate(week.endStr)}` : "Aucune semaine selectionnee.";
-      dom.detailGrid.innerHTML = `<div class="chip"><span>CA total</span><strong>${formatCurrency(summary.total)}</strong></div><div class="chip"><span>CA Auto</span><strong>${formatCurrency(summary.auto)}</strong></div><div class="chip"><span>CA Industrie</span><strong>${formatCurrency(summary.industrie)}</strong></div><div class="chip"><span>Clients</span><strong>${formatNumber(summary.clients)}</strong></div><div class="chip"><span>Commandes</span><strong>${formatNumber(summary.orders)}</strong></div><div class="chip"><span>Telephone</span><strong>${formatNumber(summary.phoneOrders)}</strong></div>`;
-      dom.topClientsList.innerHTML = topClients.length ? topClients.map(client => `<div class="top-row"><div><strong>${escapeHtml(client.nom)}</strong><span>Compte ${escapeHtml(client.compte)} - ${formatNumber(client.ordersCount)} commande(s) - ${formatNumber(client.lines)} ligne(s)</span><span class="pill ${client.source === "auto" ? "auto" : "indus"}">${escapeHtml(client.sourceLabel)}</span></div><div class="amount">${formatCurrency(client.ca)}</div></div>`).join("") : '<div class="empty">Aucun client avec CA sur cette semaine.</div>';
+      dom.modalTitle.textContent = week ? `Detail ${week.label}` : "Detail semaine";
+      dom.modalSubtitle.textContent = week ? `${formatShortDate(week.startStr)} au ${formatShortDate(week.endStr)}` : "Aucune semaine selectionnee.";
+      dom.modalDetailGrid.innerHTML = `<div class="chip"><span>CA total</span><strong>${formatCurrency(summary.total)}</strong></div><div class="chip"><span>CA Auto</span><strong>${formatCurrency(summary.auto)}</strong></div><div class="chip"><span>CA Industrie</span><strong>${formatCurrency(summary.industrie)}</strong></div><div class="chip"><span>Clients</span><strong>${formatNumber(summary.clients)}</strong></div><div class="chip"><span>Commandes</span><strong>${formatNumber(summary.orders)}</strong></div><div class="chip"><span>Telephone</span><strong>${formatNumber(summary.phoneOrders)}</strong></div>`;
+      dom.modalTopClientsList.innerHTML = topClients.length ? topClients.map(client => `<div class="top-row"><div><strong>${escapeHtml(client.nom)}</strong><span>Compte ${escapeHtml(client.compte)} - ${formatNumber(client.ordersCount)} commande(s) - ${formatNumber(client.lines)} ligne(s)</span><span class="pill ${client.source === "auto" ? "auto" : "indus"}">${escapeHtml(client.sourceLabel)}</span></div><div class="amount">${formatCurrency(client.ca)}</div></div>`).join("") : '<div class="empty">Aucun client avec CA sur cette semaine.</div>';
+      openModal();
     }
     function renderSummaryTable(rows) {
       dom.summaryBody.innerHTML = state.weeks.map(week => {
@@ -710,7 +785,6 @@
       const rows = getFilteredRows();
       renderKpis(rows);
       renderWeeks(rows);
-      renderDetail(rows);
       renderSummaryTable(rows);
       renderAnalysis(rows);
       const summary = summarizeRows(rows);
@@ -722,6 +796,7 @@
         const monthBounds = getMonthBounds(dom.monthSelect.value);
         state.weeks = buildMonthWeeks(dom.monthSelect.value);
         state.selectedWeekIndex = 0;
+        closeWeekModal();
         setStatus("Chargement des ventes Auto + Industrie...");
         const sourceRows = await Promise.all(SOURCES.map(source => loadSourceRows(source, monthBounds)));
         state.rows = sourceRows.flat().sort((a, b) => String(a.date_visite).localeCompare(String(b.date_visite)));
@@ -731,8 +806,6 @@
         state.rows = [];
         setStatus(`Erreur de chargement: ${error.message || "erreur inconnue"}`);
         dom.weekGrid.innerHTML = '<div class="empty">Impossible de charger les ventes.</div>';
-        dom.detailGrid.innerHTML = "";
-        dom.topClientsList.innerHTML = "";
         dom.summaryBody.innerHTML = "";
       } finally {
         dom.reloadBtn.disabled = false;
@@ -740,8 +813,11 @@
     }
     function bindEvents() {
       dom.monthSelect.addEventListener("change", refreshData);
-      dom.sectorFilter.addEventListener("change", () => { state.selectedWeekIndex = 0; applyView(); });
+      dom.sectorFilter.addEventListener("change", () => { state.selectedWeekIndex = 0; closeWeekModal(); applyView(); });
       dom.reloadBtn.addEventListener("click", refreshData);
+      dom.modalCloseBtn.addEventListener("click", closeWeekModal);
+      dom.weekModal.addEventListener("click", event => { if (event.target === dom.weekModal) closeWeekModal(); });
+      window.addEventListener("keydown", event => { if (event.key === "Escape") closeWeekModal(); });
     }
     function init() {
       cacheDom();
