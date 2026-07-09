@@ -1,0 +1,551 @@
+﻿<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Requete Commerce - Ventes reelles</title>
+  <script src="./shared-ui.js"></script>
+  <link rel="stylesheet" href="./shared-theme.css">
+  <style>
+    :root{
+      --bg:#06111f;
+      --panel:rgba(15,23,42,.82);
+      --line:rgba(148,163,184,.18);
+      --text:#e8f0ff;
+      --muted:#9fb1ca;
+      --auto:#38bdf8;
+      --indus:#22c55e;
+      --gold:#f59e0b;
+      --danger:#ef4444;
+      --shadow:0 24px 70px rgba(0,0,0,.34);
+      --r:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:"Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 14% 0%, rgba(56,189,248,.20), transparent 30%),
+        radial-gradient(circle at 88% 4%, rgba(34,197,94,.16), transparent 30%),
+        linear-gradient(135deg,#06111f 0%,#081827 52%,#04101c 100%);
+      padding:18px;
+    }
+    .wrap{max-width:1500px;margin:0 auto}
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+      padding:16px;
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:linear-gradient(180deg,rgba(15,23,42,.88),rgba(8,15,28,.82));
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(14px);
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:42px;height:42px;border-radius:15px;
+      background:linear-gradient(135deg,rgba(56,189,248,.95),rgba(34,197,94,.74));
+      box-shadow:0 16px 34px rgba(56,189,248,.20);
+      flex:0 0 auto;
+    }
+    .title{line-height:1.15}
+    .title b{display:block;font-size:17px;letter-spacing:.2px}
+    .title span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{
+      border:1px solid rgba(255,255,255,.11);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      padding:10px 13px;
+      border-radius:14px;
+      font-weight:900;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      white-space:nowrap;
+      transition:transform .18s ease, background .18s ease, opacity .18s ease;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .btn.primary{background:linear-gradient(135deg,var(--auto),#2563eb);border:none;box-shadow:0 14px 30px rgba(37,99,235,.28)}
+    .btn.green{background:linear-gradient(135deg,var(--indus),#059669);border:none;box-shadow:0 14px 30px rgba(5,150,105,.22)}
+    .btn.gold{color:#08111f;background:linear-gradient(135deg,#fde68a,var(--gold));border:none}
+    .card{
+      background:linear-gradient(180deg,rgba(15,23,42,.88),rgba(8,15,28,.82));
+      border:1px solid var(--line);
+      border-radius:var(--r);
+      box-shadow:var(--shadow);
+      padding:14px;
+      backdrop-filter:blur(14px);
+      margin-top:12px;
+    }
+    .meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .chip{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:7px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.11);
+      background:rgba(2,6,23,.28);
+      font-size:12px;color:var(--muted);font-weight:800;
+    }
+    .dot{width:9px;height:9px;border-radius:99px;background:var(--gold)}
+    .dot.ok{background:var(--indus)}
+    .dot.warn{background:var(--gold)}
+    .dot.bad{background:var(--danger)}
+    .small{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.4}
+    .filters{
+      display:grid;
+      grid-template-columns:repeat(9,minmax(0,1fr));
+      gap:8px;
+      align-items:start;
+    }
+    @media(max-width:1280px){.filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:760px){body{padding:12px}.filters{grid-template-columns:1fr}.topbar{align-items:flex-start}.top-actions{justify-content:flex-start}}
+    .fbox{
+      height:188px;
+      display:flex;
+      flex-direction:column;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(2,6,23,.28);
+      border-radius:14px;
+      padding:8px;
+    }
+    .fhead{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px;font-size:11px;font-weight:950;color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
+    .headLeft{display:flex;align-items:center;gap:7px;min-width:0}
+    .badge{padding:3px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(255,255,255,.75);font-weight:950;white-space:nowrap}
+    .headBtns{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+    .miniBtn{padding:5px 7px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.88);font-weight:950;font-size:11px;cursor:pointer}
+    .miniBtn:hover{background:rgba(255,255,255,.09)}
+    select[multiple]{width:100%;flex:1;min-height:0;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);color:var(--text);padding:6px;outline:none;font-weight:800;overflow:auto}
+    option{padding:4px}
+    select[multiple]:focus{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 3px rgba(56,189,248,.14)}
+    select[multiple] option:checked{background:rgba(56,189,248,.36);color:#fff}
+    .cumulRow{margin-top:6px;display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:900;font-size:11px}
+    .genRow{display:flex;justify-content:center;margin-top:14px;gap:10px;flex-wrap:wrap}
+    .tableWrap{overflow:auto;border-radius:16px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.34);max-height:62vh}
+    table{border-collapse:collapse;width:100%;min-width:1100px}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
+    th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.2px;user-select:none;position:sticky;top:0;background:rgba(8,15,28,.96);z-index:1}
+    td{font-weight:850;font-size:13px}
+    .right{text-align:right;white-space:nowrap}
+    th.sortable{cursor:pointer}
+    th.sortable:hover{color:rgba(255,255,255,.90)}
+    .sortIcon{opacity:.65;margin-left:6px}
+    .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .kpi{flex:1;min-width:220px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:rgba(2,6,23,.28);padding:12px}
+    .kpi .k{color:var(--muted);font-size:12px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
+    .kpi .v{font-size:19px;font-weight:990;margin-top:5px;letter-spacing:-.02em}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <b>Requete Commerce (ventes reelles)</b>
+        <span>Auto + Industrie depuis Supabase - filtres en colonnes, cumul, tri CA et export CSV</span>
+      </div>
+    </div>
+    <div class="top-actions">
+      <a class="btn" href="index.html">Portail</a>
+      <a class="btn" href="reporting-commerce-global.html">Reporting global</a>
+      <button class="btn" id="reloadBtn" type="button">Recharger Supabase</button>
+      <button class="btn green" id="exportBtn" type="button" disabled>Exporter CSV</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="meta">
+      <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargement...</span></span>
+      <span class="chip"><span class="dot ok"></span><span>Source : <b>Supabase Auto + Industrie</b></span></span>
+      <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes : 9 filtres + quantite + CA</span></span>
+    </div>
+    <div class="small">Les ventes telephone sont incluses. Le CA est calcule comme dans Mes ventes et Reporting global : quantite x prix unitaire.</div>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <div class="fbox" id="boxActivity"></div>
+      <div class="fbox" id="boxYear"></div>
+      <div class="fbox" id="boxMonth"></div>
+      <div class="fbox" id="boxDate"></div>
+      <div class="fbox" id="boxType"></div>
+      <div class="fbox" id="boxClientInt"></div>
+      <div class="fbox" id="boxClient"></div>
+      <div class="fbox" id="boxRef"></div>
+      <div class="fbox" id="boxDes"></div>
+    </div>
+    <div class="genRow">
+      <button class="btn primary" id="genBtn" type="button">Generer</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tableWrap">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"><tr><td style="color:var(--muted)">Chargement des donnees...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Lignes resultat</div><div class="v" id="kpiRows">-</div></div>
+      <div class="kpi"><div class="k">Quantite totale</div><div class="v" id="kpiQty">-</div></div>
+      <div class="kpi"><div class="k">CA total</div><div class="v" id="kpiCA">-</div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PAGE_SIZE = 1000;
+const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
+const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
+const MONTHS_FR = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"];
+const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR" });
+const SOURCES = [
+  { key:"auto", label:"Auto", tables:{ clients:"clients", produits:"produits", visites:"visites", lignes:"visite_commandes" } },
+  { key:"industrie", label:"Industrie", tables:{ clients:"industrie_clients", produits:"industrie_produits", visites:"industrie_visites", lignes:"industrie_visite_commandes" } }
+];
+const COLS = {
+  ACTIVITY:"Activite",
+  YEAR:"Annee",
+  MONTH:"Mois",
+  DATE:"Date",
+  TYPE:"Type de vente",
+  CLIENT_INT:"N client",
+  CLIENT:"Client",
+  REF:"Reference Produits",
+  DES:"Designations",
+  QTY:"Quantite",
+  CA:"CA HT"
+};
+const $ = id => document.getElementById(id);
+const normalize = value => String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const toNumber = value => {
+  if (value === null || value === undefined) return 0;
+  const n = Number(String(value).replace(",", ".").replace(/\s/g, ""));
+  return Number.isFinite(n) ? n : 0;
+};
+const fmtNumber = value => Number(value || 0).toLocaleString("fr-FR");
+function setStatus(type, text){
+  const dot = $("dotStatus");
+  dot.classList.remove("ok","warn","bad");
+  if (type === "ok") dot.classList.add("ok");
+  if (type === "warn") dot.classList.add("warn");
+  if (type === "bad") dot.classList.add("bad");
+  $("status").textContent = text;
+}
+function escapeHtml(value){
+  return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function uniq(values){ return [...new Set(values.filter(v => v !== "" && v !== null && v !== undefined))]; }
+function sortNumIfPossible(a,b){
+  const na = Number(a), nb = Number(b);
+  if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+  return String(a).localeCompare(String(b), "fr", { numeric:true, sensitivity:"base" });
+}
+function monthLabel(value){
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 1 && n <= 12 ? MONTHS_FR[n - 1] : String(value || "");
+}
+function normalizeVisitType(value){
+  const v = normalize(value);
+  if (["commande_telephone", "commande_tel", "appel_telephonique", "telephone", "tel"].includes(v)) return VISIT_TYPE_PHONE_ORDER;
+  if (["vente", "visite", "terrain", "commande"].includes(v)) return "vente";
+  if (["passage_sans_vente", "sans_vente"].includes(v)) return "passage_sans_vente";
+  if (["client_ferme", "ferme"].includes(v)) return "client_ferme";
+  return v || "vente";
+}
+function resolveVisitTypeFromRecord(visite){
+  const type = normalizeVisitType(visite?.type_visite);
+  if (type === "vente" && String(visite?.note || "").includes(PHONE_ORDER_NOTE_MARKER)) return VISIT_TYPE_PHONE_ORDER;
+  return type;
+}
+function getVisitTypeLabel(type){
+  if (type === VISIT_TYPE_PHONE_ORDER) return "Commande telephone";
+  if (type === "vente") return "Vente terrain";
+  if (type === "passage_sans_vente") return "Passage sans vente";
+  if (type === "client_ferme") return "Client ferme";
+  return type || "Vente";
+}
+function isOrderVisit(visite){
+  const type = resolveVisitTypeFromRecord(visite);
+  return type === "vente" || type === VISIT_TYPE_PHONE_ORDER || Number(visite?.total_commande || 0) > 0;
+}
+async function fetchPaged(table, select, options = {}){
+  let from = 0;
+  const all = [];
+  while (true){
+    let query = supabaseClient.from(table).select(select).range(from, from + PAGE_SIZE - 1);
+    if (options.order) query = query.order(options.order.column, { ascending: options.order.ascending ?? true });
+    const { data, error } = await query;
+    if (error) throw new Error(`${table}: ${error.message}`);
+    const batch = data || [];
+    all.push(...batch);
+    if (batch.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return all;
+}
+function buildListBox(mountId, title){
+  const mount = $(mountId);
+  mount.innerHTML = `
+    <div class="fhead">
+      <div class="headLeft"><div>${title}</div><div class="badge" id="${mountId}_badge">-</div></div>
+      <div class="headBtns"><button class="miniBtn" type="button" id="${mountId}_all">Tout</button><button class="miniBtn" type="button" id="${mountId}_none">Aucun</button></div>
+    </div>
+    <select id="${mountId}_sel" multiple></select>
+    <div class="cumulRow"><input type="checkbox" id="${mountId}_cumul"><label for="${mountId}_cumul">Cumul</label></div>
+  `;
+  const sel = $(`${mountId}_sel`);
+  const cumul = $(`${mountId}_cumul`);
+  const badge = $(`${mountId}_badge`);
+  const btnAll = $(`${mountId}_all`);
+  const btnNone = $(`${mountId}_none`);
+  function updateBadge(){ badge.textContent = sel.options.length ? `${sel.selectedOptions.length}/${sel.options.length}` : "0/0"; }
+  function selectAll(){ [...sel.options].forEach(option => option.selected = true); updateBadge(); }
+  function selectNone(){ [...sel.options].forEach(option => option.selected = false); updateBadge(); }
+  function getSelected(){ return [...sel.selectedOptions].map(option => option.value); }
+  function setSelected(values){ const set = new Set(values); [...sel.options].forEach(option => option.selected = set.has(option.value)); updateBadge(); }
+  function setOptions(values, { labelFn = null, preserve = true, sortFn = null } = {}){
+    const previous = preserve ? new Set(getSelected()) : null;
+    let clean = uniq(values.map(value => String(value ?? "").trim()).filter(Boolean));
+    clean.sort(sortFn || sortNumIfPossible);
+    sel.innerHTML = clean.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(labelFn ? labelFn(value) : value)}</option>`).join("");
+    selectAll();
+    if (previous && previous.size){
+      const available = new Set(clean);
+      const intersection = [...previous].filter(value => available.has(value));
+      if (intersection.length) setSelected(intersection);
+    }
+    updateBadge();
+  }
+  sel.addEventListener("change", () => { updateBadge(); cascadeFrom(mountId); });
+  btnAll.addEventListener("click", () => { selectAll(); cascadeFrom(mountId); });
+  btnNone.addEventListener("click", () => { selectNone(); cascadeFrom(mountId); });
+  return { id: mountId, setOptions, getSelected, setSelected, selectAll, selectNone, getCumul: () => cumul.checked, setCumul: value => cumul.checked = Boolean(value) };
+}
+let rows = [];
+let lastResult = [];
+let lastHeaders = [];
+let sortCAAsc = false;
+const boxActivity = buildListBox("boxActivity", "Activite");
+const boxYear = buildListBox("boxYear", "Annee");
+const boxMonth = buildListBox("boxMonth", "Mois");
+const boxDate = buildListBox("boxDate", "Date");
+const boxType = buildListBox("boxType", "Type");
+const boxClientInt = buildListBox("boxClientInt", "N client");
+const boxClient = buildListBox("boxClient", "Client");
+const boxRef = buildListBox("boxRef", "Reference");
+const boxDes = buildListBox("boxDes", "Designation");
+const chain = [
+  { box:boxActivity, key:"ACTIVITY", labelFn:null, sortFn:null },
+  { box:boxYear, key:"YEAR", labelFn:null, sortFn:(a,b)=>Number(a)-Number(b) },
+  { box:boxMonth, key:"MONTH", labelFn:monthLabel, sortFn:(a,b)=>Number(a)-Number(b) },
+  { box:boxDate, key:"DATE", labelFn:null, sortFn:null },
+  { box:boxType, key:"TYPE", labelFn:null, sortFn:null },
+  { box:boxClientInt, key:"CLIENT_INT", labelFn:null, sortFn:sortNumIfPossible },
+  { box:boxClient, key:"CLIENT", labelFn:null, sortFn:null },
+  { box:boxRef, key:"REF", labelFn:null, sortFn:null },
+  { box:boxDes, key:"DES", labelFn:null, sortFn:null }
+];
+function filterRowsUpTo(index){
+  let filtered = rows;
+  for (let i = 0; i <= index; i++){
+    const colName = COLS[chain[i].key];
+    const selected = new Set(chain[i].box.getSelected());
+    if (!colName || selected.size === 0) return [];
+    filtered = filtered.filter(row => selected.has(String(row[colName] ?? "").trim()));
+  }
+  return filtered;
+}
+function cascadeFrom(changedBoxId){
+  const index = chain.findIndex(item => item.box.id === changedBoxId);
+  if (index < 0) return;
+  for (let j = index + 1; j < chain.length; j++){
+    const base = filterRowsUpTo(j - 1);
+    const colName = COLS[chain[j].key];
+    chain[j].box.setOptions(colName ? base.map(row => row[colName]) : [], { labelFn: chain[j].labelFn, preserve:true, sortFn: chain[j].sortFn });
+  }
+}
+function buildKey(row, colsList){ return colsList.map(col => `${col}=${row[col] ?? ""}`).join("||"); }
+function prettyHeader(header){ return header; }
+function generate(){
+  if (!rows.length) return;
+  let filtered = rows;
+  for (const item of chain){
+    const colName = COLS[item.key];
+    const selected = new Set(item.box.getSelected());
+    if (!colName || selected.size === 0){ renderEmpty("Selection vide sur une colonne."); return; }
+    filtered = filtered.filter(row => selected.has(String(row[colName] ?? "").trim()));
+  }
+  if (!filtered.length){ renderEmpty("Aucune donnee pour cette requete."); return; }
+  const groupCols = chain.filter(item => !item.box.getCumul()).map(item => COLS[item.key]).filter(Boolean);
+  const colQ = COLS.QTY;
+  const colCA = COLS.CA;
+  const map = new Map();
+  let totalQty = 0;
+  let totalCA = 0;
+  for (const row of filtered){
+    const qty = toNumber(row[colQ]);
+    const ca = toNumber(row[colCA]);
+    totalQty += qty;
+    totalCA += ca;
+    const key = buildKey(row, groupCols);
+    if (!map.has(key)){
+      const aggregate = {};
+      for (const col of groupCols) aggregate[col] = String(row[col] ?? "").trim();
+      aggregate[colQ] = 0;
+      aggregate[colCA] = 0;
+      map.set(key, aggregate);
+    }
+    const aggregate = map.get(key);
+    aggregate[colQ] += qty;
+    aggregate[colCA] += ca;
+  }
+  const result = [...map.values()].sort((a,b) => (b[colCA] - a[colCA]) || (b[colQ] - a[colQ]));
+  sortCAAsc = false;
+  lastResult = result;
+  lastHeaders = [...groupCols, colQ, colCA];
+  renderTable(groupCols, colQ, colCA, result, totalQty, totalCA);
+  $("exportBtn").disabled = result.length === 0;
+}
+function renderEmpty(message){
+  $("thead").innerHTML = "";
+  $("tbody").innerHTML = `<tr><td style="color:var(--muted)">${escapeHtml(message)}</td></tr>`;
+  $("kpiRows").textContent = "-";
+  $("kpiQty").textContent = "-";
+  $("kpiCA").textContent = "-";
+  $("exportBtn").disabled = true;
+  lastResult = [];
+  lastHeaders = [];
+}
+function renderTable(groupCols, colQ, colCA, result, totalQty, totalCA){
+  const headers = [...groupCols.map(col => ({ label:prettyHeader(col), col, right:false, kind:"text" })), { label:prettyHeader(colQ), col:colQ, right:true, kind:"num" }, { label:prettyHeader(colCA), col:colCA, right:true, kind:"eur", sortable:true }];
+  const icon = sortCAAsc ? "▲" : "▼";
+  $("thead").innerHTML = `<tr>${headers.map(header => `<th class="${header.sortable ? "sortable" : ""} ${header.right ? "right" : ""}" data-sort="${header.sortable ? "ca" : ""}">${escapeHtml(header.label)}${header.sortable ? `<span class="sortIcon">${icon}</span>` : ""}</th>`).join("")}</tr>`;
+  $("tbody").innerHTML = result.map(row => `<tr>${headers.map(header => {
+    let value = row[header.col];
+    if (header.col === COLS.MONTH) value = monthLabel(value);
+    if (header.kind === "num") return `<td class="right">${fmtNumber(Math.round((value || 0) * 100) / 100)}</td>`;
+    if (header.kind === "eur") return `<td class="right">${eur.format(value || 0)}</td>`;
+    return `<td>${escapeHtml(value ?? "")}</td>`;
+  }).join("")}</tr>`).join("");
+  $("kpiRows").textContent = fmtNumber(result.length);
+  $("kpiQty").textContent = fmtNumber(Math.round(totalQty * 100) / 100);
+  $("kpiCA").textContent = eur.format(totalCA);
+  const th = $("thead").querySelector("th[data-sort='ca']");
+  if (th) th.onclick = () => toggleSortCA(colCA, colQ, groupCols);
+}
+function toggleSortCA(colCA, colQ, groupCols){
+  if (!lastResult.length) return;
+  sortCAAsc = !sortCAAsc;
+  const sorted = [...lastResult].sort((a,b) => sortCAAsc ? (a[colCA] - b[colCA]) : (b[colCA] - a[colCA]));
+  const totalQty = sorted.reduce((sum,row) => sum + toNumber(row[colQ]), 0);
+  const totalCA = sorted.reduce((sum,row) => sum + toNumber(row[colCA]), 0);
+  lastResult = sorted;
+  renderTable(groupCols, colQ, colCA, sorted, totalQty, totalCA);
+}
+function exportCSV(){
+  if (!lastResult.length) return;
+  const lines = [];
+  lines.push(lastHeaders.map(header => `"${String(prettyHeader(header)).replaceAll('"','""')}"`).join(";"));
+  for (const row of lastResult){
+    lines.push(lastHeaders.map(header => {
+      let value = row[header] ?? "";
+      if (header === COLS.MONTH) value = monthLabel(value);
+      return `"${String(value).replaceAll('"','""')}"`;
+    }).join(";"));
+  }
+  const blob = new Blob([lines.join("\n")], { type:"text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `requete_commerce_${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+async function loadSourceRows(source){
+  const [clients, produits, visites, lignes] = await Promise.all([
+    fetchPaged(source.tables.clients, "id, nom, numero_compte", { order:{ column:"nom", ascending:true } }),
+    fetchPaged(source.tables.produits, "id, nom, reference_produit", { order:{ column:"nom", ascending:true } }),
+    fetchPaged(source.tables.visites, "id, client_id, date_visite, note, type_visite, total_commande", { order:{ column:"date_visite", ascending:false } }),
+    fetchPaged(source.tables.lignes, "id, visite_id, produit_id, quantite, prix_unitaire")
+  ]);
+  const clientsById = new Map((clients || []).map(client => [String(client.id), client]));
+  const produitsById = new Map((produits || []).map(produit => [String(produit.id), produit]));
+  const visitesById = new Map((visites || []).map(visite => [String(visite.id), visite]));
+  const mapped = [];
+  for (const ligne of lignes || []){
+    const visite = visitesById.get(String(ligne.visite_id));
+    if (!visite || !isOrderVisit(visite)) continue;
+    const client = clientsById.get(String(visite.client_id));
+    const produit = produitsById.get(String(ligne.produit_id));
+    const date = String(visite.date_visite || "").slice(0, 10);
+    if (!date) continue;
+    const [year, month] = date.split("-");
+    const quantite = toNumber(ligne.quantite);
+    const prixUnitaire = toNumber(ligne.prix_unitaire);
+    mapped.push({
+      [COLS.ACTIVITY]: source.label,
+      [COLS.YEAR]: year || "",
+      [COLS.MONTH]: String(Number(month || 0) || ""),
+      [COLS.DATE]: date,
+      [COLS.TYPE]: getVisitTypeLabel(resolveVisitTypeFromRecord(visite)),
+      [COLS.CLIENT_INT]: client?.numero_compte || "-",
+      [COLS.CLIENT]: client?.nom || "Client inconnu",
+      [COLS.REF]: produit?.reference_produit || "-",
+      [COLS.DES]: produit?.nom || "Produit archive",
+      [COLS.QTY]: quantite,
+      [COLS.CA]: quantite * prixUnitaire
+    });
+  }
+  return mapped;
+}
+function populateFilters(){
+  for (const item of chain){
+    item.box.setOptions(rows.map(row => row[COLS[item.key]]), { labelFn:item.labelFn, preserve:false, sortFn:item.sortFn });
+  }
+}
+async function loadData(){
+  setStatus("warn", "Chargement des ventes reelles...");
+  renderEmpty("Chargement des donnees...");
+  $("exportBtn").disabled = true;
+  $("genBtn").disabled = true;
+  try{
+    const sourceRows = await Promise.all(SOURCES.map(loadSourceRows));
+    rows = sourceRows.flat().sort((a,b) => String(b[COLS.DATE]).localeCompare(String(a[COLS.DATE])));
+    populateFilters();
+    setStatus("ok", `${fmtNumber(rows.length)} ligne(s) de vente chargee(s).`);
+    $("colsDebug").textContent = `Auto + Industrie - ${fmtNumber(rows.length)} lignes reelles`;
+    generate();
+  }catch(error){
+    console.error(error);
+    rows = [];
+    setStatus("bad", `Erreur de chargement: ${error.message || "erreur inconnue"}`);
+    renderEmpty("Impossible de charger les ventes commerce.");
+  }finally{
+    $("genBtn").disabled = false;
+  }
+}
+$("genBtn").addEventListener("click", generate);
+$("reloadBtn").addEventListener("click", loadData);
+$("exportBtn").addEventListener("click", exportCSV);
+loadData();
+</script>
+</body>
+</html>
