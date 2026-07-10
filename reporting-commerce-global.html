@@ -428,7 +428,7 @@
     }
     .modal-backdrop.open { display: flex; }
     .modal-card {
-      width: min(820px, 100%);
+      width: min(980px, 100%);
       max-height: calc(100vh - 48px);
       overflow: auto;
       padding: 20px;
@@ -1164,11 +1164,14 @@
       </div>`;
     }
     function openClientProductsDetail(periodRows, clientKey, container = dom.modalTopClientsList) {
-      container.querySelectorAll(".client-detail-panel").forEach(panel => panel.remove());
       const buttons = [...container.querySelectorAll(".top-client-button")];
-      buttons.forEach(button => button.classList.toggle("active", button.dataset.clientKey === clientKey));
       const activeButton = buttons.find(button => button.dataset.clientKey === clientKey);
+      const shouldClose = Boolean(activeButton?.classList.contains("active") && activeButton.nextElementSibling?.classList.contains("client-detail-panel"));
+      container.querySelectorAll(".client-detail-panel").forEach(panel => panel.remove());
+      buttons.forEach(button => button.classList.remove("active"));
+      if (shouldClose) return;
       if (!activeButton) return;
+      activeButton.classList.add("active");
       activeButton.insertAdjacentHTML("afterend", buildClientProductsHtml(periodRows, clientKey));
     }
     function attachTopClientHandlers(periodRows, container = dom.modalTopClientsList) {
