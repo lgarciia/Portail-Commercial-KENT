@@ -49,6 +49,11 @@
       justify-content: space-between;
       gap: 18px;
       align-items: flex-start;
+      padding: 0;
+      margin-bottom: 20px;
+    }
+
+    .sales-control-card {
       padding: 24px;
       margin-bottom: 18px;
     }
@@ -110,10 +115,10 @@
     .btn-secondary { color: var(--text); background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.1); }
     .btn-info { color: #d8f3ff; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.2); }
 
-    .filters-card { padding: 18px; margin-bottom: 18px; }
+    .filters-card { padding: 0; margin-bottom: 0; }
     .filters-grid {
       display: grid;
-      grid-template-columns: 180px 170px 170px minmax(220px, 1fr) minmax(220px, 1fr) 180px 170px auto;
+      grid-template-columns: 180px 170px 170px minmax(220px, 1fr) minmax(220px, 1fr) 180px 170px;
       gap: 12px;
       align-items: end;
     }
@@ -290,8 +295,7 @@
       body { padding: 14px; }
       .filters-grid,
       .kpi-grid { grid-template-columns: 1fr; }
-      .page-header,
-      .filters-card,
+      .sales-control-card,
       .table-card { padding: 16px; }
     }
   </style>
@@ -299,20 +303,21 @@
 </head>
 <body>
   <div class="container">
-    <header class="glass-card page-header">
-      <div>
-        <div class="eyebrow">Recap commercial</div>
-        <h1>Mes ventes</h1>
-        <p>Vue globale des lignes produits vendues par periode, avec le client, la reference, le type de saisie et les montants.</p>
-      </div>
-      <div class="header-actions">
-        <a class="btn btn-secondary" href="tdbactivite.html">Tableau de bord</a>
-        <a class="btn btn-info" href="ficherclt.html">Fiche client</a>
-        <button class="btn btn-primary" id="refreshBtn" type="button">Actualiser</button>
-      </div>
-    </header>
+    <section class="glass-card sales-control-card">
+      <header class="page-header">
+        <div>
+          <div class="eyebrow">Recap commercial</div>
+          <h1>Mes ventes</h1>
+          <p>Vue globale des lignes produits vendues par periode, avec le client, la reference, le type de saisie et les montants.</p>
+        </div>
+        <div class="header-actions">
+          <a class="btn btn-secondary" href="tdbactivite.html">Tableau de bord</a>
+          <a class="btn btn-info" href="ficherclt.html">Fiche client</a>
+          <button class="btn btn-primary" id="refreshBtn" type="button">Actualiser</button>
+        </div>
+      </header>
 
-    <section class="glass-card filters-card">
+      <div class="filters-card">
       <div class="filters-grid">
         <div class="field-group">
           <label for="periodSelect">Periode</label>
@@ -354,12 +359,9 @@
             <option value="all">Toutes plaques</option>
           </select>
         </div>
-        <div class="field-group">
-          <label>&nbsp;</label>
-          <button class="btn btn-primary" id="applyBtn" type="button">Filtrer</button>
-        </div>
       </div>
       <div class="status-bar" id="statusBar">Connexion a Supabase...</div>
+      </div>
     </section>
 
     <section class="kpi-grid">
@@ -428,7 +430,6 @@
       dom.productSearch = document.getElementById("productSearch");
       dom.typeFilter = document.getElementById("typeFilter");
       dom.plaqueFilter = document.getElementById("plaqueFilter");
-      dom.applyBtn = document.getElementById("applyBtn");
       dom.refreshBtn = document.getElementById("refreshBtn");
       dom.statusBar = document.getElementById("statusBar");
       dom.salesBody = document.getElementById("salesBody");
@@ -817,7 +818,6 @@
       });
       [dom.clientSearch, dom.productSearch].forEach(input => input.addEventListener("input", applyFilters));
       [dom.typeFilter, dom.plaqueFilter].forEach(select => select.addEventListener("change", applyFilters));
-      dom.applyBtn.addEventListener("click", applyFilters);
       dom.refreshBtn.addEventListener("click", refreshPage);
     }
 

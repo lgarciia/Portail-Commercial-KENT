@@ -556,7 +556,8 @@ let rows = [];
 let cols = {};
 let lastResult = [];
 let lastHeaders = [];
-let sortCAAsc = false;
+let sortKey = "ca";
+let sortAsc = false;
 
 const boxYear   = buildListBox("boxYear",   "Année *");
 const boxMonth  = buildListBox("boxMonth",  "Mois *");
@@ -674,7 +675,8 @@ function generate(){
 
   let result = [...map.values()];
   result.sort((a,b) => (b[colCA] - a[colCA]) || (b[colQ] - a[colQ]));
-  sortCAAsc = false;
+  sortKey = "ca";
+  sortAsc = false;
 
   lastResult = result;
   lastHeaders = [...groupCols, colQ, colCA];
@@ -697,17 +699,17 @@ function renderEmpty(msg){
 function renderTable(groupCols, colQ, colCA, result, totalQty, totalCA){
   const headers = [
     ...groupCols.map(c => ({label: prettyHeader(c), col:c, right:false, kind:"text"})),
-    {label: prettyHeader(colQ), col:colQ, right:true, kind:"num"},
-    {label: prettyHeader(colCA), col:colCA, right:true, kind:"eur", sortable:true},
+    {label: prettyHeader(colQ), col:colQ, right:true, kind:"num", sortable:true, sortKey:"qty"},
+    {label: prettyHeader(colCA), col:colCA, right:true, kind:"eur", sortable:true, sortKey:"ca"},
   ];
-  const icon = sortCAAsc ? "▲" : "▼";
+  const iconFor = key => sortKey === key ? (sortAsc ? "▲" : "▼") : "↕";
 
   $("thead").innerHTML = `
     <tr>
       ${headers.map(h => {
         const cls = h.sortable ? "sortable" : "";
-        const ico = h.sortable ? `<span class="sortIcon">${icon}</span>` : "";
-        return `<th class="${cls} ${h.right ? "right":""}" data-sort="${h.sortable ? "ca":""}">${h.label}${ico}</th>`;
+        const ico = h.sortable ? `<span class="sortIcon">${iconFor(h.sortKey)}</span>` : "";
+        return `<th class="${cls} ${h.right ? "right":""}" data-sort="${h.sortKey || ""}">${h.label}${ico}</th>`;
       }).join("")}
     </tr>
   `;
@@ -728,16 +730,25 @@ function renderTable(groupCols, colQ, colCA, result, totalQty, totalCA){
   $("kpiQty").textContent  = String(Math.round(totalQty*100)/100);
   $("kpiCA").textContent   = eur.format(totalCA);
 
-  const th = $("thead").querySelector("th[data-sort='ca']");
-  if (th){
-    th.onclick = () => toggleSortCA(colCA, colQ, groupCols);
-  }
+  $("thead").querySelectorAll("th[data-sort='qty'], th[data-sort='ca']").forEach(th => {
+    th.onclick = () => toggleSort(th.dataset.sort, colCA, colQ, groupCols);
+  });
 }
 
-function toggleSortCA(colCA, colQ, groupCols){
+function toggleSort(nextSortKey, colCA, colQ, groupCols){
   if (!lastResult.length) return;
-  sortCAAsc = !sortCAAsc;
-  const sorted = [...lastResult].sort((a,b) => sortCAAsc ? (a[colCA]-b[colCA]) : (b[colCA]-a[colCA]));
+  if (sortKey === nextSortKey) sortAsc = !sortAsc;
+  else {
+    sortKey = nextSortKey;
+    sortAsc = false;
+  }
+  const primaryCol = sortKey === "qty" ? colQ : colCA;
+  const secondaryCol = sortKey === "qty" ? colCA : colQ;
+  const sorted = [...lastResult].sort((a,b) => {
+    const primary = sortAsc ? toNumber(a[primaryCol]) - toNumber(b[primaryCol]) : toNumber(b[primaryCol]) - toNumber(a[primaryCol]);
+    if (primary !== 0) return primary;
+    return toNumber(b[secondaryCol]) - toNumber(a[secondaryCol]);
+  });
   const totalQty = sorted.reduce((s,r)=>s+(r[colQ]??0),0);
   const totalCA  = sorted.reduce((s,r)=>s+(r[colCA]??0),0);
   lastResult = sorted;
