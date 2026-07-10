@@ -18,6 +18,7 @@
       --indus: #22c55e;
       --indus-2: #059669;
       --gold: #f59e0b;
+      --partner: #fb7185;
       --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
       --radius: 22px;
     }
@@ -564,6 +565,7 @@
     .legend-dot.real-auto::before { background: var(--auto); }
     .legend-dot.budget-auto::before { background: var(--gold); }
     .legend-dot.real-indus::before { background: var(--indus); }
+    .legend-dot.partner::before { background: var(--partner); }
     .quick-actions {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -586,6 +588,7 @@
     td { font-size: .9rem; }
     .number { text-align: right; white-space: nowrap; }
     .budget-view { display: grid; gap: 18px; }
+    .budget-view table { min-width: 1280px; }
     .budget-chart {
       display: grid;
       grid-template-columns: repeat(12, minmax(96px, 1fr));
@@ -619,6 +622,7 @@
     .budget-bar.real-auto { background: linear-gradient(180deg, var(--auto), var(--auto-2)); }
     .budget-bar.budget-auto { background: linear-gradient(180deg, #fde68a, var(--gold)); }
     .budget-bar.real-indus { background: linear-gradient(180deg, var(--indus), var(--indus-2)); }
+    .budget-bar.partner { background: linear-gradient(180deg, #fda4af, var(--partner)); }
     .budget-month-name {
       display: block;
       text-align: center;
@@ -650,6 +654,27 @@
     .gap-good { color: #86efac; }
     .gap-bad { color: #fca5a5; }
     .muted-value { color: var(--muted); }
+    .adjustment-cell {
+      min-width: 142px;
+    }
+    .adjustment-input {
+      width: 118px;
+      text-align: right;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border-color: rgba(251, 113, 133, 0.34);
+      background: rgba(251, 113, 133, 0.08);
+      color: var(--text);
+      font-weight: 850;
+    }
+    .adjustment-input:focus {
+      border-color: rgba(251, 113, 133, 0.72);
+      box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.12);
+    }
+    .adjusted-total {
+      color: #fecdd3;
+      font-weight: 950;
+    }
 
     @media (max-width: 1180px) {
       .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -889,9 +914,9 @@
     <section class="budget-view" id="budgetView" hidden>
       <section class="kpis">
         <div class="kpi total">
-          <span>Reel global HT</span>
+          <span>Reel ajuste HT</span>
           <strong id="budgetKpiRealGlobal">0,00 EUR</strong>
-          <small>Auto + Industrie, telephone inclus</small>
+          <small id="budgetKpiRealGlobalSub">Ventes + CA partenaires</small>
         </div>
         <div class="kpi auto">
           <span>Budget Auto</span>
@@ -899,18 +924,18 @@
           <small id="budgetKpiAutoSub">PSA + Gueudet + Ford + Direct</small>
         </div>
         <div class="kpi auto">
-          <span>Ecart Auto</span>
+          <span>Ecart Auto ajuste</span>
           <strong id="budgetKpiAutoGap">-</strong>
           <small id="budgetKpiAutoRate">Atteinte auto</small>
         </div>
         <div class="kpi indus">
           <span>Budget Industrie</span>
-          <strong id="budgetKpiIndusBudget">Budget non disponible</strong>
-          <small>Branchement prevu pour les futurs budgets industrie</small>
+          <strong id="budgetKpiIndusBudget">0,00 EUR</strong>
+          <small>Budget industrie a 0 pour le moment</small>
         </div>
         <div class="kpi total">
           <span>Budget Global</span>
-          <strong id="budgetKpiGlobalBudget">Budget non disponible</strong>
+          <strong id="budgetKpiGlobalBudget">0,00 EUR</strong>
           <small id="budgetKpiGlobalSub">Auto + Industrie</small>
         </div>
         <div class="kpi">
@@ -928,19 +953,20 @@
           </div>
           <div class="legend">
             <span class="legend-dot real-auto">Reel Auto</span>
+            <span class="legend-dot partner">CA partenaires</span>
             <span class="legend-dot budget-auto">Budget Auto</span>
             <span class="legend-dot real-indus">Reel Industrie</span>
           </div>
         </div>
         <div class="budget-chart" id="budgetChart"></div>
-        <div class="budget-note" id="budgetStatus">Budget industrie non disponible pour le moment.</div>
+        <div class="budget-note" id="budgetStatus">Budget industrie a 0 pour le moment.</div>
       </section>
 
       <section class="glass analysis">
         <div class="panel-head">
           <div>
             <h2>Lecture detaillee</h2>
-            <p>Le global sera complet quand le budget industrie sera branche. En attendant, la comparaison budget fiable est faite sur l'Auto.</p>
+            <p>Le budget industrie est pris a 0 pour le moment. Le global compare donc le reel Auto + Industrie au budget Auto.</p>
           </div>
         </div>
         <div class="table-shell">
@@ -950,13 +976,15 @@
                 <th>Mois</th>
                 <th class="number">Reel Auto</th>
                 <th class="number">Budget Auto</th>
-                <th class="number">Ecart Auto</th>
+                <th class="number">Ecart Auto ajuste</th>
                 <th class="number">Reel Industrie</th>
                 <th class="number">Budget Industrie</th>
                 <th class="number">Ecart Industrie</th>
                 <th class="number">Reel Global</th>
+                <th class="number">CA partenaires</th>
+                <th class="number">Reel ajuste</th>
                 <th class="number">Budget Global</th>
-                <th class="number">Ecart Global</th>
+                <th class="number">Ecart ajuste</th>
               </tr>
             </thead>
             <tbody id="budgetSummaryBody"></tbody>
@@ -974,6 +1002,9 @@
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const BUDGET_ADJUSTMENT_TABLE = "commerce_budget_ajustements";
+    const BUDGET_ADJUSTMENT_SOURCE = "vendeurs_partenaires";
+    const BUDGET_ADJUSTMENT_SECTOR = "auto";
     const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
     const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
     const PAGE_SIZE = 1000;
@@ -993,16 +1024,33 @@
     };
     const MONTH_LABELS = ["Janv.", "Fevr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Aout", "Sept.", "Oct.", "Nov.", "Dec."];
     const dom = {};
-    const state = { rows: [], weeks: [], selectedWeekIndex: 0, selectedMonthIndex: null, viewMode: "day", budget: null, budgetCache: new Map() };
+    const state = { rows: [], weeks: [], selectedWeekIndex: 0, selectedMonthIndex: null, viewMode: "day", budget: null, budgetCache: new Map(), budgetAdjustments: new Map(), budgetAdjustmentError: "" };
 
     function cacheDom() {
-      ["dayModeBtn","monthModeBtn","yearModeBtn","budgetModeBtn","dayField","monthField","yearField","sectorField","daySelect","monthSelect","yearSelect","sectorFilter","statusBar","dayView","dayClientsSection","dayClientsSubtitle","dayClientsList","dayKpiTotal","dayKpiTotalSub","dayKpiAuto","dayKpiAutoSub","dayKpiIndus","dayKpiIndusSub","dayMainMeter","weekGrid","summaryBody","weekModal","modalTitle","modalSubtitle","modalDetailGrid","modalTopClientsList","modalCloseBtn","analysisText","kpiTotal","kpiTotalSub","kpiAuto","kpiAutoSub","kpiIndus","kpiIndusSub","kpiClients","kpiOrders","kpiPhone","mainMeter","yearView","annualChart","yearSummaryBody","yearAnalysisText","yearKpiTotal","yearKpiTotalSub","yearKpiAuto","yearKpiAutoSub","yearKpiIndus","yearKpiIndusSub","yearKpiClients","yearKpiOrders","yearKpiBestMonth","yearKpiBestMonthSub","yearMainMeter","budgetView","budgetChart","budgetStatus","budgetSummaryBody","budgetAnalysisText","budgetKpiRealGlobal","budgetKpiAutoBudget","budgetKpiAutoSub","budgetKpiAutoGap","budgetKpiAutoRate","budgetKpiIndusBudget","budgetKpiGlobalBudget","budgetKpiGlobalSub","budgetKpiLines","budgetKpiClients"].forEach(id => dom[id] = document.getElementById(id));
+      ["dayModeBtn","monthModeBtn","yearModeBtn","budgetModeBtn","dayField","monthField","yearField","sectorField","daySelect","monthSelect","yearSelect","sectorFilter","statusBar","dayView","dayClientsSection","dayClientsSubtitle","dayClientsList","dayKpiTotal","dayKpiTotalSub","dayKpiAuto","dayKpiAutoSub","dayKpiIndus","dayKpiIndusSub","dayMainMeter","weekGrid","summaryBody","weekModal","modalTitle","modalSubtitle","modalDetailGrid","modalTopClientsList","modalCloseBtn","analysisText","kpiTotal","kpiTotalSub","kpiAuto","kpiAutoSub","kpiIndus","kpiIndusSub","kpiClients","kpiOrders","kpiPhone","mainMeter","yearView","annualChart","yearSummaryBody","yearAnalysisText","yearKpiTotal","yearKpiTotalSub","yearKpiAuto","yearKpiAutoSub","yearKpiIndus","yearKpiIndusSub","yearKpiClients","yearKpiOrders","yearKpiBestMonth","yearKpiBestMonthSub","yearMainMeter","budgetView","budgetChart","budgetStatus","budgetSummaryBody","budgetAnalysisText","budgetKpiRealGlobal","budgetKpiRealGlobalSub","budgetKpiAutoBudget","budgetKpiAutoSub","budgetKpiAutoGap","budgetKpiAutoRate","budgetKpiIndusBudget","budgetKpiGlobalBudget","budgetKpiGlobalSub","budgetKpiLines","budgetKpiClients"].forEach(id => dom[id] = document.getElementById(id));
       dom.monthlySections = [...document.querySelectorAll(".monthly-section")];
     }
     function setStatus(message) { dom.statusBar.textContent = message; }
     function escapeHtml(value) { return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
     function formatCurrency(value) { return Number(value || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" }); }
     function formatNumber(value) { return Number(value || 0).toLocaleString("fr-FR"); }
+    function parseEuroInput(value) {
+      let normalized = String(value || "")
+        .replace(/\s/g, "")
+        .replace(/\u00a0/g, "")
+        .replace(/[^0-9.,-]/g, "");
+      if (normalized.includes(",") && normalized.includes(".")) {
+        normalized = normalized.replace(/\./g, "").replace(",", ".");
+      } else {
+        normalized = normalized.replace(",", ".");
+      }
+      const amount = Number(normalized);
+      return Number.isFinite(amount) ? amount : 0;
+    }
+    function formatAdjustmentInput(value) {
+      const amount = Number(value || 0);
+      return amount ? amount.toLocaleString("fr-FR", { maximumFractionDigits: 2 }) : "";
+    }
     function toInputDate(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`; }
     function formatShortDate(dateStr) {
       if (!dateStr) return "-";
@@ -1460,8 +1508,8 @@
         autoAvailable: false,
         autoLoaded: [],
         autoFailed: AUTO_BUDGET_ENTITIES.map(entity => entity.label),
-        industryMonthly: null,
-        industryAvailable: false,
+        industryMonthly: Array.from({ length: 12 }, () => 0),
+        industryAvailable: true,
         status: status || "Budget non disponible."
       };
     }
@@ -1487,8 +1535,8 @@
         autoAvailable: false,
         autoLoaded: [],
         autoFailed: [],
-        industryMonthly: null,
-        industryAvailable: false,
+        industryMonthly: Array.from({ length: 12 }, () => 0),
+        industryAvailable: true,
         status: ""
       };
 
@@ -1518,24 +1566,76 @@
       state.budgetCache.set(cacheKey, snapshot);
       return snapshot;
     }
+    async function loadBudgetAdjustments(year) {
+      const adjustments = new Map();
+      state.budgetAdjustmentError = "";
+      const { data, error } = await supabaseClient
+        .from(BUDGET_ADJUSTMENT_TABLE)
+        .select("annee, mois, secteur, source, montant")
+        .eq("annee", Number(year))
+        .eq("secteur", BUDGET_ADJUSTMENT_SECTOR)
+        .eq("source", BUDGET_ADJUSTMENT_SOURCE)
+        .order("mois", { ascending: true });
+      if (error) {
+        state.budgetAdjustmentError = error.message || "Table d'ajustements budget indisponible.";
+        console.warn("Ajustements budget indisponibles", error);
+        return adjustments;
+      }
+      (data || []).forEach(row => {
+        const month = Number(row.mois);
+        if (month >= 1 && month <= 12) adjustments.set(month, Number(row.montant || 0));
+      });
+      return adjustments;
+    }
+    function getBudgetAdjustment(monthIndex) {
+      return Number(state.budgetAdjustments.get(Number(monthIndex) + 1) || 0);
+    }
+    function getBudgetAdjustmentsTotal() {
+      return [...state.budgetAdjustments.values()].reduce((sum, value) => sum + Number(value || 0), 0);
+    }
+    async function saveBudgetAdjustment(month, amount) {
+      const year = Number(dom.yearSelect.value) || new Date().getFullYear();
+      const safeMonth = Math.max(1, Math.min(12, Number(month) || 1));
+      const safeAmount = Math.max(0, Number(amount || 0));
+      setStatus(`Sauvegarde du CA partenaires ${MONTH_LABELS[safeMonth - 1]} ${year}...`);
+      const payload = {
+        annee: year,
+        mois: safeMonth,
+        secteur: BUDGET_ADJUSTMENT_SECTOR,
+        source: BUDGET_ADJUSTMENT_SOURCE,
+        montant: safeAmount,
+        note: "CA vendeurs partenaires hors ventes personnelles"
+      };
+      const { error } = await supabaseClient
+        .from(BUDGET_ADJUSTMENT_TABLE)
+        .upsert(payload, { onConflict: "annee,mois,secteur,source" });
+      if (error) throw new Error(error.message || "Sauvegarde impossible.");
+      state.budgetAdjustments.set(safeMonth, safeAmount);
+      applyView();
+      setStatus(`CA partenaires sauvegarde pour ${MONTH_LABELS[safeMonth - 1]} ${year} : ${formatCurrency(safeAmount)}.`);
+    }
     function buildBudgetRows(rows) {
       const months = buildYearMonths(dom.yearSelect.value);
       const monthSummaries = getYearMonthSummaries(rows, months);
       const budget = state.budget || emptyBudgetSnapshot(Number(dom.yearSelect.value) || new Date().getFullYear());
       return monthSummaries.map(({ period, summary }, index) => {
         const autoBudget = budget.autoAvailable ? Number(budget.autoMonthly[index] || 0) : null;
-        const industryBudget = budget.industryAvailable && budget.industryMonthly ? Number(budget.industryMonthly[index] || 0) : null;
-        const globalBudgetAvailable = budget.autoAvailable && budget.industryAvailable;
+        const industryBudget = budget.industryMonthly ? Number(budget.industryMonthly[index] || 0) : 0;
+        const partnerAdjustment = getBudgetAdjustment(index);
+        const globalBudgetAvailable = budget.autoAvailable;
         return {
           period,
           realAuto: summary.auto,
           realIndustry: summary.industrie,
           realGlobal: summary.total,
+          partnerAdjustment,
+          adjustedAuto: summary.auto + partnerAdjustment,
+          adjustedGlobal: summary.total + partnerAdjustment,
           autoBudget,
           industryBudget,
           globalBudget: globalBudgetAvailable ? Number(autoBudget || 0) + Number(industryBudget || 0) : null,
           autoBudgetAvailable: budget.autoAvailable,
-          industryBudgetAvailable: budget.industryAvailable,
+          industryBudgetAvailable: true,
           globalBudgetAvailable
         };
       });
@@ -1567,43 +1667,50 @@
       const monthCount = budgetComparisonMonthCount(year);
       const autoBudgetAvailable = budgetRows.some(row => row.autoBudgetAvailable);
       const industryBudgetAvailable = budgetRows.some(row => row.industryBudgetAvailable);
-      const globalBudgetAvailable = autoBudgetAvailable && industryBudgetAvailable;
+      const globalBudgetAvailable = autoBudgetAvailable;
       const autoBudgetAnnual = autoBudgetAvailable ? budgetRows.reduce((sum, row) => sum + Number(row.autoBudget || 0), 0) : null;
       const autoRealToDate = budgetRows.slice(0, monthCount).reduce((sum, row) => sum + Number(row.realAuto || 0), 0);
+      const partnerAdjustmentToDate = budgetRows.slice(0, monthCount).reduce((sum, row) => sum + Number(row.partnerAdjustment || 0), 0);
+      const partnerAdjustmentAnnual = budgetRows.reduce((sum, row) => sum + Number(row.partnerAdjustment || 0), 0);
+      const adjustedGlobalAnnual = summary.total + partnerAdjustmentAnnual;
+      const adjustedAutoToDate = autoRealToDate + partnerAdjustmentToDate;
       const autoBudgetToDate = autoBudgetAvailable ? budgetRows.slice(0, monthCount).reduce((sum, row) => sum + Number(row.autoBudget || 0), 0) : null;
-      const autoGapToDate = autoBudgetAvailable ? autoRealToDate - autoBudgetToDate : null;
-      const autoRate = autoBudgetToDate ? (autoRealToDate / autoBudgetToDate) * 100 : 0;
+      const autoGapToDate = autoBudgetAvailable ? adjustedAutoToDate - autoBudgetToDate : null;
+      const autoRate = autoBudgetToDate ? (adjustedAutoToDate / autoBudgetToDate) * 100 : 0;
       const globalBudgetAnnual = globalBudgetAvailable ? budgetRows.reduce((sum, row) => sum + Number(row.globalBudget || 0), 0) : null;
 
-      dom.budgetKpiRealGlobal.textContent = formatCurrency(summary.total);
+      dom.budgetKpiRealGlobal.textContent = formatCurrency(adjustedGlobalAnnual);
+      dom.budgetKpiRealGlobalSub.textContent = `Ventes ${formatCurrency(summary.total)} + partenaires ${formatCurrency(partnerAdjustmentAnnual)}`;
       dom.budgetKpiAutoBudget.textContent = autoBudgetAvailable ? formatCurrency(autoBudgetAnnual) : "Budget non disponible";
       dom.budgetKpiAutoSub.textContent = autoBudgetAvailable ? `Budget annuel Auto - ${state.budget.autoLoaded.join(", ")}` : "PSA + Gueudet + Ford + Direct";
       setGapText(dom.budgetKpiAutoGap, autoGapToDate, autoBudgetAvailable);
-      dom.budgetKpiAutoRate.textContent = autoBudgetAvailable && autoBudgetToDate ? `Atteinte auto a date : ${formatNumber(autoRate.toFixed(1))}%` : "Atteinte auto non disponible";
+      dom.budgetKpiAutoRate.textContent = autoBudgetAvailable && autoBudgetToDate ? `Atteinte ajustee a date : ${formatNumber(autoRate.toFixed(1))}%` : "Atteinte auto non disponible";
       dom.budgetKpiIndusBudget.textContent = industryBudgetAvailable ? formatCurrency(budgetRows.reduce((sum, row) => sum + Number(row.industryBudget || 0), 0)) : "Budget non disponible";
       dom.budgetKpiGlobalBudget.textContent = globalBudgetAvailable ? formatCurrency(globalBudgetAnnual) : "Budget non disponible";
-      dom.budgetKpiGlobalSub.textContent = globalBudgetAvailable ? "Budget Auto + Industrie" : "Budget global incomplet : industrie manquante";
+      dom.budgetKpiGlobalSub.textContent = globalBudgetAvailable ? "Budget Auto + Industrie (Industrie a 0)" : "Budget global indisponible : budget auto manquant";
       dom.budgetKpiLines.textContent = formatNumber(summary.lines);
       dom.budgetKpiClients.textContent = `${formatNumber(summary.clients)} client(s) - ${formatNumber(summary.orders)} commande(s)`;
     }
     function renderBudgetChart(budgetRows) {
       const maxValue = Math.max(1, ...budgetRows.flatMap(row => [
         Number(row.realAuto || 0),
+        Number(row.partnerAdjustment || 0),
         Number(row.autoBudget || 0),
         Number(row.realIndustry || 0)
       ]));
       const heightFor = value => Number(value || 0) > 0 ? Math.max(4, Math.round((Number(value || 0) / maxValue) * 100)) : 0;
       dom.budgetChart.innerHTML = budgetRows.map(row => {
         const autoGapAvailable = row.autoBudgetAvailable;
-        const autoGap = autoGapAvailable ? row.realAuto - row.autoBudget : 0;
+        const autoGap = autoGapAvailable ? row.adjustedAuto - row.autoBudget : 0;
         return `<article class="budget-month" title="${escapeHtml(row.period.label)} - Reel global ${formatCurrency(row.realGlobal)}">
           <div class="budget-bars">
             <div class="budget-bar real-auto" style="height:${heightFor(row.realAuto)}%" title="Reel Auto ${formatCurrency(row.realAuto)}"></div>
+            <div class="budget-bar partner" style="height:${heightFor(row.partnerAdjustment)}%" title="CA partenaires ${formatCurrency(row.partnerAdjustment)}"></div>
             <div class="budget-bar budget-auto" style="height:${row.autoBudgetAvailable ? heightFor(row.autoBudget) : 0}%" title="Budget Auto ${row.autoBudgetAvailable ? formatCurrency(row.autoBudget) : "non disponible"}"></div>
             <div class="budget-bar real-indus" style="height:${heightFor(row.realIndustry)}%" title="Reel Industrie ${formatCurrency(row.realIndustry)}"></div>
           </div>
           <span class="budget-month-name">${escapeHtml(row.period.label)}</span>
-          <span class="budget-month-value">${formatCurrency(row.realGlobal)}</span>
+          <span class="budget-month-value">${formatCurrency(row.adjustedGlobal)}</span>
           <span class="budget-month-value ${autoGap >= 0 ? "gap-good" : "gap-bad"}">${autoGapAvailable ? `${autoGap > 0 ? "+" : ""}${formatCurrency(autoGap)}` : "Auto N/D"}</span>
         </article>`;
       }).join("");
@@ -1617,13 +1724,15 @@
           <td>${escapeHtml(row.period.label)}</td>
           <td class="number">${formatCurrency(row.realAuto)}</td>
           <td class="number">${formatBudgetValue(row.autoBudget, row.autoBudgetAvailable)}</td>
-          <td class="number">${formatGapValue(row.realAuto - Number(row.autoBudget || 0), autoGapAvailable)}</td>
+          <td class="number">${formatGapValue(row.adjustedAuto - Number(row.autoBudget || 0), autoGapAvailable)}</td>
           <td class="number">${formatCurrency(row.realIndustry)}</td>
           <td class="number">${formatBudgetValue(row.industryBudget, row.industryBudgetAvailable)}</td>
           <td class="number">${formatGapValue(row.realIndustry - Number(row.industryBudget || 0), industryGapAvailable)}</td>
           <td class="number">${formatCurrency(row.realGlobal)}</td>
+          <td class="number adjustment-cell"><input class="adjustment-input" type="text" inputmode="decimal" data-month="${row.period.index + 1}" value="${escapeHtml(formatAdjustmentInput(row.partnerAdjustment))}" placeholder="0" aria-label="CA partenaires ${escapeHtml(row.period.label)}"></td>
+          <td class="number adjusted-total">${formatCurrency(row.adjustedGlobal)}</td>
           <td class="number">${formatBudgetValue(row.globalBudget, row.globalBudgetAvailable)}</td>
-          <td class="number">${formatGapValue(row.realGlobal - Number(row.globalBudget || 0), globalGapAvailable)}</td>
+          <td class="number">${formatGapValue(row.adjustedGlobal - Number(row.globalBudget || 0), globalGapAvailable)}</td>
         </tr>`;
       }).join("");
     }
@@ -1634,19 +1743,28 @@
       const year = Number(dom.yearSelect.value) || new Date().getFullYear();
       const monthCount = budgetComparisonMonthCount(year);
       const autoRealToDate = budgetRows.slice(0, monthCount).reduce((sum, row) => sum + Number(row.realAuto || 0), 0);
+      const partnerAdjustmentToDate = budgetRows.slice(0, monthCount).reduce((sum, row) => sum + Number(row.partnerAdjustment || 0), 0);
+      const adjustedAutoToDate = autoRealToDate + partnerAdjustmentToDate;
+      const partnerAdjustmentAnnual = budgetRows.reduce((sum, row) => sum + Number(row.partnerAdjustment || 0), 0);
+      const adjustedGlobalAnnual = summary.total + partnerAdjustmentAnnual;
       const autoBudgetToDate = autoBudgetAvailable ? budgetRows.slice(0, monthCount).reduce((sum, row) => sum + Number(row.autoBudget || 0), 0) : 0;
-      const autoGap = autoRealToDate - autoBudgetToDate;
+      const autoGap = adjustedAutoToDate - autoBudgetToDate;
       const comparisonLabel = year === new Date().getFullYear() ? `a date (${MONTH_LABELS[monthCount - 1] || "mois courant"})` : "sur l'annee complete";
       if (!summary.lines && !autoBudgetAvailable) {
         dom.budgetAnalysisText.textContent = "Aucun reel charge et budget auto non disponible pour cette annee.";
       } else if (!autoBudgetAvailable) {
         dom.budgetAnalysisText.textContent = `Le reel global ${year} est de ${formatCurrency(summary.total)}, mais le budget auto n'est pas disponible.`;
       } else {
-        dom.budgetAnalysisText.textContent = `Auto ${comparisonLabel} : reel ${formatCurrency(autoRealToDate)} vs budget ${formatCurrency(autoBudgetToDate)}, soit un ecart de ${autoGap >= 0 ? "+" : ""}${formatCurrency(autoGap)}. Le reel global Auto + Industrie est de ${formatCurrency(summary.total)}.`;
+        dom.budgetAnalysisText.textContent = `Auto ${comparisonLabel} : ventes ${formatCurrency(autoRealToDate)} + partenaires ${formatCurrency(partnerAdjustmentToDate)} = ${formatCurrency(adjustedAutoToDate)} vs budget ${formatCurrency(autoBudgetToDate)}, soit un ecart ajuste de ${autoGap >= 0 ? "+" : ""}${formatCurrency(autoGap)}. Le reel global ajuste Auto + Industrie est de ${formatCurrency(adjustedGlobalAnnual)}.`;
       }
 
       const statusParts = [budget.status || "Budget auto non disponible."];
-      statusParts.push("Budget industrie non disponible pour le moment : la colonne est prete pour un futur branchement multi-budgets industrie.");
+      statusParts.push("Budget industrie actuellement a 0 EUR : la colonne est prete pour un futur budget industrie.");
+      if (state.budgetAdjustmentError) {
+        statusParts.push(`CA partenaires non charge : ${state.budgetAdjustmentError}. Lance le SQL fourni si ce n'est pas encore fait.`);
+      } else {
+        statusParts.push("CA partenaires sauvegarde dans une table separee, hors ventes.");
+      }
       dom.budgetStatus.textContent = statusParts.join(" ");
     }
     function renderBudgetView(rows) {
@@ -1721,7 +1839,8 @@
       if (state.viewMode === "budget") {
         renderBudgetView(rows);
         const summary = summarizeRows(rows);
-        setStatus(`Vue budget a jour - reel global ${formatCurrency(summary.total)} HT - budget auto ${state.budget?.autoAvailable ? "charge" : "non disponible"} - budget industrie non disponible.`);
+        const partnerTotal = getBudgetAdjustmentsTotal();
+        setStatus(`Vue budget a jour - reel ajuste ${formatCurrency(summary.total + partnerTotal)} HT - ventes ${formatCurrency(summary.total)} - partenaires ${formatCurrency(partnerTotal)} - budget auto ${state.budget?.autoAvailable ? "charge" : "non disponible"} - budget industrie a 0.`);
         return;
       }
       renderKpis(rows);
@@ -1744,8 +1863,12 @@
         setStatus(isDayMode ? "Chargement du jour Auto + Industrie..." : isBudgetMode ? "Chargement du reel et du budget Auto..." : isYearMode ? "Chargement de l'annee Auto + Industrie..." : "Chargement des ventes Auto + Industrie...");
         const salesPromise = Promise.all(SOURCES.map(source => loadSourceRows(source, periodBounds)));
         const budgetPromise = isBudgetMode ? loadBudgetSnapshot(periodBounds.year) : Promise.resolve(state.budget);
-        const [sourceRows, budgetSnapshot] = await Promise.all([salesPromise, budgetPromise]);
-        if (isBudgetMode) state.budget = budgetSnapshot;
+        const adjustmentsPromise = isBudgetMode ? loadBudgetAdjustments(periodBounds.year) : Promise.resolve(state.budgetAdjustments);
+        const [sourceRows, budgetSnapshot, budgetAdjustments] = await Promise.all([salesPromise, budgetPromise, adjustmentsPromise]);
+        if (isBudgetMode) {
+          state.budget = budgetSnapshot;
+          state.budgetAdjustments = budgetAdjustments;
+        }
         state.rows = sourceRows.flat().sort((a, b) => String(a.date_visite).localeCompare(String(b.date_visite)));
         applyView();
       } catch (error) {
@@ -1761,6 +1884,21 @@
         dom.budgetSummaryBody.innerHTML = "";
       }
     }
+    async function handleBudgetAdjustmentChange(event) {
+      const input = event.target.closest(".adjustment-input");
+      if (!input) return;
+      const month = Number(input.dataset.month);
+      const amount = parseEuroInput(input.value);
+      input.value = formatAdjustmentInput(amount);
+      input.disabled = true;
+      try {
+        await saveBudgetAdjustment(month, amount);
+      } catch (error) {
+        console.error(error);
+        input.disabled = false;
+        setStatus(`Impossible de sauvegarder le CA partenaires : ${error.message || "erreur inconnue"}`);
+      }
+    }
     function bindEvents() {
       dom.dayModeBtn.addEventListener("click", () => setViewMode("day"));
       dom.monthModeBtn.addEventListener("click", () => setViewMode("month"));
@@ -1770,6 +1908,13 @@
       dom.monthSelect.addEventListener("change", () => { if (state.viewMode === "month") refreshData(); });
       dom.yearSelect.addEventListener("change", () => { if (state.viewMode === "year" || state.viewMode === "budget") refreshData(); });
       dom.sectorFilter.addEventListener("change", () => { state.selectedWeekIndex = 0; state.selectedMonthIndex = null; closeWeekModal(); applyView(); });
+      dom.budgetSummaryBody.addEventListener("change", handleBudgetAdjustmentChange);
+      dom.budgetSummaryBody.addEventListener("keydown", event => {
+        if (event.target.closest(".adjustment-input") && event.key === "Enter") {
+          event.preventDefault();
+          event.target.blur();
+        }
+      });
       dom.modalCloseBtn.addEventListener("click", closeWeekModal);
       dom.weekModal.addEventListener("click", event => { if (event.target === dom.weekModal) closeWeekModal(); });
       window.addEventListener("keydown", event => { if (event.key === "Escape") closeWeekModal(); });
