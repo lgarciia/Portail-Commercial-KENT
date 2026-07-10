@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Espace reporting</title>
   <script src="./shared-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./app-data-config.js"></script>
+  <script src="./reporting-data-utils.js"></script>
 
   <style>
     :root{
@@ -14,6 +17,9 @@
       --stroke:rgba(255,255,255,0.12);
       --text:rgba(255,255,255,0.92);
       --muted:rgba(255,255,255,0.6);
+      --blue:#60a5fa;
+      --green:#22c55e;
+      --gold:#f59e0b;
       --shadow:0 18px 45px rgba(0,0,0,0.35);
     }
 
@@ -27,7 +33,7 @@
         var(--bg);
       color:var(--text);
       min-height:100vh;
-      overflow:hidden;
+      overflow:auto;
     }
 
     /* NAVBAR */
@@ -131,7 +137,7 @@
       font-weight:900;
     }
 
-    /* CENTER (image only) */
+    /* CENTER DASHBOARD */
     .center{
       height:calc(100vh - 64px);
       display:flex;
@@ -140,27 +146,237 @@
       padding:22px;
     }
 
-    .imageCard{
-      background:rgba(255,255,255,0.04);
+    .reportHero{
+      width:min(1120px, 94vw);
+      background:
+        radial-gradient(700px 360px at 18% 0%, rgba(96,165,250,0.18), transparent 55%),
+        radial-gradient(650px 340px at 92% 12%, rgba(34,197,94,0.12), transparent 55%),
+        rgba(255,255,255,0.045);
       border:1px solid rgba(255,255,255,0.12);
-      border-radius:18px;
-      padding:18px;
+      border-radius:28px;
+      padding:24px;
       box-shadow:var(--shadow);
-      max-width:min(920px, 92vw);
+      backdrop-filter: blur(14px);
     }
 
-    .imageCard img{
-      width:100%;
-      height:auto;
+    .heroTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:18px;
+      margin-bottom:18px;
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      height:30px;
+      padding:0 12px;
+      border-radius:999px;
+      background:rgba(96,165,250,0.14);
+      border:1px solid rgba(96,165,250,0.22);
+      color:#dbeafe;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .heroTop h1{
+      margin:13px 0 8px;
+      font-size:clamp(30px, 5vw, 58px);
+      line-height:.96;
+      letter-spacing:-.06em;
+    }
+    .heroTop p{
+      max-width:640px;
+      margin:0;
+      color:var(--muted);
+      line-height:1.55;
+      font-weight:650;
+    }
+    .yearPill{
+      min-width:112px;
+      text-align:center;
+      padding:13px 15px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.07);
+      border:1px solid rgba(255,255,255,0.12);
+      color:rgba(255,255,255,0.72);
+      font-size:12px;
+      font-weight:850;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+    .yearPill strong{
       display:block;
-      max-height:72vh;
-      object-fit:contain;
+      margin-top:5px;
+      color:var(--text);
+      font-size:22px;
+      letter-spacing:-.04em;
+    }
+
+    .heroGrid{
+      display:grid;
+      grid-template-columns: 1fr 320px;
+      gap:16px;
+      align-items:stretch;
+    }
+    .chartCard,
+    .sideCard{
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,0.11);
+      background:rgba(6,10,20,0.42);
+      padding:18px;
+      min-width:0;
+    }
+    .chartHead{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      margin-bottom:16px;
+    }
+    .chartHead h2,
+    .sideCard h2{
+      margin:0;
+      font-size:18px;
+      letter-spacing:-.03em;
+    }
+    .legend{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:850;
+    }
+    .legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 9px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+    }
+    .legend span::before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:var(--blue);
+    }
+    .legend span:last-child::before{ background:var(--gold); }
+    .annualChart{
+      min-height:270px;
+      display:grid;
+      grid-template-columns:repeat(12, minmax(0, 1fr));
+      gap:10px;
+      align-items:end;
+      padding-top:10px;
+    }
+    .monthCol{
+      min-width:0;
+      display:grid;
+      gap:8px;
+      align-items:end;
+    }
+    .bars{
+      height:205px;
+      display:flex;
+      align-items:end;
+      justify-content:center;
+      gap:5px;
+      padding:0 2px;
+      border-bottom:1px solid rgba(255,255,255,0.14);
+    }
+    .bar{
+      width:min(18px, 42%);
+      min-height:3px;
+      border-radius:10px 10px 2px 2px;
+      background:linear-gradient(180deg, #93c5fd, var(--blue));
+      box-shadow:0 10px 24px rgba(96,165,250,0.16);
+    }
+    .bar.budget{
+      background:linear-gradient(180deg, #fde68a, var(--gold));
+      box-shadow:0 10px 24px rgba(245,158,11,0.13);
+      opacity:.86;
+    }
+    .monthLabel{
+      text-align:center;
+      color:rgba(255,255,255,0.62);
+      font-size:11px;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+    .kpiStack{
+      display:grid;
+      gap:10px;
+      margin:13px 0 16px;
+    }
+    .miniKpi{
+      padding:13px;
+      border-radius:17px;
+      background:rgba(255,255,255,0.055);
+      border:1px solid rgba(255,255,255,0.10);
+    }
+    .miniKpi span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:850;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+    .miniKpi strong{
+      display:block;
+      margin-top:5px;
+      font-size:24px;
+      letter-spacing:-.04em;
+    }
+    .miniKpi small{
+      display:block;
+      margin-top:4px;
+      color:rgba(255,255,255,0.55);
+      line-height:1.35;
+    }
+    .entityList{
+      display:grid;
+      gap:8px;
+      margin-top:10px;
+    }
+    .entityRow{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      padding:10px 11px;
+      border-radius:14px;
+      background:rgba(255,255,255,0.045);
+      border:1px solid rgba(255,255,255,0.08);
+      font-weight:850;
+      color:rgba(255,255,255,0.78);
+    }
+    .entityRow strong{ color:var(--text); }
+    .statusLine{
+      margin-top:14px;
+      padding:12px 13px;
+      border-radius:16px;
+      background:rgba(96,165,250,0.10);
+      border:1px solid rgba(96,165,250,0.16);
+      color:#dbeafe;
+      font-size:13px;
+      font-weight:750;
+      line-height:1.45;
     }
 
     @media (max-width:900px){
-      body{overflow:auto;}
       .center{height:auto;padding:16px;}
-      .imageCard img{max-height:none;}
+      .heroTop{flex-direction:column;}
+      .heroGrid{grid-template-columns:1fr;}
+      .annualChart{grid-template-columns:repeat(6, minmax(0, 1fr));}
+      .bars{height:150px;}
     }
   </style>
   <link rel="stylesheet" href="./shared-theme.css">
@@ -247,13 +463,41 @@
 
     </div>
   </div>
-
-  <!-- CENTER CONTENT (image only, comme ta home budget) -->
+  <!-- CENTER CONTENT -->
   <div class="center">
-    <div class="imageCard">
-      <!-- ✅ Mets ton image au milieu -->
-      <img src="accreporting.png" alt="Accueil Reporting">
-    </div>
+    <section class="reportHero">
+      <div class="heroTop">
+        <div>
+          <span class="eyebrow">Reporting annuel</span>
+          <h1>Pilotage activite vs budget</h1>
+          <p>Vue de synthese pour visualiser rapidement le chiffre d'affaires realise par mois, le budget attendu, et l'ecart cumule sur l'annee.</p>
+        </div>
+        <div class="yearPill">Annee active<strong id="reportYear">-</strong></div>
+      </div>
+
+      <div class="heroGrid">
+        <article class="chartCard">
+          <div class="chartHead">
+            <div>
+              <h2>Realise vs Budget par mois</h2>
+            </div>
+            <div class="legend"><span>Realise</span><span>Budget</span></div>
+          </div>
+          <div class="annualChart" id="annualChart" aria-label="Graphique realise versus budget"></div>
+          <div class="statusLine" id="reportStatus">Chargement des donnees reporting...</div>
+        </article>
+
+        <aside class="sideCard">
+          <h2>Synthese annuelle</h2>
+          <div class="kpiStack">
+            <div class="miniKpi"><span>CA realise</span><strong id="kpiReal">-</strong><small>Toutes entites cumulees</small></div>
+            <div class="miniKpi"><span>Budget</span><strong id="kpiBudget">-</strong><small>Objectif annuel total</small></div>
+            <div class="miniKpi"><span>Atteinte</span><strong id="kpiRate">-</strong><small id="kpiGap">Ecart annuel en attente</small></div>
+          </div>
+          <div class="entityList" id="entityList"></div>
+        </aside>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -304,6 +548,152 @@
     window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
     window.addEventListener("pageshow", () => closeAll());
     window.addEventListener("blur", () => closeAll());
+  })();
+
+  (function(){
+    const chart = document.getElementById("annualChart");
+    const status = document.getElementById("reportStatus");
+    const entityList = document.getElementById("entityList");
+    const yearEl = document.getElementById("reportYear");
+    const kpiReal = document.getElementById("kpiReal");
+    const kpiBudget = document.getElementById("kpiBudget");
+    const kpiRate = document.getElementById("kpiRate");
+    const kpiGap = document.getElementById("kpiGap");
+    if (!chart || !status) return;
+
+    const entities = [
+      { key: "psa", label: "PSA" },
+      { key: "gueudet", label: "Gueudet" },
+      { key: "ford", label: "Ford" },
+      { key: "direct", label: "Direct" },
+    ];
+
+    const budgetConfig = {
+      clientCandidates: ["client", "clients", "nom client", "nom du client"],
+      codeCandidates: ["n client", "n client interne", "n° client", "no client", "numero client", "num client", "nclient", "code livré", "code livre", "code"]
+    };
+
+    const realConfig = {
+      clientCodeCandidates: ["n° client interne", "no client interne", "n client interne", "numero client interne", "n° client", "code livré", "code livre", "code"],
+      clientNameCandidates: ["nom du client", "nom client", "client"],
+      amountCandidates: ["montant prix achat kent", "montant", "ca total", "ca", "chiffre d'affaires", "chiffre d'affaire", "chiffre affaire", "chiffre daffaires"],
+      monthCandidates: ["mois2", "mois", "month"],
+      dateCandidates: ["date", "date facture", "date livraison", "jour"],
+      yearCandidates: ["annee", "année", "year"]
+    };
+
+    function fmtCurrency(value){
+      return Number(value || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+    }
+    function fmtPercent(value){
+      return `${Number(value || 0).toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%`;
+    }
+    function renderEmptyChart(months){
+      chart.innerHTML = months.map(month => `<div class="monthCol"><div class="bars"><div class="bar" style="height:6%"></div><div class="bar budget" style="height:6%"></div></div><div class="monthLabel">${month.label.slice(0, 3)}</div></div>`).join("");
+    }
+    function renderChart(months, totals){
+      const maxValue = Math.max(1, ...totals.map(item => Math.max(item.real, item.budget)));
+      chart.innerHTML = months.map((month, index) => {
+        const item = totals[index] || { real: 0, budget: 0 };
+        const realHeight = Math.max(3, Math.round((item.real / maxValue) * 100));
+        const budgetHeight = Math.max(3, Math.round((item.budget / maxValue) * 100));
+        return `<div class="monthCol" title="${month.label} - Realise ${fmtCurrency(item.real)} / Budget ${fmtCurrency(item.budget)}">
+          <div class="bars">
+            <div class="bar" style="height:${realHeight}%"></div>
+            <div class="bar budget" style="height:${budgetHeight}%"></div>
+          </div>
+          <div class="monthLabel">${month.label.slice(0, 3)}</div>
+        </div>`;
+      }).join("");
+    }
+    function addMonthlyTotals(target, realTotals, budgetTotals){
+      target.forEach((item, index) => {
+        item.real += Number(realTotals[index] || 0);
+        item.budget += Number(budgetTotals[index] || 0);
+      });
+    }
+    function renderEntityRows(rows){
+      entityList.innerHTML = rows.map(row => `<div class="entityRow"><span>${row.label}</span><strong>${fmtCurrency(row.real)}</strong></div>`).join("");
+    }
+
+    async function loadEntity(entity, year, utils){
+      const budgetFiles = KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
+      const realFiles = KentDataConfig.getEntityFileCandidates(entity.key, "real", year);
+      const { budgetData } = await utils.loadBudgetData({
+        fileCandidates: budgetFiles,
+        budgetConfig
+      });
+      const { realData } = await utils.loadRealDataAgainstBudget({
+        fileCandidates: realFiles,
+        budgetData,
+        realConfig,
+        year
+      });
+      const budgetTotals = utils.computeBudgetMonthlyTotals(budgetData);
+      const realTotals = utils.computeRealMonthlyTotals(budgetData, realData);
+      return {
+        key: entity.key,
+        label: entity.label,
+        budgetTotals,
+        realTotals,
+        budget: budgetTotals.reduce((sum, value) => sum + Number(value || 0), 0),
+        real: realTotals.reduce((sum, value) => sum + Number(value || 0), 0)
+      };
+    }
+
+    async function initReportingPreview(){
+      const utils = window.ReportingDataUtils;
+      if (!window.KentDataConfig || !utils || !window.XLSX) {
+        status.textContent = "Apercu indisponible : bibliotheques de reporting non chargees.";
+        return;
+      }
+
+      const year = KentDataConfig.getActiveYear();
+      yearEl.textContent = year;
+      renderEmptyChart(utils.MONTHS);
+
+      const monthlyTotals = utils.MONTHS.map(() => ({ real: 0, budget: 0 }));
+      status.textContent = "Chargement des fichiers budget et activite reelle...";
+
+      const results = await Promise.allSettled(entities.map(entity => loadEntity(entity, year, utils)));
+      const loaded = [];
+      const failed = [];
+
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          loaded.push(result.value);
+          addMonthlyTotals(monthlyTotals, result.value.realTotals, result.value.budgetTotals);
+        } else {
+          failed.push(entities[index].label);
+          console.warn("Reporting preview error", entities[index], result.reason);
+        }
+      });
+
+      const annualReal = monthlyTotals.reduce((sum, item) => sum + item.real, 0);
+      const annualBudget = monthlyTotals.reduce((sum, item) => sum + item.budget, 0);
+      const gap = annualReal - annualBudget;
+      const rate = annualBudget ? (annualReal / annualBudget) * 100 : 0;
+
+      renderChart(utils.MONTHS, monthlyTotals);
+      renderEntityRows(loaded);
+      kpiReal.textContent = fmtCurrency(annualReal);
+      kpiBudget.textContent = fmtCurrency(annualBudget);
+      kpiRate.textContent = annualBudget ? fmtPercent(rate) : "-";
+      kpiGap.textContent = `${gap >= 0 ? "Avance" : "Retard"} de ${fmtCurrency(Math.abs(gap))}`;
+
+      if (!loaded.length) {
+        status.textContent = "Impossible de charger les donnees. Les menus restent disponibles en haut.";
+      } else if (failed.length) {
+        status.textContent = `Apercu charge partiellement : ${loaded.length} entite(s) OK, a verifier : ${failed.join(", ")}.`;
+      } else {
+        status.textContent = `Apercu consolide charge : ${loaded.length} entites, donnees reelles vs budget ${year}.`;
+      }
+    }
+
+    initReportingPreview().catch(error => {
+      console.error(error);
+      status.textContent = "Erreur pendant le chargement de l'apercu. Les menus restent disponibles.";
+    });
   })();
   </script>
 
