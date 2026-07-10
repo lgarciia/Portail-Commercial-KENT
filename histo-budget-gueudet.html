@@ -289,7 +289,9 @@ window.toggleSort=function(){
 }
 
 function format(n){
-  return new Intl.NumberFormat("fr-FR").format(n);
+  return new Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: 0
+  }).format(Number(n) || 0);
 }
 
 function esc(s){
