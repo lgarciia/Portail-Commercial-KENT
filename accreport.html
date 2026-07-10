@@ -33,7 +33,7 @@
         var(--bg);
       color:var(--text);
       min-height:100vh;
-      overflow:auto;
+      overflow:hidden;
     }
 
     /* NAVBAR */
@@ -146,11 +146,11 @@
 
     /* CENTER DASHBOARD */
     .center{
-      min-height:calc(100vh - 88px);
+      height:calc(100vh - 64px);
       display:flex;
       align-items:flex-start;
       justify-content:center;
-      padding:34px 22px 30px;
+      padding:16px 20px 18px;
     }
 
     .reportHero{
@@ -160,18 +160,20 @@
         radial-gradient(650px 340px at 92% 12%, rgba(34,197,94,0.12), transparent 55%),
         rgba(255,255,255,0.045);
       border:1px solid rgba(255,255,255,0.12);
-      border-radius:28px;
-      padding:24px;
+      border-radius:24px;
+      padding:18px;
       box-shadow:var(--shadow);
       backdrop-filter: blur(14px);
+      max-height:calc(100vh - 96px);
+      overflow:hidden;
     }
 
     .heroTop{
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
-      gap:18px;
-      margin-bottom:18px;
+      gap:14px;
+      margin-bottom:13px;
     }
     .eyebrow{
       display:inline-flex;
@@ -189,8 +191,8 @@
       text-transform:uppercase;
     }
     .heroTop h1{
-      margin:13px 0 8px;
-      font-size:clamp(30px, 5vw, 58px);
+      margin:10px 0 6px;
+      font-size:clamp(28px, 4.3vw, 48px);
       line-height:.96;
       letter-spacing:-.06em;
     }
@@ -198,13 +200,13 @@
       max-width:640px;
       margin:0;
       color:var(--muted);
-      line-height:1.55;
+      line-height:1.42;
       font-weight:650;
     }
     .yearPill{
       min-width:112px;
       text-align:center;
-      padding:13px 15px;
+      padding:10px 14px;
       border-radius:18px;
       background:rgba(255,255,255,0.07);
       border:1px solid rgba(255,255,255,0.12);
@@ -216,16 +218,16 @@
     }
     .yearPill strong{
       display:block;
-      margin-top:5px;
+      margin-top:3px;
       color:var(--text);
-      font-size:22px;
+      font-size:20px;
       letter-spacing:-.04em;
     }
 
     .heroGrid{
       display:grid;
       grid-template-columns: 1fr 320px;
-      gap:16px;
+      gap:14px;
       align-items:stretch;
     }
     .chartCard,
@@ -233,7 +235,7 @@
       border-radius:22px;
       border:1px solid rgba(255,255,255,0.11);
       background:rgba(6,10,20,0.42);
-      padding:18px;
+      padding:14px;
       min-width:0;
     }
     .chartHead{
@@ -241,7 +243,7 @@
       justify-content:space-between;
       gap:12px;
       align-items:flex-start;
-      margin-bottom:16px;
+      margin-bottom:10px;
     }
     .chartHead h2,
     .sideCard h2{
@@ -276,7 +278,7 @@
     }
     .legend span:last-child::before{ background:var(--gold); }
     .annualChart{
-      min-height:270px;
+      min-height:210px;
       display:grid;
       grid-template-columns:repeat(12, minmax(0, 1fr));
       gap:10px;
@@ -290,7 +292,7 @@
       align-items:end;
     }
     .bars{
-      height:205px;
+      height:155px;
       display:flex;
       align-items:end;
       justify-content:center;
@@ -319,71 +321,102 @@
     }
     .kpiStack{
       display:grid;
-      gap:10px;
-      margin:13px 0 16px;
+      gap:8px;
+      margin:10px 0 10px;
     }
     .miniKpi{
-      padding:13px;
-      border-radius:17px;
+      padding:10px;
+      border-radius:15px;
       background:rgba(255,255,255,0.055);
       border:1px solid rgba(255,255,255,0.10);
     }
     .miniKpi span{
       display:block;
       color:var(--muted);
-      font-size:12px;
+      font-size:11px;
       font-weight:850;
       text-transform:uppercase;
       letter-spacing:.05em;
     }
     .miniKpi strong{
       display:block;
-      margin-top:5px;
-      font-size:24px;
+      margin-top:3px;
+      font-size:20px;
       letter-spacing:-.04em;
     }
     .miniKpi small{
       display:block;
-      margin-top:4px;
+      margin-top:3px;
       color:rgba(255,255,255,0.55);
-      line-height:1.35;
+      line-height:1.25;
+      font-size:11px;
     }
     .entityList{
       display:grid;
-      gap:8px;
-      margin-top:10px;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:7px;
+      margin-top:8px;
     }
     .entityRow{
       display:flex;
       justify-content:space-between;
-      gap:10px;
+      gap:8px;
       align-items:center;
-      padding:10px 11px;
-      border-radius:14px;
+      padding:8px 9px;
+      border-radius:13px;
       background:rgba(255,255,255,0.045);
       border:1px solid rgba(255,255,255,0.08);
       font-weight:850;
       color:rgba(255,255,255,0.78);
+      font-size:12px;
+      min-width:0;
     }
+    .entityRow span,
+    .entityRow strong{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .entityRow strong{ color:var(--text); }
     .statusLine{
-      margin-top:14px;
-      padding:12px 13px;
-      border-radius:16px;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
       background:rgba(96,165,250,0.10);
       border:1px solid rgba(96,165,250,0.16);
       color:#dbeafe;
-      font-size:13px;
+      font-size:12px;
       font-weight:750;
-      line-height:1.45;
+      line-height:1.3;
     }
 
     @media (max-width:900px){
+      body{overflow:auto;}
       .center{height:auto;padding:16px;}
+      .reportHero{max-height:none; overflow:visible;}
       .heroTop{flex-direction:column;}
       .heroGrid{grid-template-columns:1fr;}
       .annualChart{grid-template-columns:repeat(6, minmax(0, 1fr));}
       .bars{height:150px;}
+    }
+
+    @media (max-height:760px) and (min-width:901px){
+      .navbar{min-height:56px;padding:8px 16px;}
+      .ddBtn{height:34px;font-size:12px;}
+      .center{height:calc(100vh - 56px);padding:10px 18px 12px;}
+      .reportHero{padding:14px;max-height:calc(100vh - 78px);}
+      .heroTop{margin-bottom:10px;}
+      .eyebrow{height:26px;font-size:11px;}
+      .heroTop h1{font-size:clamp(26px, 3.7vw, 42px);margin:8px 0 4px;}
+      .heroTop p{font-size:14px;line-height:1.32;}
+      .yearPill{padding:8px 12px;}
+      .heroGrid{gap:10px;}
+      .chartCard,.sideCard{padding:12px;border-radius:19px;}
+      .chartHead{margin-bottom:8px;}
+      .annualChart{min-height:178px;gap:8px;}
+      .bars{height:126px;}
+      .kpiStack{gap:6px;margin:8px 0;}
+      .miniKpi{padding:8px;border-radius:13px;}
+      .miniKpi strong{font-size:18px;}
+      .entityList{gap:6px;margin-top:6px;}
+      .entityRow{padding:6px 8px;font-size:11px;}
+      .statusLine{margin-top:8px;padding:8px 10px;}
     }
   </style>
   <link rel="stylesheet" href="./shared-theme.css">
@@ -476,30 +509,30 @@
       <div class="heroTop">
         <div>
           <span class="eyebrow">Reporting annuel</span>
-          <h1>Pilotage activite vs budget</h1>
-          <p>Vue de synthese pour visualiser rapidement le chiffre d'affaires realise par mois, le budget attendu, et l'ecart cumule sur l'annee.</p>
+          <h1>Pilotage activité vs budget</h1>
+          <p>Vue de synthèse pour visualiser rapidement le chiffre d'affaires réalisé par mois, le budget attendu, et l'écart cumulé sur l'année.</p>
         </div>
-        <div class="yearPill">Annee active<strong id="reportYear">-</strong></div>
+        <div class="yearPill">Année active<strong id="reportYear">-</strong></div>
       </div>
 
       <div class="heroGrid">
         <article class="chartCard">
           <div class="chartHead">
             <div>
-              <h2>Realise vs Budget par mois</h2>
+              <h2>Réalisé vs Budget par mois</h2>
             </div>
-            <div class="legend"><span>Realise</span><span>Budget</span></div>
+            <div class="legend"><span>Réalisé</span><span>Budget</span></div>
           </div>
-          <div class="annualChart" id="annualChart" aria-label="Graphique realise versus budget"></div>
-          <div class="statusLine" id="reportStatus">Chargement des donnees reporting...</div>
+          <div class="annualChart" id="annualChart" aria-label="Graphique réalisé versus budget"></div>
+          <div class="statusLine" id="reportStatus">Chargement des données reporting...</div>
         </article>
 
         <aside class="sideCard">
-          <h2>Synthese a date</h2>
+          <h2>Synthèse à date</h2>
           <div class="kpiStack">
-            <div class="miniKpi"><span>CA realise</span><strong id="kpiReal">-</strong><small>Toutes entites cumulees</small></div>
-            <div class="miniKpi"><span>Budget a date</span><strong id="kpiBudget">-</strong><small>Objectif cumule jusqu'au mois courant</small></div>
-            <div class="miniKpi"><span>Atteinte</span><strong id="kpiRate">-</strong><small id="kpiGap">Ecart a date en attente</small></div>
+            <div class="miniKpi"><span>CA réalisé</span><strong id="kpiReal">-</strong><small>Toutes entités cumulées</small></div>
+            <div class="miniKpi"><span>Budget à date</span><strong id="kpiBudget">-</strong><small>Objectif cumulé jusqu'au mois courant</small></div>
+            <div class="miniKpi"><span>Atteinte</span><strong id="kpiRate">-</strong><small id="kpiGap">Écart à date en attente</small></div>
           </div>
           <div class="entityList" id="entityList"></div>
         </aside>
@@ -604,7 +637,7 @@
         const item = totals[index] || { real: 0, budget: 0 };
         const realHeight = Math.max(3, Math.round((item.real / maxValue) * 100));
         const budgetHeight = Math.max(3, Math.round((item.budget / maxValue) * 100));
-        return `<div class="monthCol" title="${month.label} - Realise ${fmtCurrency(item.real)} / Budget ${fmtCurrency(item.budget)}">
+        return `<div class="monthCol" title="${month.label} - Réalisé ${fmtCurrency(item.real)} / Budget ${fmtCurrency(item.budget)}">
           <div class="bars">
             <div class="bar" style="height:${realHeight}%"></div>
             <div class="bar budget" style="height:${budgetHeight}%"></div>
@@ -659,7 +692,7 @@
     async function initReportingPreview(){
       const utils = window.ReportingDataUtils;
       if (!window.KentDataConfig || !utils || !window.XLSX) {
-        status.textContent = "Apercu indisponible : bibliotheques de reporting non chargees.";
+        status.textContent = "Aperçu indisponible : bibliothèques de reporting non chargées.";
         return;
       }
 
@@ -668,7 +701,7 @@
       renderEmptyChart(utils.MONTHS);
 
       const monthlyTotals = utils.MONTHS.map(() => ({ real: 0, budget: 0 }));
-      status.textContent = "Chargement des fichiers budget et activite reelle...";
+      status.textContent = "Chargement des fichiers budget et activité réelle...";
 
       const results = await Promise.allSettled(entities.map(entity => loadEntity(entity, year, utils)));
       const loaded = [];
@@ -696,20 +729,20 @@
       kpiReal.textContent = fmtCurrency(realToDate);
       kpiBudget.textContent = fmtCurrency(budgetToDate);
       kpiRate.textContent = budgetToDate ? fmtPercent(rate) : "-";
-      kpiGap.textContent = `Ecart a date (${comparisonMonth ? comparisonMonth.label : "annee"}) : ${gap >= 0 ? "+" : "-"}${fmtCurrency(Math.abs(gap))}`;
+      kpiGap.textContent = `Écart à date (${comparisonMonth ? comparisonMonth.label : "année"}) : ${gap >= 0 ? "+" : "-"}${fmtCurrency(Math.abs(gap))}`;
 
       if (!loaded.length) {
-        status.textContent = "Impossible de charger les donnees. Les menus restent disponibles en haut.";
+        status.textContent = "Impossible de charger les données. Les menus restent disponibles en haut.";
       } else if (failed.length) {
-        status.textContent = `Apercu charge partiellement : ${loaded.length} entite(s) OK, a verifier : ${failed.join(", ")}.`;
+        status.textContent = `Aperçu chargé partiellement : ${loaded.length} entité(s) OK, à vérifier : ${failed.join(", ")}.`;
       } else {
-        status.textContent = `Apercu consolide charge : ${loaded.length} entites. Les KPI comparent le realise au budget a date, jusqu'a ${comparisonMonth ? comparisonMonth.label : "la periode"} ${year}.`;
+        status.textContent = `Aperçu consolidé chargé : ${loaded.length} entités. Les KPI comparent le réalisé au budget à date, jusqu'à ${comparisonMonth ? comparisonMonth.label : "la période"} ${year}.`;
       }
     }
 
     initReportingPreview().catch(error => {
       console.error(error);
-      status.textContent = "Erreur pendant le chargement de l'apercu. Les menus restent disponibles.";
+      status.textContent = "Erreur pendant le chargement de l'aperçu. Les menus restent disponibles.";
     });
   })();
   </script>
