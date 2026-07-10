@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Espace budgétaire</title>
   <script src="./shared-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./reporting-data-utils.js"></script>
 
   <style>
     :root{
@@ -14,6 +16,9 @@
       --stroke:rgba(255,255,255,0.12);
       --text:rgba(255,255,255,0.92);
       --muted:rgba(255,255,255,0.6);
+      --purple:#8b5cf6;
+      --gold:#f59e0b;
+      --green:#22c55e;
       --shadow:0 18px 45px rgba(0,0,0,0.35);
     }
 
@@ -306,31 +311,273 @@
       padding-left:20px;
     }
 
-    /* CENTER */
+    /* CENTER DASHBOARD */
 
     .center{
       height:calc(100vh - 64px);
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:center;
-      padding:22px;
+      padding:16px 20px 18px;
     }
 
-    .imageCard{
-      background:rgba(255,255,255,0.04);
+    .budgetHero{
+      width:min(1120px,94vw);
+      max-height:calc(100vh - 96px);
+      overflow:hidden;
+      background:
+        radial-gradient(720px 360px at 18% 0%, rgba(139,92,246,0.22), transparent 55%),
+        radial-gradient(650px 340px at 90% 8%, rgba(245,158,11,0.13), transparent 55%),
+        rgba(255,255,255,0.045);
       border:1px solid rgba(255,255,255,0.12);
-      border-radius:18px;
+      border-radius:24px;
       padding:18px;
       box-shadow:var(--shadow);
-      max-width:min(920px, 92vw);
+      backdrop-filter:blur(14px);
     }
 
-    .imageCard img{
-      width:100%;
-      height:auto;
+    .heroTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:13px;
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      height:30px;
+      padding:0 12px;
+      border-radius:999px;
+      background:rgba(139,92,246,0.16);
+      border:1px solid rgba(139,92,246,0.28);
+      color:#ede9fe;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .heroTop h1{
+      margin:10px 0 6px;
+      font-size:clamp(28px,4.3vw,48px);
+      line-height:.96;
+      letter-spacing:-.06em;
+    }
+    .heroTop p{
+      max-width:650px;
+      margin:0;
+      color:var(--muted);
+      line-height:1.42;
+      font-weight:650;
+    }
+    .yearPill{
+      min-width:112px;
+      text-align:center;
+      padding:10px 14px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.07);
+      border:1px solid rgba(255,255,255,0.12);
+      color:rgba(255,255,255,0.72);
+      font-size:12px;
+      font-weight:850;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+    .yearPill strong{
       display:block;
-      max-height:72vh;
-      object-fit:contain;
+      margin-top:3px;
+      color:var(--text);
+      font-size:20px;
+      letter-spacing:-.04em;
+    }
+    .heroGrid{
+      display:grid;
+      grid-template-columns:1fr 320px;
+      gap:14px;
+      align-items:stretch;
+    }
+    .chartCard,.sideCard{
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,0.11);
+      background:rgba(6,10,20,0.42);
+      padding:14px;
+      min-width:0;
+    }
+    .chartHead{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      margin-bottom:10px;
+    }
+    .chartHead h2,.sideCard h2{
+      margin:0;
+      font-size:18px;
+      letter-spacing:-.03em;
+    }
+    .legend{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:850;
+    }
+    .legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 9px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+    }
+    .legend span::before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:var(--gold);
+    }
+    .annualChart{
+      min-height:210px;
+      display:grid;
+      grid-template-columns:repeat(12,minmax(0,1fr));
+      gap:10px;
+      align-items:end;
+      padding-top:10px;
+    }
+    .monthCol{
+      min-width:0;
+      display:grid;
+      gap:8px;
+      align-items:end;
+    }
+    .bars{
+      height:155px;
+      display:flex;
+      align-items:end;
+      justify-content:center;
+      padding:0 2px;
+      border-bottom:1px solid rgba(255,255,255,0.14);
+    }
+    .bar{
+      width:min(28px,58%);
+      min-height:3px;
+      border-radius:12px 12px 2px 2px;
+      background:linear-gradient(180deg,#fde68a,var(--gold));
+      box-shadow:0 10px 24px rgba(245,158,11,0.15);
+    }
+    .monthLabel{
+      text-align:center;
+      color:rgba(255,255,255,0.62);
+      font-size:11px;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+    .kpiStack{
+      display:grid;
+      gap:8px;
+      margin:10px 0;
+    }
+    .miniKpi{
+      padding:10px;
+      border-radius:15px;
+      background:rgba(255,255,255,0.055);
+      border:1px solid rgba(255,255,255,0.10);
+    }
+    .miniKpi span{
+      display:block;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:850;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+    .miniKpi strong{
+      display:block;
+      margin-top:3px;
+      font-size:20px;
+      letter-spacing:-.04em;
+    }
+    .miniKpi small{
+      display:block;
+      margin-top:3px;
+      color:rgba(255,255,255,0.55);
+      line-height:1.25;
+      font-size:11px;
+    }
+    .entityList{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:7px;
+      margin-top:8px;
+    }
+    .entityRow{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+      padding:8px 9px;
+      border-radius:13px;
+      background:rgba(255,255,255,0.045);
+      border:1px solid rgba(255,255,255,0.08);
+      font-weight:850;
+      color:rgba(255,255,255,0.78);
+      font-size:12px;
+      min-width:0;
+    }
+    .entityRow span,.entityRow strong{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .entityRow strong{color:var(--text);}
+    .statusLine{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(139,92,246,0.11);
+      border:1px solid rgba(139,92,246,0.18);
+      color:#ede9fe;
+      font-size:12px;
+      font-weight:750;
+      line-height:1.3;
+    }
+
+    @media (max-width:900px){
+      body{overflow:auto;}
+      .center{height:auto;padding:16px;}
+      .budgetHero{max-height:none;overflow:visible;}
+      .heroTop{flex-direction:column;}
+      .heroGrid{grid-template-columns:1fr;}
+      .annualChart{grid-template-columns:repeat(6,minmax(0,1fr));}
+      .bars{height:150px;}
+    }
+
+    @media (max-height:760px) and (min-width:901px){
+      .navbar{height:56px;padding:8px 16px;}
+      .btn,.ddBtn{height:34px;font-size:12px;}
+      .center{height:calc(100vh - 56px);padding:10px 18px 12px;}
+      .budgetHero{padding:14px;max-height:calc(100vh - 78px);}
+      .heroTop{margin-bottom:10px;}
+      .eyebrow{height:26px;font-size:11px;}
+      .heroTop h1{font-size:clamp(26px,3.7vw,42px);margin:8px 0 4px;}
+      .heroTop p{font-size:14px;line-height:1.32;}
+      .yearPill{padding:8px 12px;}
+      .heroGrid{gap:10px;}
+      .chartCard,.sideCard{padding:12px;border-radius:19px;}
+      .chartHead{margin-bottom:8px;}
+      .annualChart{min-height:178px;gap:8px;}
+      .bars{height:126px;}
+      .kpiStack{gap:6px;margin:8px 0;}
+      .miniKpi{padding:8px;border-radius:13px;}
+      .miniKpi strong{font-size:18px;}
+      .entityList{gap:6px;margin-top:6px;}
+      .entityRow{padding:6px 8px;font-size:11px;}
+      .statusLine{margin-top:8px;padding:8px 10px;}
     }
 
   </style>
@@ -387,9 +634,39 @@
 </div>
 
 <div class="center">
-  <div class="imageCard">
-    <img src="accbudget.png" alt="Accueil Budget">
-  </div>
+  <section class="budgetHero">
+    <div class="heroTop">
+      <div>
+        <span class="eyebrow">Pilotage budget</span>
+        <h1>Préparer et suivre le budget annuel</h1>
+        <p>Vue de synthèse pour visualiser le budget prévu par mois, l'objectif à date, et les enveloppes par entité avant de rentrer dans les outils détaillés.</p>
+      </div>
+      <div class="yearPill">Année active<strong id="budgetYear">-</strong></div>
+    </div>
+
+    <div class="heroGrid">
+      <article class="chartCard">
+        <div class="chartHead">
+          <div>
+            <h2>Budget prévisionnel par mois</h2>
+          </div>
+          <div class="legend"><span>Budget mensuel</span></div>
+        </div>
+        <div class="annualChart" id="budgetChart" aria-label="Graphique budget mensuel"></div>
+        <div class="statusLine" id="budgetStatus">Chargement des budgets...</div>
+      </article>
+
+      <aside class="sideCard">
+        <h2>Synthèse budget</h2>
+        <div class="kpiStack">
+          <div class="miniKpi"><span>Budget annuel</span><strong id="kpiBudgetAnnual">-</strong><small>Toutes entités cumulées</small></div>
+          <div class="miniKpi"><span>Budget à date</span><strong id="kpiBudgetToDate">-</strong><small>Objectif cumulé jusqu'au mois courant</small></div>
+          <div class="miniKpi"><span>Mois le plus fort</span><strong id="kpiBestMonth">-</strong><small id="kpiBestMonthSub">Analyse en attente</small></div>
+        </div>
+        <div class="entityList" id="budgetEntityList"></div>
+      </aside>
+    </div>
+  </section>
 </div>
 
 <!-- POPUP -->
@@ -513,6 +790,132 @@ document.addEventListener("keydown",(e)=>{
   }
 })
 
+(function(){
+  const chart = document.getElementById("budgetChart")
+  const status = document.getElementById("budgetStatus")
+  const entityList = document.getElementById("budgetEntityList")
+  const yearEl = document.getElementById("budgetYear")
+  const kpiAnnual = document.getElementById("kpiBudgetAnnual")
+  const kpiToDate = document.getElementById("kpiBudgetToDate")
+  const kpiBestMonth = document.getElementById("kpiBestMonth")
+  const kpiBestMonthSub = document.getElementById("kpiBestMonthSub")
+  if(!chart || !status) return
+
+  const entities = [
+    { key:"psa", label:"PSA" },
+    { key:"gueudet", label:"Gueudet" },
+    { key:"ford", label:"Ford" },
+    { key:"direct", label:"Direct" }
+  ]
+
+  const budgetConfig = {
+    clientCandidates:["client", "clients", "nom client", "nom du client"],
+    codeCandidates:["n client", "n client interne", "n° client", "no client", "numero client", "num client", "nclient", "code livré", "code livre", "code"]
+  }
+
+  function fmtCurrency(value){
+    return Number(value || 0).toLocaleString("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 })
+  }
+
+  function renderEmptyChart(months){
+    chart.innerHTML = months.map(month => `<div class="monthCol"><div class="bars"><div class="bar" style="height:6%"></div></div><div class="monthLabel">${month.label.slice(0,3)}</div></div>`).join("")
+  }
+
+  function renderChart(months, totals){
+    const maxValue = Math.max(1, ...totals)
+    chart.innerHTML = months.map((month, index) => {
+      const value = Number(totals[index] || 0)
+      const height = Math.max(3, Math.round((value / maxValue) * 100))
+      return `<div class="monthCol" title="${month.label} - Budget ${fmtCurrency(value)}">
+        <div class="bars"><div class="bar" style="height:${height}%"></div></div>
+        <div class="monthLabel">${month.label.slice(0,3)}</div>
+      </div>`
+    }).join("")
+  }
+
+  function currentMonthCount(year){
+    const now = new Date()
+    if(Number(year) === now.getFullYear()) return now.getMonth() + 1
+    return 12
+  }
+
+  function renderEntityRows(rows){
+    entityList.innerHTML = rows.map(row => `<div class="entityRow"><span>${row.label}</span><strong>${fmtCurrency(row.total)}</strong></div>`).join("")
+  }
+
+  async function loadEntityBudget(entity, year, utils){
+    const budgetFiles = KentDataConfig.getEntityFileCandidates(entity.key, "budget", year)
+    const { budgetData } = await utils.loadBudgetData({
+      fileCandidates: budgetFiles,
+      budgetConfig
+    })
+    const totals = utils.computeBudgetMonthlyTotals(budgetData)
+    return {
+      key:entity.key,
+      label:entity.label,
+      totals,
+      total:totals.reduce((sum, value) => sum + Number(value || 0), 0)
+    }
+  }
+
+  async function initBudgetPreview(yearOverride){
+    const utils = window.ReportingDataUtils
+    if(!window.KentDataConfig || !utils || !window.XLSX){
+      status.textContent = "Aperçu indisponible : bibliothèques budget non chargées."
+      return
+    }
+
+    const year = Number(yearOverride || KentDataConfig.getActiveYear())
+    yearEl.textContent = year
+    renderEmptyChart(utils.MONTHS)
+    status.textContent = "Chargement des fichiers budget..."
+
+    const monthlyTotals = utils.MONTHS.map(() => 0)
+    const results = await Promise.allSettled(entities.map(entity => loadEntityBudget(entity, year, utils)))
+    const loaded = []
+    const failed = []
+
+    results.forEach((result, index) => {
+      if(result.status === "fulfilled"){
+        loaded.push(result.value)
+        result.value.totals.forEach((value, monthIndex) => {
+          monthlyTotals[monthIndex] += Number(value || 0)
+        })
+      } else {
+        failed.push(entities[index].label)
+        console.warn("Budget preview error", entities[index], result.reason)
+      }
+    })
+
+    const annual = monthlyTotals.reduce((sum, value) => sum + Number(value || 0), 0)
+    const monthCount = currentMonthCount(year)
+    const toDate = monthlyTotals.slice(0, monthCount).reduce((sum, value) => sum + Number(value || 0), 0)
+    const bestIndex = monthlyTotals.reduce((best, value, index) => Number(value || 0) > Number(monthlyTotals[best] || 0) ? index : best, 0)
+    const bestMonth = utils.MONTHS[bestIndex]
+
+    renderChart(utils.MONTHS, monthlyTotals)
+    renderEntityRows(loaded)
+    kpiAnnual.textContent = fmtCurrency(annual)
+    kpiToDate.textContent = fmtCurrency(toDate)
+    kpiBestMonth.textContent = bestMonth ? bestMonth.label : "-"
+    kpiBestMonthSub.textContent = bestMonth ? fmtCurrency(monthlyTotals[bestIndex]) : "Aucun budget chargé"
+
+    if(!loaded.length){
+      status.textContent = "Impossible de charger les budgets. Les accès restent disponibles en haut."
+    } else if(failed.length){
+      status.textContent = `Aperçu chargé partiellement : ${loaded.length} entité(s) OK, à vérifier : ${failed.join(", ")}.`
+    } else {
+      status.textContent = `Aperçu budget chargé : ${loaded.length} entités, budget ${year} consolidé.`
+    }
+  }
+
+  window.refreshBudgetPreview = initBudgetPreview
+  initBudgetPreview().catch(error => {
+    console.error(error)
+    status.textContent = "Erreur pendant le chargement de l'aperçu budget. Les accès restent disponibles."
+  })
+})()
+
 const yearSelect = document.getElementById("yearSelect")
 function refreshYearLinks(year){
   KentDataConfig.applyYearToLinks(document, year)
@@ -523,6 +926,7 @@ yearSelect.addEventListener("change", () => {
   const nextYear = KentDataConfig.setActiveYear(Number(yearSelect.value))
   yearSelect.value = String(nextYear)
   refreshYearLinks(nextYear)
+  if(window.refreshBudgetPreview) window.refreshBudgetPreview(nextYear)
 })
 
 </script>
