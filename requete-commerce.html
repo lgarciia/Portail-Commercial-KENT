@@ -289,7 +289,10 @@ async function fetchPaged(table, select, options = {}){
   const all = [];
   while (true){
     let query = supabaseClient.from(table).select(select).range(from, from + PAGE_SIZE - 1);
-    if (options.order) query = query.order(options.order.column, { ascending: options.order.ascending ?? true });
+    const orders = Array.isArray(options.order) ? options.order : (options.order ? [options.order] : []);
+    orders.forEach(order => {
+      query = query.order(order.column, { ascending: order.ascending ?? true });
+    });
     const { data, error } = await query;
     if (error) throw new Error(`${table}: ${error.message}`);
     const batch = data || [];
@@ -496,8 +499,8 @@ async function loadSourceRows(source){
   const [clients, produits, visites, lignes] = await Promise.all([
     fetchPaged(source.tables.clients, "id, nom, numero_compte", { order:{ column:"nom", ascending:true } }),
     fetchPaged(source.tables.produits, "id, nom, reference_produit", { order:{ column:"nom", ascending:true } }),
-    fetchPaged(source.tables.visites, "id, client_id, date_visite, note, type_visite, total_commande", { order:{ column:"date_visite", ascending:false } }),
-    fetchPaged(source.tables.lignes, "id, visite_id, produit_id, quantite, prix_unitaire")
+    fetchPaged(source.tables.visites, "id, client_id, date_visite, note, type_visite, total_commande", { order:[{ column:"date_visite", ascending:false }, { column:"id", ascending:true }] }),
+    fetchPaged(source.tables.lignes, "id, visite_id, produit_id, quantite, prix_unitaire", { order:[{ column:"visite_id", ascending:true }, { column:"id", ascending:true }] })
   ]);
   const clientsById = new Map((clients || []).map(client => [String(client.id), client]));
   const produitsById = new Map((produits || []).map(produit => [String(produit.id), produit]));

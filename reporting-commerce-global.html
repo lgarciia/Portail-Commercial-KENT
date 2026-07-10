@@ -1093,7 +1093,10 @@
         if (options.gte) query = query.gte(options.gte.column, options.gte.value);
         if (options.lte) query = query.lte(options.lte.column, options.lte.value);
         if (options.in) query = query.in(options.in.column, options.in.values);
-        if (options.order) query = query.order(options.order.column, { ascending: options.order.ascending ?? true });
+        const orders = Array.isArray(options.order) ? options.order : (options.order ? [options.order] : []);
+        orders.forEach(order => {
+          query = query.order(order.column, { ascending: order.ascending ?? true });
+        });
         const { data, error } = await query;
         if (error) throw new Error(`${table}: ${error.message}`);
         const batch = data || [];
@@ -1103,12 +1106,16 @@
       }
       return all;
     }
-    async function fetchInChunks(table, select, column, values) {
+    async function fetchInChunks(table, select, column, values, options = {}) {
       const cleanValues = [...new Set((values || []).map(value => String(value)).filter(Boolean))];
       if (!cleanValues.length) return [];
       const all = [];
-      for (let index = 0; index < cleanValues.length; index += 450) {
-        all.push(...await fetchPaged(table, select, { in: { column, values: cleanValues.slice(index, index + 450) } }));
+      const chunkSize = options.chunkSize || 100;
+      for (let index = 0; index < cleanValues.length; index += chunkSize) {
+        all.push(...await fetchPaged(table, select, {
+          in: { column, values: cleanValues.slice(index, index + chunkSize) },
+          order: options.order
+        }));
       }
       return all;
     }
@@ -1116,11 +1123,17 @@
       const visites = await fetchPaged(source.tables.visites, "id, client_id, date_visite, note, type_visite, total_commande", {
         gte: { column: "date_visite", value: monthBounds.startStr },
         lte: { column: "date_visite", value: monthBounds.endStr },
-        order: { column: "date_visite", ascending: true }
+        order: [{ column: "date_visite", ascending: true }, { column: "id", ascending: true }]
       });
-      const lignes = await fetchInChunks(source.tables.lignes, "id, visite_id, produit_id, quantite, prix_unitaire", "visite_id", visites.map(v => v.id));
-      const clients = await fetchInChunks(source.tables.clients, "id, nom, numero_compte", "id", visites.map(v => v.client_id));
-      const produits = await fetchInChunks(source.tables.produits, "id, nom, reference_produit", "id", lignes.map(ligne => ligne.produit_id));
+      const lignes = await fetchInChunks(source.tables.lignes, "id, visite_id, produit_id, quantite, prix_unitaire", "visite_id", visites.map(v => v.id), {
+        order: [{ column: "visite_id", ascending: true }, { column: "id", ascending: true }]
+      });
+      const clients = await fetchInChunks(source.tables.clients, "id, nom, numero_compte", "id", visites.map(v => v.client_id), {
+        order: { column: "id", ascending: true }
+      });
+      const produits = await fetchInChunks(source.tables.produits, "id, nom, reference_produit", "id", lignes.map(ligne => ligne.produit_id), {
+        order: { column: "id", ascending: true }
+      });
       const visitesById = new Map(visites.map(visite => [String(visite.id), visite]));
       const clientsById = new Map(clients.map(client => [String(client.id), client]));
       const produitsById = new Map(produits.map(produit => [String(produit.id), produit]));

@@ -568,7 +568,10 @@
       while (true) {
         const to = from + pageSize - 1;
         let query = supabaseClient.from(table).select(select).range(from, to);
-        if (options.order) query = query.order(options.order.column, { ascending: options.order.ascending ?? true });
+        const orders = Array.isArray(options.order) ? options.order : (options.order ? [options.order] : []);
+        orders.forEach(order => {
+          query = query.order(order.column, { ascending: order.ascending ?? true });
+        });
         const { data, error } = await query;
         if (error) throw new Error(`${table}: ${error.message}`);
         const batch = data || [];
@@ -584,8 +587,8 @@
       const [clientsRes, produitsRes, visitesRes, lignesRes, plaquesRes] = await Promise.all([
         fetchPaged("industrie_clients", "id, nom, numero_compte, adresse, telephone, plaque_id", { order: { column: "nom", ascending: true } }),
         fetchPaged("industrie_produits", "id, nom, actif, reference_produit, prix_vente", { order: { column: "nom", ascending: true } }),
-        fetchPaged("industrie_visites", "id, client_id, date_visite, note, type_visite, total_commande", { order: { column: "date_visite", ascending: false } }),
-        fetchPaged("industrie_visite_commandes", "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire"),
+        fetchPaged("industrie_visites", "id, client_id, date_visite, note, type_visite, total_commande", { order: [{ column: "date_visite", ascending: false }, { column: "id", ascending: true }] }),
+        fetchPaged("industrie_visite_commandes", "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire", { order: [{ column: "visite_id", ascending: true }, { column: "id", ascending: true }] }),
         fetchPaged("industrie_plaques", "id, nom", { order: { column: "nom", ascending: true } })
       ]);
 
