@@ -38,14 +38,18 @@
 
     /* NAVBAR */
     .navbar{
-      height:64px;
+      min-height:64px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      padding:0 18px;
+      gap:14px;
+      flex-wrap:wrap;
+      padding:12px 18px;
       border-bottom:1px solid var(--stroke);
       background:rgba(255,255,255,0.05);
       backdrop-filter: blur(10px);
+      position:relative;
+      z-index:20;
     }
 
     .logo{
@@ -60,6 +64,9 @@
       gap:12px;
       align-items:center;
       flex-wrap:wrap;
+      justify-content:flex-end;
+      flex:1;
+      min-width:min(760px, 100%);
     }
 
     /* Dropdown */
@@ -139,11 +146,11 @@
 
     /* CENTER DASHBOARD */
     .center{
-      height:calc(100vh - 64px);
+      min-height:calc(100vh - 88px);
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:center;
-      padding:22px;
+      padding:34px 22px 30px;
     }
 
     .reportHero{
@@ -488,11 +495,11 @@
         </article>
 
         <aside class="sideCard">
-          <h2>Synthese annuelle</h2>
+          <h2>Synthese a date</h2>
           <div class="kpiStack">
             <div class="miniKpi"><span>CA realise</span><strong id="kpiReal">-</strong><small>Toutes entites cumulees</small></div>
-            <div class="miniKpi"><span>Budget</span><strong id="kpiBudget">-</strong><small>Objectif annuel total</small></div>
-            <div class="miniKpi"><span>Atteinte</span><strong id="kpiRate">-</strong><small id="kpiGap">Ecart annuel en attente</small></div>
+            <div class="miniKpi"><span>Budget a date</span><strong id="kpiBudget">-</strong><small>Objectif cumule jusqu'au mois courant</small></div>
+            <div class="miniKpi"><span>Atteinte</span><strong id="kpiRate">-</strong><small id="kpiGap">Ecart a date en attente</small></div>
           </div>
           <div class="entityList" id="entityList"></div>
         </aside>
@@ -612,6 +619,14 @@
         item.budget += Number(budgetTotals[index] || 0);
       });
     }
+    function getComparisonMonthCount(year){
+      const now = new Date();
+      if (Number(year) === now.getFullYear()) return now.getMonth() + 1;
+      return 12;
+    }
+    function sumMonths(totals, key, monthCount){
+      return totals.slice(0, monthCount).reduce((sum, item) => sum + Number(item[key] || 0), 0);
+    }
     function renderEntityRows(rows){
       entityList.innerHTML = rows.map(row => `<div class="entityRow"><span>${row.label}</span><strong>${fmtCurrency(row.real)}</strong></div>`).join("");
     }
@@ -669,24 +684,26 @@
         }
       });
 
-      const annualReal = monthlyTotals.reduce((sum, item) => sum + item.real, 0);
-      const annualBudget = monthlyTotals.reduce((sum, item) => sum + item.budget, 0);
-      const gap = annualReal - annualBudget;
-      const rate = annualBudget ? (annualReal / annualBudget) * 100 : 0;
+      const monthCount = getComparisonMonthCount(year);
+      const comparisonMonth = utils.MONTHS[Math.max(0, monthCount - 1)];
+      const realToDate = sumMonths(monthlyTotals, "real", monthCount);
+      const budgetToDate = sumMonths(monthlyTotals, "budget", monthCount);
+      const gap = realToDate - budgetToDate;
+      const rate = budgetToDate ? (realToDate / budgetToDate) * 100 : 0;
 
       renderChart(utils.MONTHS, monthlyTotals);
       renderEntityRows(loaded);
-      kpiReal.textContent = fmtCurrency(annualReal);
-      kpiBudget.textContent = fmtCurrency(annualBudget);
-      kpiRate.textContent = annualBudget ? fmtPercent(rate) : "-";
-      kpiGap.textContent = `${gap >= 0 ? "Avance" : "Retard"} de ${fmtCurrency(Math.abs(gap))}`;
+      kpiReal.textContent = fmtCurrency(realToDate);
+      kpiBudget.textContent = fmtCurrency(budgetToDate);
+      kpiRate.textContent = budgetToDate ? fmtPercent(rate) : "-";
+      kpiGap.textContent = `Ecart a date (${comparisonMonth ? comparisonMonth.label : "annee"}) : ${gap >= 0 ? "+" : "-"}${fmtCurrency(Math.abs(gap))}`;
 
       if (!loaded.length) {
         status.textContent = "Impossible de charger les donnees. Les menus restent disponibles en haut.";
       } else if (failed.length) {
         status.textContent = `Apercu charge partiellement : ${loaded.length} entite(s) OK, a verifier : ${failed.join(", ")}.`;
       } else {
-        status.textContent = `Apercu consolide charge : ${loaded.length} entites, donnees reelles vs budget ${year}.`;
+        status.textContent = `Apercu consolide charge : ${loaded.length} entites. Les KPI comparent le realise au budget a date, jusqu'a ${comparisonMonth ? comparisonMonth.label : "la periode"} ${year}.`;
       }
     }
 
