@@ -253,7 +253,7 @@
       background: rgba(255, 255, 255, 0.045);
       border: 1px solid rgba(255, 255, 255, 0.08);
       display: grid;
-      grid-template-columns: minmax(170px, 1.25fr) minmax(210px, 1fr) auto;
+      grid-template-columns: minmax(170px, 1.2fr) minmax(190px, 1fr) auto auto;
       gap: 10px;
       align-items: center;
     }
@@ -313,6 +313,18 @@
       font-size: 0.78rem;
     }
 
+    .doc-date {
+      justify-self: end;
+      padding: 7px 9px;
+      border-radius: 999px;
+      color: #fde68a;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.18);
+      font-size: 0.76rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
     .empty {
       padding: 18px;
       border-radius: 16px;
@@ -336,6 +348,7 @@
       .filters-grid,
       .kpis { grid-template-columns: 1fr; }
       .doc-card { grid-template-columns: 1fr; }
+      .doc-date { justify-self: start; }
       .doc-actions { justify-content: stretch; }
       .doc-actions .btn { flex: 1 1 auto; }
     }
@@ -468,6 +481,11 @@
       dom.statusBar.className = `status ${tone === "info" ? "" : tone}`.trim();
     }
 
+    function getSortTimestamp(value) {
+      const time = value ? new Date(value).getTime() : 0;
+      return Number.isFinite(time) ? time : 0;
+    }
+
     function getFilteredDocuments() {
       const search = String(dom.searchInput.value || "").trim().toLowerCase();
       const sector = dom.sectorFilter.value;
@@ -488,6 +506,10 @@
           doc.type_document
         ].join(" ").toLowerCase();
         return haystack.includes(search);
+      }).sort((a, b) => {
+        const dateDiff = getSortTimestamp(b.date_document) - getSortTimestamp(a.date_document);
+        if (dateDiff) return dateDiff;
+        return getSortTimestamp(b.created_at) - getSortTimestamp(a.created_at);
       });
     }
 
@@ -507,7 +529,6 @@
         </div>
         <div class="doc-meta">
           <span class="pill ${escapeHtml(doc.secteur || "auto")}">${escapeHtml(sectorLabel(doc.secteur))}</span>
-          <span>${escapeHtml(formatDate(doc.date_document))}</span>
           <span>Compte ${escapeHtml(doc.numero_compte || "-")}</span>
           <span>${escapeHtml(formatCurrency(doc.montant_ht))}</span>
           <span>${escapeHtml(formatBytes(doc.taille_octets))}</span>
@@ -517,6 +538,7 @@
           <button class="btn btn-primary" type="button" data-action="download" data-id="${escapeHtml(doc.id)}">Telecharger</button>
           <button class="btn btn-danger" type="button" data-action="delete" data-id="${escapeHtml(doc.id)}">Supprimer</button>
         </div>
+        <div class="doc-date">${escapeHtml(formatDate(doc.date_document))}</div>
       </article>`;
     }
 
@@ -541,6 +563,7 @@
       const { data, error } = await supabaseClient
         .from(DOCUMENTS_TABLE)
         .select("*")
+        .order("date_document", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(1000);
 
