@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BDC / Devis - Documents commerciaux</title>
+  <script src="./shared-ui.js"></script>
+  <style>
+    :root {
+      --bg: #06111f;
+      --panel: rgba(12, 22, 38, 0.86);
+      --panel-2: rgba(8, 15, 28, 0.92);
+      --border: rgba(148, 163, 184, 0.18);
+      --text: #eef4ff;
+      --muted: #9fb1ca;
+      --auto: #38bdf8;
+      --indus: #22c55e;
+      --gold: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 28px 80px rgba(2, 6, 23, 0.44);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Aptos", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.2), transparent 30%),
+        radial-gradient(circle at 92% 6%, rgba(34, 197, 94, 0.16), transparent 30%),
+        linear-gradient(135deg, #06111f 0%, #081827 54%, #04101c 100%);
+      padding: 24px;
+    }
+
+    .app-shell { max-width: 1480px; margin: 0 auto; }
+
+    .glass {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero {
+      padding: 22px;
+      margin-bottom: 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.24);
+      color: #fde68a;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3.1rem);
+      line-height: 0.96;
+      letter-spacing: -0.055em;
+      margin-bottom: 10px;
+    }
+
+    .hero p,
+    .panel-head p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 14px;
+      padding: 11px 15px;
+      font-weight: 850;
+      font-size: 0.9rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.11); }
+    .btn-primary { color: #07111f; border: none; background: linear-gradient(135deg, #fde68a, var(--gold)); }
+    .btn-danger { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.28); color: #fecaca; }
+
+    .filters {
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 1.3fr repeat(3, minmax(150px, 0.55fr)) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 7px; }
+
+    label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 850;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.72);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 13px;
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    select option { color: #0f172a; background: #fff; }
+
+    .status {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+      color: #cbeafe;
+      font-weight: 760;
+      line-height: 1.45;
+    }
+    .status.warn {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.22);
+      color: #fde68a;
+    }
+    .status.error {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.22);
+      color: #fecaca;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .kpi {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid var(--border);
+      min-height: 98px;
+    }
+    .kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+    .kpi strong {
+      display: block;
+      font-size: clamp(1.25rem, 2vw, 1.9rem);
+      letter-spacing: -0.04em;
+    }
+    .kpi small { color: var(--muted); display: block; margin-top: 8px; }
+
+    .documents-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 18px;
+      min-height: 420px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .panel-head h2 {
+      font-size: 1.25rem;
+      letter-spacing: -0.03em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .doc-list { display: grid; gap: 11px; }
+
+    .doc-card {
+      padding: 13px;
+      border-radius: 17px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: grid;
+      gap: 10px;
+    }
+
+    .doc-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .doc-title {
+      font-size: 1rem;
+      font-weight: 950;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .doc-file {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+    }
+
+    .doc-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.05);
+      font-size: .76rem;
+      font-weight: 850;
+    }
+    .pill.auto { color: #bae6fd; border-color: rgba(56,189,248,.24); background: rgba(56,189,248,.1); }
+    .pill.industrie { color: #bbf7d0; border-color: rgba(34,197,94,.24); background: rgba(34,197,94,.1); }
+
+    .doc-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .empty {
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,.08);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .documents-grid { grid-template-columns: 1fr; }
+      .actions { justify-content: flex-start; }
+      .filters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .filters-grid .btn { width: 100%; }
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 680px) {
+      body { padding: 14px; }
+      .filters-grid,
+      .kpis { grid-template-columns: 1fr; }
+      .doc-top { grid-template-columns: 1fr; }
+      .doc-actions { justify-content: stretch; }
+      .doc-actions .btn { flex: 1 1 auto; }
+    }
+  </style>
+  <link rel="stylesheet" href="./shared-theme.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="glass hero">
+      <div>
+        <span class="eyebrow">Documents commerciaux</span>
+        <h1>BDC / Devis</h1>
+        <p>Archive commune Auto + Industrie. Les PDF restent separes des ventes et servent uniquement a retrouver, telecharger ou supprimer les documents generes.</p>
+      </div>
+      <nav class="actions" aria-label="Navigation">
+        <a class="btn" href="index.html">Portail</a>
+        <a class="btn" href="ficherclt.html">Fiche Auto</a>
+        <a class="btn" href="ficherclt-industrie.html">Fiche Industrie</a>
+      </nav>
+    </header>
+
+    <section class="glass filters">
+      <div class="filters-grid">
+        <div class="field">
+          <label for="searchInput">Recherche client / fichier</label>
+          <input id="searchInput" type="search" placeholder="Nom client, compte, nom du PDF..." />
+        </div>
+        <div class="field">
+          <label for="sectorFilter">Secteur</label>
+          <select id="sectorFilter">
+            <option value="all">Auto + Industrie</option>
+            <option value="auto">Auto</option>
+            <option value="industrie">Industrie</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="typeFilter">Type</label>
+          <select id="typeFilter">
+            <option value="all">BDC + Devis</option>
+            <option value="bdc">BDC</option>
+            <option value="devis">Devis</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="dateFilter">Date</label>
+          <input id="dateFilter" type="month" />
+        </div>
+        <button class="btn btn-primary" id="refreshBtn" type="button">Actualiser</button>
+      </div>
+      <div class="status" id="statusBar">Chargement des documents...</div>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi"><span>Total</span><strong id="kpiTotal">0</strong><small>document(s)</small></article>
+      <article class="kpi"><span>BDC</span><strong id="kpiBdc">0</strong><small>bon(s) de commande</small></article>
+      <article class="kpi"><span>Devis</span><strong id="kpiDevis">0</strong><small>devis archive(s)</small></article>
+      <article class="kpi"><span>Stockage</span><strong id="kpiStorage">0 Ko</strong><small>poids estime des PDF</small></article>
+    </section>
+
+    <main class="documents-grid">
+      <section class="glass panel">
+        <div class="panel-head">
+          <div>
+            <h2>Bons de commande</h2>
+            <p>Les BDC generes depuis les fiches clients.</p>
+          </div>
+          <span class="badge" id="bdcCount">0 BDC</span>
+        </div>
+        <div class="doc-list" id="bdcList"></div>
+      </section>
+
+      <section class="glass panel">
+        <div class="panel-head">
+          <div>
+            <h2>Devis</h2>
+            <p>Les devis generes depuis les fiches clients.</p>
+          </div>
+          <span class="badge" id="devisCount">0 devis</span>
+        </div>
+        <div class="doc-list" id="devisList"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const DOCUMENTS_BUCKET = "documents-commerciaux";
+    const DOCUMENTS_TABLE = "documents_commerciaux";
+
+    const state = { documents: [] };
+    const dom = {};
+
+    function cacheDom() {
+      ["searchInput","sectorFilter","typeFilter","dateFilter","refreshBtn","statusBar","kpiTotal","kpiBdc","kpiDevis","kpiStorage","bdcCount","devisCount","bdcList","devisList"].forEach(id => dom[id] = document.getElementById(id));
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const [year, month, day] = String(value).split("-").map(Number);
+      const date = new Date(year, (month || 1) - 1, day || 1);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleDateString("fr-FR");
+    }
+
+    function formatCurrency(value) {
+      return Number(value || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+    }
+
+    function formatBytes(bytes) {
+      const value = Number(bytes || 0);
+      if (value >= 1024 * 1024) return `${(value / (1024 * 1024)).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo`;
+      return `${Math.max(0, Math.round(value / 1024)).toLocaleString("fr-FR")} Ko`;
+    }
+
+    function setStatus(message, tone = "info") {
+      dom.statusBar.textContent = message;
+      dom.statusBar.className = `status ${tone === "info" ? "" : tone}`.trim();
+    }
+
+    function getFilteredDocuments() {
+      const search = String(dom.searchInput.value || "").trim().toLowerCase();
+      const sector = dom.sectorFilter.value;
+      const type = dom.typeFilter.value;
+      const dateMonth = dom.dateFilter.value;
+
+      return state.documents.filter(doc => {
+        if (sector !== "all" && doc.secteur !== sector) return false;
+        if (type !== "all" && doc.type_document !== type) return false;
+        if (dateMonth && !String(doc.date_document || "").startsWith(dateMonth)) return false;
+        if (!search) return true;
+        const haystack = [
+          doc.client_nom,
+          doc.numero_compte,
+          doc.nom_fichier,
+          doc.numero_document,
+          doc.secteur,
+          doc.type_document
+        ].join(" ").toLowerCase();
+        return haystack.includes(search);
+      });
+    }
+
+    function typeLabel(type) {
+      return type === "bdc" ? "BDC" : "Devis";
+    }
+
+    function sectorLabel(sector) {
+      return sector === "industrie" ? "Industrie" : "Auto";
+    }
+
+    function renderDocumentCard(doc) {
+      return `<article class="doc-card" data-id="${escapeHtml(doc.id)}">
+        <div class="doc-top">
+          <div>
+            <div class="doc-title">${escapeHtml(doc.client_nom || "Client")}</div>
+            <div class="doc-file">${escapeHtml(doc.nom_fichier || "document.pdf")}</div>
+          </div>
+          <span class="pill ${escapeHtml(doc.secteur || "auto")}">${escapeHtml(sectorLabel(doc.secteur))}</span>
+        </div>
+        <div class="doc-meta">
+          <span>${escapeHtml(formatDate(doc.date_document))}</span>
+          <span>Compte ${escapeHtml(doc.numero_compte || "-")}</span>
+          <span>${escapeHtml(formatCurrency(doc.montant_ht))}</span>
+          <span>${escapeHtml(formatBytes(doc.taille_octets))}</span>
+          ${doc.numero_document ? `<span>${escapeHtml(doc.numero_document)}</span>` : ""}
+        </div>
+        <div class="doc-actions">
+          <button class="btn btn-primary" type="button" data-action="download" data-id="${escapeHtml(doc.id)}">Telecharger</button>
+          <button class="btn btn-danger" type="button" data-action="delete" data-id="${escapeHtml(doc.id)}">Supprimer</button>
+        </div>
+      </article>`;
+    }
+
+    function render() {
+      const docs = getFilteredDocuments();
+      const bdcDocs = docs.filter(doc => doc.type_document === "bdc");
+      const devisDocs = docs.filter(doc => doc.type_document === "devis");
+      const totalSize = docs.reduce((sum, doc) => sum + Number(doc.taille_octets || 0), 0);
+
+      dom.kpiTotal.textContent = String(docs.length);
+      dom.kpiBdc.textContent = String(bdcDocs.length);
+      dom.kpiDevis.textContent = String(devisDocs.length);
+      dom.kpiStorage.textContent = formatBytes(totalSize);
+      dom.bdcCount.textContent = `${bdcDocs.length} BDC`;
+      dom.devisCount.textContent = `${devisDocs.length} devis`;
+      dom.bdcList.innerHTML = bdcDocs.length ? bdcDocs.map(renderDocumentCard).join("") : '<div class="empty">Aucun BDC trouve pour ces filtres.</div>';
+      dom.devisList.innerHTML = devisDocs.length ? devisDocs.map(renderDocumentCard).join("") : '<div class="empty">Aucun devis trouve pour ces filtres.</div>';
+    }
+
+    async function loadDocuments() {
+      setStatus("Chargement des documents...");
+      const { data, error } = await supabaseClient
+        .from(DOCUMENTS_TABLE)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+
+      if (error) {
+        state.documents = [];
+        render();
+        setStatus(`Impossible de charger les documents. Lance le SQL Supabase si ce n'est pas encore fait. Detail: ${error.message}`, "warn");
+        return;
+      }
+
+      state.documents = data || [];
+      render();
+      setStatus(`${state.documents.length} document(s) charge(s).`);
+    }
+
+    function findDocument(id) {
+      return state.documents.find(doc => String(doc.id) === String(id));
+    }
+
+    async function downloadDocument(id) {
+      const doc = findDocument(id);
+      if (!doc) return;
+      setStatus(`Preparation du telechargement : ${doc.nom_fichier || "document.pdf"}...`);
+      const { data, error } = await supabaseClient.storage
+        .from(doc.storage_bucket || DOCUMENTS_BUCKET)
+        .createSignedUrl(doc.storage_path, 60);
+      if (error || !data?.signedUrl) {
+        setStatus(`Impossible de preparer le telechargement : ${error?.message || "lien indisponible"}`, "error");
+        return;
+      }
+      const link = document.createElement("a");
+      link.href = data.signedUrl;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.download = doc.nom_fichier || "document.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setStatus(`Telechargement lance : ${doc.nom_fichier || "document.pdf"}.`);
+    }
+
+    async function deleteDocument(id) {
+      const doc = findDocument(id);
+      if (!doc) return;
+      const ok = confirm(`Supprimer ce ${typeLabel(doc.type_document)} ?\n\n${doc.nom_fichier || "document.pdf"}\n\nLe PDF sera supprime de Supabase Storage et de l'historique.`);
+      if (!ok) return;
+      setStatus(`Suppression de ${doc.nom_fichier || "document.pdf"}...`);
+
+      const { error: storageError } = await supabaseClient.storage
+        .from(doc.storage_bucket || DOCUMENTS_BUCKET)
+        .remove([doc.storage_path]);
+      if (storageError) {
+        setStatus(`PDF non supprime du stockage : ${storageError.message}`, "error");
+        return;
+      }
+
+      const { error: tableError } = await supabaseClient
+        .from(DOCUMENTS_TABLE)
+        .delete()
+        .eq("id", doc.id);
+      if (tableError) {
+        setStatus(`PDF supprime, mais ligne historique non supprimee : ${tableError.message}`, "error");
+        return;
+      }
+
+      state.documents = state.documents.filter(item => String(item.id) !== String(id));
+      render();
+      setStatus("Document supprime.");
+    }
+
+    async function handleListClick(event) {
+      const button = event.target.closest("[data-action][data-id]");
+      if (!button) return;
+      const action = button.dataset.action;
+      const id = button.dataset.id;
+      button.disabled = true;
+      try {
+        if (action === "download") await downloadDocument(id);
+        if (action === "delete") await deleteDocument(id);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function bindEvents() {
+      dom.searchInput.addEventListener("input", render);
+      dom.sectorFilter.addEventListener("change", render);
+      dom.typeFilter.addEventListener("change", render);
+      dom.dateFilter.addEventListener("change", render);
+      dom.refreshBtn.addEventListener("click", loadDocuments);
+      dom.bdcList.addEventListener("click", handleListClick);
+      dom.devisList.addEventListener("click", handleListClick);
+    }
+
+    function init() {
+      cacheDom();
+      bindEvents();
+      loadDocuments();
+    }
+
+    init();
+  </script>
+</body>
+</html>

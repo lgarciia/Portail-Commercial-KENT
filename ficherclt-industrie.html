@@ -559,6 +559,7 @@
           <p>Puissance fonctionnelle, une lecture plus rapide, une saisie plus fluide et une présentation premium.</p>
         </div>
         <div class="hero-actions">
+          <a class="btn btn-secondary" href="documents-commerciaux.html">BDC / Devis</a>
           <button class="btn btn-info" id="openTopProductsBtn" type="button">Top produits</button>
           <button class="btn btn-secondary" id="openClientModalBtn" type="button">Ajout client</button>
           <button class="btn btn-primary" id="openVisitModalBtn" type="button">+ Nouvelle visite</button>
@@ -872,6 +873,9 @@
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const DOCUMENTS_BUCKET = "documents-commerciaux";
+    const DOCUMENTS_TABLE = "documents_commerciaux";
+    const DOCUMENTS_SECTOR = "industrie";
 
     const state = {
       clients: [],
@@ -2932,6 +2936,53 @@
       return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
 
+    function buildDocumentStoragePath(type, filename, dateStr) {
+      const safeType = String(type || "document").replace(/[^a-z0-9_-]/gi, "").toLowerCase() || "document";
+      const safeDate = String(dateStr || getTodayIsoLocal()).replace(/[^0-9-]/g, "") || getTodayIsoLocal();
+      const safeFilename = String(filename || "document.pdf").replace(/[\\/:*?"<>|]+/g, "-");
+      const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      return `${DOCUMENTS_SECTOR}/${safeType}/${safeDate}/${suffix}-${safeFilename}`;
+    }
+
+    async function archiveCommercialDocument({ type, doc, filename, client, dateVisite, montantHt, devisNumber, lineCount, visitType }) {
+      if (!doc || !filename) return false;
+      const pdfBlob = doc.output("blob");
+      const storagePath = buildDocumentStoragePath(type, filename, dateVisite);
+      const { error: uploadError } = await supabaseClient.storage
+        .from(DOCUMENTS_BUCKET)
+        .upload(storagePath, pdfBlob, {
+          contentType: "application/pdf",
+          upsert: false
+        });
+      if (uploadError) throw uploadError;
+
+      const payload = {
+        secteur: DOCUMENTS_SECTOR,
+        type_document: type,
+        client_id: client?.id ? String(client.id) : null,
+        client_nom: client?.nom || "Client",
+        numero_compte: client?.numero_compte || null,
+        date_document: dateVisite || getTodayIsoLocal(),
+        nom_fichier: filename,
+        storage_bucket: DOCUMENTS_BUCKET,
+        storage_path: storagePath,
+        montant_ht: Number(montantHt || 0),
+        numero_document: devisNumber || null,
+        type_visite: visitType || null,
+        nb_lignes: Number(lineCount || 0),
+        taille_octets: Number(pdfBlob.size || 0)
+      };
+
+      const { error: insertError } = await supabaseClient
+        .from(DOCUMENTS_TABLE)
+        .insert(payload);
+      if (insertError) {
+        await supabaseClient.storage.from(DOCUMENTS_BUCKET).remove([storagePath]);
+        throw insertError;
+      }
+      return true;
+    }
+
     async function generateQuoteFromVisitForm() {
       const clientId = dom.popupClient.value;
       const dateVisite = dom.popupDate.value || getTodayIsoLocal();
@@ -3101,6 +3152,23 @@
         doc.setTextColor(0, 0, 0);
 
         doc.save(filename);
+
+        try {
+          await archiveCommercialDocument({
+            type: "devis",
+            doc,
+            filename,
+            client,
+            dateVisite,
+            montantHt: totalHt,
+            devisNumber,
+            lineCount: lignes.length,
+            visitType: typeVisite
+          });
+        } catch (archiveError) {
+          console.warn("Archivage devis impossible:", archiveError);
+          showToast("Devis telecharge, mais archive Supabase non enregistree.", "warning");
+        }
 
         const mailtoLink = buildQuoteMailtoLink(clientName, devisNumber);
         window.location.href = mailtoLink;
@@ -3290,6 +3358,24 @@
         doc.setTextColor(0, 0, 0);
 
         doc.save(filename);
+
+        try {
+          await archiveCommercialDocument({
+            type: "bdc",
+            doc,
+            filename,
+            client,
+            dateVisite,
+            montantHt: totalHt,
+            devisNumber: null,
+            lineCount: lignes.length,
+            visitType: typeVisite
+          });
+        } catch (archiveError) {
+          console.warn("Archivage BDC impossible:", archiveError);
+          showToast("BDC telecharge, mais archive Supabase non enregistree.", "warning");
+        }
+
         window.location.href = buildBdcMailtoLink(client, dateVisite);
 
         if (missingConditionnements > 0) {
