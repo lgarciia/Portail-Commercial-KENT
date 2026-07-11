@@ -46,34 +46,39 @@
     }
 
     .hero {
-      padding: 22px;
-      margin-bottom: 18px;
+      padding: 18px;
+      margin-bottom: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-main {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 18px;
-      align-items: start;
+      align-items: center;
     }
 
     .eyebrow {
       display: inline-flex;
       align-items: center;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border-radius: 999px;
       background: rgba(245, 158, 11, 0.12);
       border: 1px solid rgba(245, 158, 11, 0.24);
       color: #fde68a;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 900;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     h1 {
-      font-size: clamp(2rem, 4vw, 3.1rem);
+      font-size: clamp(1.8rem, 3.4vw, 2.8rem);
       line-height: 0.96;
       letter-spacing: -0.055em;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .hero p,
@@ -84,7 +89,7 @@
 
     .actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
       justify-content: flex-end;
     }
@@ -92,10 +97,10 @@
     .btn {
       border: none;
       cursor: pointer;
-      border-radius: 14px;
-      padding: 11px 15px;
+      border-radius: 13px;
+      padding: 10px 14px;
       font-weight: 850;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
@@ -111,23 +116,18 @@
     .btn-primary { color: #07111f; border: none; background: linear-gradient(135deg, #fde68a, var(--gold)); }
     .btn-danger { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.28); color: #fecaca; }
 
-    .filters {
-      padding: 16px;
-      margin-bottom: 18px;
-    }
-
     .filters-grid {
       display: grid;
-      grid-template-columns: 1.3fr repeat(3, minmax(150px, 0.55fr)) auto;
-      gap: 12px;
+      grid-template-columns: minmax(240px, 1.35fr) repeat(3, minmax(140px, 0.55fr)) auto;
+      gap: 10px;
       align-items: end;
     }
 
-    .field { display: flex; flex-direction: column; gap: 7px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
 
     label {
       color: var(--muted);
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 850;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -139,22 +139,22 @@
       border: 1px solid rgba(148, 163, 184, 0.2);
       background: rgba(15, 23, 42, 0.72);
       color: var(--text);
-      border-radius: 14px;
-      padding: 12px 13px;
-      font-size: 0.92rem;
+      border-radius: 13px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
       outline: none;
     }
 
     select option { color: #0f172a; background: #fff; }
 
     .status {
-      margin-top: 12px;
-      padding: 12px 14px;
-      border-radius: 14px;
+      padding: 9px 12px;
+      border-radius: 13px;
       background: rgba(56, 189, 248, 0.08);
       border: 1px solid rgba(56, 189, 248, 0.16);
       color: #cbeafe;
       font-weight: 760;
+      font-size: 0.86rem;
       line-height: 1.45;
     }
     .status.warn {
@@ -171,32 +171,44 @@
     .kpis {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
+      gap: 8px;
     }
 
     .kpi {
-      padding: 16px;
-      border-radius: 18px;
-      background: rgba(15, 23, 42, 0.72);
-      border: 1px solid var(--border);
-      min-height: 98px;
+      padding: 9px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(255, 255, 255, 0.075);
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 2px 10px;
+      align-items: center;
     }
     .kpi span {
       display: block;
       color: var(--muted);
-      font-size: 0.74rem;
+      font-size: 0.68rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       font-weight: 900;
-      margin-bottom: 8px;
+      margin-bottom: 0;
     }
     .kpi strong {
       display: block;
-      font-size: clamp(1.25rem, 2vw, 1.9rem);
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      font-size: clamp(1rem, 1.6vw, 1.28rem);
       letter-spacing: -0.04em;
+      text-align: right;
     }
-    .kpi small { color: var(--muted); display: block; margin-top: 8px; }
+    .kpi small {
+      color: var(--muted);
+      display: block;
+      margin-top: 0;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
 
     .documents-grid {
       display: grid;
@@ -305,7 +317,7 @@
     }
 
     @media (max-width: 1080px) {
-      .hero,
+      .hero-main,
       .documents-grid { grid-template-columns: 1fr; }
       .actions { justify-content: flex-start; }
       .filters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -327,19 +339,19 @@
 <body>
   <div class="app-shell">
     <header class="glass hero">
-      <div>
-        <span class="eyebrow">Documents commerciaux</span>
-        <h1>BDC / Devis</h1>
-        <p>Archive commune Auto + Industrie. Les PDF restent separes des ventes et servent uniquement a retrouver, telecharger ou supprimer les documents generes.</p>
+      <div class="hero-main">
+        <div>
+          <span class="eyebrow">Documents commerciaux</span>
+          <h1>BDC / Devis</h1>
+          <p>Archive commune Auto + Industrie pour retrouver, telecharger ou supprimer les PDF generes.</p>
+        </div>
+        <nav class="actions" aria-label="Navigation">
+          <a class="btn" href="index.html">Portail</a>
+          <a class="btn" href="ficherclt.html">Fiche Auto</a>
+          <a class="btn" href="ficherclt-industrie.html">Fiche Industrie</a>
+        </nav>
       </div>
-      <nav class="actions" aria-label="Navigation">
-        <a class="btn" href="index.html">Portail</a>
-        <a class="btn" href="ficherclt.html">Fiche Auto</a>
-        <a class="btn" href="ficherclt-industrie.html">Fiche Industrie</a>
-      </nav>
-    </header>
 
-    <section class="glass filters">
       <div class="filters-grid">
         <div class="field">
           <label for="searchInput">Recherche client / fichier</label>
@@ -367,15 +379,16 @@
         </div>
         <button class="btn btn-primary" id="refreshBtn" type="button">Actualiser</button>
       </div>
-      <div class="status" id="statusBar">Chargement des documents...</div>
-    </section>
 
-    <section class="kpis">
-      <article class="kpi"><span>Total</span><strong id="kpiTotal">0</strong><small>document(s)</small></article>
-      <article class="kpi"><span>BDC</span><strong id="kpiBdc">0</strong><small>bon(s) de commande</small></article>
-      <article class="kpi"><span>Devis</span><strong id="kpiDevis">0</strong><small>devis archive(s)</small></article>
-      <article class="kpi"><span>Stockage</span><strong id="kpiStorage">0 Ko</strong><small>poids estime des PDF</small></article>
-    </section>
+      <section class="kpis" aria-label="Indicateurs documents">
+        <article class="kpi"><span>Total</span><small>document(s)</small><strong id="kpiTotal">0</strong></article>
+        <article class="kpi"><span>BDC</span><small>commande</small><strong id="kpiBdc">0</strong></article>
+        <article class="kpi"><span>Devis</span><small>archive(s)</small><strong id="kpiDevis">0</strong></article>
+        <article class="kpi"><span>Stockage</span><small>PDF</small><strong id="kpiStorage">0 Ko</strong></article>
+      </section>
+
+      <div class="status" id="statusBar">Chargement des documents...</div>
+    </header>
 
     <main class="documents-grid">
       <section class="glass panel">
