@@ -245,26 +245,25 @@
       white-space: nowrap;
     }
 
-    .doc-list { display: grid; gap: 11px; }
+    .doc-list { display: grid; gap: 8px; }
 
     .doc-card {
-      padding: 13px;
-      border-radius: 17px;
+      padding: 9px 10px;
+      border-radius: 14px;
       background: rgba(255, 255, 255, 0.045);
       border: 1px solid rgba(255, 255, 255, 0.08);
       display: grid;
+      grid-template-columns: minmax(170px, 1.25fr) minmax(210px, 1fr) auto;
       gap: 10px;
+      align-items: center;
     }
 
     .doc-top {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 10px;
-      align-items: start;
+      min-width: 0;
     }
 
     .doc-title {
-      font-size: 1rem;
+      font-size: 0.92rem;
       font-weight: 950;
       letter-spacing: -0.02em;
       line-height: 1.25;
@@ -273,28 +272,29 @@
 
     .doc-file {
       color: var(--muted);
-      font-size: 0.82rem;
-      margin-top: 4px;
+      font-size: 0.76rem;
+      margin-top: 2px;
       overflow-wrap: anywhere;
     }
 
     .doc-meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 7px;
+      gap: 5px;
       color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.75rem;
+      align-items: center;
     }
 
     .pill {
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      padding: 6px 9px;
+      padding: 5px 8px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.1);
       background: rgba(255,255,255,.05);
-      font-size: .76rem;
+      font-size: .72rem;
       font-weight: 850;
     }
     .pill.auto { color: #bae6fd; border-color: rgba(56,189,248,.24); background: rgba(56,189,248,.1); }
@@ -302,9 +302,15 @@
 
     .doc-actions {
       display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 6px;
+      flex-wrap: nowrap;
       justify-content: flex-end;
+    }
+
+    .doc-actions .btn {
+      padding: 8px 10px;
+      border-radius: 11px;
+      font-size: 0.78rem;
     }
 
     .empty {
@@ -329,7 +335,7 @@
       body { padding: 14px; }
       .filters-grid,
       .kpis { grid-template-columns: 1fr; }
-      .doc-top { grid-template-columns: 1fr; }
+      .doc-card { grid-template-columns: 1fr; }
       .doc-actions { justify-content: stretch; }
       .doc-actions .btn { flex: 1 1 auto; }
     }
@@ -496,13 +502,11 @@
     function renderDocumentCard(doc) {
       return `<article class="doc-card" data-id="${escapeHtml(doc.id)}">
         <div class="doc-top">
-          <div>
-            <div class="doc-title">${escapeHtml(doc.client_nom || "Client")}</div>
-            <div class="doc-file">${escapeHtml(doc.nom_fichier || "document.pdf")}</div>
-          </div>
-          <span class="pill ${escapeHtml(doc.secteur || "auto")}">${escapeHtml(sectorLabel(doc.secteur))}</span>
+          <div class="doc-title">${escapeHtml(doc.client_nom || "Client")}</div>
+          <div class="doc-file">${escapeHtml(doc.nom_fichier || "document.pdf")}</div>
         </div>
         <div class="doc-meta">
+          <span class="pill ${escapeHtml(doc.secteur || "auto")}">${escapeHtml(sectorLabel(doc.secteur))}</span>
           <span>${escapeHtml(formatDate(doc.date_document))}</span>
           <span>Compte ${escapeHtml(doc.numero_compte || "-")}</span>
           <span>${escapeHtml(formatCurrency(doc.montant_ht))}</span>
