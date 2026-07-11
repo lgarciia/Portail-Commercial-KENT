@@ -531,7 +531,7 @@
           <h2>Synthèse à date</h2>
           <div class="kpiStack">
             <div class="miniKpi"><span>CA réalisé</span><strong id="kpiReal">-</strong><small>Toutes entités cumulées</small></div>
-            <div class="miniKpi"><span>Budget à date</span><strong id="kpiBudget">-</strong><small>Objectif cumulé jusqu'au mois courant</small></div>
+            <div class="miniKpi"><span>Budget à date</span><strong id="kpiBudget">-</strong><small>Objectif cumulé jusqu'au dernier mois réalisé</small></div>
             <div class="miniKpi"><span>Atteinte</span><strong id="kpiRate">-</strong><small id="kpiGap">Écart à date en attente</small></div>
           </div>
           <div class="entityList" id="entityList"></div>
@@ -652,9 +652,16 @@
         item.budget += Number(budgetTotals[index] || 0);
       });
     }
-    function getComparisonMonthCount(year){
+    function getLastRealMonthCount(totals){
+      const lastIndex = (totals || []).reduce((last, item, index) => {
+        return Number(item && item.real || 0) ? index : last;
+      }, -1);
+      return lastIndex >= 0 ? lastIndex + 1 : 1;
+    }
+    function getComparisonMonthCount(year, totals){
       const now = new Date();
-      if (Number(year) === now.getFullYear()) return now.getMonth() + 1;
+      const lastRealMonthCount = getLastRealMonthCount(totals);
+      if (Number(year) === now.getFullYear()) return Math.min(now.getMonth() + 1, lastRealMonthCount);
       return 12;
     }
     function sumMonths(totals, key, monthCount){
@@ -717,7 +724,7 @@
         }
       });
 
-      const monthCount = getComparisonMonthCount(year);
+      const monthCount = getComparisonMonthCount(year, monthlyTotals);
       const comparisonMonth = utils.MONTHS[Math.max(0, monthCount - 1)];
       const realToDate = sumMonths(monthlyTotals, "real", monthCount);
       const budgetToDate = sumMonths(monthlyTotals, "budget", monthCount);
