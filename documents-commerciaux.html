@@ -118,7 +118,7 @@
 
     .filters-grid {
       display: grid;
-      grid-template-columns: minmax(240px, 1.35fr) repeat(3, minmax(140px, 0.55fr)) auto;
+      grid-template-columns: minmax(220px, 1.25fr) repeat(4, minmax(120px, 0.5fr)) auto;
       gap: 10px;
       align-items: end;
     }
@@ -256,6 +256,12 @@
       grid-template-columns: minmax(170px, 1.2fr) minmax(190px, 1fr) auto auto;
       gap: 10px;
       align-items: center;
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .doc-card.validated {
+      background: rgba(34, 197, 94, 0.09);
+      border-color: rgba(34, 197, 94, 0.22);
     }
 
     .doc-top {
@@ -305,12 +311,71 @@
       gap: 6px;
       flex-wrap: nowrap;
       justify-content: flex-end;
+      align-items: center;
     }
 
     .doc-actions .btn {
-      padding: 8px 10px;
-      border-radius: 11px;
-      font-size: 0.78rem;
+      padding: 7px 9px;
+      border-radius: 10px;
+      font-size: 0.74rem;
+    }
+
+    .validation-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.72rem;
+      font-weight: 900;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .validation-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+    }
+
+    .toggle-track {
+      width: 30px;
+      height: 16px;
+      padding: 2px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.28);
+      display: inline-flex;
+      align-items: center;
+      transition: background 0.18s ease;
+    }
+
+    .toggle-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .validation-toggle.is-valid {
+      color: #bbf7d0;
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.24);
+    }
+
+    .validation-toggle.is-valid .toggle-track {
+      background: rgba(34, 197, 94, 0.42);
+    }
+
+    .validation-toggle.is-valid .toggle-dot {
+      transform: translateX(14px);
+      background: #dcfce7;
     }
 
     .doc-date {
@@ -393,6 +458,14 @@
           </select>
         </div>
         <div class="field">
+          <label for="validationFilter">Validation</label>
+          <select id="validationFilter">
+            <option value="all">Tous</option>
+            <option value="pending">Non validés</option>
+            <option value="validated">Validés</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="dateFilter">Date</label>
           <input id="dateFilter" type="month" />
         </div>
@@ -446,7 +519,7 @@
     const dom = {};
 
     function cacheDom() {
-      ["searchInput","sectorFilter","typeFilter","dateFilter","refreshBtn","statusBar","kpiTotal","kpiBdc","kpiDevis","kpiStorage","bdcCount","devisCount","bdcList","devisList"].forEach(id => dom[id] = document.getElementById(id));
+      ["searchInput","sectorFilter","typeFilter","validationFilter","dateFilter","refreshBtn","statusBar","kpiTotal","kpiBdc","kpiDevis","kpiStorage","bdcCount","devisCount","bdcList","devisList"].forEach(id => dom[id] = document.getElementById(id));
     }
 
     function escapeHtml(value) {
@@ -486,15 +559,23 @@
       return Number.isFinite(time) ? time : 0;
     }
 
+    function isDocumentValidated(doc) {
+      return doc?.valide === true || doc?.valide === "true";
+    }
+
     function getFilteredDocuments() {
       const search = String(dom.searchInput.value || "").trim().toLowerCase();
       const sector = dom.sectorFilter.value;
       const type = dom.typeFilter.value;
+      const validation = dom.validationFilter.value;
       const dateMonth = dom.dateFilter.value;
 
       return state.documents.filter(doc => {
+        const validated = isDocumentValidated(doc);
         if (sector !== "all" && doc.secteur !== sector) return false;
         if (type !== "all" && doc.type_document !== type) return false;
+        if (validation === "validated" && !validated) return false;
+        if (validation === "pending" && validated) return false;
         if (dateMonth && !String(doc.date_document || "").startsWith(dateMonth)) return false;
         if (!search) return true;
         const haystack = [
@@ -522,7 +603,8 @@
     }
 
     function renderDocumentCard(doc) {
-      return `<article class="doc-card" data-id="${escapeHtml(doc.id)}">
+      const validated = isDocumentValidated(doc);
+      return `<article class="doc-card ${validated ? "validated" : ""}" data-id="${escapeHtml(doc.id)}">
         <div class="doc-top">
           <div class="doc-title">${escapeHtml(doc.client_nom || "Client")}</div>
           <div class="doc-file">${escapeHtml(doc.nom_fichier || "document.pdf")}</div>
@@ -535,6 +617,11 @@
           ${doc.numero_document ? `<span>${escapeHtml(doc.numero_document)}</span>` : ""}
         </div>
         <div class="doc-actions">
+          <label class="validation-toggle ${validated ? "is-valid" : ""}" title="Marquer le document comme validé ou non validé">
+            <input type="checkbox" data-action="toggle-validation" data-id="${escapeHtml(doc.id)}" ${validated ? "checked" : ""}>
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-dot"></span></span>
+            <span>${validated ? "Validé" : "Non validé"}</span>
+          </label>
           <button class="btn btn-primary" type="button" data-action="download" data-id="${escapeHtml(doc.id)}">Telecharger</button>
           <button class="btn btn-danger" type="button" data-action="delete" data-id="${escapeHtml(doc.id)}">Supprimer</button>
         </div>
@@ -634,9 +721,30 @@
       setStatus("Document supprime.");
     }
 
+    async function updateDocumentValidation(id, validated) {
+      const doc = findDocument(id);
+      if (!doc) return;
+      const previous = isDocumentValidated(doc);
+      doc.valide = validated;
+      render();
+      setStatus(validated ? "Document marqué comme validé." : "Document marqué comme non validé.");
+
+      const { error } = await supabaseClient
+        .from(DOCUMENTS_TABLE)
+        .update({ valide: validated })
+        .eq("id", id);
+
+      if (error) {
+        doc.valide = previous;
+        render();
+        setStatus(`Impossible d'enregistrer le statut. Lance la mise a jour SQL si besoin. Detail: ${error.message}`, "error");
+      }
+    }
+
     async function handleListClick(event) {
       const button = event.target.closest("[data-action][data-id]");
       if (!button) return;
+      if (button.dataset.action === "toggle-validation") return;
       const action = button.dataset.action;
       const id = button.dataset.id;
       button.disabled = true;
@@ -648,14 +756,28 @@
       }
     }
 
+    async function handleValidationChange(event) {
+      const input = event.target.closest('input[data-action="toggle-validation"][data-id]');
+      if (!input) return;
+      input.disabled = true;
+      try {
+        await updateDocumentValidation(input.dataset.id, input.checked);
+      } finally {
+        input.disabled = false;
+      }
+    }
+
     function bindEvents() {
       dom.searchInput.addEventListener("input", render);
       dom.sectorFilter.addEventListener("change", render);
       dom.typeFilter.addEventListener("change", render);
+      dom.validationFilter.addEventListener("change", render);
       dom.dateFilter.addEventListener("change", render);
       dom.refreshBtn.addEventListener("click", loadDocuments);
       dom.bdcList.addEventListener("click", handleListClick);
       dom.devisList.addEventListener("click", handleListClick);
+      dom.bdcList.addEventListener("change", handleValidationChange);
+      dom.devisList.addEventListener("change", handleValidationChange);
     }
 
     function init() {

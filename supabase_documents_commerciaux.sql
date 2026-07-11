@@ -34,9 +34,13 @@ create table if not exists public.documents_commerciaux (
   type_visite text,
   nb_lignes integer not null default 0,
   taille_octets bigint not null default 0,
+  valide boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.documents_commerciaux
+  add column if not exists valide boolean not null default false;
 
 create index if not exists idx_documents_commerciaux_type
   on public.documents_commerciaux (type_document);
@@ -49,6 +53,9 @@ create index if not exists idx_documents_commerciaux_date
 
 create index if not exists idx_documents_commerciaux_client
   on public.documents_commerciaux (client_nom);
+
+create index if not exists idx_documents_commerciaux_valide
+  on public.documents_commerciaux (valide);
 
 grant select, insert, update, delete on table public.documents_commerciaux to anon, authenticated;
 
