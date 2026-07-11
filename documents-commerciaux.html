@@ -33,9 +33,10 @@
         radial-gradient(circle at 92% 6%, rgba(34, 197, 94, 0.16), transparent 30%),
         linear-gradient(135deg, #06111f 0%, #081827 54%, #04101c 100%);
       padding: 24px;
+      overflow-x: hidden;
     }
 
-    .app-shell { max-width: 1480px; margin: 0 auto; }
+    .app-shell { max-width: 1480px; margin: 0 auto; min-width: 0; }
 
     .glass {
       background: linear-gradient(180deg, var(--panel), var(--panel-2));
@@ -217,8 +218,9 @@
     }
 
     .panel {
-      padding: 18px;
+      padding: 14px;
       min-height: 420px;
+      min-width: 0;
     }
 
     .panel-head {
@@ -245,18 +247,19 @@
       white-space: nowrap;
     }
 
-    .doc-list { display: grid; gap: 8px; }
+    .doc-list { display: grid; gap: 6px; min-width: 0; }
 
     .doc-card {
-      padding: 9px 10px;
-      border-radius: 14px;
+      padding: 7px 8px;
+      border-radius: 11px;
       background: rgba(255, 255, 255, 0.045);
       border: 1px solid rgba(255, 255, 255, 0.08);
       display: grid;
-      grid-template-columns: minmax(170px, 1.2fr) minmax(190px, 1fr) auto auto;
-      gap: 10px;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.82fr) max-content max-content;
+      gap: 6px;
       align-items: center;
       transition: background 0.18s ease, border-color 0.18s ease;
+      min-width: 0;
     }
 
     .doc-card.validated {
@@ -269,67 +272,83 @@
     }
 
     .doc-title {
-      font-size: 0.92rem;
+      font-size: 0.8rem;
       font-weight: 950;
       letter-spacing: -0.02em;
-      line-height: 1.25;
-      overflow-wrap: anywhere;
+      line-height: 1.18;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .doc-file {
       color: var(--muted);
-      font-size: 0.76rem;
-      margin-top: 2px;
-      overflow-wrap: anywhere;
+      font-size: 0.64rem;
+      margin-top: 1px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .doc-meta {
       display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
+      flex-wrap: nowrap;
+      gap: 4px;
       color: var(--muted);
-      font-size: 0.75rem;
+      font-size: 0.66rem;
       align-items: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .doc-meta > span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .pill {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 5px 8px;
+      gap: 5px;
+      padding: 3px 6px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.1);
       background: rgba(255,255,255,.05);
-      font-size: .72rem;
+      font-size: .64rem;
       font-weight: 850;
+      flex: 0 0 auto;
     }
     .pill.auto { color: #bae6fd; border-color: rgba(56,189,248,.24); background: rgba(56,189,248,.1); }
     .pill.industrie { color: #bbf7d0; border-color: rgba(34,197,94,.24); background: rgba(34,197,94,.1); }
 
     .doc-actions {
       display: flex;
-      gap: 6px;
+      gap: 4px;
       flex-wrap: nowrap;
       justify-content: flex-end;
       align-items: center;
+      min-width: 0;
     }
 
     .doc-actions .btn {
-      padding: 7px 9px;
-      border-radius: 10px;
-      font-size: 0.74rem;
+      padding: 5px 7px;
+      border-radius: 8px;
+      font-size: 0.66rem;
+      line-height: 1;
     }
 
     .validation-toggle {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 8px;
+      gap: 4px;
+      padding: 4px 6px;
       border-radius: 999px;
       color: var(--muted);
       background: rgba(255, 255, 255, 0.055);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 0.72rem;
+      font-size: 0.64rem;
       font-weight: 900;
       white-space: nowrap;
       cursor: pointer;
@@ -345,8 +364,8 @@
     }
 
     .toggle-track {
-      width: 30px;
-      height: 16px;
+      width: 24px;
+      height: 13px;
       padding: 2px;
       border-radius: 999px;
       background: rgba(148, 163, 184, 0.28);
@@ -356,8 +375,8 @@
     }
 
     .toggle-dot {
-      width: 12px;
-      height: 12px;
+      width: 9px;
+      height: 9px;
       border-radius: 999px;
       background: #e2e8f0;
       transition: transform 0.18s ease, background 0.18s ease;
@@ -374,18 +393,18 @@
     }
 
     .validation-toggle.is-valid .toggle-dot {
-      transform: translateX(14px);
+      transform: translateX(11px);
       background: #dcfce7;
     }
 
     .doc-date {
       justify-self: end;
-      padding: 7px 9px;
+      padding: 5px 7px;
       border-radius: 999px;
       color: #fde68a;
       background: rgba(245, 158, 11, 0.1);
       border: 1px solid rgba(245, 158, 11, 0.18);
-      font-size: 0.76rem;
+      font-size: 0.66rem;
       font-weight: 900;
       white-space: nowrap;
     }
@@ -539,6 +558,14 @@
       return date.toLocaleDateString("fr-FR");
     }
 
+    function formatShortDate(value) {
+      if (!value) return "-";
+      const [year, month, day] = String(value).split("-").map(Number);
+      const date = new Date(year, (month || 1) - 1, day || 1);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+    }
+
     function formatCurrency(value) {
       return Number(value || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
     }
@@ -613,7 +640,6 @@
           <span class="pill ${escapeHtml(doc.secteur || "auto")}">${escapeHtml(sectorLabel(doc.secteur))}</span>
           <span>Compte ${escapeHtml(doc.numero_compte || "-")}</span>
           <span>${escapeHtml(formatCurrency(doc.montant_ht))}</span>
-          <span>${escapeHtml(formatBytes(doc.taille_octets))}</span>
           ${doc.numero_document ? `<span>${escapeHtml(doc.numero_document)}</span>` : ""}
         </div>
         <div class="doc-actions">
@@ -622,10 +648,10 @@
             <span class="toggle-track" aria-hidden="true"><span class="toggle-dot"></span></span>
             <span>${validated ? "Validé" : "Non validé"}</span>
           </label>
-          <button class="btn btn-primary" type="button" data-action="download" data-id="${escapeHtml(doc.id)}">Telecharger</button>
-          <button class="btn btn-danger" type="button" data-action="delete" data-id="${escapeHtml(doc.id)}">Supprimer</button>
+          <button class="btn btn-primary" type="button" data-action="download" data-id="${escapeHtml(doc.id)}" title="Telecharger">Telech.</button>
+          <button class="btn btn-danger" type="button" data-action="delete" data-id="${escapeHtml(doc.id)}" title="Supprimer">Suppr.</button>
         </div>
-        <div class="doc-date">${escapeHtml(formatDate(doc.date_document))}</div>
+        <div class="doc-date" title="${escapeHtml(formatDate(doc.date_document))}">${escapeHtml(formatShortDate(doc.date_document))}</div>
       </article>`;
     }
 
