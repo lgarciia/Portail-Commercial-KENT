@@ -101,6 +101,44 @@
     .dot.warn{background:var(--gold)}
     .dot.bad{background:var(--danger)}
     .small{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.4}
+    .quickViews{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+      padding:9px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:15px;
+      background:rgba(2,6,23,.24);
+    }
+    .quickViewsTitle{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      margin-right:2px;
+    }
+    .quickViewBtn{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.055);
+      color:var(--text);
+      border-radius:999px;
+      padding:7px 10px;
+      font-weight:950;
+      font-size:11px;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:transform .16s ease, background .16s ease, border-color .16s ease;
+    }
+    .quickViewBtn:hover{transform:translateY(-1px);background:rgba(255,255,255,.10)}
+    .quickViewBtn.active{
+      color:#06111f;
+      background:linear-gradient(135deg,#fde68a,var(--gold));
+      border-color:transparent;
+      box-shadow:0 10px 24px rgba(245,158,11,.18);
+    }
     .filters{
       display:grid;
       grid-template-columns:repeat(9,minmax(0,1fr));
@@ -173,6 +211,14 @@
   </div>
 
   <div class="card">
+    <div class="quickViews" aria-label="Vues rapides">
+      <span class="quickViewsTitle">Vues rapides</span>
+      <button class="quickViewBtn" type="button" data-preset="ca-client-month">CA par client ce mois</button>
+      <button class="quickViewBtn" type="button" data-preset="ca-product-month">CA par produit</button>
+      <button class="quickViewBtn" type="button" data-preset="top-client-auto">Top client Auto</button>
+      <button class="quickViewBtn" type="button" data-preset="phone-orders">Ventes téléphone</button>
+      <button class="quickViewBtn" type="button" data-preset="industry-product">Industrie par produit</button>
+    </div>
     <div class="filters">
       <div class="fbox" id="boxActivity"></div>
       <div class="fbox" id="boxYear"></div>
@@ -322,6 +368,7 @@ function buildListBox(mountId, title){
   function selectNone(){ [...sel.options].forEach(option => option.selected = false); updateBadge(); }
   function getSelected(){ return [...sel.selectedOptions].map(option => option.value); }
   function setSelected(values){ const set = new Set(values); [...sel.options].forEach(option => option.selected = set.has(option.value)); updateBadge(); }
+  function getOptions(){ return [...sel.options].map(option => option.value); }
   function setOptions(values, { labelFn = null, preserve = true, sortFn = null } = {}){
     const previous = preserve ? new Set(getSelected()) : null;
     let clean = uniq(values.map(value => String(value ?? "").trim()).filter(Boolean));
@@ -338,7 +385,7 @@ function buildListBox(mountId, title){
   sel.addEventListener("change", () => { updateBadge(); cascadeFrom(mountId); });
   btnAll.addEventListener("click", () => { selectAll(); cascadeFrom(mountId); });
   btnNone.addEventListener("click", () => { selectNone(); cascadeFrom(mountId); });
-  return { id: mountId, setOptions, getSelected, setSelected, selectAll, selectNone, getCumul: () => cumul.checked, setCumul: value => cumul.checked = Boolean(value) };
+  return { id: mountId, setOptions, getOptions, getSelected, setSelected, selectAll, selectNone, getCumul: () => cumul.checked, setCumul: value => cumul.checked = Boolean(value) };
 }
 let rows = [];
 let lastResult = [];
@@ -383,6 +430,74 @@ function cascadeFrom(changedBoxId){
     const colName = COLS[chain[j].key];
     chain[j].box.setOptions(colName ? base.map(row => row[colName]) : [], { labelFn: chain[j].labelFn, preserve:true, sortFn: chain[j].sortFn });
   }
+}
+function currentYearValue(){
+  return String(new Date().getFullYear());
+}
+function currentMonthValue(){
+  return String(new Date().getMonth() + 1);
+}
+function setBoxSelection(box, values){
+  const wanted = new Set([].concat(values || []).map(value => String(value)));
+  const available = new Set(box.getOptions());
+  const selected = [...wanted].filter(value => available.has(value));
+  if (selected.length) box.setSelected(selected);
+  else box.selectAll();
+}
+function setPresetActive(presetKey){
+  document.querySelectorAll(".quickViewBtn").forEach(button => {
+    button.classList.toggle("active", button.dataset.preset === presetKey);
+  });
+}
+function resetPresetFilters(){
+  chain.forEach(item => {
+    item.box.selectAll();
+    item.box.setCumul(false);
+  });
+}
+function setVisibleColumns(visibleKeys){
+  const visible = new Set(visibleKeys);
+  chain.forEach(item => {
+    item.box.setCumul(!visible.has(item.key));
+  });
+}
+function applyPreset(presetKey){
+  if (!rows.length) return;
+  resetPresetFilters();
+
+  setBoxSelection(boxYear, currentYearValue());
+  cascadeFrom(boxYear.id);
+  setBoxSelection(boxMonth, currentMonthValue());
+  cascadeFrom(boxMonth.id);
+
+  if (presetKey === "ca-client-month"){
+    setVisibleColumns(["CLIENT"]);
+  } else if (presetKey === "ca-product-month"){
+    setVisibleColumns(["REF", "DES"]);
+  } else if (presetKey === "top-client-auto"){
+    setBoxSelection(boxActivity, "Auto");
+    cascadeFrom(boxActivity.id);
+    setBoxSelection(boxYear, currentYearValue());
+    cascadeFrom(boxYear.id);
+    setBoxSelection(boxMonth, currentMonthValue());
+    cascadeFrom(boxMonth.id);
+    setVisibleColumns(["CLIENT"]);
+  } else if (presetKey === "phone-orders"){
+    setBoxSelection(boxType, "Commande telephone");
+    cascadeFrom(boxType.id);
+    setVisibleColumns(["ACTIVITY", "CLIENT"]);
+  } else if (presetKey === "industry-product"){
+    setBoxSelection(boxActivity, "Industrie");
+    cascadeFrom(boxActivity.id);
+    setBoxSelection(boxYear, currentYearValue());
+    cascadeFrom(boxYear.id);
+    setBoxSelection(boxMonth, currentMonthValue());
+    cascadeFrom(boxMonth.id);
+    setVisibleColumns(["REF", "DES"]);
+  }
+
+  setPresetActive(presetKey);
+  generate();
 }
 function buildKey(row, colsList){ return colsList.map(col => `${col}=${row[col] ?? ""}`).join("||"); }
 function prettyHeader(header){ return header; }
@@ -564,9 +679,15 @@ async function loadData(){
     $("genBtn").disabled = false;
   }
 }
-$("genBtn").addEventListener("click", generate);
+$("genBtn").addEventListener("click", () => {
+  setPresetActive("");
+  generate();
+});
 $("reloadBtn").addEventListener("click", loadData);
 $("exportBtn").addEventListener("click", exportCSV);
+document.querySelectorAll(".quickViewBtn").forEach(button => {
+  button.addEventListener("click", () => applyPreset(button.dataset.preset));
+});
 loadData();
 </script>
 </body>
