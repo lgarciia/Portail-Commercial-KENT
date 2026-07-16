@@ -116,6 +116,30 @@
     .btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.11); }
     .btn-primary { color: #07111f; border: none; background: linear-gradient(135deg, #fde68a, var(--gold)); }
     .btn-danger { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.28); color: #fecaca; }
+    .btn-export-icon {
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      color: #fde68a;
+      background: rgba(245, 158, 11, 0.08);
+      border-color: rgba(245, 158, 11, 0.18);
+    }
+    .btn-export-icon svg {
+      width: 19px;
+      height: 19px;
+      stroke: currentColor;
+    }
+    .btn-export-icon.is-loading {
+      opacity: 0.72;
+      pointer-events: none;
+    }
+    .btn-export-icon.is-loading svg {
+      animation: exportPulse 0.9s ease-in-out infinite alternate;
+    }
+    @keyframes exportPulse {
+      from { transform: translateY(-1px); opacity: 0.65; }
+      to { transform: translateY(1px); opacity: 1; }
+    }
 
     .filters-grid {
       display: grid;
@@ -505,10 +529,16 @@
           <p>Archive commune Auto + Industrie pour retrouver, telecharger ou supprimer les PDF generes.</p>
         </div>
         <nav class="actions" aria-label="Navigation">
-          <button class="btn btn-primary" id="exportArchiveBtn" type="button">Exporter tout</button>
           <a class="btn" href="index.html">Portail</a>
           <a class="btn" href="ficherclt.html">Fiche Auto</a>
           <a class="btn" href="ficherclt-industrie.html">Fiche Industrie</a>
+          <button class="btn btn-export-icon" id="exportArchiveBtn" type="button" title="Exporter tous les BDC et devis" aria-label="Exporter tous les BDC et devis">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v12"></path>
+              <path d="m7 10 5 5 5-5"></path>
+              <path d="M5 19h14"></path>
+            </svg>
+          </button>
         </nav>
       </div>
 
@@ -865,7 +895,8 @@
 
       state.exporting = true;
       dom.exportArchiveBtn.disabled = true;
-      dom.exportArchiveBtn.textContent = "Export...";
+      dom.exportArchiveBtn.classList.add("is-loading");
+      dom.exportArchiveBtn.title = "Export en cours...";
 
       try {
         setStatus("Preparation de l'export complet BDC / Devis...", "info");
@@ -925,7 +956,8 @@
       } finally {
         state.exporting = false;
         dom.exportArchiveBtn.disabled = false;
-        dom.exportArchiveBtn.textContent = "Exporter tout";
+        dom.exportArchiveBtn.classList.remove("is-loading");
+        dom.exportArchiveBtn.title = "Exporter tous les BDC et devis";
       }
     }
 
