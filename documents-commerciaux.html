@@ -608,6 +608,7 @@
         const haystack = [
           doc.client_nom,
           doc.numero_compte,
+          doc.numero_compte_libelle,
           doc.nom_fichier,
           doc.numero_document,
           doc.secteur,
@@ -631,6 +632,7 @@
 
     function renderDocumentCard(doc) {
       const validated = isDocumentValidated(doc);
+      const accountLabel = [doc.numero_compte, doc.numero_compte_libelle].filter(Boolean).join(" - ") || "-";
       return `<article class="doc-card ${validated ? "validated" : ""}" data-id="${escapeHtml(doc.id)}">
         <div class="doc-top">
           <div class="doc-title">${escapeHtml(doc.client_nom || "Client")}</div>
@@ -638,7 +640,7 @@
         </div>
         <div class="doc-meta">
           <span class="pill ${escapeHtml(doc.secteur || "auto")}">${escapeHtml(sectorLabel(doc.secteur))}</span>
-          <span>Compte ${escapeHtml(doc.numero_compte || "-")}</span>
+          <span>Compte ${escapeHtml(accountLabel)}</span>
           <span>${escapeHtml(formatCurrency(doc.montant_ht))}</span>
           ${doc.numero_document ? `<span>${escapeHtml(doc.numero_document)}</span>` : ""}
         </div>

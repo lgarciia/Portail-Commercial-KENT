@@ -25,6 +25,8 @@ create table if not exists public.documents_commerciaux (
   client_id text,
   client_nom text not null,
   numero_compte text,
+  numero_compte_libelle text,
+  compte_client_id uuid,
   date_document date not null,
   nom_fichier text not null,
   storage_bucket text not null default 'documents-commerciaux',
@@ -40,7 +42,9 @@ create table if not exists public.documents_commerciaux (
 );
 
 alter table public.documents_commerciaux
-  add column if not exists valide boolean not null default false;
+  add column if not exists valide boolean not null default false,
+  add column if not exists numero_compte_libelle text,
+  add column if not exists compte_client_id uuid;
 
 create index if not exists idx_documents_commerciaux_type
   on public.documents_commerciaux (type_document);
@@ -56,6 +60,9 @@ create index if not exists idx_documents_commerciaux_client
 
 create index if not exists idx_documents_commerciaux_valide
   on public.documents_commerciaux (valide);
+
+create index if not exists idx_documents_commerciaux_compte_client_id
+  on public.documents_commerciaux (compte_client_id);
 
 grant select, insert, update, delete on table public.documents_commerciaux to anon, authenticated;
 

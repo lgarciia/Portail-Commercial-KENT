@@ -186,6 +186,29 @@
     }
     .client-card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;position:relative;z-index:1}
     .client-card-name{font-size:1.38rem;letter-spacing:-.02em}
+    .client-accounts-card{
+      position:relative;z-index:1;margin-top:14px;padding:14px;border-radius:18px;
+      background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+    }
+    .client-accounts-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .client-accounts-title{display:flex;flex-direction:column;gap:4px}
+    .client-accounts-title strong{font-size:.95rem}
+    .client-accounts-title span{color:var(--muted-2);font-size:.76rem;line-height:1.35}
+    .client-accounts-list{display:flex;flex-direction:column;gap:8px}
+    .account-row,.account-choice-item{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
+    }
+    .account-row-main{min-width:0;display:flex;flex-direction:column;gap:3px}
+    .account-row-main strong{font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .account-row-main span{color:var(--muted-2);font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .account-row-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}
+    .account-choice-modal{max-width:620px}
+    .account-choice-list{display:flex;flex-direction:column;gap:10px}
+    .account-choice-item{width:100%;text-align:left;color:var(--text);cursor:pointer;transition:border-color .18s ease,transform .18s ease,background .18s ease}
+    .account-choice-item:hover{transform:translateY(-1px);border-color:rgba(56,189,248,.38);background:rgba(56,189,248,.1)}
+    .account-choice-item .mini-badge{margin-left:auto}
     .plaque-pill,.mini-badge,.metric-chip{
       display:inline-flex;align-items:center;gap:8px;
       padding:8px 12px;border-radius:999px;
@@ -650,6 +673,17 @@
             <strong id="clientTopProduct">—</strong>
           </div>
         </div>
+
+        <div class="client-accounts-card" id="clientAccountsCard">
+          <div class="client-accounts-head">
+            <div class="client-accounts-title">
+              <strong>Comptes client</strong>
+              <span id="clientAccountsHint">Compte principal + comptes secondaires pour les BDC et devis.</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="addClientAccountBtn" type="button">+ Compte</button>
+          </div>
+          <div class="client-accounts-list" id="clientAccountsList"></div>
+        </div>
       </aside>
     </section>
 
@@ -862,6 +896,60 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="clientAccountModalOverlay">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <div>
+          <h3>Ajouter un compte client</h3>
+          <p>Ajoute un numero de compte secondaire avec un libelle pour choisir le bon compte au moment du BDC ou du devis.</p>
+        </div>
+        <button class="close-btn" id="closeClientAccountModalBtn" type="button">&times;</button>
+      </div>
+
+      <form id="clientAccountForm">
+        <div class="modal-grid" style="grid-template-columns:1fr;">
+          <div class="field-group">
+            <label for="clientAccountNumeroInput">Numero de compte</label>
+            <input type="text" id="clientAccountNumeroInput" placeholder="Ex: 5143" />
+          </div>
+          <div class="field-group">
+            <label for="clientAccountLibelleInput">Libelle</label>
+            <input type="text" id="clientAccountLibelleInput" placeholder="Ex: Atelier, Magasin, Siege..." />
+          </div>
+          <label class="selected-client-pill" style="border-radius:14px;justify-content:flex-start;cursor:pointer;">
+            <input type="checkbox" id="clientAccountDefaultInput" style="width:auto;box-shadow:none;transform:none;" />
+            Utiliser par defaut pour les prochains documents
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <div class="helper-inline">Cela ne modifie pas le compte principal de la fiche client.</div>
+          <div class="actions-inline">
+            <button class="btn btn-secondary" id="cancelClientAccountBtn" type="button">Annuler</button>
+            <button class="btn btn-primary" id="saveClientAccountBtn" type="submit">Enregistrer</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="accountChoiceOverlay">
+    <div class="modal account-choice-modal">
+      <div class="modal-header">
+        <div>
+          <h3 id="accountChoiceTitle">Choisir le compte client</h3>
+          <p id="accountChoiceSubtitle">Selectionne le numero de compte a afficher dans le document.</p>
+        </div>
+        <button class="close-btn" id="closeAccountChoiceBtn" type="button">&times;</button>
+      </div>
+      <div class="account-choice-list" id="accountChoiceList"></div>
+      <div class="modal-actions">
+        <div class="helper-inline">Le choix sera enregistre dans l'historique du document genere.</div>
+        <button class="btn btn-secondary" id="cancelAccountChoiceBtn" type="button">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toastContainer" class="toast-container"></div>
   <datalist id="produitsDatalist"></datalist>
   <button class="fab" id="mobileAddVisitBtn" type="button">+ Visite</button>
@@ -876,9 +964,11 @@
     const DOCUMENTS_BUCKET = "documents-commerciaux";
     const DOCUMENTS_TABLE = "documents_commerciaux";
     const DOCUMENTS_SECTOR = "auto";
+    const CLIENT_ACCOUNTS_TABLE = "client_comptes";
 
     const state = {
       clients: [],
+      clientComptes: [],
       produits: [],
       produitsActifs: [],
       visites: [],
@@ -890,7 +980,9 @@
       activeVisitId: null,
       recommendationCart: new Map(),
       recommendationClientId: "",
-      lastAddedClientNumero: ""
+      lastAddedClientNumero: "",
+      accountChoiceResolver: null,
+      accountChoiceOptions: []
     };
 
     const dom = {};
@@ -921,6 +1013,9 @@
       dom.clientTelephone = document.getElementById("clientTelephone");
       dom.clientAdresse = document.getElementById("clientAdresse");
       dom.clientPlaque = document.getElementById("clientPlaque");
+      dom.clientAccountsHint = document.getElementById("clientAccountsHint");
+      dom.clientAccountsList = document.getElementById("clientAccountsList");
+      dom.addClientAccountBtn = document.getElementById("addClientAccountBtn");
       dom.clientTerrainStatus = document.getElementById("clientTerrainStatus");
       dom.clientLastVisit = document.getElementById("clientLastVisit");
       dom.clientTopProduct = document.getElementById("clientTopProduct");
@@ -984,6 +1079,20 @@
       dom.saveClientBtn = document.getElementById("saveClientBtn");
       dom.toastContainer = document.getElementById("toastContainer");
       dom.produitsDatalist = document.getElementById("produitsDatalist");
+      dom.clientAccountModalOverlay = document.getElementById("clientAccountModalOverlay");
+      dom.closeClientAccountModalBtn = document.getElementById("closeClientAccountModalBtn");
+      dom.cancelClientAccountBtn = document.getElementById("cancelClientAccountBtn");
+      dom.clientAccountForm = document.getElementById("clientAccountForm");
+      dom.clientAccountNumeroInput = document.getElementById("clientAccountNumeroInput");
+      dom.clientAccountLibelleInput = document.getElementById("clientAccountLibelleInput");
+      dom.clientAccountDefaultInput = document.getElementById("clientAccountDefaultInput");
+      dom.saveClientAccountBtn = document.getElementById("saveClientAccountBtn");
+      dom.accountChoiceOverlay = document.getElementById("accountChoiceOverlay");
+      dom.accountChoiceTitle = document.getElementById("accountChoiceTitle");
+      dom.accountChoiceSubtitle = document.getElementById("accountChoiceSubtitle");
+      dom.accountChoiceList = document.getElementById("accountChoiceList");
+      dom.closeAccountChoiceBtn = document.getElementById("closeAccountChoiceBtn");
+      dom.cancelAccountChoiceBtn = document.getElementById("cancelAccountChoiceBtn");
     }
 
     function setStatus(message, tone = "info") {
@@ -1316,6 +1425,315 @@
       return dom.popupClient.value;
     }
 
+
+    function getClientAccountsForClient(clientId) {
+      if (!clientId) return [];
+      return state.clientComptes.filter(account => String(account.client_id) === String(clientId));
+    }
+
+    function normalizeAccountNumber(value) {
+      return normalizeText(String(value || "").replace(/\s+/g, ""));
+    }
+
+    function getClientDocumentAccounts(client) {
+      if (!client) return [];
+      const seen = new Set();
+      const secondaryAccounts = getClientAccountsForClient(client.id)
+        .filter(account => String(account.numero_compte || "").trim())
+        .sort((a, b) => {
+          if (Boolean(b.is_default) !== Boolean(a.is_default)) return Boolean(b.is_default) - Boolean(a.is_default);
+          return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+        });
+      const hasSecondaryDefault = secondaryAccounts.some(account => Boolean(account.is_default));
+      const accounts = [];
+
+      if (String(client.numero_compte || "").trim()) {
+        const key = normalizeAccountNumber(client.numero_compte);
+        seen.add(key);
+        accounts.push({
+          id: "primary",
+          client_id: String(client.id),
+          numero_compte: String(client.numero_compte || "").trim(),
+          libelle: "Compte principal",
+          is_default: !hasSecondaryDefault,
+          is_primary: true
+        });
+      }
+
+      secondaryAccounts.forEach(account => {
+        const numero = String(account.numero_compte || "").trim();
+        const key = normalizeAccountNumber(numero);
+        if (!numero || seen.has(key)) return;
+        seen.add(key);
+        accounts.push({
+          ...account,
+          numero_compte: numero,
+          libelle: String(account.libelle || "").trim(),
+          is_primary: false
+        });
+      });
+
+      return accounts;
+    }
+
+    function getPreferredClientAccount(client) {
+      const accounts = getClientDocumentAccounts(client);
+      return accounts.find(account => Boolean(account.is_default)) || accounts[0] || null;
+    }
+
+    function formatClientAccountLine(account, client) {
+      const selected = account || getPreferredClientAccount(client);
+      const numero = String(selected?.numero_compte || client?.numero_compte || "").trim();
+      if (!numero) return "";
+      const libelle = String(selected?.libelle || "").trim();
+      return libelle && !selected?.is_primary ? `Compte : ${numero} - ${libelle}` : `Compte : ${numero}`;
+    }
+
+    function renderClientAccountsPanel(client = getClientById(getSelectedClientId())) {
+      if (!dom.clientAccountsList) return;
+      if (!client) {
+        dom.clientAccountsHint.textContent = "Selectionne un client pour voir ses comptes.";
+        dom.clientAccountsList.innerHTML = '<div class="account-row"><div class="account-row-main"><strong>Aucun client selectionne</strong><span>Les comptes apparaitront ici.</span></div></div>';
+        return;
+      }
+
+      const accounts = getClientDocumentAccounts(client);
+      const secondaryCount = getClientAccountsForClient(client.id).length;
+      dom.clientAccountsHint.textContent = secondaryCount
+        ? `${secondaryCount} compte(s) secondaire(s) enregistre(s).`
+        : "Le compte principal sera utilise par defaut.";
+
+      if (!accounts.length) {
+        dom.clientAccountsList.innerHTML = '<div class="account-row"><div class="account-row-main"><strong>Aucun compte renseigne</strong><span>Ajoute un compte pour le faire apparaitre sur les documents.</span></div></div>';
+        return;
+      }
+
+      dom.clientAccountsList.innerHTML = accounts.map(account => {
+        const isDefault = Boolean(account.is_default);
+        const actions = account.is_primary
+          ? `${isDefault ? '<span class="mini-badge">Defaut</span>' : `<button class="btn btn-secondary btn-sm" type="button" data-action="account-default-primary" data-client-id="${escapeHtml(client.id)}">Defaut</button>`}`
+          : `
+              ${isDefault ? '<span class="mini-badge">Defaut</span>' : `<button class="btn btn-secondary btn-sm" type="button" data-action="account-default" data-account-id="${escapeHtml(account.id)}" data-client-id="${escapeHtml(client.id)}">Defaut</button>`}
+              <button class="btn btn-danger btn-sm" type="button" data-action="account-delete" data-account-id="${escapeHtml(account.id)}">Suppr.</button>
+            `;
+        return `
+          <div class="account-row ${isDefault ? "is-default" : ""}">
+            <div class="account-row-main">
+              <strong>${escapeHtml(account.numero_compte || "-")}</strong>
+              <span>${escapeHtml(account.libelle || (account.is_primary ? "Compte principal" : "Sans libelle"))}</span>
+            </div>
+            <div class="account-row-actions">${actions}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function fetchClientComptes() {
+      const { data, error } = await supabaseClient
+        .from(CLIENT_ACCOUNTS_TABLE)
+        .select("id, client_id, numero_compte, libelle, is_default, created_at, updated_at")
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.warn("Comptes clients secondaires indisponibles:", error);
+        return [];
+      }
+      return data || [];
+    }
+
+    async function reloadClientComptes({ silent = false } = {}) {
+      try {
+        state.clientComptes = await fetchClientComptes();
+        renderClientAccountsPanel();
+      } catch (error) {
+        console.error("Erreur reloadClientComptes:", error);
+        if (!silent) showToast("Impossible de charger les comptes secondaires.", "warning");
+      }
+    }
+
+    function resetClientAccountForm() {
+      dom.clientAccountNumeroInput.value = "";
+      dom.clientAccountLibelleInput.value = "";
+      dom.clientAccountDefaultInput.checked = false;
+      dom.saveClientAccountBtn.disabled = false;
+    }
+
+    function openClientAccountModal() {
+      const client = getClientById(getSelectedClientId());
+      if (!client) return showToast("Selectionne un client avant d'ajouter un compte.", "warning");
+      resetClientAccountForm();
+      dom.clientAccountModalOverlay.classList.add("active");
+      setTimeout(() => dom.clientAccountNumeroInput.focus(), 30);
+    }
+
+    function closeClientAccountModal() {
+      dom.clientAccountModalOverlay.classList.remove("active");
+    }
+
+    async function saveClientAccount(event) {
+      event.preventDefault();
+      const client = getClientById(getSelectedClientId());
+      if (!client) return showToast("Selectionne un client avant d'ajouter un compte.", "warning");
+
+      const numeroCompte = String(dom.clientAccountNumeroInput.value || "").trim();
+      const libelle = String(dom.clientAccountLibelleInput.value || "").trim();
+      const isDefault = Boolean(dom.clientAccountDefaultInput.checked);
+
+      if (!numeroCompte) return showToast("Renseigne le numero de compte.", "warning");
+      if (normalizeAccountNumber(numeroCompte) === normalizeAccountNumber(client.numero_compte)) {
+        return showToast("Ce numero est deja le compte principal du client.", "warning");
+      }
+
+      try {
+        dom.saveClientAccountBtn.disabled = true;
+        setStatus("Enregistrement du compte client...", "info");
+
+        if (isDefault) {
+          const { error: resetError } = await supabaseClient
+            .from(CLIENT_ACCOUNTS_TABLE)
+            .update({ is_default: false })
+            .eq("client_id", String(client.id));
+          if (resetError) throw resetError;
+        }
+
+        const { error } = await supabaseClient
+          .from(CLIENT_ACCOUNTS_TABLE)
+          .upsert({
+            client_id: String(client.id),
+            numero_compte: numeroCompte,
+            libelle: libelle || null,
+            is_default: isDefault
+          }, { onConflict: "client_id,numero_compte" });
+        if (error) throw error;
+
+        closeClientAccountModal();
+        await reloadClientComptes({ silent: true });
+        setStatus("Compte client enregistre.", "success");
+        showToast("Compte client enregistre.", "success");
+      } catch (error) {
+        console.error("Erreur saveClientAccount:", error);
+        setStatus("Erreur lors de l'enregistrement du compte.", "error");
+        showToast("Impossible d'enregistrer le compte client. Verifie le SQL Supabase.", "error");
+      } finally {
+        dom.saveClientAccountBtn.disabled = false;
+      }
+    }
+
+    async function setPrimaryAccountAsDefault(clientId) {
+      try {
+        const { error } = await supabaseClient
+          .from(CLIENT_ACCOUNTS_TABLE)
+          .update({ is_default: false })
+          .eq("client_id", String(clientId));
+        if (error) throw error;
+        await reloadClientComptes({ silent: true });
+        showToast("Compte principal defini par defaut.", "success");
+      } catch (error) {
+        console.error("Erreur setPrimaryAccountAsDefault:", error);
+        showToast("Impossible de definir le compte principal par defaut.", "error");
+      }
+    }
+
+    async function setClientAccountDefault(accountId, clientId) {
+      try {
+        const { error: resetError } = await supabaseClient
+          .from(CLIENT_ACCOUNTS_TABLE)
+          .update({ is_default: false })
+          .eq("client_id", String(clientId));
+        if (resetError) throw resetError;
+
+        const { error } = await supabaseClient
+          .from(CLIENT_ACCOUNTS_TABLE)
+          .update({ is_default: true })
+          .eq("id", String(accountId));
+        if (error) throw error;
+
+        await reloadClientComptes({ silent: true });
+        showToast("Compte defini par defaut.", "success");
+      } catch (error) {
+        console.error("Erreur setClientAccountDefault:", error);
+        showToast("Impossible de definir le compte par defaut.", "error");
+      }
+    }
+
+    async function deleteClientAccount(accountId) {
+      if (!accountId) return;
+      if (!window.confirm("Supprimer ce compte secondaire ?")) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from(CLIENT_ACCOUNTS_TABLE)
+          .delete()
+          .eq("id", String(accountId));
+        if (error) throw error;
+
+        await reloadClientComptes({ silent: true });
+        showToast("Compte secondaire supprime.", "success");
+      } catch (error) {
+        console.error("Erreur deleteClientAccount:", error);
+        showToast("Impossible de supprimer ce compte.", "error");
+      }
+    }
+
+    function handleClientAccountsClick(event) {
+      const button = event.target.closest("[data-action]");
+      if (!button) return;
+      const action = button.dataset.action;
+      if (action === "account-default-primary") setPrimaryAccountAsDefault(button.dataset.clientId);
+      if (action === "account-default") setClientAccountDefault(button.dataset.accountId, button.dataset.clientId);
+      if (action === "account-delete") deleteClientAccount(button.dataset.accountId);
+    }
+
+    function openAccountChoiceModal(accounts, documentType = "document") {
+      if (!accounts.length) return Promise.resolve(null);
+      if (!dom.accountChoiceOverlay) return Promise.resolve(accounts[0]);
+      if (state.accountChoiceResolver) closeAccountChoiceModal(null);
+
+      const label = documentType === "bdc" ? "BDC" : "devis";
+      dom.accountChoiceTitle.textContent = `Choisir le compte pour le ${label}`;
+      dom.accountChoiceSubtitle.textContent = "Ce numero sera affiche dans le PDF, le mail et l'historique du document.";
+      state.accountChoiceOptions = accounts;
+      dom.accountChoiceList.innerHTML = accounts.map((account, index) => `
+        <button class="account-choice-item" type="button" data-account-choice-index="${index}">
+          <div class="account-row-main">
+            <strong>${escapeHtml(account.numero_compte || "-")}</strong>
+            <span>${escapeHtml(account.libelle || (account.is_primary ? "Compte principal" : "Sans libelle"))}</span>
+          </div>
+          ${account.is_default ? '<span class="mini-badge">Defaut</span>' : ""}
+        </button>
+      `).join("");
+      dom.accountChoiceOverlay.classList.add("active");
+
+      return new Promise(resolve => {
+        state.accountChoiceResolver = resolve;
+      });
+    }
+
+    function closeAccountChoiceModal(result = null) {
+      if (dom.accountChoiceOverlay) dom.accountChoiceOverlay.classList.remove("active");
+      const resolver = state.accountChoiceResolver;
+      state.accountChoiceResolver = null;
+      state.accountChoiceOptions = [];
+      if (resolver) resolver(result);
+    }
+
+    function handleAccountChoiceClick(event) {
+      const button = event.target.closest("[data-account-choice-index]");
+      if (!button) return;
+      const index = Number(button.dataset.accountChoiceIndex);
+      const account = state.accountChoiceOptions[index] || null;
+      closeAccountChoiceModal(account);
+    }
+
+    async function resolveDocumentAccountSelection(client, documentType) {
+      const accounts = getClientDocumentAccounts(client);
+      if (accounts.length <= 1) return accounts[0] || null;
+      const selected = await openAccountChoiceModal(accounts, documentType);
+      if (!selected) showToast("Generation annulee: aucun compte selectionne.", "warning");
+      return selected;
+    }
+
     function getColorDotHtml(color = "green") {
       return `<span class="color-dot ${escapeHtml(color)}"></span>`;
     }
@@ -1587,6 +2005,7 @@
       dom.clientLastVisit.textContent = "—";
       dom.clientTopProduct.textContent = "—";
       if (dom.quickRecoSummary) clearRecommendationCart({ silent: true });
+      renderClientAccountsPanel(null);
     }
 
     function updateClientHeader() {
@@ -1602,6 +2021,7 @@
       dom.clientAdresse.textContent = client.adresse || "—";
       dom.clientPlaque.textContent = getClientPlaqueLabel(client);
       dom.clientTerrainStatus.textContent = "Fiche client prête pour le rendez-vous";
+      renderClientAccountsPanel(client);
     }
 
     function isVisitWithSale(visite) {
@@ -1678,7 +2098,7 @@
       if (!query) return [...state.clients];
 
       return state.clients.filter(client =>
-        [client.nom, client.numero_compte, client.telephone, client.adresse]
+        [client.nom, client.numero_compte, client.telephone, client.adresse, ...getClientAccountsForClient(client.id).flatMap(account => [account.numero_compte, account.libelle])]
           .some(value => normalizeText(value).includes(query))
       );
     }
@@ -2909,9 +3329,9 @@
       return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
 
-    function buildBdcMailContent(client, dateVisite) {
+    function buildBdcMailContent(client, dateVisite, selectedAccount = null) {
       const clientName = client?.nom || "Client";
-      const clientCompte = String(client?.numero_compte || "").trim();
+      const clientCompte = String(selectedAccount?.numero_compte || client?.numero_compte || "").trim();
       const subject = `Bon de commande - ${clientName || "Client"} - ${formatDate(dateVisite)}`;
       const accountLine = clientCompte
         ? `Ci joint une cde pour le cpte ${clientCompte}`
@@ -2927,8 +3347,8 @@
       return { subject, body };
     }
 
-    function buildBdcMailtoLink(client, dateVisite) {
-      const { subject, body } = buildBdcMailContent(client, dateVisite);
+    function buildBdcMailtoLink(client, dateVisite, selectedAccount = null) {
+      const { subject, body } = buildBdcMailContent(client, dateVisite, selectedAccount);
       return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
 
@@ -2940,7 +3360,7 @@
       return `${DOCUMENTS_SECTOR}/${safeType}/${safeDate}/${suffix}-${safeFilename}`;
     }
 
-    async function archiveCommercialDocument({ type, doc, filename, client, dateVisite, montantHt, devisNumber, lineCount, visitType }) {
+    async function archiveCommercialDocument({ type, doc, filename, client, dateVisite, montantHt, devisNumber, lineCount, visitType, account = null }) {
       if (!doc || !filename) return false;
       const pdfBlob = doc.output("blob");
       const storagePath = buildDocumentStoragePath(type, filename, dateVisite);
@@ -2957,7 +3377,9 @@
         type_document: type,
         client_id: client?.id ? String(client.id) : null,
         client_nom: client?.nom || "Client",
-        numero_compte: client?.numero_compte || null,
+        numero_compte: String(account?.numero_compte || client?.numero_compte || "").trim() || null,
+        numero_compte_libelle: account?.is_primary ? null : (String(account?.libelle || "").trim() || null),
+        compte_client_id: account?.id && account.id !== "primary" ? account.id : null,
         date_document: dateVisite || getTodayIsoLocal(),
         nom_fichier: filename,
         storage_bucket: DOCUMENTS_BUCKET,
@@ -2996,6 +3418,8 @@
       if (!window.jspdf?.jsPDF) return showToast("Moteur PDF indisponible. Recharge la page puis reessaye.", "error");
 
       const client = getClientById(clientId);
+      const selectedAccount = await resolveDocumentAccountSelection(client, "devis");
+      if (!selectedAccount && getClientDocumentAccounts(client).length > 1) return;
       const clientName = client?.nom || "Client";
       const clientPlaque = getClientPlaqueLabel(client);
       const devisNumber = getNextDevisNumber(dateVisite);
@@ -3054,7 +3478,7 @@
         doc.setFontSize(9.6);
         const clientLines = [
           clientName,
-          client?.numero_compte ? `Compte : ${client.numero_compte}` : "",
+          formatClientAccountLine(selectedAccount, client),
           client?.adresse ? `Adresse : ${client.adresse}` : "",
           client?.telephone ? `Telephone : ${client.telephone}` : "",
           clientPlaque && clientPlaque !== "â€”" ? `Plaque tarif : ${clientPlaque}` : ""
@@ -3159,7 +3583,8 @@
             montantHt: totalHt,
             devisNumber,
             lineCount: lignes.length,
-            visitType: typeVisite
+            visitType: typeVisite,
+            account: selectedAccount
           });
         } catch (archiveError) {
           console.warn("Archivage devis impossible:", archiveError);
@@ -3195,6 +3620,8 @@
       if (!window.jspdf?.jsPDF) return showToast("Moteur PDF indisponible. Recharge la page puis reessaye.", "error");
 
       const client = getClientById(clientId);
+      const selectedAccount = await resolveDocumentAccountSelection(client, "bdc");
+      if (!selectedAccount && getClientDocumentAccounts(client).length > 1) return;
       const clientName = client?.nom || "Client";
       const clientPlaque = getClientPlaqueLabel(client);
       const totalHt = roundPrice(lignes.reduce((sum, ligne) => sum + Number(ligne.total_ligne || 0), 0));
@@ -3250,7 +3677,7 @@
         doc.setFontSize(9);
         const clientLines = [
           clientName,
-          client?.numero_compte ? `Compte : ${client.numero_compte}` : "",
+          formatClientAccountLine(selectedAccount, client),
           client?.adresse ? `Adresse : ${client.adresse}` : "",
           client?.telephone ? `Telephone : ${client.telephone}` : "",
           clientPlaque ? `Plaque tarif : ${clientPlaque}` : ""
@@ -3365,14 +3792,15 @@
             montantHt: totalHt,
             devisNumber: null,
             lineCount: lignes.length,
-            visitType: typeVisite
+            visitType: typeVisite,
+            account: selectedAccount
           });
         } catch (archiveError) {
           console.warn("Archivage BDC impossible:", archiveError);
           showToast("BDC telecharge, mais archive Supabase non enregistree.", "warning");
         }
 
-        window.location.href = buildBdcMailtoLink(client, dateVisite);
+        window.location.href = buildBdcMailtoLink(client, dateVisite, selectedAccount);
 
         if (missingConditionnements > 0) {
           showToast(`${missingConditionnements} ligne(s) sans conditionnement. PDF telecharge, mail ouvert.`, "warning");
@@ -3701,6 +4129,14 @@
       dom.closeClientModalBtn.addEventListener("click", closeClientModal);
       dom.cancelClientBtn.addEventListener("click", closeClientModal);
       dom.clientForm.addEventListener("submit", saveClient);
+      dom.addClientAccountBtn.addEventListener("click", openClientAccountModal);
+      dom.clientAccountsList.addEventListener("click", handleClientAccountsClick);
+      dom.closeClientAccountModalBtn.addEventListener("click", closeClientAccountModal);
+      dom.cancelClientAccountBtn.addEventListener("click", closeClientAccountModal);
+      dom.clientAccountForm.addEventListener("submit", saveClientAccount);
+      dom.accountChoiceList.addEventListener("click", handleAccountChoiceClick);
+      dom.closeAccountChoiceBtn.addEventListener("click", () => closeAccountChoiceModal(null));
+      dom.cancelAccountChoiceBtn.addEventListener("click", () => closeAccountChoiceModal(null));
       dom.timelineList.addEventListener("click", handleVisitActionClick);
       dom.visitesTableBody.addEventListener("click", handleVisitActionClick);
       dom.visitesTableHead.addEventListener("input", handleRecommendationControlChange);
@@ -3718,11 +4154,21 @@
         if (event.target === dom.clientModalOverlay) closeClientModal();
       });
 
+      dom.clientAccountModalOverlay.addEventListener("click", event => {
+        if (event.target === dom.clientAccountModalOverlay) closeClientAccountModal();
+      });
+
+      dom.accountChoiceOverlay.addEventListener("click", event => {
+        if (event.target === dom.accountChoiceOverlay) closeAccountChoiceModal(null);
+      });
+
       document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
           closeVisitModal();
           closeTopProduits();
           closeClientModal();
+          closeClientAccountModal();
+          closeAccountChoiceModal(null);
         }
       });
     }
@@ -3737,8 +4183,9 @@
       try {
         setStatus("Connexion à Supabase...", "info");
 
-        const [clients, produits, tarifsPlaques, plaques, conditionnements] = await Promise.all([
+        const [clients, clientComptes, produits, tarifsPlaques, plaques, conditionnements] = await Promise.all([
           fetchClients(),
+          fetchClientComptes(),
           fetchProduits(),
           fetchTarifsPlaques(),
           fetchPlaques(),
@@ -3746,6 +4193,7 @@
         ]);
 
         state.clients = clients;
+        state.clientComptes = clientComptes;
         state.produits = produits;
         state.produitsActifs = produits.filter(produit => Boolean(produit.actif));
         state.tarifsPlaques = tarifsPlaques;
