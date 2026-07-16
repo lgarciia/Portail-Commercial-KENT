@@ -505,6 +505,7 @@
           <p>Archive commune Auto + Industrie pour retrouver, telecharger ou supprimer les PDF generes.</p>
         </div>
         <nav class="actions" aria-label="Navigation">
+          <button class="btn btn-primary" id="exportArchiveBtn" type="button">Exporter tout</button>
           <a class="btn" href="index.html">Portail</a>
           <a class="btn" href="ficherclt.html">Fiche Auto</a>
           <a class="btn" href="ficherclt-industrie.html">Fiche Industrie</a>
@@ -596,6 +597,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script>
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
@@ -613,11 +615,11 @@
       non_valide: "Non valid\u00e9"
     };
 
-    const state = { documents: [], deleteCandidateId: null, deleting: false };
+    const state = { documents: [], deleteCandidateId: null, deleting: false, exporting: false };
     const dom = {};
 
     function cacheDom() {
-      ["searchInput","sectorFilter","typeFilter","validationFilter","dateFilter","refreshBtn","statusBar","kpiTotal","kpiBdc","kpiDevis","kpiStorage","bdcCount","devisCount","bdcList","devisList","deleteModal","deleteModalFile","cancelDeleteBtn","confirmDeleteBtn"].forEach(id => dom[id] = document.getElementById(id));
+      ["searchInput","sectorFilter","typeFilter","validationFilter","dateFilter","refreshBtn","exportArchiveBtn","statusBar","kpiTotal","kpiBdc","kpiDevis","kpiStorage","bdcCount","devisCount","bdcList","devisList","deleteModal","deleteModalFile","cancelDeleteBtn","confirmDeleteBtn"].forEach(id => dom[id] = document.getElementById(id));
     }
 
     function escapeHtml(value) {
@@ -653,6 +655,24 @@
       const value = Number(bytes || 0);
       if (value >= 1024 * 1024) return `${(value / (1024 * 1024)).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo`;
       return `${Math.max(0, Math.round(value / 1024)).toLocaleString("fr-FR")} Ko`;
+    }
+
+    function sanitizeArchivePart(value, fallback = "document") {
+      const cleaned = String(value || fallback || "document")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[\\/:*?"<>|]+/g, "-")
+        .replace(/\s+/g, " ")
+        .trim();
+      return (cleaned || fallback || "document").slice(0, 110);
+    }
+
+    function getTodayCompact() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}${month}${day}`;
     }
 
     function setStatus(message, tone = "info") {
@@ -774,6 +794,139 @@
       state.documents = data || [];
       render();
       setStatus(`${state.documents.length} document(s) charge(s).`);
+    }
+
+    async function fetchAllDocumentsForExport() {
+      const pageSize = 1000;
+      let from = 0;
+      const all = [];
+
+      while (true) {
+        const to = from + pageSize - 1;
+        const { data, error } = await supabaseClient
+          .from(DOCUMENTS_TABLE)
+          .select("*")
+          .order("date_document", { ascending: true })
+          .order("created_at", { ascending: true })
+          .range(from, to);
+
+        if (error) throw error;
+        const batch = data || [];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+
+      return all;
+    }
+
+    function buildArchivePath(doc, usedPaths) {
+      const sector = sanitizeArchivePart(sectorLabel(doc.secteur), "Auto");
+      const type = sanitizeArchivePart(typeLabel(doc.type_document), "Document");
+      const year = String(doc.date_document || "sans-date").slice(0, 4) || "sans-date";
+      const date = sanitizeArchivePart(doc.date_document || "sans-date", "sans-date");
+      const client = sanitizeArchivePart(doc.client_nom || "Client", "Client");
+      const account = sanitizeArchivePart(doc.numero_compte || "", "");
+      const originalName = sanitizeArchivePart(doc.nom_fichier || `${type}_${client}_${date}.pdf`, `${type}_${date}.pdf`);
+      const accountPart = account ? ` - ${account}` : "";
+      const baseWithContext = `${date} - ${client}${accountPart} - ${originalName}`;
+      const extension = baseWithContext.toLowerCase().endsWith(".pdf") ? "" : ".pdf";
+      const folder = `${sector}/${type}/${year}`;
+      let candidate = `${folder}/${baseWithContext}${extension}`;
+      let index = 2;
+
+      while (usedPaths.has(candidate)) {
+        const withoutPdf = candidate.replace(/\.pdf$/i, "");
+        candidate = `${withoutPdf} (${index}).pdf`;
+        index += 1;
+      }
+
+      usedPaths.add(candidate);
+      return candidate;
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1200);
+    }
+
+    async function exportAllDocumentsArchive() {
+      if (state.exporting) return;
+      if (!window.JSZip) {
+        setStatus("Moteur ZIP indisponible. Recharge la page puis reessaye.", "error");
+        return;
+      }
+
+      state.exporting = true;
+      dom.exportArchiveBtn.disabled = true;
+      dom.exportArchiveBtn.textContent = "Export...";
+
+      try {
+        setStatus("Preparation de l'export complet BDC / Devis...", "info");
+        const docs = await fetchAllDocumentsForExport();
+        if (!docs.length) {
+          setStatus("Aucun document a exporter.", "warn");
+          return;
+        }
+
+        const zip = new window.JSZip();
+        const usedPaths = new Set();
+        const errors = [];
+        let exported = 0;
+
+        for (let index = 0; index < docs.length; index += 1) {
+          const doc = docs[index];
+          const label = doc.nom_fichier || `document-${index + 1}.pdf`;
+          setStatus(`Export ${index + 1}/${docs.length} : ${label}`);
+
+          try {
+            if (!doc.storage_path) throw new Error("storage_path manquant");
+            const { data, error } = await supabaseClient.storage
+              .from(doc.storage_bucket || DOCUMENTS_BUCKET)
+              .createSignedUrl(doc.storage_path, 300);
+            if (error || !data?.signedUrl) throw new Error(error?.message || "lien signe indisponible");
+
+            const response = await fetch(data.signedUrl);
+            if (!response.ok) throw new Error(`telechargement impossible (${response.status})`);
+
+            const blob = await response.blob();
+            zip.file(buildArchivePath(doc, usedPaths), await blob.arrayBuffer());
+            exported += 1;
+          } catch (error) {
+            errors.push(`${label} | ${doc.storage_path || "chemin inconnu"} | ${error?.message || "erreur inconnue"}`);
+          }
+        }
+
+        if (errors.length) {
+          zip.file("erreurs_export.txt", [
+            "Certains documents n'ont pas pu etre exportes.",
+            "Les autres PDF sont bien presents dans cette archive.",
+            "",
+            ...errors
+          ].join("\n"));
+        }
+
+        const zipBlob = await zip.generateAsync(
+          { type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } },
+          metadata => setStatus(`Compression archive : ${Math.round(metadata.percent || 0)} %`)
+        );
+        const filename = `archive_bdc_devis_${getTodayCompact()}.zip`;
+        downloadBlob(zipBlob, filename);
+        setStatus(`Archive telechargee : ${exported}/${docs.length} PDF exporte(s)${errors.length ? `, ${errors.length} erreur(s) listee(s).` : "."}`);
+      } catch (error) {
+        console.error("Erreur export archive:", error);
+        setStatus(`Impossible de creer l'archive : ${error?.message || "erreur inconnue"}`, "error");
+      } finally {
+        state.exporting = false;
+        dom.exportArchiveBtn.disabled = false;
+        dom.exportArchiveBtn.textContent = "Exporter tout";
+      }
     }
 
     function findDocument(id) {
@@ -903,6 +1056,7 @@
       dom.validationFilter.addEventListener("change", render);
       dom.dateFilter.addEventListener("change", render);
       dom.refreshBtn.addEventListener("click", loadDocuments);
+      dom.exportArchiveBtn.addEventListener("click", exportAllDocumentsArchive);
       dom.bdcList.addEventListener("click", handleListClick);
       dom.devisList.addEventListener("click", handleListClick);
       dom.cancelDeleteBtn.addEventListener("click", closeDeleteModal);
