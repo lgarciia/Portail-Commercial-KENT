@@ -23,6 +23,7 @@ create table if not exists public.documents_commerciaux (
   secteur text not null check (secteur in ('auto', 'industrie')),
   type_document text not null check (type_document in ('bdc', 'devis')),
   client_id text,
+  visite_id text,
   client_nom text not null,
   numero_compte text,
   numero_compte_libelle text,
@@ -46,7 +47,8 @@ alter table public.documents_commerciaux
   add column if not exists valide boolean not null default false,
   add column if not exists statut_validation text not null default 'en_cours',
   add column if not exists numero_compte_libelle text,
-  add column if not exists compte_client_id uuid;
+  add column if not exists compte_client_id uuid,
+  add column if not exists visite_id text;
 
 update public.documents_commerciaux
 set statut_validation = 'valide'
@@ -87,6 +89,12 @@ create index if not exists idx_documents_commerciaux_statut_validation
 
 create index if not exists idx_documents_commerciaux_compte_client_id
   on public.documents_commerciaux (compte_client_id);
+
+create index if not exists idx_documents_commerciaux_visite_id
+  on public.documents_commerciaux (visite_id);
+
+create index if not exists idx_documents_commerciaux_visite_type
+  on public.documents_commerciaux (visite_id, type_document);
 
 grant select, insert, update, delete on table public.documents_commerciaux to anon, authenticated;
 

@@ -245,6 +245,33 @@
       background:rgba(148,163,184,.14);
       color:#cbd5e1;
     }
+    .document-status-badge{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 9px;border-radius:999px;
+      border:1px solid rgba(148,163,184,.24);
+      background:rgba(148,163,184,.12);
+      color:#e2e8f0;font-size:.68rem;font-weight:800;
+      text-transform:uppercase;letter-spacing:.055em;
+      white-space:nowrap;
+    }
+    .document-status-badge .doc-kind{
+      opacity:.72;font-weight:900;
+    }
+    .document-status-badge.status-valide{
+      border-color:rgba(34,197,94,.34);
+      background:rgba(34,197,94,.15);
+      color:#bbf7d0;
+    }
+    .document-status-badge.status-en_cours{
+      border-color:rgba(245,158,11,.35);
+      background:rgba(245,158,11,.14);
+      color:#fde68a;
+    }
+    .document-status-badge.status-non_valide{
+      border-color:rgba(248,113,113,.38);
+      background:rgba(248,113,113,.14);
+      color:#fecaca;
+    }
     .visit-card.phone-order{
       border-color:rgba(56,189,248,.22);
       background:linear-gradient(180deg,rgba(14,165,233,.08),rgba(255,255,255,.025));
@@ -978,6 +1005,8 @@
       conditionnementsByRef5: new Map(),
       currentView: "timeline",
       activeVisitId: null,
+      documentStatusByVisitId: new Map(),
+      pendingDocumentLinkIds: [],
       recommendationCart: new Map(),
       recommendationClientId: "",
       lastAddedClientNumero: "",
@@ -1281,6 +1310,60 @@
       if (key === VISIT_TYPE_CLIENT_CLOSED) badgeClass = "closed";
       return `<span class="visit-type-badge ${badgeClass}">${escapeHtml(getVisitTypeLabel(key))}</span>`;
     }
+
+    const DOCUMENT_STATUS_LABELS = {
+      en_cours: "En cours",
+      valide: "Valid\u00e9",
+      non_valide: "Non valid\u00e9"
+    };
+    const DOCUMENT_STATUS_PRIORITY = { non_valide: 3, en_cours: 2, valide: 1 };
+    const DOCUMENT_TYPE_PRIORITY = { bdc: 2, devis: 1 };
+
+    function normalizeDocumentStatus(value) {
+      const status = String(value || "").trim();
+      return Object.prototype.hasOwnProperty.call(DOCUMENT_STATUS_LABELS, status) ? status : "";
+    }
+
+    function getDocumentStatus(doc) {
+      return normalizeDocumentStatus(doc?.statut_validation) || (doc?.valide === true ? "valide" : "en_cours");
+    }
+
+    function pickDocumentStatusForVisit(documents) {
+      if (!Array.isArray(documents) || !documents.length) return null;
+      return [...documents].sort((a, b) => {
+        const typeDiff = (DOCUMENT_TYPE_PRIORITY[String(b?.type_document || "").toLowerCase()] || 0) - (DOCUMENT_TYPE_PRIORITY[String(a?.type_document || "").toLowerCase()] || 0);
+        if (typeDiff) return typeDiff;
+        const statusDiff = (DOCUMENT_STATUS_PRIORITY[getDocumentStatus(b)] || 0) - (DOCUMENT_STATUS_PRIORITY[getDocumentStatus(a)] || 0);
+        if (statusDiff) return statusDiff;
+        return String(b?.created_at || b?.date_document || "").localeCompare(String(a?.created_at || a?.date_document || ""));
+      })[0] || null;
+    }
+
+    function buildDocumentStatusMap(documents) {
+      const grouped = new Map();
+      (documents || []).forEach(doc => {
+        if (!doc?.visite_id) return;
+        const key = String(doc.visite_id);
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(doc);
+      });
+
+      const result = new Map();
+      grouped.forEach((items, visiteId) => {
+        const picked = pickDocumentStatusForVisit(items);
+        if (picked) result.set(visiteId, picked);
+      });
+      return result;
+    }
+
+    function renderVisitDocumentStatusBadge(visiteId) {
+      const doc = state.documentStatusByVisitId.get(String(visiteId));
+      if (!doc) return "";
+      const status = getDocumentStatus(doc);
+      const typeLabel = String(doc.type_document || "").toLowerCase() === "bdc" ? "BDC" : "Devis";
+      return `<span class="document-status-badge status-${escapeHtml(status)}"><span class="doc-kind">${escapeHtml(typeLabel)}</span>${escapeHtml(DOCUMENT_STATUS_LABELS[status] || "En cours")}</span>`;
+    }
+
 
     function parseLocalDate(dateStr) {
       if (!dateStr) return null;
@@ -1928,6 +2011,30 @@
       });
     }
 
+    async function fetchDocumentStatusesByVisitIds(visitIds) {
+      const ids = [...new Set((visitIds || []).map(id => String(id || "").trim()).filter(Boolean))];
+      if (!ids.length) return [];
+
+      const documents = [];
+      const chunkSize = 100;
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        const { data, error } = await supabaseClient
+          .from(DOCUMENTS_TABLE)
+          .select("id, visite_id, type_document, statut_validation, valide, created_at, date_document")
+          .eq("secteur", DOCUMENTS_SECTOR)
+          .in("visite_id", chunk);
+
+        if (error) {
+          console.warn("Statuts BDC/devis indisponibles:", error.message || error);
+          return documents;
+        }
+        documents.push(...(data || []));
+      }
+      return documents;
+    }
+
+
     function getTarifPlaque(clientId, produitId) {
       const client = getClientById(clientId);
       const produit = getProduitById(produitId);
@@ -2008,6 +2115,8 @@
       dom.clientTerrainStatus.textContent = "Sélectionne un client pour démarrer";
       dom.clientLastVisit.textContent = "—";
       dom.clientTopProduct.textContent = "—";
+      state.documentStatusByVisitId = new Map();
+      state.pendingDocumentLinkIds = [];
       if (dom.quickRecoSummary) clearRecommendationCart({ silent: true });
       renderClientAccountsPanel(null);
     }
@@ -2572,6 +2681,7 @@
               <div class="table-date-stack">
                 <span>${escapeHtml(formatDate(visite.date_visite))}</span>
                 ${buildVisitTypeBadgeHtml(visite.type_visite)}
+                ${renderVisitDocumentStatusBadge(visite.id)}
               </div>
             </td>
             <td class="sticky-col sticky-col-2 table-total">${formatCurrency(visite.total_commande || 0)}</td>
@@ -2631,6 +2741,7 @@
 
       if (!clientId) {
         state.visites = [];
+        state.documentStatusByVisitId = new Map();
         updateStats([]);
         updateClientInsights([]);
         renderTimelineEmpty("Sélectionne un client pour afficher l’historique terrain.");
@@ -2641,6 +2752,8 @@
       try {
         setStatus("Chargement des visites...", "info");
         state.visites = await fetchVisitesByClient(clientId);
+        const linkedDocuments = await fetchDocumentStatusesByVisitIds(state.visites.map(visite => visite.id));
+        state.documentStatusByVisitId = buildDocumentStatusMap(linkedDocuments);
         updateStats(state.visites);
         updateClientInsights(state.visites);
         renderAllViews();
@@ -2656,6 +2769,7 @@
       } catch (error) {
         console.error("Erreur loadVisites:", error);
         state.visites = [];
+        state.documentStatusByVisitId = new Map();
         updateStats([]);
         updateClientInsights([]);
         renderTimelineEmpty("Erreur de chargement des visites.");
@@ -3091,6 +3205,7 @@
 
     function openVisitModal(visiteId = null, options = {}) {
       updatePopupClientOptions();
+      state.pendingDocumentLinkIds = [];
       dom.productsFormList.innerHTML = "";
       dom.popupTotalCommande.textContent = formatCurrency(0);
 
@@ -3153,6 +3268,7 @@
       dom.visitModalOverlay.classList.remove("active");
       dom.popupClient.disabled = false;
       state.activeVisitId = null;
+      state.pendingDocumentLinkIds = [];
     }
 
     function collectCommandesFromForm() {
@@ -3364,7 +3480,7 @@
       return `${DOCUMENTS_SECTOR}/${safeType}/${safeDate}/${suffix}-${safeFilename}`;
     }
 
-    async function archiveCommercialDocument({ type, doc, filename, client, dateVisite, montantHt, devisNumber, lineCount, visitType, account = null }) {
+    async function archiveCommercialDocument({ type, doc, filename, client, dateVisite, montantHt, devisNumber, lineCount, visitType, account = null, visitId = null }) {
       if (!doc || !filename) return false;
       const pdfBlob = doc.output("blob");
       const storagePath = buildDocumentStoragePath(type, filename, dateVisite);
@@ -3380,6 +3496,7 @@
         secteur: DOCUMENTS_SECTOR,
         type_document: type,
         client_id: client?.id ? String(client.id) : null,
+        visite_id: visitId ? String(visitId) : null,
         client_nom: client?.nom || "Client",
         numero_compte: String(account?.numero_compte || client?.numero_compte || "").trim() || null,
         numero_compte_libelle: account?.is_primary ? null : (String(account?.libelle || "").trim() || null),
@@ -3395,15 +3512,42 @@
         taille_octets: Number(pdfBlob.size || 0)
       };
 
-      const { error: insertError } = await supabaseClient
+      const { data: insertedDocument, error: insertError } = await supabaseClient
         .from(DOCUMENTS_TABLE)
-        .insert(payload);
+        .insert(payload)
+        .select("id")
+        .single();
       if (insertError) {
         await supabaseClient.storage.from(DOCUMENTS_BUCKET).remove([storagePath]);
         throw insertError;
       }
-      return true;
+      return insertedDocument?.id || true;
     }
+
+    function queuePendingDocumentLink(documentId) {
+      if (!documentId || documentId === true || state.activeVisitId) return;
+      const id = String(documentId);
+      if (!state.pendingDocumentLinkIds.includes(id)) state.pendingDocumentLinkIds.push(id);
+    }
+
+    async function linkPendingDocumentsToVisit(visiteId) {
+      const ids = [...new Set(state.pendingDocumentLinkIds.map(id => String(id || "").trim()).filter(Boolean))];
+      if (!visiteId || !ids.length) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from(DOCUMENTS_TABLE)
+          .update({ visite_id: String(visiteId) })
+          .in("id", ids);
+        if (error) throw error;
+      } catch (error) {
+        console.warn("Lien BDC/devis vers visite impossible:", error.message || error);
+        showToast("Visite enregistree. Statut BDC/devis non relie a la synthese.", "warning");
+      } finally {
+        state.pendingDocumentLinkIds = [];
+      }
+    }
+
 
     async function generateQuoteFromVisitForm() {
       const clientId = dom.popupClient.value;
@@ -3578,7 +3722,7 @@
         doc.save(filename);
 
         try {
-          await archiveCommercialDocument({
+          const archivedDocumentId = await archiveCommercialDocument({
             type: "devis",
             doc,
             filename,
@@ -3588,8 +3732,10 @@
             devisNumber,
             lineCount: lignes.length,
             visitType: typeVisite,
-            account: selectedAccount
+            account: selectedAccount,
+            visitId: state.activeVisitId || null
           });
+          queuePendingDocumentLink(archivedDocumentId);
         } catch (archiveError) {
           console.warn("Archivage devis impossible:", archiveError);
           showToast("Devis telecharge, mais archive Supabase non enregistree.", "warning");
@@ -3787,7 +3933,7 @@
         doc.save(filename);
 
         try {
-          await archiveCommercialDocument({
+          const archivedDocumentId = await archiveCommercialDocument({
             type: "bdc",
             doc,
             filename,
@@ -3797,8 +3943,10 @@
             devisNumber: null,
             lineCount: lignes.length,
             visitType: typeVisite,
-            account: selectedAccount
+            account: selectedAccount,
+            visitId: state.activeVisitId || null
           });
+          queuePendingDocumentLink(archivedDocumentId);
         } catch (archiveError) {
           console.warn("Archivage BDC impossible:", archiveError);
           showToast("BDC telecharge, mais archive Supabase non enregistree.", "warning");
@@ -3949,6 +4097,8 @@
             if (insertCommandesError) throw insertCommandesError;
           }
 
+          await linkPendingDocumentsToVisit(visiteId);
+
           showToast(
             usedFallback ? "Commande telephone mise a jour en mode compatibilite." : "Visite mise a jour avec succes.",
             usedFallback ? "info" : "success"
@@ -3971,6 +4121,8 @@
               .insert(lignes);
             if (insertCommandesError) throw insertCommandesError;
           }
+
+          await linkPendingDocumentsToVisit(visiteData.id);
 
           showToast(
             usedFallback ? "Commande telephone enregistree en mode compatibilite." : "Visite enregistree avec succes.",
