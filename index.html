@@ -355,6 +355,33 @@
       border-color: var(--hoverBorder);
       transform: translateY(-1px);
     }
+    .link.live-source{
+      border-color: rgba(56,189,248,.46);
+      background:
+        linear-gradient(135deg, rgba(56,189,248,.10), rgba(34,197,94,.055)),
+        var(--linkBg);
+      box-shadow:
+        inset 0 0 0 1px rgba(56,189,248,.10),
+        0 10px 26px rgba(8,145,178,.08);
+    }
+    .link.live-source:hover{
+      border-color: rgba(56,189,248,.70);
+      background:
+        linear-gradient(135deg, rgba(56,189,248,.16), rgba(34,197,94,.09)),
+        var(--hoverBg);
+      box-shadow:
+        inset 0 0 0 1px rgba(56,189,248,.18),
+        0 14px 30px rgba(8,145,178,.12);
+    }
+    html[data-theme="light"] .link.live-source{
+      border-color: rgba(14,116,144,.34);
+      background:
+        linear-gradient(135deg, rgba(14,165,233,.12), rgba(34,197,94,.07)),
+        var(--linkBg);
+      box-shadow:
+        inset 0 0 0 1px rgba(14,116,144,.06),
+        0 10px 22px rgba(14,116,144,.06);
+    }
 
     .left{
       min-width:0;
@@ -546,7 +573,7 @@
             <div class="chev">›</div>
           </a>
 
-          <a class="link app" href="requete-commerce.html" data-tags="requete commerce ventes reelles auto industrie supabase">
+          <a class="link app live-source" href="requete-commerce.html" data-tags="requete commerce ventes reelles auto industrie supabase">
             <div class="left">
               <div class="name">Requete Commerce</div>
               <div class="desc">Ventes reelles Auto + Industrie depuis Supabase</div>
@@ -579,7 +606,7 @@
           </a>
         </div>
         <div class="links split-links">
-          <a class="link app" href="ficherclt.html" data-tags="Fiche client auto automobile fiches clients">
+          <a class="link app live-source" href="ficherclt.html" data-tags="Fiche client auto automobile fiches clients">
             <div class="left">
               <div class="name">Fiche client Auto</div>
               <div class="desc">Consultation fiches clients automobile</div>
@@ -587,7 +614,7 @@
             <div class="chev">&rsaquo;</div>
           </a>
 
-          <a class="link app" href="ficherclt-industrie.html" data-tags="Fiche client industrie indus fiches clients">
+          <a class="link app live-source" href="ficherclt-industrie.html" data-tags="Fiche client industrie indus fiches clients">
             <div class="left">
               <div class="name">Fiche client Industrie</div>
               <div class="desc">Consultation fiches clients industrie</div>
@@ -596,7 +623,7 @@
           </a>
         </div>
                         <div class="links">
-                    <a class="link app" href="commerce.html" data-tags="Commerce automobile auto">
+                    <a class="link app live-source" href="commerce.html" data-tags="Commerce automobile auto">
             <div class="left">
               <div class="name">Commerce Automobile</div>
               <div class="desc">Commerce automobile / Rapport journalier / Tableau de bord</div>
@@ -604,7 +631,7 @@
             <div class="chev">›</div>
           </a>
 
-          <a class="link app" href="commerce-industrie.html" data-tags="Commerce Industrie industrial clients tarifs">
+          <a class="link app live-source" href="commerce-industrie.html" data-tags="Commerce Industrie industrial clients tarifs">
             <div class="left">
               <div class="name">Commerce Industrie</div>
               <div class="desc">Hub industrie separe / Clients industrie / Futurs tarifs industrie</div>
@@ -612,7 +639,7 @@
             <div class="chev">›</div>
           </a>
 
-          <a class="link app" href="reporting-commerce-global.html" data-tags="reporting commerce global auto industrie ca ventes semaines">
+          <a class="link app live-source" href="reporting-commerce-global.html" data-tags="reporting commerce global auto industrie ca ventes semaines">
             <div class="left">
               <div class="name">Reporting Commerce Global</div>
               <div class="desc">CA HT Auto + Industrie par mois et par semaine</div>
