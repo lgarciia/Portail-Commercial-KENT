@@ -166,6 +166,29 @@
     option{padding:4px}
     select[multiple]:focus{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 3px rgba(56,189,248,.14)}
     select[multiple] option:checked{background:rgba(56,189,248,.36);color:#fff}
+
+    .fbox.is-filtered{
+      border-color:rgba(56,189,248,.62);
+      background:
+        linear-gradient(180deg,rgba(56,189,248,.12),rgba(34,197,94,.06)),
+        rgba(2,6,23,.30);
+      box-shadow:
+        inset 0 0 0 1px rgba(56,189,248,.12),
+        0 12px 28px rgba(8,145,178,.12);
+    }
+    .fbox.is-filtered .fhead{color:#dff7ff}
+    .fbox.is-filtered .badge{
+      color:#06111f;
+      background:linear-gradient(135deg,#7dd3fc,var(--auto));
+      border-color:transparent;
+      box-shadow:0 8px 18px rgba(56,189,248,.16);
+    }
+    .fbox.is-empty{
+      border-color:rgba(248,113,113,.50);
+      background:rgba(127,29,29,.16);
+    }
+    select[multiple].has-filter option:not(:checked){color:rgba(232,240,255,.38);background:rgba(0,0,0,.14)}
+    select[multiple].has-filter option:checked{background:rgba(56,189,248,.58);color:#fff;font-weight:950}
     .cumulRow{margin-top:6px;display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:900;font-size:11px}
     .genRow{display:flex;justify-content:center;margin-top:14px;gap:10px;flex-wrap:wrap}
     .tableWrap{overflow-x:hidden;overflow-y:auto;border-radius:16px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.34);max-height:62vh}
@@ -363,7 +386,20 @@ function buildListBox(mountId, title){
   const badge = $(`${mountId}_badge`);
   const btnAll = $(`${mountId}_all`);
   const btnNone = $(`${mountId}_none`);
-  function updateBadge(){ badge.textContent = sel.options.length ? `${sel.selectedOptions.length}/${sel.options.length}` : "0/0"; }
+  function syncFilterVisualState(){
+    const total = sel.options.length;
+    const selected = sel.selectedOptions.length;
+    const filtered = total > 0 && selected > 0 && selected < total;
+    const empty = total > 0 && selected === 0;
+    mount.classList.toggle("is-filtered", filtered);
+    mount.classList.toggle("is-empty", empty);
+    sel.classList.toggle("has-filter", filtered);
+    sel.classList.toggle("has-empty", empty);
+  }
+  function updateBadge(){
+    badge.textContent = sel.options.length ? `${sel.selectedOptions.length}/${sel.options.length}` : "0/0";
+    syncFilterVisualState();
+  }
   function selectAll(){ [...sel.options].forEach(option => option.selected = true); updateBadge(); }
   function selectNone(){ [...sel.options].forEach(option => option.selected = false); updateBadge(); }
   function getSelected(){ return [...sel.selectedOptions].map(option => option.value); }
