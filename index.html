@@ -214,6 +214,13 @@
       transform: translateY(-1px);
     }
     .toolBtn:active{ transform: translateY(0px); }
+    .toolBtn.compactTool{
+      height:38px;
+      padding:0 10px;
+      border-radius:13px;
+      gap:8px;
+      font-size:13px;
+    }
 
     .toolBtn .ico{
       width:28px;height:28px;border-radius:12px;
@@ -224,6 +231,141 @@
     }
     html[data-theme="light"] .toolBtn .ico{
       background: rgba(255,255,255,.55);
+    }
+    .toolBtn.compactTool .ico{
+      width:25px;
+      height:25px;
+      border-radius:10px;
+    }
+
+    .releaseWrap{
+      position:relative;
+      display:inline-flex;
+    }
+    .releaseBtn{
+      width:38px;
+      height:38px;
+      padding:0;
+      position:relative;
+      border-color:rgba(245,158,11,.34);
+      background:
+        linear-gradient(135deg,rgba(245,158,11,.18),rgba(124,58,237,.10)),
+        var(--panel2);
+    }
+    .releaseBtn .material-symbols-outlined{
+      color:#fde68a;
+      font-size:21px;
+    }
+    .releaseCount{
+      position:absolute;
+      top:-7px;
+      right:-7px;
+      min-width:20px;
+      height:20px;
+      padding:0 6px;
+      border-radius:999px;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg,#f97316,#facc15);
+      color:#121826;
+      font-size:11px;
+      font-weight:950;
+      border:1px solid rgba(255,255,255,.35);
+      box-shadow:0 10px 18px rgba(245,158,11,.24);
+    }
+    .releaseCount.visible{display:inline-flex}
+    .releasePanel{
+      position:absolute;
+      right:0;
+      top:calc(100% + 10px);
+      width:min(360px, calc(100vw - 32px));
+      border:1px solid rgba(255,255,255,.13);
+      border-radius:18px;
+      background:linear-gradient(180deg,rgba(18,24,38,.96),rgba(10,14,22,.96));
+      box-shadow:0 24px 60px rgba(0,0,0,.45);
+      padding:12px;
+      z-index:30;
+      display:none;
+      backdrop-filter:blur(16px);
+    }
+    .releasePanel.open{display:block}
+    html[data-theme="light"] .releasePanel{
+      background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(246,247,251,.97));
+      border-color:rgba(10,14,22,.10);
+      box-shadow:0 24px 60px rgba(10,14,22,.18);
+    }
+    .releaseHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:4px 4px 10px;
+      border-bottom:1px solid var(--line);
+      margin-bottom:8px;
+    }
+    .releaseHead strong{
+      font-size:13px;
+      letter-spacing:.2px;
+    }
+    .releaseHead span{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:850;
+    }
+    .releaseList{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      max-height:290px;
+      overflow:auto;
+      padding-right:2px;
+    }
+    .releaseItem{
+      display:flex;
+      gap:9px;
+      padding:10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.045);
+    }
+    html[data-theme="light"] .releaseItem{
+      border-color:rgba(10,14,22,.08);
+      background:rgba(255,255,255,.62);
+    }
+    .releaseItem.unread{
+      border-color:rgba(245,158,11,.34);
+      background:rgba(245,158,11,.10);
+    }
+    .releaseDot{
+      width:9px;
+      height:9px;
+      border-radius:999px;
+      margin-top:5px;
+      background:#f59e0b;
+      flex:0 0 auto;
+      box-shadow:0 0 0 4px rgba(245,158,11,.12);
+    }
+    .releaseItem:not(.unread) .releaseDot{
+      background:rgba(148,163,184,.55);
+      box-shadow:none;
+    }
+    .releaseText{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+    }
+    .releaseTitle{
+      font-size:12px;
+      font-weight:950;
+      color:var(--text);
+      line-height:1.25;
+    }
+    .releaseDate{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:800;
     }
 
     .hint{
@@ -450,7 +592,7 @@
         </select>
 
         <!-- ✅ Paramétrage (Material Symbols) -->
-        <a class="toolBtn" href="parametrage.html" title="Ouvrir la page Paramétrage">
+        <a class="toolBtn compactTool" href="parametrage.html" title="Ouvrir la page Paramétrage">
           <span class="ico" aria-hidden="true">
             <span class="material-symbols-outlined">settings_b_roll</span>
           </span>
@@ -458,12 +600,26 @@
         </a>
 
         <!-- ✅ Analyse Co -->
-        <a class="toolBtn" href="ai-analytics.html" title="Ouvrir Analyse Co">
+        <a class="toolBtn compactTool" href="ai-analytics.html" title="Ouvrir Analyse Co">
           <span class="ico" aria-hidden="true">
             <span class="material-symbols-outlined">auto_awesome</span>
           </span>
           <span>Analyse Co</span>
         </a>
+
+        <div class="releaseWrap">
+          <button class="toolBtn releaseBtn" id="releaseBtn" type="button" title="Voir les nouveautes" aria-expanded="false" aria-controls="releasePanel">
+            <span class="material-symbols-outlined" aria-hidden="true">new_releases</span>
+            <span class="releaseCount" id="releaseCount"></span>
+          </button>
+          <div class="releasePanel" id="releasePanel" role="dialog" aria-label="Dernieres nouveautes">
+            <div class="releaseHead">
+              <strong>Dernieres mises a jour</strong>
+              <span id="releaseMeta">Simple & rapide</span>
+            </div>
+            <div class="releaseList" id="releaseList"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -664,6 +820,81 @@
   const yearSelect = document.getElementById("yearSelect");
   const apps = [...document.querySelectorAll(".app")];
   const cards = [...document.querySelectorAll(".card")];
+  const RELEASE_NOTES = [
+    {
+      id: "2026-07-17-requetes-selection",
+      date: "17/07/2026",
+      title: "Visualisation plus claire des selections dans les requetes"
+    },
+    {
+      id: "2026-07-17-portail-commerce",
+      date: "17/07/2026",
+      title: "Reperes visuels sur les modules Commerce du portail"
+    },
+    {
+      id: "2026-07-17-documents-synthese",
+      date: "17/07/2026",
+      title: "Statut BDC/devis visible dans Synthese produits"
+    }
+  ];
+  const RELEASE_READ_KEY = "KENT_PORTAL_RELEASE_NOTES_READ_IDS";
+  const releaseBtn = document.getElementById("releaseBtn");
+  const releasePanel = document.getElementById("releasePanel");
+  const releaseCount = document.getElementById("releaseCount");
+  const releaseList = document.getElementById("releaseList");
+  const releaseMeta = document.getElementById("releaseMeta");
+
+  function getReadReleaseIds(){
+    try{
+      const parsed = JSON.parse(localStorage.getItem(RELEASE_READ_KEY) || "[]");
+      return Array.isArray(parsed) ? new Set(parsed.map(String)) : new Set();
+    }catch(_){
+      return new Set();
+    }
+  }
+
+  function setReadReleaseIds(ids){
+    try{
+      localStorage.setItem(RELEASE_READ_KEY, JSON.stringify([...ids]));
+    }catch(_){}
+  }
+
+  function renderReleaseNotes(){
+    if (!releaseBtn || !releasePanel || !releaseCount || !releaseList) return;
+    const readIds = getReadReleaseIds();
+    const unread = RELEASE_NOTES.filter(note => !readIds.has(note.id));
+    releaseCount.textContent = unread.length > 9 ? "+9" : `+${unread.length}`;
+    releaseCount.classList.toggle("visible", unread.length > 0);
+    if (releaseMeta) {
+      releaseMeta.textContent = unread.length
+        ? `${unread.length} nouveaute${unread.length > 1 ? "s" : ""}`
+        : "Tout est lu";
+    }
+    releaseList.innerHTML = RELEASE_NOTES.map(note => {
+      const isUnread = !readIds.has(note.id);
+      return `
+        <div class="releaseItem ${isUnread ? "unread" : ""}">
+          <span class="releaseDot" aria-hidden="true"></span>
+          <div class="releaseText">
+            <span class="releaseTitle">${note.title}</span>
+            <span class="releaseDate">${note.date}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function markReleaseNotesAsRead(){
+    setReadReleaseIds(new Set(RELEASE_NOTES.map(note => note.id)));
+    renderReleaseNotes();
+  }
+
+  function setReleasePanelOpen(open){
+    if (!releaseBtn || !releasePanel) return;
+    releasePanel.classList.toggle("open", open);
+    releaseBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) markReleaseNotesAsRead();
+  }
 
   function applyFilter(){
     const q = (search.value || "").trim().toLowerCase();
@@ -684,6 +915,23 @@
     });
   }
   search.addEventListener("input", applyFilter);
+  renderReleaseNotes();
+
+  if (releaseBtn && releasePanel) {
+    releaseBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setReleasePanelOpen(!releasePanel.classList.contains("open"));
+    });
+
+    releasePanel.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    document.addEventListener("click", () => setReleasePanelOpen(false));
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setReleasePanelOpen(false);
+    });
+  }
 
   // Focus search on "/" like modern tools
   window.addEventListener("keydown", (e) => {
