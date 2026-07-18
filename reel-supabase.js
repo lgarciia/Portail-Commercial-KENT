@@ -19,9 +19,9 @@
 
   const REAL_COLUMN_CONFIGS = {
     psa: {
-      clientCodeCandidates: ["n° client interne", "no client interne", "n client interne", "n° client", "numero client interne"],
-      clientNameCandidates: ["nom du client", "nom client", "client"],
-      amountCandidates: ["montant prix achat kent", "montant achat kent", "montant"],
+      clientCodeCandidates: ["n° client interne", "no client interne", "n client interne", "n° client", "numero client interne", "numero client", "code client", "client code"],
+      clientNameCandidates: ["nom du client", "nom client", "client", "raison sociale"],
+      amountCandidates: ["montant prix achat kent", "montant achat kent", "montant", "montant ht", "ca total", "ca ht", "ca"],
       monthCandidates: ["mois2", "mois", "month"],
       dateCandidates: ["date commande", "date de commande", "date vente", "date de vente", "date facturation", "date facture", "date", "date piece", "date pièce"],
       refCandidates: ["nos réf kent", "nos ref kent", "reference produits", "reference produit", "référence produits", "référence produit", "code produit", "n° produit", "n produit", "reference", "référence", "ref"],
@@ -29,9 +29,9 @@
       qtyCandidates: ["quantité payante servie", "quantite payante servie", "quantité servie", "quantite servie", "quantite", "quantité", "qte", "qté"]
     },
     gueudet: {
-      clientCodeCandidates: ["n° client interne", "no client interne", "n client interne", "numero client interne", "n° client", "no client", "n client", "numero client", "nclient"],
-      clientNameCandidates: ["nom du client", "nom client", "client"],
-      amountCandidates: ["montant prix achat kent", "montant achat kent", "montant", "ca total", "ca", "chiffre d'affaires", "chiffre daffaires"],
+      clientCodeCandidates: ["n° client interne", "no client interne", "n client interne", "numero client interne", "n° client", "no client", "n client", "numero client", "nclient", "code client", "client code"],
+      clientNameCandidates: ["nom du client", "nom client", "client", "raison sociale"],
+      amountCandidates: ["montant prix achat kent", "montant achat kent", "montant", "montant ht", "ca total", "ca ht", "ca", "chiffre d'affaires", "chiffre daffaires"],
       monthCandidates: ["mois2", "mois", "month"],
       dateCandidates: ["date commande", "date de commande", "date vente", "date de vente", "date facturation", "date facture", "date", "date piece", "date pièce"],
       refCandidates: ["nos réf kent", "nos ref kent", "reference produits", "reference produit", "référence produits", "référence produit", "code produit", "n° produit", "n produit", "reference", "référence", "ref"],
@@ -39,9 +39,9 @@
       qtyCandidates: ["quantité payante servie", "quantite payante servie", "quantité servie", "quantite servie", "quantite", "quantité", "qte", "qté"]
     },
     default: {
-      clientCodeCandidates: ["code livré", "code livre", "code", "code livre client"],
-      clientNameCandidates: ["nom client", "nom du client", "client"],
-      amountCandidates: ["ca total", "ca", "chiffre d'affaires", "chiffre daffaires", "montant"],
+      clientCodeCandidates: ["code livré", "code livre", "code livré client", "code livre client", "code client", "client code", "n° client", "no client", "n client", "numero client", "nclient", "code"],
+      clientNameCandidates: ["nom client", "nom du client", "client", "raison sociale", "nom"],
+      amountCandidates: ["ca total", "ca ht", "ca", "chiffre d'affaires", "chiffre daffaires", "montant", "montant ht", "total ht", "total"],
       monthCandidates: ["mois2", "mois", "month"],
       dateCandidates: ["date commande", "date de commande", "date vente", "date de vente", "date facturation", "date facture", "date", "date piece", "date pièce"],
       refCandidates: ["nos réf kent", "nos ref kent", "reference produits", "reference produit", "référence produits", "référence produit", "code produit", "n° produit", "n produit", "reference", "référence", "ref"],
@@ -81,7 +81,10 @@
   function buildHeaderMap(sampleRow){
     const map = {};
     for (const key of Object.keys(sampleRow || {})){
-      map[normalizeKey(key)] = key;
+      const normalized = normalizeKey(key);
+      const loose = looseKey(key);
+      if (normalized && !map[normalized]) map[normalized] = key;
+      if (loose && !map[loose]) map[loose] = key;
     }
     return map;
   }
@@ -90,8 +93,16 @@
     for (const candidate of candidates || []){
       const normalized = normalizeKey(candidate);
       if (headerMap[normalized]) return headerMap[normalized];
+      const loose = looseKey(candidate);
+      if (headerMap[loose]) return headerMap[loose];
     }
     return null;
+  }
+
+  function looseKey(value){
+    return normalizeKey(value)
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
   }
 
   function monthToKey(value){

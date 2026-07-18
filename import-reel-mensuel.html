@@ -371,6 +371,18 @@
     }
 
     function pickBestSheet(workbook){
+      const preferredSheet = workbook.SheetNames.find(sheetName => {
+        const normalized = String(sheetName || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+        return normalized.includes("modele import reel")
+          || normalized.includes("import reel")
+          || normalized.includes("modele")
+          || normalized.includes("donnees");
+      });
+      if (preferredSheet) return preferredSheet;
+
       let bestName = workbook.SheetNames[0];
       let bestScore = -1;
       for (const sheetName of workbook.SheetNames){
