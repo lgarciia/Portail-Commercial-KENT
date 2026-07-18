@@ -437,6 +437,7 @@
   let budgetData = null;     // {clients:[{id,name,nclient,budget:{jan..}}]}
   let realData = {};
   let activite = null;       // {clients:[{id,name,nclient,months:{jan..}}]}
+  let budgetSourceLabel = "";
 
   // ---------------------------
   // STATUS: loading
@@ -454,9 +455,11 @@
 
     if(supabaseBudgetData && supabaseBudgetData.clients && supabaseBudgetData.clients.length){
       budgetData = supabaseBudgetData;
+      budgetSourceLabel = "Supabase";
     }else{
       const budgetWB = await fetchWorkbook(FILES.budget);
       budgetData = parseBudgetWorkbook(budgetWB);
+      budgetSourceLabel = "Excel";
     }
 
     if (!(budgetData?.clients?.length)) {
@@ -847,7 +850,7 @@
     const rOk = realClientsCount > 0;
 
     el.dotBudget.className = "dot " + (bOk ? "ok" : "bad");
-    el.sBudget.textContent = bOk ? `${budgetData.clients.length} clients` : "introuvable";
+    el.sBudget.textContent = bOk ? `${budgetData.clients.length} clients - ${budgetSourceLabel || "source inconnue"}` : "introuvable";
 
     el.dotReel.className = "dot " + (rOk ? "ok" : "warn");
     el.sReel.textContent = rOk ? `${realClientsCount} clients matchés` : "non trouvé";

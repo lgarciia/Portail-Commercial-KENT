@@ -8,6 +8,9 @@
   <script src="./shared-ui.js"></script>
   <link rel="stylesheet" href="./shared-theme.css">
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
+
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -618,7 +621,8 @@
           budgetMonthly[i] += (b[i] || 0);
           realMonthly[i] += (r[i] || 0);
         }
-        status[ent.key] = { ok:true, msg:"OK (B+R)" };
+        const budgetSource = b.source === "supabase" ? "Supabase" : "Excel";
+        status[ent.key] = { ok:true, msg:`OK (B ${budgetSource} + R)` };
       }catch(err){
         console.error(ent.key, err);
         status[ent.key] = { ok:false, msg:`Erreur` };
@@ -1067,6 +1071,9 @@
      BUDGET entity -> [12]
   ========================= */
   async function loadBudgetEntity(ent, year){
+    const supabaseBudget = await loadBudgetEntityFromSupabase(ent, year);
+    if (supabaseBudget) return supabaseBudget;
+
     const file = ent.budgetFiles?.[year];
     if (!file) throw new Error("Budget file manquant");
 
@@ -1076,7 +1083,11 @@
     const ws = wb.Sheets[sheetName];
     const raw = XLSX.utils.sheet_to_json(ws, { defval:"" });
 
-    if (!raw.length) return new Array(12).fill(0);
+    if (!raw.length) {
+      const empty = new Array(12).fill(0);
+      empty.source = "excel";
+      return empty;
+    }
 
     const headerMap = buildHeaderMap(raw[0]);
     const monthCols = MONTHS.map(m => findCol(headerMap, [m]));
@@ -1087,7 +1098,30 @@
     for (const r of raw){
       for (let i=0;i<12;i++) sums[i] += toNumber(r[monthCols[i]]);
     }
+    sums.source = "excel";
     return sums;
+  }
+
+  async function loadBudgetEntityFromSupabase(ent, year){
+    if(!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return null;
+    try{
+      const result = await window.BudgetSupabase.getActiveBudgetData(ent.key, year);
+      const clients = result && result.budgetData && Array.isArray(result.budgetData.clients)
+        ? result.budgetData.clients
+        : [];
+      if(!clients.length) return null;
+
+      const monthKeys = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+      const sums = monthKeys.map(key => clients.reduce((sum, client) => {
+        const value = Number((client.budget || {})[key]);
+        return sum + (Number.isFinite(value) ? value : 0);
+      }, 0));
+      sums.source = "supabase";
+      return sums;
+    }catch(error){
+      console.warn("Budget actif Supabase indisponible, fallback Excel:", error && error.message ? error.message : error);
+      return null;
+    }
   }
 
   /* =========================
