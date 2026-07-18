@@ -94,14 +94,22 @@
     }
     .modalOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(2,6,23,.70);z-index:30}
     .modalOverlay.show{display:flex}
-    .modal{width:min(1120px,96vw);max-height:88vh;overflow:auto;padding:18px}
-    .modalHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
-    .modalTitle{font-size:25px;font-weight:1000;letter-spacing:-.04em}
+    .modal{width:min(1460px,98vw);max-height:92vh;overflow:auto;padding:16px;border-radius:24px}
+    .modalHeader{position:sticky;top:-16px;z-index:4;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:-16px -16px 12px;padding:15px 16px 12px;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(15,23,42,.88));border-bottom:1px solid rgba(148,163,184,.12);backdrop-filter:blur(16px)}
+    .modalTitle{font-size:22px;font-weight:1000;letter-spacing:-.04em}
     .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .chip{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.06);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:12px;font-weight:900}
     .miniGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
     .analysisGrid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(280px,.92fr);gap:12px}
     .analysisCard{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.045);border-radius:16px;padding:13px}
+    .analysisHero{position:relative;overflow:hidden;border:1px solid rgba(56,189,248,.18);background:linear-gradient(135deg,rgba(14,165,233,.13),rgba(15,23,42,.74) 46%,rgba(34,197,94,.08));border-radius:20px;padding:14px;margin-bottom:12px}
+    .analysisHero:after{content:"";position:absolute;right:-58px;top:-68px;width:180px;height:180px;border-radius:999px;background:rgba(56,189,248,.10)}
+    .analysisHeroTop{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .analysisContext{font-size:12px;color:var(--muted);font-weight:900;margin-top:4px}
+    .analysisBadgeRow{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+    .analysisBadge{border:1px solid rgba(148,163,184,.14);background:rgba(2,6,23,.26);border-radius:14px;padding:8px 10px}
+    .analysisBadge .k{font-size:9px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.08em}
+    .analysisBadge .v{font-size:15px;font-weight:1000;margin-top:2px}
     .analysisTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .analysisTitle{font-size:11px;font-weight:1000;color:rgba(226,232,240,.70);text-transform:uppercase;letter-spacing:.09em}
     .analysisValue{margin-top:5px;font-size:24px;font-weight:1000;letter-spacing:-.04em}
@@ -116,6 +124,8 @@
     .fill.gold{background:linear-gradient(90deg,#fde68a,#f59e0b)}
     .listTools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
     .listTools .input{min-height:32px}
+    .clientToolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 8px;flex-wrap:wrap}
+    .microHint{color:var(--muted);font-size:12px;font-weight:850}
     .clientList{display:grid;gap:8px}
     .clientCard,.entityCardMini{border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.045);border-radius:15px;overflow:hidden}
     .clientHead,.entityHeadMini{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;cursor:pointer}
@@ -124,18 +134,23 @@
     .clientAmount{font-size:15px;font-weight:1000;text-align:right}
     .productPanel{display:none;border-top:1px solid rgba(148,163,184,.12);padding:9px 12px;background:rgba(2,6,23,.22)}
     .clientCard.open .productPanel{display:block}
-    .productRow{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px 98px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(148,163,184,.09);font-size:12px}
-    .productRow:last-child{border-bottom:0}
-    .productTitle{font-weight:950;min-width:0;overflow:hidden;text-overflow:ellipsis}
+    .productStack{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
+    .productRow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:9px;border:1px solid rgba(148,163,184,.10);border-radius:13px;background:rgba(15,23,42,.42);font-size:12px}
+    .productTitle{font-weight:950;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .productMeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;color:var(--muted);font-size:10px;font-weight:900}
+    .productMoney{font-weight:1000;white-space:nowrap;text-align:right}
     .entityGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;margin-top:12px}
-    .entityCardMini{padding:10px;cursor:pointer}
+    .entityCardMini{position:relative;padding:12px;cursor:pointer;background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.028))}
+    .entityCardMini:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,#38bdf8,#22c55e);opacity:.75}
     .entityCardMini:hover,.clientCard:hover{border-color:rgba(56,189,248,.30);background:rgba(56,189,248,.055)}
     .entityTitle{font-weight:1000}
     .entityMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
     .entityMetric{border:1px solid rgba(148,163,184,.11);border-radius:12px;padding:7px;background:rgba(2,6,23,.22)}
     .entityMetric .k{font-size:9px;color:var(--muted);font-weight:950;text-transform:uppercase}
     .entityMetric .v{font-size:12px;font-weight:1000;margin-top:2px}
-    @media(max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.miniGrid,.analysisGrid{grid-template-columns:1fr}.analysisMini,.entityMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.productRow{grid-template-columns:1fr 72px 78px}.page{padding:12px}.tableWrap{max-height:none}.actions{justify-content:flex-start}.select,.input{width:100%}}
+    .cumulProgress{height:7px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:10px}
+    .cumulProgress span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#38bdf8,#22c55e)}
+    @media(max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.miniGrid,.analysisGrid{grid-template-columns:1fr}.analysisMini,.analysisBadgeRow,.entityMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.page{padding:12px}.tableWrap{max-height:none}.actions{justify-content:flex-start}.select,.input{width:100%}}
   </style>
   <link rel="stylesheet" href="./shared-theme.css">
 </head>
@@ -728,6 +743,7 @@
     const totalEcart = totalReal - totalBudget;
     const driver = lines.find(row => row.real || row.budget) || null;
     const insight = buildMonthInsight(totalReal, totalBudget, totalEcart, driver?.label);
+    const maxEntityReal = Math.max(1, ...lines.map(row => Math.abs(row.real || 0)));
 
     const body = `
       ${monthAnalysisHtml({
@@ -736,32 +752,12 @@
         budget: totalBudget,
         ecart: totalEcart,
         context: "Auto + toutes entites",
-        insight,
-        sideTitle: "Contribution a l'ecart",
-        sideHtml: contributionHtml(lines)
+        insight
       })}
       <div class="entityGrid">
-        ${lines.map(entity => `
-          <div class="entityCardMini" data-cumul-entity="${escAttr(entity.key)}">
-            <div class="entityHeadMini">
-              <div>
-                <div class="entityTitle">${esc(entity.label)}</div>
-                <div class="clientMeta">
-                  <span>${fmtInt(entity.activeClients)} client(s)</span>
-                  <span>Atteinte ${fmtPct(entity.attain)}</span>
-                </div>
-              </div>
-              <div class="clientAmount">${fmtMoney(entity.real)}</div>
-            </div>
-            <div class="entityMetrics">
-              <div class="entityMetric"><div class="k">Budget</div><div class="v">${fmtMoney(entity.budget)}</div></div>
-              <div class="entityMetric"><div class="k">Ecart</div><div class="v ${ecartClass(entity.ecart)}">${fmtSignedMoney(entity.ecart)}</div></div>
-              <div class="entityMetric"><div class="k">Poids</div><div class="v">${weightPct(entity.ecart, lines)}%</div></div>
-            </div>
-          </div>
-        `).join("")}
+        ${lines.map(entity => cumulEntityCardHtml(entity, lines, maxEntityReal)).join("")}
       </div>
-      <div class="insightBox">Clique sur une entite pour ouvrir le detail client, puis clique sur un client pour voir les produits.</div>
+      <div class="microHint" style="margin-top:10px">Clique une entite pour ouvrir le detail client, puis clique un client pour voir les produits.</div>
     `;
 
     openModal(`Analyse - ${month.label}`, `${year} - Cumul toutes entites - ${fmtMoney(totalReal)} de CA`, body);
@@ -780,9 +776,6 @@
     const totalBudget = sum(rows.map(row => row.budget));
     const totalEcart = totalReal - totalBudget;
     const topClient = rows.find(row => row.real > 0) || rows[0] || null;
-    const sideHtml = topClient
-      ? topClientsHtml(rows)
-      : `<div class="empty">Aucun client avec CA ou budget sur ce mois.</div>`;
     const backBtn = backToCumul
       ? `<button class="btn small" id="backToCumulBtn" type="button">Retour cumul</button>`
       : "";
@@ -793,14 +786,11 @@
         budget: totalBudget,
         ecart: totalEcart,
         context: entity.label,
-        insight: buildMonthInsight(totalReal, totalBudget, totalEcart, topClient?.name),
-        sideTitle: "Top clients du mois",
-        sideHtml
+        insight: buildMonthInsight(totalReal, totalBudget, totalEcart, topClient?.name)
       })}
-      <div class="listTools">
-        ${backBtn}
-        <input class="input" data-client-search placeholder="Rechercher un client...">
-        <button class="btn small" data-client-sort type="button">Tri CA: desc</button>
+      <div class="clientToolbar">
+        <div class="microHint">Detail clients du mois. Clique un client pour ouvrir/fermer ses produits.</div>
+        <div>${backBtn}</div>
       </div>
       <div class="clientList" data-client-list>
         ${rows.length ? rows.map(clientMonthCardHtml).join("") : `<div class="empty">Aucune ligne pour ce mois.</div>`}
@@ -830,27 +820,46 @@
   function monthAnalysisHtml({ title, real, budget, ecart, context, insight, sideTitle, sideHtml }){
     const attain = budget ? real / budget : 0;
     return `
-      <div class="analysisGrid">
-        <div class="analysisCard">
-          <div class="analysisTop">
-            <div>
-              <div class="analysisTitle">${esc(title || "Analyse")}</div>
-              <div class="analysisValue">${fmtMoney(real)}</div>
-              <div class="muted" style="font-weight:850;margin-top:3px">${esc(context || "")}</div>
-            </div>
-            <div class="chip ${ecartClass(ecart)}">Ecart ${fmtSignedMoney(ecart)}</div>
+      <div class="analysisHero">
+        <div class="analysisHeroTop">
+          <div>
+            <div class="analysisTitle">${esc(title || "Analyse")}</div>
+            <div class="analysisValue">${fmtMoney(real)}</div>
+            <div class="analysisContext">${esc(context || "")}</div>
           </div>
-          <div class="analysisMini">
-            <div class="miniStat"><div class="k">Realise</div><div class="v">${fmtMoney(real)}</div></div>
-            <div class="miniStat"><div class="k">Budget</div><div class="v">${fmtMoney(budget)}</div></div>
-            <div class="miniStat"><div class="k">Ecart</div><div class="v ${ecartClass(ecart)}">${fmtSignedMoney(ecart)}</div></div>
-            <div class="miniStat"><div class="k">Atteinte</div><div class="v">${fmtPct(attain)}</div></div>
-          </div>
-          <div class="insightBox">${esc(insight)}</div>
+          <div class="chip ${ecartClass(ecart)}">Ecart ${fmtSignedMoney(ecart)}</div>
         </div>
-        <div class="analysisCard">
-          <div class="analysisTitle">${esc(sideTitle || "Detail")}</div>
-          <div style="margin-top:10px">${sideHtml || ""}</div>
+        <div class="analysisBadgeRow">
+          <div class="analysisBadge"><div class="k">Realise</div><div class="v">${fmtMoney(real)}</div></div>
+          <div class="analysisBadge"><div class="k">Budget</div><div class="v">${fmtMoney(budget)}</div></div>
+          <div class="analysisBadge"><div class="k">Ecart</div><div class="v ${ecartClass(ecart)}">${fmtSignedMoney(ecart)}</div></div>
+          <div class="analysisBadge"><div class="k">Atteinte</div><div class="v">${fmtPct(attain)}</div></div>
+        </div>
+        <div class="insightBox">${esc(insight)}</div>
+      </div>
+    `;
+  }
+
+  function cumulEntityCardHtml(entity, lines, maxEntityReal){
+    const weight = weightPct(entity.ecart, lines);
+    const realWidth = Math.max(3, Math.round(Math.abs(entity.real || 0) / maxEntityReal * 100));
+    return `
+      <div class="entityCardMini" data-cumul-entity="${escAttr(entity.key)}">
+        <div class="entityHeadMini">
+          <div>
+            <div class="entityTitle">${esc(entity.label)}</div>
+            <div class="clientMeta">
+              <span>${fmtInt(entity.activeClients)} client(s)</span>
+              <span>Poids ecart ${weight}%</span>
+            </div>
+          </div>
+          <div class="clientAmount">${fmtMoney(entity.real)}</div>
+        </div>
+        <div class="cumulProgress"><span style="width:${realWidth}%"></span></div>
+        <div class="entityMetrics">
+          <div class="entityMetric"><div class="k">Budget</div><div class="v">${fmtMoney(entity.budget)}</div></div>
+          <div class="entityMetric"><div class="k">Ecart</div><div class="v ${ecartClass(entity.ecart)}">${fmtSignedMoney(entity.ecart)}</div></div>
+          <div class="entityMetric"><div class="k">Atteinte</div><div class="v">${fmtPct(entity.attain)}</div></div>
         </div>
       </div>
     `;
@@ -970,17 +979,21 @@
     const rows = aggregateProductRows(products);
     if (!rows.length) return `<div class="muted" style="font-weight:850">Aucun produit detaille pour ce client sur le mois.</div>`;
     return `
-      <div class="productRow muted" style="font-weight:1000;text-transform:uppercase;font-size:10px">
-        <div>Produit</div><div>Ref</div><div>Qte</div><div style="text-align:right">CA</div>
+      <div class="productStack">
+        ${rows.map(row => `
+          <div class="productRow">
+            <div style="min-width:0">
+              <div class="productTitle">${esc(row.product)}</div>
+              <div class="productMeta">
+                <span>Ref ${esc(row.ref || "-")}</span>
+                <span>Qte ${fmtQty(row.qty)}</span>
+                <span>${fmtInt(row.lines)} ligne(s)</span>
+              </div>
+            </div>
+            <div class="productMoney">${fmtMoney(row.amount)}</div>
+          </div>
+        `).join("")}
       </div>
-      ${rows.map(row => `
-        <div class="productRow">
-          <div class="productTitle">${esc(row.product)}</div>
-          <div class="muted">${esc(row.ref || "-")}</div>
-          <div class="num">${fmtQty(row.qty)}</div>
-          <div class="num">${fmtMoney(row.amount)}</div>
-        </div>
-      `).join("")}
     `;
   }
 
