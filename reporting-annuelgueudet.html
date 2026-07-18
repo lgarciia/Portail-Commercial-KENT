@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Reporting annuel (Gueudet)</title>
   <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
@@ -490,8 +491,8 @@
     render();
   });
 
-  el.btnResetReal.addEventListener("click", () => {
-    if (!confirm(`Recharger toutes les valeurs Réel depuis ${REAL_FILE} ?`)) return;
+  el.btnResetReal.addEventListener("click", async () => {
+    if (!await kentConfirm(`Recharger toutes les valeurs Réel depuis ${REAL_FILE} ?`, { title: "Recharger le r\u00e9el", confirmText: "Recharger" })) return;
     loadRealFromFetch().then(render).catch(console.error);
   });
 
@@ -512,7 +513,7 @@
     if (!file) return;
     const name = (file.name || "").toLowerCase();
     if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
-      alert("Veuillez déposer un fichier .xlsx ou .xls");
+      await kentAlert("Veuillez d\u00e9poser un fichier .xlsx ou .xls", { title: "Fichier invalide", tone: "warning" });
       return;
     }
     await importBudgetFile(file);
@@ -546,7 +547,7 @@
       render();
     }catch(err){
       console.error(err);
-      alert("Import impossible : " + (err?.message || err));
+      await kentAlert("Import impossible : " + (err?.message || err), { title: "Import impossible", tone: "danger" });
     }
   }
 
@@ -1017,7 +1018,7 @@
 
   function exportCSV(){
     const rows = buildExportRows();
-    if (!rows.length) { alert("Rien à exporter."); return; }
+    if (!rows.length) { void kentAlert("Rien \u00e0 exporter.", { title: "Export", tone: "warning" }); return; }
     const ws = XLSX.utils.json_to_sheet(rows);
     const csv = XLSX.utils.sheet_to_csv(ws, { FS: ";", RS: "\n" });
     downloadBlob(
@@ -1028,7 +1029,7 @@
 
   function exportXLSX(){
     const rows = buildExportRows();
-    if (!rows.length) { alert("Rien à exporter."); return; }
+    if (!rows.length) { void kentAlert("Rien \u00e0 exporter.", { title: "Export", tone: "warning" }); return; }
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, "Reporting annuel Gueudet");

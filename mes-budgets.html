@@ -7,6 +7,7 @@
   <title>Mes budgets</title>
   <script src="./app-data-config.js"></script>
   <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
   <style>
@@ -302,19 +303,19 @@
         `).join("");
       }catch(error){
         console.error("View budget failed", error);
-        alert(error?.message || "Impossible de charger le budget.");
+        await kentAlert(error?.message || "Impossible de charger le budget.", { title: "Erreur budget", tone: "danger" });
       }
     }
 
     async function changeBudgetStatus(id, status){
       const label = status === "active" ? "activer" : "desactiver";
-      if (!confirm(`Confirmer : ${label} ce budget ?`)) return;
+      if (!await kentConfirm(`Confirmer : ${label} ce budget ?`, { title: "Changer le statut", confirmText: "Confirmer" })) return;
       try{
         await window.BudgetSupabase.setBudgetStatus(id, status);
         await refreshData();
       }catch(error){
         console.error("Change budget status failed", error);
-        alert(error?.message || "Impossible de changer le statut du budget.");
+        await kentAlert(error?.message || "Impossible de changer le statut du budget.", { title: "Erreur statut", tone: "danger" });
       }
     }
 
@@ -340,10 +341,10 @@
       try{
         const { budget, lines } = await window.BudgetSupabase.getBudget(id);
         if (budget.statut === "active") {
-          alert("Ce budget est actif. Desactive-le avant de le modifier.");
+          await kentAlert("Ce budget est actif. Desactive-le avant de le modifier.", { title: "Budget actif", tone: "warning" });
           return;
         }
-        if (!confirm("Charger ce budget dans Budget annuel pour le modifier ?")) return;
+        if (!await kentConfirm("Charger ce budget dans Budget annuel pour le modifier ?", { title: "Modifier ce budget", confirmText: "Charger" })) return;
         const payload = {
           globalBudget: Number(budget.total_annuel || 0),
           clients: lines.map(lineToBudgetClient)
@@ -353,12 +354,12 @@
         window.location.href = `budget2026.html?year=${encodeURIComponent(budget.annee)}`;
       }catch(error){
         console.error("Edit budget failed", error);
-        alert(error?.message || "Impossible de charger ce budget en modification.");
+        await kentAlert(error?.message || "Impossible de charger ce budget en modification.", { title: "Erreur modification", tone: "danger" });
       }
     }
 
     async function createEntity(){
-      const label = prompt("Nom de la nouvelle entite :");
+      const label = await kentPrompt("Nom de la nouvelle entite :", "", { title: "Nouvelle entité" });
       if (!label || !label.trim()) return;
       try{
         const entity = await window.BudgetSupabase.createEntity(label.trim());
@@ -367,7 +368,7 @@
         renderBudgets();
       }catch(error){
         console.error("Create entity failed", error);
-        alert(error?.message || "Impossible de creer l'entite.");
+        await kentAlert(error?.message || "Impossible de creer l'entite.", { title: "Erreur entité", tone: "danger" });
       }
     }
 

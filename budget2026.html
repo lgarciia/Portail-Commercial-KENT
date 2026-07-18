@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Budget</title>
   <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
 
 <style>
   :root{
@@ -732,7 +733,7 @@ function renderTable(){
 /* ✅ EVENT DELEGATION : supprime / rename / copy fonctionne TOUJOURS */
 function bindTableActions(){
   const table = $("budgetTable");
-  table.addEventListener("click", (e) => {
+  table.addEventListener("click", async (e) => {
     const btn = e.target.closest("button.iconBtn");
     if (!btn) return;
 
@@ -742,7 +743,7 @@ function bindTableActions(){
     if (!client) return;
 
     if (action === "delete"){
-      const ok = confirm(`Supprimer "${client.name}" ?`);
+      const ok = await kentConfirm(`Supprimer "${client.name}" ?`, { title: "Supprimer le client", tone: "danger", confirmText: "Supprimer" });
       if (!ok) return;
       state.clients = state.clients.filter(x => x.id !== id);
       save();
@@ -752,10 +753,10 @@ function bindTableActions(){
 
     if (action === "rename"){
       // ✅ rename + n client (sans casser)
-      const name = prompt("Nouveau nom :", client.name);
+      const name = await kentPrompt("Nouveau nom :", client.name, { title: "Renommer le client" });
       if (!name) return;
 
-      const number = prompt("N CLIENT (laisser vide si aucun) :", client.number || "");
+      const number = await kentPrompt("N CLIENT (laisser vide si aucun) :", client.number || "", { title: "Numero client" });
       client.name = name.trim();
       client.number = (number ?? "").toString().trim();
 
@@ -822,7 +823,7 @@ async function importProjectionXlsx(file){
     const rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
 
     if (!rows.length){
-      alert("Fichier vide.");
+      await kentAlert("Fichier vide.", { title: "Import projection" });
       return;
     }
 
@@ -837,7 +838,7 @@ async function importProjectionXlsx(file){
     }
 
     if (!colClient){
-      alert("Colonne manquante : CLIENT");
+      await kentAlert("Colonne manquante : CLIENT", { title: "Import projection", tone: "warning" });
       return;
     }
 
@@ -864,11 +865,11 @@ async function importProjectionXlsx(file){
     }
 
     if (!imported.length){
-      alert("Aucune ligne client détectée.");
+      await kentAlert("Aucune ligne client détectée.", { title: "Import projection", tone: "warning" });
       return;
     }
 
-    const replace = confirm(`Projection détectée : ${imported.length} clients.\n\nOK = Remplacer le budget\nAnnuler = Ajouter au budget`);
+    const replace = await kentConfirm(`Projection détectée : ${imported.length} clients.\n\nValider = Remplacer le budget\nAnnuler = Ajouter au budget`, { title: "Importer la projection", confirmText: "Remplacer" });
     if (replace){
       state.clients = imported;
     }else{
@@ -883,7 +884,7 @@ async function importProjectionXlsx(file){
     renderAll();
   }catch(e){
     console.error(e);
-    alert("Import impossible (XLSX invalide).");
+    await kentAlert("Import impossible (XLSX invalide).", { title: "Import projection", tone: "danger" });
   }
 }
 
@@ -955,11 +956,11 @@ function closePasteModal(){
   $("pasteModal").classList.remove("show");
   $("pasteModal").setAttribute("aria-hidden","true");
 }
-function pasteApply(mode){
+async function pasteApply(mode){
   const txt = $("pasteArea").value || "";
   const list = extractNamesFromText(txt);
   if (!list.length){
-    alert("Aucun client détecté.");
+    await kentAlert("Aucun client détecté.", { title: "Coller une liste", tone: "warning" });
     return;
   }
   setClientsFromList(list, { mode });
@@ -981,7 +982,7 @@ function addClient(name, number){
 
   const exists = state.clients.some(c => c.name.toLowerCase() === n.toLowerCase());
   if (exists){
-    alert("Ce client existe déjà.");
+    void kentAlert("Ce client existe déjà.", { title: "Client déjà présent", tone: "warning" });
     return;
   }
 
@@ -1001,8 +1002,8 @@ function addDemo(){
     { name:"Client Direct", number:"40004" },
   ], { mode:"add" });
 }
-function resetAll(){
-  const ok = confirm(`Réinitialiser Budget ${APP_YEAR} (efface tout) ?`);
+async function resetAll(){
+  const ok = await kentConfirm(`Réinitialiser Budget ${APP_YEAR} (efface tout) ?`, { title: "Réinitialiser le budget", tone: "danger", confirmText: "Réinitialiser" });
   if (!ok) return;
   localStorage.removeItem(LS_KEY);
   state = { globalBudget: 0, clients: [] };
@@ -1149,19 +1150,19 @@ async function refreshBudgetSupabaseControls(){
 
 async function loadSelectedProjection(){
   const projectionId = $("projectionSelect").value;
-  if (!projectionId) return alert("Selectionne une projection.");
+  if (!projectionId) return await kentAlert("Selectionne une projection.", { title: "Projection manquante", tone: "warning" });
   try{
     const { projection, lines } = await window.BudgetSupabase.getProjection(projectionId);
     applyRowsToBudgetState(lines, projection.id);
-    alert(`Projection chargee : ${projection.nom}`);
+    await kentAlert(`Projection chargee : ${projection.nom}`, { title: "Projection charg\u00e9e", tone: "success" });
   }catch(error){
     console.error("Load projection failed", error);
-    alert(error?.message || "Impossible de charger la projection.");
+    await kentAlert(error?.message || "Impossible de charger la projection.", { title: "Erreur projection", tone: "danger" });
   }
 }
 
 async function createBudgetEntityFromPrompt(){
-  const label = prompt("Nom de la nouvelle entite :");
+  const label = await kentPrompt("Nom de la nouvelle entite :", "", { title: "Nouvelle entit\u00e9" });
   if (!label || !label.trim()) return;
   try{
     const entity = await window.BudgetSupabase.createEntity(label.trim());
@@ -1169,21 +1170,21 @@ async function createBudgetEntityFromPrompt(){
     $("budgetEntitySelect").value = entity.id;
   }catch(error){
     console.error("Create entity failed", error);
-    alert(error?.message || "Impossible de creer l'entite.");
+    await kentAlert(error?.message || "Impossible de creer l'entite.", { title: "Erreur entit\u00e9", tone: "danger" });
   }
 }
 
 async function validateCurrentBudget(){
-  if (!state.clients.length) return alert("Aucun client dans le budget.");
+  if (!state.clients.length) return await kentAlert("Aucun client dans le budget.", { title: "Budget vide", tone: "warning" });
   const entityId = $("budgetEntitySelect").value;
-  if (!entityId) return alert("Selectionne une entite.");
+  if (!entityId) return await kentAlert("Selectionne une entite.", { title: "Entit\u00e9 manquante", tone: "warning" });
 
   const entityLabel = $("budgetEntitySelect").selectedOptions[0]?.textContent || "Entite";
   const defaultName = `Budget ${entityLabel} ${APP_YEAR}`;
-  const name = prompt("Nom du budget valide :", defaultName);
+  const name = await kentPrompt("Nom du budget valide :", defaultName, { title: "Valider le budget" });
   if (!name || !name.trim()) return;
 
-  if (!confirm(`Valider ce budget actif pour ${entityLabel} ${APP_YEAR} ?\n\nSi un budget actif existe deja, je te proposerai de le remplacer sans le supprimer.`)) return;
+  if (!await kentConfirm(`Valider ce budget actif pour ${entityLabel} ${APP_YEAR} ?\n\nSi un budget actif existe deja, je te proposerai de le remplacer sans le supprimer.`, { title: "Valider le budget actif", confirmText: "Valider" })) return;
 
   try{
     const saved = await window.BudgetSupabase.validateBudget({
@@ -1195,14 +1196,15 @@ async function validateCurrentBudget(){
       meta: { origin: "budget2026", sourceProjectionId: currentProjectionId || null }
     });
     await refreshBudgetSupabaseControls();
-    alert(`Budget valide : ${saved.nom}`);
+    await kentAlert(`Budget valide : ${saved.nom}`, { title: "Budget valid\u00e9", tone: "success" });
   }catch(error){
     if (error?.code === "ACTIVE_BUDGET_EXISTS") {
       const activeName = error.activeBudget?.nom || "budget actif actuel";
-      const replace = confirm(
+      const replace = await kentConfirm(
         `Un budget actif existe deja pour ${entityLabel} ${APP_YEAR} : ${activeName}.\n\n` +
         "Tu veux le remplacer par ce nouveau budget ?\n\n" +
-        "L'ancien budget sera conserve en inactif, aucune ligne budget ne sera supprimee."
+        "L'ancien budget sera conserve en inactif, aucune ligne budget ne sera supprimee.",
+        { title: "Remplacer le budget actif", tone: "warning", confirmText: "Remplacer" }
       );
       if (!replace) return;
       try{
@@ -1216,16 +1218,16 @@ async function validateCurrentBudget(){
           replaceActive: true
         });
         await refreshBudgetSupabaseControls();
-        alert(`Budget actif remplace : ${saved.nom}\n\nL'ancien budget est conserve en inactif.`);
+        await kentAlert(`Budget actif remplace : ${saved.nom}\n\nL'ancien budget est conserve en inactif.`, { title: "Budget remplacé", tone: "success" });
         return;
       }catch(replaceError){
         console.error("Replace active budget failed", replaceError);
-        alert(replaceError?.message || "Impossible de remplacer le budget actif.");
+        await kentAlert(replaceError?.message || "Impossible de remplacer le budget actif.", { title: "Erreur remplacement", tone: "danger" });
         return;
       }
     }
     console.error("Validate budget failed", error);
-    alert(error?.message || "Impossible de valider le budget.");
+    await kentAlert(error?.message || "Impossible de valider le budget.", { title: "Erreur budget", tone: "danger" });
   }
 }
 
@@ -1255,7 +1257,7 @@ async function importJSON(file){
     renderAll();
   }catch(e){
     console.error(e);
-    alert("Import impossible : fichier JSON invalide.");
+    await kentAlert("Import impossible : fichier JSON invalide.", { title: "Import JSON", tone: "danger" });
   }
 }
 
