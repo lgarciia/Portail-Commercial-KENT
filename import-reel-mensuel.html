@@ -182,6 +182,7 @@
             Si le même mois existe déjà, l'ancien import actif passe en inactif.
           </p>
           <div class="inline">
+            <button class="btn gold" id="templateBtn" type="button">Modèle Excel</button>
             <button class="btn" id="previewBtn" type="button">Prévisualiser</button>
             <button class="btn green" id="importBtn" type="button" disabled>Importer dans Supabase</button>
           </div>
@@ -292,6 +293,81 @@
     function selectedEntity(){
       const id = $("entitySelect").value;
       return entities.find(entity => String(entity.id) === String(id)) || null;
+    }
+
+    function safeFilePart(value){
+      return String(value || "entite")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "entite";
+    }
+
+    function firstCandidate(values, fallback){
+      return Array.isArray(values) && values.length ? values[0] : fallback;
+    }
+
+    async function downloadTemplate(){
+      const entity = selectedEntity();
+      if (!entity) return await kentAlert("Sélectionne une entité avant de télécharger le modèle.", { title:"Entité manquante", tone:"warning" });
+      if (!window.XLSX || !window.ReelSupabase?.configForEntity){
+        return await kentAlert("Module modèle indisponible. Recharge la page.", { title:"Modèle indisponible", tone:"danger" });
+      }
+
+      const config = window.ReelSupabase.configForEntity(entity.key);
+      const selectedMonth = Number($("monthSelect").value);
+      const selectedYear = Number($("yearSelect").value);
+      const monthText = monthLabel(selectedMonth);
+
+      const columns = {
+        clientCode: firstCandidate(config.clientCodeCandidates, "code livré"),
+        clientName: firstCandidate(config.clientNameCandidates, "nom client"),
+        amount: firstCandidate(config.amountCandidates, "ca total"),
+        date: firstCandidate(config.dateCandidates, "date commande"),
+        reference: firstCandidate(config.refCandidates, "nos réf kent"),
+        designation: firstCandidate(config.desCandidates, "designation"),
+        quantity: firstCandidate(config.qtyCandidates, "quantité"),
+        month: firstCandidate(config.monthCandidates, "mois2")
+      };
+
+      const headers = [
+        columns.clientCode,
+        columns.clientName,
+        columns.amount,
+        columns.date,
+        columns.reference,
+        columns.designation,
+        columns.quantity,
+        columns.month
+      ];
+
+      const rows = [
+        headers,
+        ["10001", "Client test A", 1250, `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-10`, "REF-001", "Produit test A", 2, monthText],
+        ["10002", "Client test B", 340.5, `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-18`, "REF-002", "Produit test B", 1, monthText]
+      ];
+
+      const helpRows = [
+        ["Champ", "Obligatoire", "Colonne utilisée dans ce modèle", "Remarque"],
+        ["Code client", "Oui", columns.clientCode, "Identifiant client livré / interne."],
+        ["Nom client", "Oui", columns.clientName, "Nom affiché dans les reportings."],
+        ["Montant", "Oui", columns.amount, "CA réel de la ligne. Les décimales peuvent être avec virgule ou point."],
+        ["Date commande", "Non", columns.date, "Utile pour les vues semaine et le détail, si disponible."],
+        ["Référence", "Non", columns.reference, "Utile pour les détails produits."],
+        ["Désignation", "Non", columns.designation, "Utile pour les détails produits."],
+        ["Quantité", "Non", columns.quantity, "Utile pour les quantités en reporting."],
+        ["Mois", "Non", columns.month, "Info seulement : l'import affecte tout au mois sélectionné dans l'écran."]
+      ];
+
+      const wb = XLSX.utils.book_new();
+      const dataSheet = XLSX.utils.aoa_to_sheet(rows);
+      dataSheet["!cols"] = headers.map(header => ({ wch: Math.max(14, String(header).length + 4) }));
+      const helpSheet = XLSX.utils.aoa_to_sheet(helpRows);
+      helpSheet["!cols"] = [{ wch: 18 }, { wch: 13 }, { wch: 30 }, { wch: 68 }];
+      XLSX.utils.book_append_sheet(wb, dataSheet, "Modele import reel");
+      XLSX.utils.book_append_sheet(wb, helpSheet, "A lire");
+      XLSX.writeFile(wb, `modele_import_reel_${safeFilePart(entity.key || entity.libelle)}_${selectedYear}.xlsx`);
     }
 
     function pickBestSheet(workbook){
@@ -558,6 +634,7 @@
       }
     }
 
+    $("templateBtn").addEventListener("click", downloadTemplate);
     $("previewBtn").addEventListener("click", previewFile);
     $("importBtn").addEventListener("click", importCurrentFile);
     $("refreshBtn").addEventListener("click", refreshImports);
