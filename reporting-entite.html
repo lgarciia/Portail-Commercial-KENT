@@ -100,7 +100,42 @@
     .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .chip{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.06);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:12px;font-weight:900}
     .miniGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-    @media(max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.miniGrid{grid-template-columns:1fr}.page{padding:12px}.tableWrap{max-height:none}.actions{justify-content:flex-start}.select,.input{width:100%}}
+    .analysisGrid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(280px,.92fr);gap:12px}
+    .analysisCard{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.045);border-radius:16px;padding:13px}
+    .analysisTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .analysisTitle{font-size:11px;font-weight:1000;color:rgba(226,232,240,.70);text-transform:uppercase;letter-spacing:.09em}
+    .analysisValue{margin-top:5px;font-size:24px;font-weight:1000;letter-spacing:-.04em}
+    .analysisMini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+    .miniStat{border:1px solid rgba(148,163,184,.12);border-radius:13px;padding:8px;background:rgba(2,6,23,.22)}
+    .miniStat .k{font-size:9px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.08em}
+    .miniStat .v{font-size:14px;font-weight:1000;margin-top:3px}
+    .insightBox{margin-top:10px;border:1px solid rgba(56,189,248,.18);background:rgba(56,189,248,.07);border-radius:14px;padding:10px;font-size:12px;font-weight:850;color:rgba(226,232,240,.86);line-height:1.45}
+    .bar{height:8px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
+    .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#38bdf8,#2563eb)}
+    .fill.green{background:linear-gradient(90deg,#22c55e,#14b8a6)}
+    .fill.gold{background:linear-gradient(90deg,#fde68a,#f59e0b)}
+    .listTools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    .listTools .input{min-height:32px}
+    .clientList{display:grid;gap:8px}
+    .clientCard,.entityCardMini{border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.045);border-radius:15px;overflow:hidden}
+    .clientHead,.entityHeadMini{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;cursor:pointer}
+    .clientName{font-weight:1000;line-height:1.2}
+    .clientMeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px;color:var(--muted);font-size:11px;font-weight:850}
+    .clientAmount{font-size:15px;font-weight:1000;text-align:right}
+    .productPanel{display:none;border-top:1px solid rgba(148,163,184,.12);padding:9px 12px;background:rgba(2,6,23,.22)}
+    .clientCard.open .productPanel{display:block}
+    .productRow{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px 98px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(148,163,184,.09);font-size:12px}
+    .productRow:last-child{border-bottom:0}
+    .productTitle{font-weight:950;min-width:0;overflow:hidden;text-overflow:ellipsis}
+    .entityGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;margin-top:12px}
+    .entityCardMini{padding:10px;cursor:pointer}
+    .entityCardMini:hover,.clientCard:hover{border-color:rgba(56,189,248,.30);background:rgba(56,189,248,.055)}
+    .entityTitle{font-weight:1000}
+    .entityMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+    .entityMetric{border:1px solid rgba(148,163,184,.11);border-radius:12px;padding:7px;background:rgba(2,6,23,.22)}
+    .entityMetric .k{font-size:9px;color:var(--muted);font-weight:950;text-transform:uppercase}
+    .entityMetric .v{font-size:12px;font-weight:1000;margin-top:2px}
+    @media(max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.miniGrid,.analysisGrid{grid-template-columns:1fr}.analysisMini,.entityMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.productRow{grid-template-columns:1fr 72px 78px}.page{padding:12px}.tableWrap{max-height:none}.actions{justify-content:flex-start}.select,.input{width:100%}}
   </style>
   <link rel="stylesheet" href="./shared-theme.css">
 </head>
@@ -320,7 +355,9 @@
         budget: item.monthly.budget,
         totalReal: sum(item.monthly.real),
         totalBudget: sum(item.monthly.budget),
-        clients: item.clients.length
+        clients: item.clients.length,
+        clientRows: item.clients,
+        realRows: item.realRows
       });
       for (let i=0;i<12;i++){
         monthly.real[i] += item.monthly.real[i] || 0;
@@ -658,23 +695,124 @@
   }
 
   function openMonthDetail(monthIndex){
-    const rows = data.clients.map(client => ({
-      name: client.name,
-      code: client.code,
-      real: client.real[monthIndex] || 0,
-      budget: client.budget[monthIndex] || 0
-    })).filter(row => row.real || row.budget).sort((a,b) => b.real - a.real);
-    openModal(`Detail ${MONTHS[monthIndex].label} - ${entityLabel}`, `${rows.length} client(s)`, clientRowsHtml(rows));
+    openEntityMonthDetail({
+      key: data.key,
+      label: data.label,
+      clientRows: data.clients,
+      realRows: data.realRows,
+      real: data.monthly.real,
+      budget: data.monthly.budget
+    }, monthIndex);
   }
 
   function openCumulMonthDetail(monthIndex){
-    const rows = data.entities.map(entity => ({
-      name: entity.label,
-      code: entity.key,
-      real: entity.real[monthIndex] || 0,
-      budget: entity.budget[monthIndex] || 0
-    })).sort((a,b) => b.real - a.real);
-    openModal(`Cumul ${MONTHS[monthIndex].label}`, `${rows.length} entite(s) actives`, clientRowsHtml(rows, "Entite"));
+    const month = MONTHS[monthIndex];
+    const lines = data.entities.map(entity => {
+      const real = entity.real[monthIndex] || 0;
+      const budget = entity.budget[monthIndex] || 0;
+      const ecart = real - budget;
+      const clients = buildClientMonthRows(entity.clientRows || [], entity.realRows || [], monthIndex);
+      return {
+        ...entity,
+        real,
+        budget,
+        ecart,
+        attain: budget ? real / budget : 0,
+        pctEcart: budget ? ecart / budget : 0,
+        activeClients: clients.filter(row => row.real).length
+      };
+    }).sort((a,b) => Math.abs(b.ecart) - Math.abs(a.ecart));
+
+    const totalReal = sum(lines.map(row => row.real));
+    const totalBudget = sum(lines.map(row => row.budget));
+    const totalEcart = totalReal - totalBudget;
+    const driver = lines.find(row => row.real || row.budget) || null;
+    const insight = buildMonthInsight(totalReal, totalBudget, totalEcart, driver?.label);
+
+    const body = `
+      ${monthAnalysisHtml({
+        title: "Analyse globale",
+        real: totalReal,
+        budget: totalBudget,
+        ecart: totalEcart,
+        context: "Auto + toutes entites",
+        insight,
+        sideTitle: "Contribution a l'ecart",
+        sideHtml: contributionHtml(lines)
+      })}
+      <div class="entityGrid">
+        ${lines.map(entity => `
+          <div class="entityCardMini" data-cumul-entity="${escAttr(entity.key)}">
+            <div class="entityHeadMini">
+              <div>
+                <div class="entityTitle">${esc(entity.label)}</div>
+                <div class="clientMeta">
+                  <span>${fmtInt(entity.activeClients)} client(s)</span>
+                  <span>Atteinte ${fmtPct(entity.attain)}</span>
+                </div>
+              </div>
+              <div class="clientAmount">${fmtMoney(entity.real)}</div>
+            </div>
+            <div class="entityMetrics">
+              <div class="entityMetric"><div class="k">Budget</div><div class="v">${fmtMoney(entity.budget)}</div></div>
+              <div class="entityMetric"><div class="k">Ecart</div><div class="v ${ecartClass(entity.ecart)}">${fmtSignedMoney(entity.ecart)}</div></div>
+              <div class="entityMetric"><div class="k">Poids</div><div class="v">${weightPct(entity.ecart, lines)}%</div></div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="insightBox">Clique sur une entite pour ouvrir le detail client, puis clique sur un client pour voir les produits.</div>
+    `;
+
+    openModal(`Analyse - ${month.label}`, `${year} - Cumul toutes entites - ${fmtMoney(totalReal)} de CA`, body);
+    el.modalBody.querySelectorAll("[data-cumul-entity]").forEach(card => {
+      card.addEventListener("click", () => {
+        const entity = data.entities.find(item => item.key === card.dataset.cumulEntity);
+        if (entity) openEntityMonthDetail(entity, monthIndex, true);
+      });
+    });
+  }
+
+  function openEntityMonthDetail(entity, monthIndex, backToCumul = false){
+    const month = MONTHS[monthIndex];
+    const rows = buildClientMonthRows(entity.clientRows || [], entity.realRows || [], monthIndex);
+    const totalReal = sum(rows.map(row => row.real));
+    const totalBudget = sum(rows.map(row => row.budget));
+    const totalEcart = totalReal - totalBudget;
+    const topClient = rows.find(row => row.real > 0) || rows[0] || null;
+    const sideHtml = topClient
+      ? topClientsHtml(rows)
+      : `<div class="empty">Aucun client avec CA ou budget sur ce mois.</div>`;
+    const backBtn = backToCumul
+      ? `<button class="btn small" id="backToCumulBtn" type="button">Retour cumul</button>`
+      : "";
+    const body = `
+      ${monthAnalysisHtml({
+        title: "Analyse entite",
+        real: totalReal,
+        budget: totalBudget,
+        ecart: totalEcart,
+        context: entity.label,
+        insight: buildMonthInsight(totalReal, totalBudget, totalEcart, topClient?.name),
+        sideTitle: "Top clients du mois",
+        sideHtml
+      })}
+      <div class="listTools">
+        ${backBtn}
+        <input class="input" data-client-search placeholder="Rechercher un client...">
+        <button class="btn small" data-client-sort type="button">Tri CA: desc</button>
+      </div>
+      <div class="clientList" data-client-list>
+        ${rows.length ? rows.map(clientMonthCardHtml).join("") : `<div class="empty">Aucune ligne pour ce mois.</div>`}
+      </div>
+    `;
+
+    openModal(`Detail ${month.label} - ${entity.label}`, `${year} - ${rows.length} client(s) - CA ${fmtMoney(totalReal)}`, body);
+    if (backToCumul){
+      const btn = document.getElementById("backToCumulBtn");
+      if (btn) btn.addEventListener("click", () => openCumulMonthDetail(monthIndex));
+    }
+    bindClientDrilldown(el.modalBody);
   }
 
   function openProductDetail(product){
@@ -687,6 +825,221 @@
       return { name:a.name || b.name, code:a.code || b.code, real:a.real, budget:b.real };
     }).sort((a,b) => b.real - a.real);
     openModal(`Detail produit - ${product}`, `${rows.length} client(s)`, clientRowsHtml(rows, "Client", "Reel", "N-1"));
+  }
+
+  function monthAnalysisHtml({ title, real, budget, ecart, context, insight, sideTitle, sideHtml }){
+    const attain = budget ? real / budget : 0;
+    return `
+      <div class="analysisGrid">
+        <div class="analysisCard">
+          <div class="analysisTop">
+            <div>
+              <div class="analysisTitle">${esc(title || "Analyse")}</div>
+              <div class="analysisValue">${fmtMoney(real)}</div>
+              <div class="muted" style="font-weight:850;margin-top:3px">${esc(context || "")}</div>
+            </div>
+            <div class="chip ${ecartClass(ecart)}">Ecart ${fmtSignedMoney(ecart)}</div>
+          </div>
+          <div class="analysisMini">
+            <div class="miniStat"><div class="k">Realise</div><div class="v">${fmtMoney(real)}</div></div>
+            <div class="miniStat"><div class="k">Budget</div><div class="v">${fmtMoney(budget)}</div></div>
+            <div class="miniStat"><div class="k">Ecart</div><div class="v ${ecartClass(ecart)}">${fmtSignedMoney(ecart)}</div></div>
+            <div class="miniStat"><div class="k">Atteinte</div><div class="v">${fmtPct(attain)}</div></div>
+          </div>
+          <div class="insightBox">${esc(insight)}</div>
+        </div>
+        <div class="analysisCard">
+          <div class="analysisTitle">${esc(sideTitle || "Detail")}</div>
+          <div style="margin-top:10px">${sideHtml || ""}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function contributionHtml(lines){
+    const active = (lines || []).filter(row => row.real || row.budget);
+    if (!active.length) return `<div class="empty">Aucune entite active sur ce mois.</div>`;
+    const sumAbsEcart = sumAbs(active.map(row => row.ecart));
+    return `
+      <div style="display:grid;gap:9px">
+        ${active.map(row => {
+          const weight = sumAbsEcart ? Math.round(Math.abs(row.ecart) / sumAbsEcart * 100) : 0;
+          const fillClass = row.ecart >= 0 ? "green" : "gold";
+          return `
+            <div>
+              <div class="analysisTop" style="margin-bottom:5px">
+                <span style="font-weight:950">${esc(row.label)}</span>
+                <span class="${ecartClass(row.ecart)}" style="font-weight:1000">${fmtSignedMoney(row.ecart)} (${weight}%)</span>
+              </div>
+              <div class="bar"><div class="fill ${fillClass}" style="width:${Math.max(4, weight)}%"></div></div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  function topClientsHtml(rows){
+    const top = (rows || []).filter(row => row.real).slice(0, 5);
+    if (!top.length) return `<div class="empty">Aucun client facture sur ce mois.</div>`;
+    return `
+      <div style="display:grid;gap:8px">
+        ${top.map((row, index) => `
+          <div class="entityMetric" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+            <div>
+              <div class="k">#${index + 1}</div>
+              <div class="v">${esc(row.name)}</div>
+            </div>
+            <div class="v">${fmtMoney(row.real)}</div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function buildClientMonthRows(clients, realRows, monthIndex){
+    const productsByClient = new Map();
+    for (const row of realRows || []){
+      if (row.monthIndex !== monthIndex) continue;
+      const key = clientKey(row.code, row.name);
+      if (!productsByClient.has(key)) productsByClient.set(key, []);
+      productsByClient.get(key).push(row);
+    }
+
+    const map = new Map();
+    for (const client of clients || []){
+      const real = client.real?.[monthIndex] || 0;
+      const budget = client.budget?.[monthIndex] || 0;
+      const products = productsByClient.get(client.key) || [];
+      if (!real && !budget && !products.length) continue;
+      map.set(client.key, {
+        key: client.key,
+        name: client.name,
+        code: client.code,
+        real,
+        budget,
+        products,
+        lines: products.length,
+        qty: sum(products.map(item => item.qty))
+      });
+    }
+
+    for (const [key, products] of productsByClient){
+      if (map.has(key)) continue;
+      const first = products[0] || {};
+      map.set(key, {
+        key,
+        name: first.name || "Client",
+        code: first.code || "",
+        real: sum(products.map(item => item.amount)),
+        budget: 0,
+        products,
+        lines: products.length,
+        qty: sum(products.map(item => item.qty))
+      });
+    }
+
+    return Array.from(map.values()).sort((a,b) => (b.real || 0) - (a.real || 0) || (b.budget || 0) - (a.budget || 0));
+  }
+
+  function clientMonthCardHtml(row){
+    const ecart = (row.real || 0) - (row.budget || 0);
+    const search = normalizeText(`${row.name} ${row.code}`);
+    return `
+      <div class="clientCard" data-client-card data-search="${escAttr(search)}" data-amount="${escAttr(row.real || 0)}">
+        <div class="clientHead">
+          <div>
+            <div class="clientName">${esc(row.name || "Client")}</div>
+            <div class="clientMeta">
+              <span>Compte ${esc(row.code || "-")}</span>
+              <span>${fmtInt(row.lines)} ligne(s)</span>
+              <span>Qte ${fmtQty(row.qty)}</span>
+            </div>
+          </div>
+          <div>
+            <div class="clientAmount">${fmtMoney(row.real)}</div>
+            <div class="${ecartClass(ecart)}" style="font-size:11px;font-weight:1000;text-align:right">${fmtSignedMoney(ecart)}</div>
+          </div>
+        </div>
+        <div class="productPanel">${productPanelHtml(row.products)}</div>
+      </div>
+    `;
+  }
+
+  function productPanelHtml(products){
+    const rows = aggregateProductRows(products);
+    if (!rows.length) return `<div class="muted" style="font-weight:850">Aucun produit detaille pour ce client sur le mois.</div>`;
+    return `
+      <div class="productRow muted" style="font-weight:1000;text-transform:uppercase;font-size:10px">
+        <div>Produit</div><div>Ref</div><div>Qte</div><div style="text-align:right">CA</div>
+      </div>
+      ${rows.map(row => `
+        <div class="productRow">
+          <div class="productTitle">${esc(row.product)}</div>
+          <div class="muted">${esc(row.ref || "-")}</div>
+          <div class="num">${fmtQty(row.qty)}</div>
+          <div class="num">${fmtMoney(row.amount)}</div>
+        </div>
+      `).join("")}
+    `;
+  }
+
+  function aggregateProductRows(products){
+    const map = new Map();
+    for (const row of products || []){
+      const ref = String(row.ref || "").trim();
+      const product = productName(row);
+      const key = `${normalizeText(ref)}__${normalizeText(product)}`;
+      if (!map.has(key)) map.set(key, { ref, product, qty:0, amount:0, lines:0 });
+      const item = map.get(key);
+      item.qty += row.qty || 0;
+      item.amount += row.amount || 0;
+      item.lines += 1;
+    }
+    return Array.from(map.values()).sort((a,b) => b.amount - a.amount);
+  }
+
+  function bindClientDrilldown(root){
+    const list = root.querySelector("[data-client-list]");
+    if (!list) return;
+    const cards = Array.from(list.querySelectorAll("[data-client-card]"));
+    const search = root.querySelector("[data-client-search]");
+    const sortBtn = root.querySelector("[data-client-sort]");
+    let desc = true;
+
+    cards.forEach(card => {
+      const head = card.querySelector(".clientHead");
+      if (!head) return;
+      head.addEventListener("click", () => {
+        const wasOpen = card.classList.contains("open");
+        cards.forEach(item => item.classList.remove("open"));
+        if (!wasOpen) card.classList.add("open");
+      });
+    });
+
+    function applyFilters(){
+      const query = normalizeText(search?.value || "");
+      const sorted = cards.slice().sort((a,b) => {
+        const av = toNumber(a.dataset.amount);
+        const bv = toNumber(b.dataset.amount);
+        return desc ? bv - av : av - bv;
+      });
+      for (const card of sorted){
+        const show = !query || String(card.dataset.search || "").includes(query);
+        card.style.display = show ? "" : "none";
+        list.appendChild(card);
+      }
+    }
+
+    if (search) search.addEventListener("input", applyFilters);
+    if (sortBtn){
+      sortBtn.addEventListener("click", () => {
+        desc = !desc;
+        sortBtn.textContent = `Tri CA: ${desc ? "desc" : "asc"}`;
+        applyFilters();
+      });
+    }
+    applyFilters();
   }
 
   function clientRowsHtml(rows, firstLabel = "Client", realLabel = "Reel", budgetLabel = "Budget"){
@@ -839,12 +1192,25 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
   function sum(values){ return (values || []).reduce((total, value) => total + toNumber(value), 0); }
+  function sumAbs(values){ return (values || []).reduce((total, value) => total + Math.abs(toNumber(value)), 0); }
   function round(value){ return Math.round(toNumber(value)); }
   function fmtMoney(value){ return `${nf0.format(round(value))} €`; }
+  function fmtSignedMoney(value){ const n = round(value); return `${n > 0 ? "+" : ""}${fmtMoney(n)}`; }
   function fmtInt(value){ return nf0.format(round(value)); }
   function fmtQty(value){ return nfQty.format(toNumber(value)); }
   function fmtPct(value){ return `${nf0.format((toNumber(value) || 0) * 100)}%`; }
   function ecartClass(value){ const n = round(value); return n > 0 ? "pos" : n < 0 ? "neg" : "zero"; }
+  function weightPct(value, lines){
+    const total = sumAbs((lines || []).map(row => row.ecart));
+    return total ? Math.round(Math.abs(toNumber(value)) / total * 100) : 0;
+  }
+  function buildMonthInsight(real, budget, ecart, driverLabel){
+    if (!real && !budget) return "Aucune donnee sur ce mois : rien a analyser pour le moment.";
+    if (!budget && real) return `CA realise sans budget charge sur ce mois. Point principal a regarder : ${driverLabel || "client / entite principale"}.`;
+    if (ecart > 0) return `Mois au-dessus du budget. L'ecart positif est principalement porte par ${driverLabel || "les meilleures lignes du mois"}.`;
+    if (ecart < 0) return `Mois sous budget. Priorite : regarder ${driverLabel || "les clients les plus contributeurs"} et identifier les lignes a relancer.`;
+    return "Mois exactement aligne avec le budget : bon point de controle, a surveiller dans la duree.";
+  }
   function csvCell(value){
     const raw = String(value ?? "");
     return /[;"\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
