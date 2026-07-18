@@ -1,6 +1,39 @@
 (function(){
   const PAGE_PARAMS = new URLSearchParams(location.search);
-  let APP_YEAR = KentDataConfig.setActiveYear(Number(PAGE_PARAMS.get("year")) || KentDataConfig.getActiveYear());
+  const Config = window.KentDataConfig || {
+    getActiveYear: () => new Date().getFullYear(),
+    setActiveYear: (year) => Number.isFinite(Number(year)) ? Number(year) : new Date().getFullYear(),
+    fillYearSelect: (select, options = {}) => {
+      const selected = Number(options.selectedYear) || new Date().getFullYear();
+      if (!select) return;
+      select.innerHTML = "";
+      for (let year = selected - 2; year <= selected + 3; year += 1){
+        const option = document.createElement("option");
+        option.value = String(year);
+        option.textContent = String(year);
+        option.selected = year === selected;
+        select.appendChild(option);
+      }
+    },
+    applyYearToLinks: () => {}
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const normalize = (value) =>
+    String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ");
+
+  function normalizeEntityKey(value){
+    return normalize(value)
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  let APP_YEAR = Config.setActiveYear(Number(PAGE_PARAMS.get("year")) || Config.getActiveYear());
   let ENTITY_KEY = normalizeEntityKey(PAGE_PARAMS.get("entity") || "psa");
   let entities = [];
 
@@ -27,21 +60,6 @@
   const MONTHS_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
   const eur = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
   const numberFmt = new Intl.NumberFormat("fr-FR");
-
-  const $ = (id) => document.getElementById(id);
-  const normalize = (value) =>
-    String(value ?? "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, " ");
-
-  function normalizeEntityKey(value){
-    return normalize(value)
-      .replace(/[^a-z0-9_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-  }
 
   function escapeHtml(value){
     return String(value ?? "")
@@ -102,7 +120,7 @@
     url.searchParams.set("entity", ENTITY_KEY);
     url.searchParams.set("year", String(APP_YEAR));
     history.replaceState(null, "", url);
-    KentDataConfig.applyYearToLinks(document, APP_YEAR);
+    Config.applyYearToLinks(document, APP_YEAR);
   }
 
   function updatePageLabels(){
@@ -536,7 +554,7 @@
 
   async function init(){
     try{
-      KentDataConfig.fillYearSelect($("yearSelect"), { selectedYear: APP_YEAR });
+      Config.fillYearSelect($("yearSelect"), { selectedYear: APP_YEAR });
       $("yearSelect").value = String(APP_YEAR);
       await refreshEntities();
       updateUrl();
@@ -558,7 +576,7 @@
     await loadSupabase();
   });
   $("yearSelect").addEventListener("change", async () => {
-    APP_YEAR = KentDataConfig.setActiveYear(Number($("yearSelect").value));
+    APP_YEAR = Config.setActiveYear(Number($("yearSelect").value));
     $("yearSelect").value = String(APP_YEAR);
     updatePageLabels();
     updateUrl();
