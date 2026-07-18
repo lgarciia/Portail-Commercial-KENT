@@ -261,6 +261,7 @@
     const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
     const num = new Intl.NumberFormat("fr-FR");
     let entities = [];
+    let entityById = new Map();
     let currentFile = null;
     let currentParsed = null;
     let currentSheetName = "";
@@ -383,8 +384,7 @@
 
       const year = Number($("yearSelect").value);
       const month = Number($("monthSelect").value);
-      const activeSameMonth = (await window.ReelSupabase.listImports({ year, entiteId: entity.id, includeInactive:false }))
-        .filter(row => Number(row.mois) === month);
+      const activeSameMonth = await window.ReelSupabase.listImports({ year, month, entiteId: entity.id, includeInactive:false });
       const message = activeSameMonth.length
         ? `Un réel actif existe déjà pour ${entity.libelle} ${monthLabel(month)} ${year}.\n\nLe nouvel import deviendra actif et l'ancien passera en inactif. Aucune ligne ne sera supprimée.`
         : `Importer ${currentParsed.lines.length} ligne(s) pour ${entity.libelle} ${monthLabel(month)} ${year} ?`;
@@ -419,15 +419,22 @@
     }
 
     async function refreshEntities(){
-      entities = await window.BudgetSupabase.listEntities();
+      entities = await window.ReelSupabase.listEntities();
+      entityById = new Map(entities.map(entity => [String(entity.id), entity]));
       $("entitySelect").innerHTML = entities.map(entity => (
         `<option value="${escapeHtml(entity.id)}">${escapeHtml(entity.libelle)}</option>`
       )).join("");
     }
 
     async function refreshImports(){
+      try{
       const entityId = $("entitySelect").value || null;
-      const rows = await window.ReelSupabase.listImports({ year: Number($("yearSelect").value), entiteId, includeInactive:true });
+      const rows = await window.ReelSupabase.listImports({
+        year: Number($("yearSelect").value),
+        month: Number($("monthSelect").value),
+        entiteId,
+        includeInactive:true
+      });
       const activeRows = rows.filter(row => row.statut === "active");
       $("kpiImports").textContent = num.format(rows.length);
       $("kpiActive").textContent = num.format(activeRows.length);
@@ -441,7 +448,7 @@
 
       $("importsRows").innerHTML = rows.map(row => {
         const active = row.statut === "active";
-        const entityLabel = row.budget_entites?.libelle || "-";
+        const entityLabel = row.budget_entites?.libelle || entityById.get(String(row.entite_id))?.libelle || "-";
         return `
           <tr>
             <td>${escapeHtml(entityLabel)}</td>
@@ -454,18 +461,22 @@
             <td>${fmtDate(row.imported_at || row.created_at)}</td>
             <td>
               <button class="btn small" type="button" data-action="view" data-id="${escapeHtml(row.id)}">Voir</button>
-              ${active ? "" : `<button class="btn small green" type="button" data-action="active" data-id="${escapeHtml(row.id)}">Activer</button>
-                <button class="btn small red" type="button" data-action="delete" data-id="${escapeHtml(row.id)}">Supprimer</button>`}
+              ${active ? "" : `<button class="btn small green" type="button" data-action="active" data-id="${escapeHtml(row.id)}">Activer</button>`}
+              <button class="btn small red" type="button" data-action="delete" data-id="${escapeHtml(row.id)}">Supprimer</button>
             </td>
           </tr>
         `;
       }).join("");
+      }catch(error){
+        console.error("Refresh reel imports failed", error);
+        $("importsRows").innerHTML = `<tr><td colspan="9" class="empty">Impossible de charger l'historique : ${escapeHtml(error?.message || "erreur Supabase")}</td></tr>`;
+      }
     }
 
     async function viewImport(id){
       try{
         const { importRow, lines } = await window.ReelSupabase.getImport(id);
-        const entityLabel = importRow.budget_entites?.libelle || "Entité";
+        const entityLabel = importRow.budget_entites?.libelle || entityById.get(String(importRow.entite_id))?.libelle || "Entité";
         $("detailTitle").textContent = `${entityLabel} - ${monthLabel(importRow.mois)} ${importRow.annee}`;
         $("detailMeta").textContent = `${fmtCurrency(importRow.total_mois)} - ${lines.length} ligne(s) - affichage des 120 premières lignes.`;
         $("detailRows").innerHTML = lines.slice(0, 120).map(line => `
@@ -502,12 +513,13 @@
 
     async function deleteImport(id){
       const { importRow } = await window.ReelSupabase.getImport(id);
-      if (importRow.statut === "active") {
-        await kentAlert("Par sécurité, un import actif ne peut pas être supprimé ici. Active d'abord un autre import du même mois.", { title:"Import actif protégé", tone:"warning" });
-        return;
-      }
+      const isActive = importRow.statut === "active";
+      const entityLabel = entityById.get(String(importRow.entite_id))?.libelle || "Entité";
+      const activeWarning = isActive
+        ? `\n\nAttention : cet import est ACTIF. Si tu le supprimes, ${entityLabel} ${monthLabel(importRow.mois)} ${importRow.annee} repassera à 0 € tant que tu ne réimportes pas un fichier ou que tu ne réactives pas un ancien import.`
+        : "";
       const first = await kentConfirm(
-        `Supprimer définitivement l'import inactif "${importRow.nom}" ?\n\nLes lignes de cet import seront supprimées. Les autres imports, budgets, ventes et clients ne seront pas touchés.`,
+        `Supprimer définitivement l'import "${importRow.nom}" ?${activeWarning}\n\nLes lignes de cet import seront supprimées. Les autres imports, budgets, ventes et clients ne seront pas touchés.`,
         { title:"Supprimer l'import", tone:"danger", confirmText:"Continuer" }
       );
       if (!first) return;
@@ -551,7 +563,7 @@
     $("refreshBtn").addEventListener("click", refreshImports);
     $("fileInput").addEventListener("change", resetPreview);
     $("entitySelect").addEventListener("change", async () => { resetPreview(); await refreshImports(); });
-    $("monthSelect").addEventListener("change", resetPreview);
+    $("monthSelect").addEventListener("change", async () => { resetPreview(); await refreshImports(); });
     $("yearSelect").addEventListener("change", async () => {
       const year = KentDataConfig.setActiveYear(Number($("yearSelect").value));
       $("yearSelect").value = String(year);

@@ -156,6 +156,17 @@
     return REAL_COLUMN_CONFIGS[key] || REAL_COLUMN_CONFIGS.default;
   }
 
+  async function listEntities(){
+    const { data, error } = await client()
+      .from("budget_entites")
+      .select("*")
+      .eq("actif", true)
+      .order("ordre", { ascending: true })
+      .order("libelle", { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
   function parseRows(rows, options = {}){
     if (!Array.isArray(rows) || !rows.length) {
       return { lines: [], total: 0, columns: {}, skipped: { empty: 0, wrongMonth: 0, noAmount: 0, noMonth: 0 } };
@@ -332,14 +343,15 @@
     }
   }
 
-  async function listImports({ year, entiteId = null, includeInactive = true } = {}){
+  async function listImports({ year, month = null, entiteId = null, includeInactive = true } = {}){
     let query = client()
       .from("reel_imports")
-      .select("*, budget_entites:entite_id(key, libelle)")
+      .select("*")
       .order("annee", { ascending: false })
       .order("mois", { ascending: false })
       .order("created_at", { ascending: false });
     if (year) query = query.eq("annee", Number(year));
+    if (month) query = query.eq("mois", Number(month));
     if (entiteId) query = query.eq("entite_id", entiteId);
     if (!includeInactive) query = query.eq("statut", "active");
     const { data, error } = await query;
@@ -350,7 +362,7 @@
   async function getImport(id){
     const { data: importRow, error } = await client()
       .from("reel_imports")
-      .select("*, budget_entites:entite_id(key, libelle)")
+      .select("*")
       .eq("id", id)
       .single();
     if (error) throw error;
@@ -409,6 +421,7 @@
     normalizeKey,
     toNumber,
     configForEntity,
+    listEntities,
     parseRows,
     saveMonthlyImport,
     listImports,
