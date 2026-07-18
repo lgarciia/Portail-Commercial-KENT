@@ -271,7 +271,7 @@
     }
 
     .helpPopup{
-      width:650px;
+      width:min(860px,92vw);
       max-height:80vh;
       background:#111827;
       border-radius:16px;
@@ -316,6 +316,24 @@
 
     .helpBody ul{
       padding-left:20px;
+    }
+
+    .helpBody .note{
+      margin:14px 0;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(34,197,94,0.25);
+      background:rgba(34,197,94,0.08);
+      color:rgba(255,255,255,0.90);
+    }
+
+    .helpBody .warning{
+      margin:14px 0;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(245,158,11,0.28);
+      background:rgba(245,158,11,0.08);
+      color:rgba(255,255,255,0.90);
     }
 
     /* CENTER DASHBOARD */
@@ -659,52 +677,115 @@
   <div class="helpPopup">
 
     <div class="helpHeader">
-      <h2>Construction du Budget</h2>
+      <h2>Processus budget global</h2>
       <button class="helpClose" id="closeHelp">✕</button>
     </div>
 
     <div class="helpBody">
 
-      <p>Le budget est construit à partir des données de l'année précédente.</p>
+      <p>
+        Le budget est maintenant piloté par <b>entité</b> et par <b>année active</b>.
+        Une entité correspond à un périmètre de suivi, par exemple <b>PSA</b>,
+        <b>Gueudet</b>, <b>Ford</b>, <b>Direct</b> ou une nouvelle entité créée plus tard.
+      </p>
 
-      <h3>1. Réel N-1</h3>
-      <p>Les données sont récupérées dans la page <b>Réel N-1</b>.</p>
+      <div class="note">
+        Règle importante : il ne peut y avoir qu'un seul <b>budget actif</b> par
+        entité et par année. Les reportings lisent ce budget actif dans Supabase.
+      </div>
 
-      <h3>2. Mes projections</h3>
-      <p>Ces données sont injectées dans la page <b>Mes projections</b>.</p>
+      <h3>1. Choisir l'année de travail</h3>
+      <p>
+        En haut de l'espace budgétaire, le sélecteur d'année définit l'année active.
+        Si tu travailles sur 2027, les projections, budgets et analyses sont rattachés
+        à 2027, sans modifier les budgets 2026.
+      </p>
 
+      <h3>2. Préparer la base avec le Réel N-1</h3>
+      <p>
+        La page <b>Réel N-1</b> sert de base historique. Elle permet de consulter les
+        données de l'année précédente par entité. C'est cette base qui aide à construire
+        une projection cohérente pour l'année suivante.
+      </p>
+
+      <h3>3. Créer une projection</h3>
+      <p>
+        Dans <b>Mes projections</b>, tu peux charger le Réel N-1 d'une entité, ajuster
+        les jours ouvrés et préparer une première estimation du budget.
+      </p>
       <ul>
-        <li>réel N-1</li>
-        <li>nombre de jours ouvrés</li>
-        <li>année cible active</li>
+        <li>La projection est un brouillon de travail.</li>
+        <li>Elle peut être nommée et enregistrée.</li>
+        <li>Elle ne remplace pas encore le budget officiel.</li>
+        <li>Elle sert de point de départ pour construire le budget annuel.</li>
       </ul>
 
-      <h3>3. Génération du Budget</h3>
-      <p>La projection est exportée et devient le <b>budget de l'année active</b>.</p>
-
-      <h3>4. Ajustement manuel</h3>
-
+      <h3>4. Transformer la projection en budget annuel</h3>
+      <p>
+        Dans <b>Budget annuel</b>, tu charges une projection, puis tu peux l'ajuster
+        avant validation.
+      </p>
       <ul>
-        <li>ajouter des clients</li>
-        <li>supprimer des clients</li>
-        <li>renommer des clients</li>
-        <li>modifier les montants projetés</li>
+        <li>Modifier les montants mois par mois.</li>
+        <li>Ajouter un client manquant.</li>
+        <li>Renommer ou corriger un client.</li>
+        <li>Supprimer une ligne inutile.</li>
+        <li>Choisir l'entité à laquelle le budget appartient.</li>
       </ul>
 
-      <h3>5. Export final</h3>
+      <h3>5. Valider le budget actif Supabase</h3>
+      <p>
+        Une fois validé, le budget est enregistré dans Supabase avec son nom, son année,
+        son entité et toutes ses lignes mensuelles.
+      </p>
+      <div class="warning">
+        Si un budget actif existe déjà pour la même entité et la même année, l'application
+        empêche le mélange : il faut gérer l'ancien budget avant d'en activer un autre.
+      </div>
 
-      <p>Le budget final est exporté et utilisé dans toutes les vues :</p>
-
+      <h3>6. Suivre et gérer les budgets</h3>
+      <p>
+        La page <b>Mes budgets</b> sert à visualiser tous les budgets enregistrés.
+        Elle permet de voir l'état du budget, son entité, son année, et d'ouvrir le
+        détail pour contrôle.
+      </p>
       <ul>
-        <li>reporting</li>
-        <li>évolutions</li>
-        <li>analyses</li>
-        <li>réel vs budget</li>
+        <li>Un budget actif alimente les reportings.</li>
+        <li>Un budget inactif reste consultable mais n'est pas utilisé pour les calculs.</li>
+        <li>La suppression d'un budget ne touche pas aux ventes, aux clients, ni aux réels importés.</li>
       </ul>
 
-      <p>Les étapes doivent être répétées pour :</p>
+      <h3>7. Importer le réel mensuel</h3>
+      <p>
+        Chaque mois, le réel est importé par entité via l'outil <b>Import réel mensuel</b>.
+        L'import vient alimenter Supabase mois par mois, puis les tableaux comparent
+        automatiquement le réel au budget actif.
+      </p>
+      <ul>
+        <li>Un import réel est rattaché à une entité, une année et un mois.</li>
+        <li>Si un mois est réimporté, l'ancien import peut être remplacé sans supprimer les autres mois.</li>
+        <li>Les reportings utilisent les imports réels actifs.</li>
+      </ul>
 
-      <b>PSA • Gueudet • Ford • Clients Directs</b>
+      <h3>8. Impact dans les reportings</h3>
+      <p>
+        Les pages de reporting lisent maintenant les données Supabase : budgets actifs,
+        réels mensuels actifs et entités actives. Si une nouvelle entité est créée,
+        elle peut apparaître dans les sélecteurs et être intégrée aux cumuls dès qu'elle
+        possède un budget ou du réel.
+      </p>
+      <ul>
+        <li><b>Reporting annuel vs Budget</b> compare réel et budget par mois.</li>
+        <li><b>Évol Reporting</b> suit le réalisé importé.</li>
+        <li><b>Évol Analyse</b> affiche les analyses par entité et en cumul.</li>
+        <li><b>Réel vs N-1</b> compare l'année active avec l'historique.</li>
+      </ul>
+
+      <div class="note">
+        Processus recommandé : <b>Réel N-1</b> → <b>Mes projections</b> →
+        <b>Budget annuel</b> → <b>Mes budgets</b> → <b>Import réel mensuel</b> →
+        <b>Reportings</b>.
+      </div>
 
     </div>
 
