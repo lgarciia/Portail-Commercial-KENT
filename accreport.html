@@ -676,7 +676,7 @@
     async function loadEntity(entity, year, utils){
       const budgetFiles = KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
       const realFiles = KentDataConfig.getEntityFileCandidates(entity.key, "real", year);
-      const { budgetData } = await utils.loadBudgetData({
+      const { budgetData, meta } = await utils.loadBudgetData({
         entityKey: entity.key,
         year,
         fileCandidates: budgetFiles,
@@ -696,7 +696,8 @@
         budgetTotals,
         realTotals,
         budget: budgetTotals.reduce((sum, value) => sum + Number(value || 0), 0),
-        real: realTotals.reduce((sum, value) => sum + Number(value || 0), 0)
+        real: realTotals.reduce((sum, value) => sum + Number(value || 0), 0),
+        budgetSource: meta?.source === "supabase" ? "Supabase" : "Excel"
       };
     }
 
@@ -712,7 +713,7 @@
       renderEmptyChart(utils.MONTHS);
 
       const monthlyTotals = utils.MONTHS.map(() => ({ real: 0, budget: 0 }));
-      status.textContent = "Chargement des fichiers budget et activité réelle...";
+      status.textContent = "Chargement des budgets actifs et activité réelle...";
 
       const results = await Promise.allSettled(entities.map(entity => loadEntity(entity, year, utils)));
       const loaded = [];
@@ -745,9 +746,11 @@
       if (!loaded.length) {
         status.textContent = "Impossible de charger les données. Les menus restent disponibles en haut.";
       } else if (failed.length) {
-        status.textContent = `Aperçu chargé partiellement : ${loaded.length} entité(s) OK, à vérifier : ${failed.join(", ")}.`;
+        const sources = loaded.map(row => `${row.label} ${row.budgetSource}`).join(", ");
+        status.textContent = `Aperçu chargé partiellement : ${sources}. À vérifier : ${failed.join(", ")}.`;
       } else {
-        status.textContent = `Aperçu consolidé chargé : ${loaded.length} entités. Les KPI comparent le réalisé au budget à date, jusqu'à ${comparisonMonth ? comparisonMonth.label : "la période"} ${year}.`;
+        const sources = loaded.map(row => `${row.label} ${row.budgetSource}`).join(", ");
+        status.textContent = `Aperçu consolidé chargé : ${sources}. Les KPI comparent le réalisé au budget à date, jusqu'à ${comparisonMonth ? comparisonMonth.label : "la période"} ${year}.`;
       }
     }
 

@@ -855,7 +855,7 @@ document.addEventListener("keydown",(e)=>{
 
   async function loadEntityBudget(entity, year, utils){
     const budgetFiles = window.KentDataConfig.getEntityFileCandidates(entity.key, "budget", year)
-    const { budgetData } = await utils.loadBudgetData({
+    const { budgetData, meta } = await utils.loadBudgetData({
       entityKey: entity.key,
       year,
       fileCandidates: budgetFiles,
@@ -866,21 +866,22 @@ document.addEventListener("keydown",(e)=>{
       key:entity.key,
       label:entity.label,
       totals,
-      total:totals.reduce((sum, value) => sum + Number(value || 0), 0)
+      total:totals.reduce((sum, value) => sum + Number(value || 0), 0),
+      source: meta?.source === "supabase" ? "Supabase" : "Excel"
     }
   }
 
   async function initBudgetPreview(yearOverride){
     const utils = window.ReportingDataUtils
     if(!window.KentDataConfig || !utils || !window.XLSX){
-      status.textContent = "Aper?u indisponible : biblioth?ques budget non charg?es."
+      status.textContent = "Aperçu indisponible : bibliothèques budget non chargées."
       return
     }
 
     const year = Number(yearOverride || window.KentDataConfig.getActiveYear())
     yearEl.textContent = year
     renderEmptyChart(utils.MONTHS)
-    status.textContent = "Chargement des fichiers budget..."
+    status.textContent = "Chargement des budgets actifs..."
 
     const monthlyTotals = utils.MONTHS.map(() => 0)
     const results = await Promise.allSettled(entities.map(entity => loadEntityBudget(entity, year, utils)))
@@ -910,14 +911,16 @@ document.addEventListener("keydown",(e)=>{
     kpiAnnual.textContent = fmtCurrency(annual)
     kpiToDate.textContent = fmtCurrency(toDate)
     kpiBestMonth.textContent = bestMonth ? bestMonth.label : "-"
-    kpiBestMonthSub.textContent = bestMonth ? fmtCurrency(monthlyTotals[bestIndex]) : "Aucun budget charg?"
+    kpiBestMonthSub.textContent = bestMonth ? fmtCurrency(monthlyTotals[bestIndex]) : "Aucun budget chargé"
 
     if(!loaded.length){
-      status.textContent = "Impossible de charger les budgets. Les acc?s restent disponibles en haut."
+      status.textContent = "Impossible de charger les budgets. Les accès restent disponibles en haut."
     } else if(failed.length){
-      status.textContent = `Aper?u charg? partiellement : ${loaded.length} entit?(s) OK, ? v?rifier : ${failed.join(", ")}.`
+      const sources = loaded.map(row => `${row.label} ${row.source}`).join(", ")
+      status.textContent = `Aperçu chargé partiellement : ${sources}. À vérifier : ${failed.join(", ")}.`
     } else {
-      status.textContent = `Aper?u budget charg? : ${loaded.length} entit?s, budget ${year} consolid?.`
+      const sources = loaded.map(row => `${row.label} ${row.source}`).join(", ")
+      status.textContent = `Aperçu budget chargé : ${sources}. Budget ${year} consolidé.`
     }
   }
 
@@ -927,13 +930,13 @@ document.addEventListener("keydown",(e)=>{
       if(attempt < 40){
         window.setTimeout(() => waitAndRefreshBudgetPreview(year, attempt + 1), 100)
       } else {
-        status.textContent = "Aper?u indisponible : biblioth?ques budget non charg?es."
+        status.textContent = "Aperçu indisponible : bibliothèques budget non chargées."
       }
       return
     }
     initBudgetPreview(year).catch(error => {
       console.error(error)
-      status.textContent = "Erreur pendant le chargement de l'aper?u budget. Les acc?s restent disponibles."
+      status.textContent = "Erreur pendant le chargement de l'aperçu budget. Les accès restent disponibles."
     })
   }
 

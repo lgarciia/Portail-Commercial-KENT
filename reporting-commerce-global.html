@@ -998,6 +998,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./reporting-data-utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
   <script>
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
@@ -1515,9 +1516,14 @@
     }
     async function loadAutoEntityBudget(entity, year, utils) {
       const files = window.KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
-      const { budgetData } = await utils.loadBudgetData({ fileCandidates: files, budgetConfig: BUDGET_CONFIG });
+      const { budgetData, meta } = await utils.loadBudgetData({
+        entityKey: entity.key,
+        year,
+        fileCandidates: files,
+        budgetConfig: BUDGET_CONFIG
+      });
       const totals = utils.computeBudgetMonthlyTotals(budgetData);
-      return { key: entity.key, label: entity.label, totals };
+      return { key: entity.key, label: entity.label, totals, source: meta?.source || "excel" };
     }
     async function loadBudgetSnapshot(year) {
       const cacheKey = String(year);
@@ -1545,7 +1551,8 @@
         const entity = AUTO_BUDGET_ENTITIES[index];
         if (result.status === "fulfilled") {
           snapshot.autoAvailable = true;
-          snapshot.autoLoaded.push(result.value.label);
+          const sourceLabel = result.value.source === "supabase" ? "Supabase" : "Excel";
+          snapshot.autoLoaded.push(`${result.value.label} (${sourceLabel})`);
           result.value.totals.forEach((value, monthIndex) => {
             snapshot.autoMonthly[monthIndex] += Number(value || 0);
           });
