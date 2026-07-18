@@ -323,7 +323,7 @@
       margin:0 3px;
     }
 
-    /* sÃ©parateur visuel chaque mois (col 3,6,9...) sur 2 lignes d'en-tÃªte + corps */
+    /* séparateur visuel chaque mois (col 3,6,9...) sur 2 lignes d'en-tête + corps */
     #reportTable th:nth-child(3),
     #reportTable th:nth-child(6),
     #reportTable th:nth-child(9),
@@ -380,7 +380,7 @@
         <button class="btn" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn" id="btnExportCsv">Exporter CSV</button>
         <button class="btn" id="btnExportJson">Exporter JSON</button>
-        <button class="btn danger" id="btnResetReal">Reset RÃ©el</button>
+        <button class="btn danger" id="btnResetReal">Reset Réel</button>
       </div>
     </div>
 
@@ -390,12 +390,12 @@
           <div class="metaLeft">
             <div class="pill">Budget actif : <strong id="budgetFileLabel">non charg&eacute;</strong></div>
             <div class="pill">Clients : <strong id="clientsCount">0</strong></div>
-            <div class="pill">DerniÃ¨re maj : <strong id="lastUpdate">â€”</strong></div>
-            <div class="pill">RÃ©el DIRECT : <strong id="reelStatus">chargementâ€¦</strong></div>
-            <input class="search" id="search" placeholder="Filtrer client (nom ou code livrÃ©)..." />
+            <div class="pill">Dernière maj : <strong id="lastUpdate">—</strong></div>
+            <div class="pill">Réel DIRECT : <strong id="reelStatus">chargement…</strong></div>
+            <input class="search" id="search" placeholder="Filtrer client (nom ou code livré)..." />
           </div>
           <div class="pill">
-            Astuce : drag&drop le fichier Excel ici â€¢ <span class="kbd">Ctrl</span>+<span class="kbd">F</span>
+            Astuce : drag&drop le fichier Excel ici • <span class="kbd">Ctrl</span>+<span class="kbd">F</span>
           </div>
         </div>
 
@@ -425,17 +425,17 @@
   ====================================================== */
   const MONTHS = [
     { key: "jan", label: "Janvier", excel: "Janvier" },
-    { key: "feb", label: "FÃ©vrier", excel: "FÃ©vrier" },
+    { key: "feb", label: "Février", excel: "Février" },
     { key: "mar", label: "Mars", excel: "Mars" },
     { key: "apr", label: "Avril", excel: "Avril" },
     { key: "may", label: "Mai", excel: "Mai" },
     { key: "jun", label: "Juin", excel: "Juin" },
     { key: "jul", label: "Juillet", excel: "Juillet" },
-    { key: "aug", label: "AoÃ»t", excel: "AoÃ»t" },
+    { key: "aug", label: "Août", excel: "Août" },
     { key: "sep", label: "Septembre", excel: "Septembre" },
     { key: "oct", label: "Octobre", excel: "Octobre" },
     { key: "nov", label: "Novembre", excel: "Novembre" },
-    { key: "dec", label: "DÃ©cembre", excel: "DÃ©cembre" },
+    { key: "dec", label: "Décembre", excel: "Décembre" },
   ];
 
   const ENTITY_KEY = "direct";
@@ -480,7 +480,7 @@
      INIT
   ====================================================== */
   renderEmpty();
-  updateReelStatus("chargementâ€¦");
+  updateReelStatus("chargement…");
   syncBottomScrollbar();
   await tryAutoFetchBudget();
 
@@ -502,7 +502,7 @@
   });
 
   el.btnResetReal.addEventListener("click", async () => {
-    if (!await kentConfirm("Recharger toutes les valeurs RÃ©el depuis activitereeldirect.xlsx ?", { title: "Recharger le r\u00e9el", confirmText: "Recharger" })) return;
+    if (!await kentConfirm("Recharger toutes les valeurs Réel depuis activitereeldirect.xlsx ?", { title: "Recharger le r\u00e9el", confirmText: "Recharger" })) return;
     loadRealFromFetch().then(render).catch(console.error);
   });
 
@@ -529,7 +529,7 @@
     await importBudgetFile(file);
   });
 
-  // âœ… sync scroll horizontal : tableScroller (X hidden) <-> hScroll (X visible)
+  // ✅ sync scroll horizontal : tableScroller (X hidden) <-> hScroll (X visible)
   let syncing = false;
 
   el.tableScroller.addEventListener("scroll", () => {
@@ -556,7 +556,7 @@
       const arrayBuffer = await file.arrayBuffer();
       parseBudget(arrayBuffer, file.name || BUDGET_FILE);
 
-      // âœ… fetch rÃ©el aprÃ¨s import budget
+      // ✅ fetch réel après import budget
       await loadRealFromFetch();
 
       render();
@@ -578,9 +578,9 @@
 
     // Budget Direct : on accepte plusieurs conventions
     const colClient = findCol(headerMap, ["client", "nom client", "nom du client"]);
-    const colCode = findCol(headerMap, ["code livrÃ©","code livre","code","n client","nÂ° client","no client","numero client","nclient"]);
+    const colCode = findCol(headerMap, ["code livré","code livre","code","n client","n° client","no client","numero client","nclient"]);
 
-    if (!colClient && !colCode) throw new Error("Budget : colonnes Client/Code livrÃ© introuvables.");
+    if (!colClient && !colCode) throw new Error("Budget : colonnes Client/Code livré introuvables.");
 
     const monthCols = {};
     for (const m of MONTHS){
@@ -671,8 +671,8 @@
   function applyMeta(meta){
     budgetMeta = meta || null;
     if (!meta) {
-      el.budgetFileLabel.textContent = "non chargÃ©";
-      el.lastUpdate.textContent = "â€”";
+      el.budgetFileLabel.textContent = "non chargé";
+      el.lastUpdate.textContent = "—";
       return;
     }
     el.budgetFileLabel.textContent = meta.filename || BUDGET_FILE;
@@ -680,8 +680,8 @@
   }
 
   /* ======================================================
-     âœ… FETCH RÃ‰EL (activitereeldirect.xlsx)
-     Colonnes : Code livrÃ© | Nom client | CA Total | mois2
+     ✅ FETCH RÉEL (activitereeldirect.xlsx)
+     Colonnes : Code livré | Nom client | CA Total | mois2
      Reconstruit realData[clientId][monthKey] = somme CA
   ====================================================== */
   async function loadRealFromFetch(){
@@ -690,7 +690,7 @@
       return;
     }
 
-    updateReelStatus("chargementâ€¦");
+    updateReelStatus("chargement…");
 
     try{
       const { buffer } = await fetchXlsxWithFallback(REAL_FILE);
@@ -707,7 +707,7 @@
       }
 
       const headerMap = buildHeaderMap(rows[0] || {});
-      const colCode = findCol(headerMap, ["code livrÃ©","code livre","code"]);
+      const colCode = findCol(headerMap, ["code livré","code livre","code"]);
       const colName = findCol(headerMap, ["nom client","nom du client","client"]);
       const colAmt  = findCol(headerMap, ["ca total","ca","chiffre d'affaires","chiffre daffaires"]);
       const colMonth= findCol(headerMap, ["mois2","mois","month"]);
@@ -777,7 +777,7 @@
 
       realData = nextReal;
       const countClients = Object.keys(realData).length;
-      updateReelStatus(`OK (${countClients} clients) â€” ${REAL_FILE}`);
+      updateReelStatus(`OK (${countClients} clients) — ${REAL_FILE}`);
     }catch(err){
       console.error(err);
       updateReelStatus("erreur fetch/lecture");
@@ -785,34 +785,34 @@
   }
 
   function monthNameToKey(m){
-    // support numÃ©rique 1..12
+    // support numérique 1..12
     const n = Number(String(m||"").trim());
     if (Number.isFinite(n) && n >= 1 && n <= 12) return MONTHS[n-1].key;
 
     const k = normKey(m);
     const map = {
       "janvier":"jan","jan":"jan",
-      "fevrier":"feb","fÃ©vrier":"feb","fev":"feb","fÃ©v":"feb",
+      "fevrier":"feb","février":"feb","fev":"feb","fév":"feb",
       "mars":"mar",
       "avril":"apr","avr":"apr",
       "mai":"may",
       "juin":"jun",
       "juillet":"jul","juil":"jul",
-      "aout":"aug","aoÃ»t":"aug",
+      "aout":"aug","août":"aug",
       "septembre":"sep","sep":"sep","sept":"sep",
       "octobre":"oct","oct":"oct",
       "novembre":"nov","nov":"nov",
-      "decembre":"dec","dÃ©cembre":"dec","dec":"dec","dÃ©c":"dec"
+      "decembre":"dec","décembre":"dec","dec":"dec","déc":"dec"
     };
     return map[k] || null;
   }
 
   function updateReelStatus(msg){
-    el.reelStatus.textContent = msg || "â€”";
+    el.reelStatus.textContent = msg || "—";
   }
 
   /* ======================================================
-     RENDER (mÃªme structure que PSA : RÃ©el/Budget/Ã‰cart cÃ´te Ã  cÃ´te)
+     RENDER (même structure que PSA : Réel/Budget/Écart côte à côte)
   ====================================================== */
   function renderEmpty(){
     el.clientsCount.textContent = "0";
@@ -820,23 +820,23 @@
       <thead>
         <tr>
           <th class="col-client">Client</th>
-          <th class="col-nclient">Code livrÃ©</th>
+          <th class="col-nclient">Code livré</th>
           ${MONTHS.map(m => `<th colspan="3">${escapeHtml(m.label)}</th>`).join("")}
           <th class="dividerL" colspan="3">Cumul</th>
         </tr>
         <tr>
-          <th class="col-client">â€”</th>
-          <th class="col-nclient">â€”</th>
-          ${MONTHS.map(() => `<th>RÃ©el</th><th>Budget</th><th>Ã‰cart</th>`).join("")}
-          <th class="dividerL">RÃ©el</th><th>Budget</th><th>Ã‰cart</th>
+          <th class="col-client">—</th>
+          <th class="col-nclient">—</th>
+          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
+          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td class="col-client">Aucun budget chargÃ©</td>
-          <td class="col-nclient">â€”</td>
-          ${MONTHS.map(() => `<td class="num">â€”</td><td class="num">â€”</td><td class="num">â€”</td>`).join("")}
-          <td class="num dividerL">â€”</td><td class="num">â€”</td><td class="num">â€”</td>
+          <td class="col-client">Aucun budget chargé</td>
+          <td class="col-nclient">—</td>
+          ${MONTHS.map(() => `<td class="num">—</td><td class="num">—</td><td class="num">—</td>`).join("")}
+          <td class="num dividerL">—</td><td class="num">—</td><td class="num">—</td>
         </tr>
       </tbody>
     `;
@@ -862,15 +862,15 @@
       <thead>
         <tr>
           <th class="col-client">Client</th>
-          <th class="col-nclient">Code livrÃ©</th>
+          <th class="col-nclient">Code livré</th>
           ${MONTHS.map(m => `<th colspan="3">${escapeHtml(m.label)}</th>`).join("")}
           <th class="dividerL" colspan="3">Cumul</th>
         </tr>
         <tr>
-          <th class="col-client">â€”</th>
-          <th class="col-nclient">â€”</th>
-          ${MONTHS.map(() => `<th>RÃ©el</th><th>Budget</th><th>Ã‰cart</th>`).join("")}
-          <th class="dividerL">RÃ©el</th><th>Budget</th><th>Ã‰cart</th>
+          <th class="col-client">—</th>
+          <th class="col-nclient">—</th>
+          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
+          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
         </tr>
       </thead>
     `;
@@ -920,7 +920,7 @@
     return `
       <tr class="row-cumul">
         <td class="col-client">Cumul</td>
-        <td class="col-nclient">â€”</td>
+        <td class="col-nclient">—</td>
         ${cells}
         <td class="num dividerL">${fmt(cumul.annual.real)}</td>
         <td class="num budget">${fmt(cumul.annual.budget)}</td>
@@ -949,7 +949,7 @@
     return `
       <tr>
         <td class="col-client">${escapeHtml(client.name)}</td>
-        <td class="col-nclient">${escapeHtml(client.nclient || "â€”")}</td>
+        <td class="col-nclient">${escapeHtml(client.nclient || "—")}</td>
         ${cells}
         <td class="num dividerL">${fmt(annualReal)}</td>
         <td class="num budget">${fmt(annualBudget)}</td>
@@ -965,7 +965,7 @@
   }
 
   /* ======================================================
-     EXPORTS (identique Ã  PSA)
+     EXPORTS (identique à PSA)
   ====================================================== */
   function buildExportRows(){
     if (!budgetData?.clients?.length) return [];
@@ -979,33 +979,33 @@
     return out;
 
     function rowFromCumul(c){
-      const r = { CLIENT: "Cumul", "CODE LIVRÃ‰": "" };
+      const r = { CLIENT: "Cumul", "CODE LIVRÉ": "" };
       for (const m of MONTHS){
         const v = c.perMonth[m.key];
-        r[`${m.label} RÃ©el`] = v.real;
+        r[`${m.label} Réel`] = v.real;
         r[`${m.label} Budget`] = v.budget;
-        r[`${m.label} Ã‰cart`] = v.ecart;
+        r[`${m.label} Écart`] = v.ecart;
       }
-      r["Cumul RÃ©el"] = c.annual.real;
+      r["Cumul Réel"] = c.annual.real;
       r["Cumul Budget"] = c.annual.budget;
-      r["Cumul Ã‰cart"] = c.annual.ecart;
+      r["Cumul Écart"] = c.annual.ecart;
       return r;
     }
 
     function rowFromClient(c){
-      const r = { CLIENT: c.name, "CODE LIVRÃ‰": c.nclient || "" };
+      const r = { CLIENT: c.name, "CODE LIVRÉ": c.nclient || "" };
       let annualB = 0, annualR = 0;
       for (const m of MONTHS){
         const b = toNumber(c.budget?.[m.key]);
         const rr = Math.round(toNumber(realData?.[c.id]?.[m.key]));
         annualB += b; annualR += rr;
-        r[`${m.label} RÃ©el`] = rr;
+        r[`${m.label} Réel`] = rr;
         r[`${m.label} Budget`] = b;
-        r[`${m.label} Ã‰cart`] = rr - b;
+        r[`${m.label} Écart`] = rr - b;
       }
-      r["Cumul RÃ©el"] = annualR;
+      r["Cumul Réel"] = annualR;
       r["Cumul Budget"] = annualB;
-      r["Cumul Ã‰cart"] = annualR - annualB;
+      r["Cumul Écart"] = annualR - annualB;
       return r;
     }
   }
@@ -1084,7 +1084,7 @@
       const d = new Date(iso);
       return d.toLocaleString("fr-FR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
     }catch{
-      return "â€”";
+      return "—";
     }
   }
 
@@ -1264,4 +1264,3 @@
 </script>
 </body>
 </html>
-
