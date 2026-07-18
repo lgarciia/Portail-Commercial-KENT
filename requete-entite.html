@@ -1,0 +1,403 @@
+﻿<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Requête annuelle par entité</title>
+  <script src="./shared-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./reel-supabase.js"></script>
+
+<style>
+  :root{
+    --bg:#0b0f17;
+    --panel:rgba(255,255,255,.06);
+    --line:rgba(255,255,255,.12);
+    --text:rgba(255,255,255,.92);
+    --muted:rgba(255,255,255,.62);
+    --accent:#7c3aed;
+    --ok:#22c55e;
+    --warn:#f59e0b;
+    --shadow:0 18px 40px rgba(0,0,0,.45);
+    --r:16px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    background:
+      radial-gradient(1200px 800px at 20% 0%, rgba(124,58,237,.20), transparent 55%),
+      radial-gradient(900px 700px at 85% 10%, rgba(34,197,94,.10), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    padding:18px;
+  }
+  .wrap{max-width:1400px;margin:0 auto;}
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{
+    width:40px;height:40px;border-radius:14px;
+    background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(34,197,94,.70));
+    box-shadow: 0 10px 26px rgba(124,58,237,.25);
+  }
+  .title{line-height:1.1}
+  .title b{display:block;font-size:16px;letter-spacing:.2px}
+  .title span{display:block;font-size:12px;color:var(--muted)}
+  .btn{
+    border:1px solid var(--line);
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    padding:10px 12px;border-radius:14px;font-weight:900;
+    cursor:pointer;
+  }
+  .btn:hover{background: rgba(255,255,255,0.09)}
+  .btn.primary{
+    background: rgba(124,58,237,.22);
+    border-color: rgba(124,58,237,.45);
+  }
+  .btn.green{
+    background: rgba(34,197,94,.16);
+    border-color: rgba(34,197,94,.34);
+  }
+
+  .card{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    padding:14px;
+    backdrop-filter: blur(10px);
+    margin-top:12px;
+  }
+
+  .meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .chip{
+    display:inline-flex;gap:8px;align-items:center;
+    padding:6px 10px;border-radius:999px;border:1px solid var(--line);
+    background: rgba(0,0,0,.20);
+    font-size:12px;color:var(--muted);
+  }
+  .dot{width:9px;height:9px;border-radius:99px;background:var(--accent)}
+  .dot.ok{background:var(--ok)}
+  .dot.warn{background:var(--warn)}
+  .small{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.35}
+
+  .filters{
+    display:grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap:8px;
+    align-items:start;
+  }
+  @media (max-width: 980px){
+    .filters{grid-template-columns: 1fr;}
+  }
+
+  .fbox{
+    border:1px solid var(--line);
+    background: rgba(0,0,0,.18);
+    border-radius: 14px;
+    padding:10px;
+  }
+
+  .fhead{
+    display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;
+    font-size:12px;font-weight:950;color:var(--muted);text-transform:uppercase;letter-spacing:.2px;
+  }
+  .headLeft{display:flex;align-items:center;gap:8px;min-width:0}
+  .badge{
+    padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    color: rgba(255,255,255,.75);
+    font-weight:950;
+    font-size:12px;
+    white-space:nowrap;
+  }
+
+  .headBtns{
+    display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;
+  }
+  .miniBtn{
+    padding:6px 8px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.05);
+    color: rgba(255,255,255,.86);
+    font-weight:950;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .miniBtn:hover{background: rgba(255,255,255,.09)}
+
+  select[multiple]{
+    width:100%;
+    height:220px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.22);
+    color: var(--text);
+    padding:8px;
+    outline:none;
+    font-weight:800;
+  }
+  option{padding:4px}
+
+  .cumulRow{
+    margin-top:8px;
+    display:flex;align-items:center;gap:8px;
+    color:var(--muted);
+    font-weight:900;
+    font-size:12px;
+  }
+  .cumulRow input{transform:scale(1.05)}
+  .genRow{
+    display:flex;justify-content:center;margin-top:14px;
+  }
+
+  .tableWrap{
+    overflow:auto;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background: rgba(0,0,0,.18);
+  }
+  table{border-collapse:collapse;width:100%;min-width:900px}
+  th,td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
+  th{
+    color:var(--muted);
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.2px;
+    user-select:none;
+  }
+  td{font-weight:900;font-size:13px}
+  .right{text-align:right}
+  th.sortable{cursor:pointer}
+  th.sortable:hover{color:rgba(255,255,255,.85)}
+  .sortIcon{opacity:.65;margin-left:6px}
+
+  .kpis{
+    display:flex;gap:10px;flex-wrap:wrap;margin-top:12px
+  }
+  .kpi{
+    flex:1;min-width:240px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background: rgba(0,0,0,.18);
+    padding:12px;
+  }
+  .kpi .k{color:var(--muted);font-size:12px;font-weight:950}
+  .kpi .v{font-size:18px;font-weight:990;margin-top:4px}
+
+
+
+/* ================================
+   Compactage zone critères + scroll
+   ================================ */
+
+/* La grille des filtres prend moins de place + scroll si besoin */
+.filters{
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
+/* Cartes filtres un peu plus compactes */
+.fbox{
+  padding: 8px;              /* avant: 10px */
+  border-radius: 12px;       /* léger */
+}
+
+/* En-tête moins haut */
+.fhead{
+  margin-bottom: 6px;        /* avant: 8px */
+  font-size: 11px;
+}
+
+/* Boutons mini plus compacts */
+.miniBtn{
+  padding: 5px 7px;          /* avant: 6px 8px */
+  border-radius: 9px;
+  font-size: 11px;
+}
+
+/* Select multiple : beaucoup moins haut + scrollbar interne */
+select[multiple]{
+  height: 110px;             /* compact pour garder tous les filtres visibles */
+  padding: 6px;              /* avant: 8px */
+  border-radius: 12px;
+  overflow: auto;
+}
+
+/* Ligne cumul plus compacte */
+.cumulRow{
+  margin-top: 6px;           /* avant: 8px */
+  gap: 8px;
+  font-size: 11px;
+}
+
+/* ================================
+   Surbrillance sélection plus premium
+   ================================ */
+
+/* Focus plus joli (glow léger) */
+select[multiple]:focus{
+  border-color: rgba(124,58,237,.55);
+  box-shadow: 0 0 0 3px rgba(124,58,237,.18);
+}
+
+/* Hover option (quand tu survoles) */
+select[multiple] option:hover{
+  background: rgba(255,255,255,.08);
+}
+
+/* Sélection (plus propre que le bleu agressif) */
+select[multiple] option:checked{
+  background: rgba(245,158,11,.78);
+  color:#101827;
+  font-weight:950;
+}
+
+.fbox.is-empty{
+  border-color: rgba(248,113,113,.48);
+  background: rgba(127,29,29,.16);
+}
+select[multiple].has-filter option:not(:checked){
+  color: rgba(255,255,255,.38);
+  background: rgba(0,0,0,.12);
+}
+select[multiple].has-filter option:checked{
+  background: rgba(245,158,11,.86);
+  color:#101827;
+  font-weight:950;
+  font-size:1.05em;
+}
+
+/* ================================
+   Scrollbars dark premium (filters + selects)
+   ================================ */
+.filters::-webkit-scrollbar,
+select[multiple]::-webkit-scrollbar{
+  width: 10px;
+  height: 10px;
+}
+.filters::-webkit-scrollbar-track,
+select[multiple]::-webkit-scrollbar-track{
+  background: rgba(255,255,255,.05);
+  border-radius: 999px;
+}
+.filters::-webkit-scrollbar-thumb,
+select[multiple]::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.18);
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,.25);
+}
+.filters::-webkit-scrollbar-thumb:hover,
+select[multiple]::-webkit-scrollbar-thumb:hover{
+  background: rgba(255,255,255,.28);
+}
+
+/* ================================
+   UNIFORMISATION DES ZONES SELECT
+   ================================ */
+
+/* Toutes les cartes filtres meme hauteur */
+.fbox{
+  height: 185px;          /* hauteur fixe compacte */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Le select prend toute la place disponible */
+.fbox select[multiple]{
+  flex: 1;
+  height: auto;           /* on laisse flex gerer */
+  min-height: 0;          /* important pour scroll interne */
+}
+
+/* Scroll interne propre */
+.fbox select[multiple]{
+  overflow: auto;
+}
+
+
+</style>
+  <link rel="stylesheet" href="./shared-theme.css">
+</head>
+
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <b id="pageTitle">Requête annuelle</b>
+        <span id="pageSubtitle">Réel Supabase annuel - sélection en colonnes + cumul + export</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="btn" href="accrequete.html" data-year-link>Accueil requêtes</a>
+      <select class="btn" id="entitySelect" title="Entité"></select>
+      <select class="btn" id="yearSelect" title="Année"></select>
+      <button class="btn" id="reloadBtn">Recharger Supabase</button>
+      <button class="btn green" id="exportBtn" disabled>Exporter CSV</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="meta">
+      <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargement...</span></span>
+      <span class="chip"><span class="dot ok"></span><span>Source : <b id="fileNameLabel">—</b></span></span>
+      <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes détectées : —</span></span>
+    </div>
+    <div class="small">
+    
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <div class="fbox" id="boxYear"></div>
+      <div class="fbox" id="boxMonth"></div>
+      <div class="fbox" id="boxSeller"></div>
+      <div class="fbox" id="boxClientInt"></div>
+      <div class="fbox" id="boxClient"></div>
+      <div class="fbox" id="boxRef"></div>
+      <div class="fbox" id="boxDes"></div>
+    </div>
+
+    <div class="genRow">
+      <button class="btn primary" id="genBtn">Générer</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tableWrap">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"><tr><td style="color:var(--muted)">—</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Lignes résultat</div>
+        <div class="v" id="kpiRows">—</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Quantité totale</div>
+        <div class="v" id="kpiQty">—</div>
+      </div>
+      <div class="kpi">
+        <div class="k">CA total</div>
+        <div class="v" id="kpiCA">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./requete-entite.js"></script>
+</body>
+</html>
