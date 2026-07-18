@@ -9,6 +9,8 @@
 
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
   <script src="./reporting-data-utils.js"></script>
 
   <style>
@@ -458,6 +460,8 @@
     try{
       budgetDataset = await window.ReportingDataUtils.loadBudgetData({
         fileName: file,
+        entityKey: "gueudet",
+        year,
         budgetConfig: DATA_SOURCE.budget,
       });
       budgetMonthly = window.ReportingDataUtils.computeBudgetMonthlyTotals(budgetDataset.budgetData);

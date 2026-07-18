@@ -78,6 +78,7 @@
         id: `${String(line.numero_client || "").trim()}__${String(line.client_nom || "").trim()}`,
         name: line.client_nom,
         nclient: line.numero_client || "",
+        commentaire: line.commentaire || "",
         budget: MONTH_KEYS.reduce((acc, key) => {
           acc[key] = toNumber(line[key]);
           return acc;
@@ -288,7 +289,6 @@
   }
 
   async function getActiveBudgetData(entityKey, year){
-    await ensureDefaultEntities();
     const { data: entities, error: entityError } = await client()
       .from("budget_entites")
       .select("*")

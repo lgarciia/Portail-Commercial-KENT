@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="fr" data-theme="dark">
 <head>
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Reporting annuel (DIRECT)</title>
   <script src="./shared-ui.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
 
   <!-- SheetJS (XLSX) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -605,6 +608,46 @@
     applyMeta(meta);
   }
 
+  async function tryLoadActiveBudgetFromSupabase(){
+    if(!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return false;
+
+    try{
+      const result = await window.BudgetSupabase.getActiveBudgetData(ENTITY_KEY, APP_YEAR);
+      const clients = result && result.budgetData && Array.isArray(result.budgetData.clients)
+        ? result.budgetData.clients
+        : [];
+      if(!clients.length) return false;
+
+      budgetData = {
+        clients: clients.map(client => {
+          const name = String(client.name || "").trim();
+          const nclient = String(client.nclient || "").trim();
+          const sourceBudget = client.budget || {};
+          const budget = {};
+          for(const month of MONTHS){
+            const value = Number(sourceBudget[month.key]);
+            budget[month.key] = Number.isFinite(value) ? value : 0;
+          }
+          return {
+            id: client.id || makeClientKey(name, nclient),
+            name,
+            nclient,
+            budget
+          };
+        }).filter(client => client.name || client.nclient)
+      };
+
+      applyMeta({
+        filename: result.meta && result.meta.fileName ? result.meta.fileName : "Budget actif Supabase",
+        updatedAt: new Date().toISOString(),
+        sheet: result.meta && result.meta.sheetName ? result.meta.sheetName : "Supabase"
+      });
+      return true;
+    }catch(error){
+      console.warn("Budget actif Supabase indisponible, fallback Excel:", error && error.message ? error.message : error);
+      return false;
+    }
+  }
   async function tryAutoFetchBudget(){
     try{
       const { buffer } = await fetchXlsxWithFallback(BUDGET_FILE);

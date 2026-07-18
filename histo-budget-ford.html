@@ -7,6 +7,9 @@
 <title>Consultation Budget</title>
   <script src="./shared-ui.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./budget-supabase.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
@@ -153,10 +156,11 @@ input{display:none}
    🔧 CONFIGURATION — À MODIFIER POUR GUEUDET / FORD
 ===================================================== */
 const CONFIG = {
-FILE_NAME: KentDataConfig.getEntityFile("ford", "budget", KentDataConfig.getActiveYear()),
-CACHE_KEY: "CONSULT_BUDGET_FORD_V1",
-LABEL: "FORD"
-
+  ENTITY_KEY: "ford",
+  APP_YEAR: KentDataConfig.getActiveYear(),
+  FILE_NAME: KentDataConfig.getEntityFile("ford", "budget", KentDataConfig.getActiveYear()),
+  CACHE_KEY: "CONSULT_BUDGET_FORD_V1",
+  LABEL: "FORD"
 };
 /* ===================================================== */
 
@@ -190,6 +194,9 @@ function setStatus(type,msg){
 async function autoFetch(){
   try{
     setStatus("warn","Chargement automatique...");
+    const supabaseLoaded = await loadSupabaseBudget();
+    if(supabaseLoaded) return;
+
     const res = await fetch(CONFIG.FILE_NAME+"?v="+Date.now(),{cache:"no-store"});
     if(!res.ok){
       setStatus("bad","Erreur fetch ("+res.status+")");
@@ -198,10 +205,39 @@ async function autoFetch(){
     const buf = await res.arrayBuffer();
     parseExcel(buf);
   }catch{
-    setStatus("bad","Erreur réseau");
+    setStatus("bad","Erreur reseau");
   }
 }
 
+async function loadSupabaseBudget(){
+  if(!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return false;
+
+  try{
+    const result = await window.BudgetSupabase.getActiveBudgetData(CONFIG.ENTITY_KEY, CONFIG.APP_YEAR);
+    const clients = result && result.budgetData && Array.isArray(result.budgetData.clients)
+      ? result.budgetData.clients
+      : [];
+    if(!clients.length) return false;
+
+    const monthKeys = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+    dataRows = clients.map(client => {
+      const budget = client.budget || {};
+      return {
+        client: client.name || "",
+        nclient: client.nclient || "",
+        months: monthKeys.map(key => Number(budget[key]) || 0),
+        commentaire: client.commentaire || ""
+      };
+    });
+
+    render();
+    setStatus("ok","Budget actif Supabase charge - "+dataRows.length+" lignes");
+    return true;
+  }catch(error){
+    console.warn("Budget actif Supabase indisponible, fallback Excel:", error && error.message ? error.message : error);
+    return false;
+  }
+}
 function normalizeKey(k){
   return String(k||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 }

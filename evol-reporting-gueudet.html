@@ -8,6 +8,8 @@
   <script src="./shared-ui.js"></script>
 
   <!-- ✅ SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
@@ -367,6 +369,7 @@
     budget: KentDataConfig.getEntityFile("gueudet", "budget", REPORT_YEAR),
     reel: KentDataConfig.getEntityFile("gueudet", "real", REPORT_YEAR),
   };
+  const BUDGET_ENTITY_KEY = "gueudet";
   const DATA_SOURCE = {
     budget: {
       clientCandidates: ["client", "clients"],
@@ -444,12 +447,18 @@
   el.sReel.textContent = "chargement…";
 
   try{
-    const [budgetWB, reelWB] = await Promise.all([
-      fetchWorkbook(FILES.budget),
+    const [supabaseBudgetData, reelWB] = await Promise.all([
+      loadActiveBudgetFromSupabase(BUDGET_ENTITY_KEY, REPORT_YEAR),
       fetchWorkbook(FILES.reel),
     ]);
 
-    budgetData = parseBudgetWorkbook(budgetWB);
+    if(supabaseBudgetData && supabaseBudgetData.clients && supabaseBudgetData.clients.length){
+      budgetData = supabaseBudgetData;
+    }else{
+      const budgetWB = await fetchWorkbook(FILES.budget);
+      budgetData = parseBudgetWorkbook(budgetWB);
+    }
+
     if (!(budgetData?.clients?.length)) {
       throw new Error("Budget Gueudet introuvable ou colonnes mois non reconnues");
     }
@@ -469,6 +478,38 @@
   }
   paintStatus();
 
+  async function loadActiveBudgetFromSupabase(entityKey, year){
+    if(!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return null;
+    try{
+      const result = await window.BudgetSupabase.getActiveBudgetData(entityKey, year);
+      const clients = result && result.budgetData && Array.isArray(result.budgetData.clients)
+        ? result.budgetData.clients
+        : [];
+      if(!clients.length) return null;
+
+      return {
+        clients: clients.map(client => {
+          const name = String(client.name || "").trim();
+          const nclient = String(client.nclient || "").trim();
+          const sourceBudget = client.budget || {};
+          const budget = {};
+          for(const month of MONTHS){
+            const value = Number(sourceBudget[month.key]);
+            budget[month.key] = Number.isFinite(value) ? value : 0;
+          }
+          return {
+            id: client.id || makeClientMatchKey(name, nclient),
+            name,
+            nclient,
+            budget
+          };
+        }).filter(client => client.name || client.nclient)
+      };
+    }catch(error){
+      console.warn("Budget actif Supabase indisponible, fallback Excel:", error && error.message ? error.message : error);
+      return null;
+    }
+  }
   // ---------------------------
   // FILTERS (mêmes options)
   // ---------------------------

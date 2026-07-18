@@ -7,6 +7,9 @@
   <title>Evol Analyse — DIRECT</title>
   <script src="./shared-ui.js"></script>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
+
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -428,6 +431,28 @@
     el.yearText.textContent = `Année : ${selectedYear}`;
   }
 
+  async function loadSupabaseBudgetMonthly(entityKey, year){
+    if(!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return null;
+    try{
+      const result = await window.BudgetSupabase.getActiveBudgetData(entityKey, year);
+      const clients = result && result.budgetData && Array.isArray(result.budgetData.clients)
+        ? result.budgetData.clients
+        : [];
+      if(!clients.length) return null;
+
+      const monthKeys = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+      const monthly = monthKeys.map(key => clients.reduce((sum, client) => {
+        const budget = client.budget || {};
+        const value = Number(budget[key]);
+        return sum + (Number.isFinite(value) ? value : 0);
+      }, 0));
+
+      return { monthly, meta: result.meta || {}, clientCount: clients.length };
+    }catch(error){
+      console.warn("Budget actif Supabase indisponible, fallback Excel:", error && error.message ? error.message : error);
+      return null;
+    }
+  }
   /* =========================
      BUDGET
   ========================= */
@@ -437,6 +462,15 @@
     setDot(el.dotBudget, "warn");
     setDot(el.dotUrlBudget, "warn");
     el.urlBudgetText.textContent = `URL budget : —`;
+    const supabaseBudget = await loadSupabaseBudgetMonthly("direct", year);
+    if(supabaseBudget){
+      budgetMonthly = supabaseBudget.monthly;
+      el.urlBudgetText.textContent = "URL budget : Supabase budgets actifs";
+      setDot(el.dotUrlBudget, "ok");
+      el.budgetText.textContent = "Budget : OK Supabase (DIRECT) - " + supabaseBudget.clientCount + " client(s)";
+      setDot(el.dotBudget, "ok");
+      return;
+    }
 
     try{
       const {buffer, usedUrl} = await fetchXlsxWithFallback(file);
