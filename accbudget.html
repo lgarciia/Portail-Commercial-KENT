@@ -611,19 +611,7 @@
     <a class="btn primary" href="budget2026.html" data-year-link>Budget annuel</a>
     <a class="btn" href="mes-budgets.html" data-year-link>Mes budgets</a>
 
-    <!-- Réel N-1 -->
-    <div class="dd" id="ddReel">
-      <button class="ddBtn" id="btnReel" type="button">
-        Réel N-1 <span class="chev"></span>
-      </button>
-
-      <div class="menu" id="menuReel">
-        <a href="activite-reelle-n-1.html" data-year-link>PSA <small>→</small></a>
-        <a href="activitereelgueudet.html?scope=n1" data-year-link>Gueudet <small>→</small></a>
-        <a href="activitereelford.html?scope=n1" data-year-link>Ford <small>→</small></a>
-        <a href="activitereeldirect.html?scope=n1" data-year-link>Direct <small>→</small></a>
-      </div>
-    </div>
+    <a class="btn" href="reel-n1.html" data-year-link>Réel N-1</a>
 
   </div>
 </div>
@@ -728,11 +716,10 @@
 (function(){
 
   const dropdowns = [
-    { btn:"btnReel", menu:"menuReel"}
   ].map(x=>({
     btn:document.getElementById(x.btn),
     menu:document.getElementById(x.menu)
-  }))
+  })).filter(x => x.btn && x.menu)
 
   function closeAll(){
     dropdowns.forEach(d=>{

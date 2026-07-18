@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>R&eacute;el N-1</title>
+  <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
+  <style>
+    :root{
+      --bg:#07111f;
+      --panel:rgba(15,23,42,.82);
+      --panel2:rgba(15,23,42,.62);
+      --line:rgba(148,163,184,.18);
+      --text:#eef4ff;
+      --muted:rgba(226,232,240,.66);
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --gold:#f59e0b;
+      --shadow:0 28px 80px rgba(0,0,0,.38);
+    }
+
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
+    body{
+      margin:0;
+      font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 720px at 12% -8%, rgba(56,189,248,.18), transparent 58%),
+        radial-gradient(900px 680px at 92% 2%, rgba(34,197,94,.13), transparent 55%),
+        radial-gradient(900px 760px at 48% 112%, rgba(245,158,11,.08), transparent 58%),
+        var(--bg);
+      overflow:hidden;
+    }
+
+    .page{
+      min-height:100vh;
+      display:grid;
+      grid-template-rows:auto 1fr;
+      gap:16px;
+      padding:22px;
+    }
+
+    .hero{
+      border:1px solid var(--line);
+      border-radius:28px;
+      background:
+        linear-gradient(135deg, rgba(15,23,42,.94), rgba(15,23,42,.72)),
+        radial-gradient(560px 260px at 96% 0%, rgba(56,189,248,.14), transparent 62%);
+      box-shadow:var(--shadow);
+      padding:22px;
+    }
+
+    .topLine{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:18px;
+      flex-wrap:wrap;
+    }
+
+    .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid rgba(56,189,248,.28);
+      background:rgba(56,189,248,.11);
+      color:#d8f3ff;
+      border-radius:999px;
+      padding:7px 12px;
+      font-size:12px;
+      font-weight:950;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+    .kicker::before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:var(--blue);
+      box-shadow:0 0 18px rgba(56,189,248,.65);
+    }
+
+    h1{
+      margin:14px 0 8px;
+      font-size:clamp(32px,4vw,58px);
+      line-height:.95;
+      letter-spacing:-.06em;
+    }
+    .subtitle{
+      margin:0;
+      max-width:820px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.55;
+      font-weight:700;
+    }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .btn,.select{
+      min-height:44px;
+      border:1px solid rgba(148,163,184,.20);
+      border-radius:16px;
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      font-weight:950;
+      font-size:14px;
+      padding:0 16px;
+      box-shadow:0 14px 34px rgba(0,0,0,.20);
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      cursor:pointer;
+    }
+    .btn:hover{transform:translateY(-1px);border-color:rgba(56,189,248,.36)}
+    .btn.primary{
+      color:#fff;
+      border-color:rgba(56,189,248,.38);
+      background:linear-gradient(135deg,#38bdf8,#2563eb);
+    }
+    .select{
+      min-width:190px;
+      outline:none;
+      cursor:pointer;
+    }
+
+    .entityGrid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+      margin-top:18px;
+    }
+    .entityCard{
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:20px;
+      background:rgba(255,255,255,.055);
+      padding:15px;
+      cursor:pointer;
+      transition:transform .15s ease,border-color .15s ease,background .15s ease;
+    }
+    .entityCard:hover{transform:translateY(-2px);border-color:rgba(56,189,248,.32)}
+    .entityCard.active{
+      border-color:rgba(56,189,248,.58);
+      background:linear-gradient(135deg,rgba(56,189,248,.16),rgba(255,255,255,.06));
+      box-shadow:0 16px 40px rgba(56,189,248,.12);
+    }
+    .entityName{font-size:18px;font-weight:950;letter-spacing:-.03em}
+    .entityFile{margin-top:6px;color:var(--muted);font-size:12px;font-weight:800;line-height:1.35}
+
+    .viewer{
+      min-height:0;
+      border:1px solid var(--line);
+      border-radius:28px;
+      background:rgba(2,6,23,.42);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .viewer iframe{
+      width:100%;
+      height:100%;
+      min-height:560px;
+      border:0;
+      display:block;
+      background:#0b0f17;
+    }
+    .viewerStatus{
+      position:absolute;
+      right:18px;
+      top:18px;
+      z-index:2;
+      border:1px solid rgba(148,163,184,.18);
+      background:rgba(15,23,42,.88);
+      color:rgba(226,232,240,.76);
+      border-radius:999px;
+      padding:8px 11px;
+      font-size:12px;
+      font-weight:900;
+      pointer-events:none;
+    }
+
+    html[data-theme="light"] body{
+      background:
+        radial-gradient(1000px 720px at 12% -8%, rgba(56,189,248,.14), transparent 58%),
+        radial-gradient(900px 680px at 92% 2%, rgba(34,197,94,.10), transparent 55%),
+        #f6f7fb;
+      color:#0f172a;
+    }
+    html[data-theme="light"] .hero,
+    html[data-theme="light"] .viewer{
+      background:rgba(255,255,255,.82);
+      color:#0f172a;
+      border-color:rgba(15,23,42,.10);
+      box-shadow:0 24px 60px rgba(15,23,42,.12);
+    }
+    html[data-theme="light"] .subtitle,
+    html[data-theme="light"] .entityFile{color:rgba(15,23,42,.60)}
+    html[data-theme="light"] .entityCard,
+    html[data-theme="light"] .select,
+    html[data-theme="light"] .btn:not(.primary){
+      background:rgba(255,255,255,.78);
+      color:#0f172a;
+      border-color:rgba(15,23,42,.10);
+    }
+
+    @media (max-width:980px){
+      body{overflow:auto}
+      .page{padding:14px;grid-template-rows:auto auto}
+      .entityGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .viewer iframe{height:72vh}
+    }
+    @media (max-width:560px){
+      .entityGrid{grid-template-columns:1fr}
+      .actions{justify-content:flex-start}
+      .select,.btn{width:100%}
+    }
+  </style>
+  <link rel="stylesheet" href="./shared-theme.css">
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="topLine">
+        <div>
+          <span class="kicker">R&eacute;el N-1</span>
+          <h1>Activit&eacute; r&eacute;elle N-1</h1>
+          <p class="subtitle">
+            Choisis l'entit&eacute;, l'outil charge la vue correspondante. Pour l'instant la source reste Excel,
+            mais cette page pr&eacute;pare d&eacute;j&agrave; le futur branchement centralis&eacute;.
+          </p>
+        </div>
+        <div class="actions">
+          <select class="select" id="yearSelect" aria-label="Ann&eacute;e active"></select>
+          <select class="select" id="entitySelect" aria-label="Entit&eacute;"></select>
+          <a class="btn" href="accbudget.html" data-year-link>Budget</a>
+          <button class="btn primary" id="openFullBtn" type="button">Ouvrir plein &eacute;cran</button>
+        </div>
+      </div>
+      <div class="entityGrid" id="entityGrid"></div>
+    </section>
+
+    <section class="viewer">
+      <div class="viewerStatus" id="viewerStatus">Chargement...</div>
+      <iframe id="entityFrame" title="Vue R&eacute;el N-1 par entit&eacute;"></iframe>
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const ENTITIES = [
+        {
+          key: "psa",
+          label: "PSA",
+          description: "Historique PSA N-1",
+          page: "activite-reelle-n-1.html",
+          params: {}
+        },
+        {
+          key: "gueudet",
+          label: "Gueudet",
+          description: "Historique Gueudet N-1",
+          page: "activitereelgueudet.html",
+          params: { scope: "n1" }
+        },
+        {
+          key: "ford",
+          label: "Ford",
+          description: "Historique Ford N-1",
+          page: "activitereelford.html",
+          params: { scope: "n1" }
+        },
+        {
+          key: "direct",
+          label: "Direct",
+          description: "Historique Direct N-1",
+          page: "activitereeldirect.html",
+          params: { scope: "n1" }
+        }
+      ];
+
+      const params = new URLSearchParams(location.search);
+      const dom = {
+        yearSelect: document.getElementById("yearSelect"),
+        entitySelect: document.getElementById("entitySelect"),
+        entityGrid: document.getElementById("entityGrid"),
+        frame: document.getElementById("entityFrame"),
+        status: document.getElementById("viewerStatus"),
+        openFullBtn: document.getElementById("openFullBtn")
+      };
+
+      let selectedEntity = ENTITIES.find(entity => entity.key === params.get("entity")) || ENTITIES[0];
+
+      function activeYear(){
+        return Number(dom.yearSelect.value || KentDataConfig.getActiveYear());
+      }
+
+      function entityFile(entity, year){
+        const candidates = KentDataConfig.getEntityFileCandidates(entity.key, "realN1", year);
+        return candidates[0] || "source Excel";
+      }
+
+      function buildEntityUrl(entity, year){
+        const url = new URL(entity.page, location.href);
+        Object.entries(entity.params || {}).forEach(([key, value]) => url.searchParams.set(key, value));
+        url.searchParams.set("year", String(year));
+        return url.pathname.replace(/^\//, "") + url.search + url.hash;
+      }
+
+      function syncUrl(entity, year){
+        const next = new URL(location.href);
+        next.searchParams.set("entity", entity.key);
+        next.searchParams.set("year", String(year));
+        history.replaceState(null, "", next.pathname.split("/").pop() + next.search);
+      }
+
+      function renderSelectors(){
+        dom.entitySelect.innerHTML = ENTITIES.map(entity => (
+          `<option value="${entity.key}">${entity.label}</option>`
+        )).join("");
+        dom.entitySelect.value = selectedEntity.key;
+
+        dom.entityGrid.innerHTML = ENTITIES.map(entity => {
+          const file = entityFile(entity, activeYear());
+          const active = entity.key === selectedEntity.key ? " active" : "";
+          return `
+            <article class="entityCard${active}" data-entity="${entity.key}">
+              <div class="entityName">${entity.label}</div>
+              <div class="entityFile">${entity.description}<br>${file}</div>
+            </article>
+          `;
+        }).join("");
+      }
+
+      function loadEntity(){
+        const year = activeYear();
+        KentDataConfig.setActiveYear(year);
+        KentDataConfig.applyYearToLinks(document, year);
+        renderSelectors();
+        const src = buildEntityUrl(selectedEntity, year);
+        dom.status.textContent = `${selectedEntity.label} - ${entityFile(selectedEntity, year)}`;
+        dom.frame.src = src;
+        syncUrl(selectedEntity, year);
+      }
+
+      KentDataConfig.fillYearSelect(dom.yearSelect, { selectedYear: KentDataConfig.getActiveYear() });
+      const urlYear = params.get("year");
+      if (urlYear) {
+        dom.yearSelect.value = String(KentDataConfig.setActiveYear(Number(urlYear)));
+      }
+
+      renderSelectors();
+      loadEntity();
+
+      dom.entitySelect.addEventListener("change", () => {
+        selectedEntity = ENTITIES.find(entity => entity.key === dom.entitySelect.value) || ENTITIES[0];
+        loadEntity();
+      });
+
+      dom.entityGrid.addEventListener("click", event => {
+        const card = event.target.closest("[data-entity]");
+        if (!card) return;
+        selectedEntity = ENTITIES.find(entity => entity.key === card.dataset.entity) || ENTITIES[0];
+        dom.entitySelect.value = selectedEntity.key;
+        loadEntity();
+      });
+
+      dom.yearSelect.addEventListener("change", () => {
+        const year = KentDataConfig.setActiveYear(Number(dom.yearSelect.value));
+        dom.yearSelect.value = String(year);
+        loadEntity();
+      });
+
+      dom.openFullBtn.addEventListener("click", () => {
+        const src = buildEntityUrl(selectedEntity, activeYear());
+        window.location.href = src;
+      });
+
+      dom.frame.addEventListener("load", () => {
+        dom.status.textContent = `${selectedEntity.label} charge - ${entityFile(selectedEntity, activeYear())}`;
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -78,22 +78,22 @@
     .actions{
       display:flex;
       align-items:center;
-      gap:10px;
+      gap:7px;
       flex-wrap:wrap;
       justify-content:flex-end;
     }
     .btn{
-      height:38px;
-      padding:0 14px;
+      height:32px;
+      padding:0 10px;
       border-radius:999px;
       border:1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.06);
       color:var(--text);
       font-weight:900;
-      font-size:12px;
+      font-size:11px;
       display:inline-flex;
       align-items:center;
-      gap:9px;
+      gap:7px;
       cursor:pointer;
       user-select:none;
       text-decoration:none;
@@ -105,6 +105,8 @@
     .btn.primary{ background: linear-gradient(135deg, rgba(132,182,255,0.22), rgba(255,125,206,0.12)); border-color: rgba(132,182,255,0.30); }
     .btn.ghost{ background: rgba(255,255,255,0.04); }
     .btn.danger{ background: rgba(255,110,110,0.12); border-color: rgba(255,110,110,0.22); }
+    .btn.slim{ padding:0 9px; box-shadow:none; }
+    .btn.save{ border-color:rgba(95,255,160,.28); background:rgba(95,255,160,.10); }
 
     .fileInput{ display:none; }
 
@@ -350,12 +352,13 @@
 
     <div class="actions">
       <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
-      <button class="btn primary" id="btnReload">Charger / Recharger le réel N-1</button>
-      <button class="btn ghost" id="btnRecalc">Recalculer projection</button>
-      <button class="btn primary" id="btnSaveProjection">Enregistrer projection</button>
-      <a class="btn ghost" href="mes-budgets.html" data-year-link>Mes budgets</a>
-      <button class="btn ghost" id="btnExportXlsx">Exporter la projection</button>
-      <button class="btn danger" id="btnReset">Reset local</button>
+      <button class="btn primary slim" id="btnReload">Charger Excel</button>
+      <button class="btn ghost slim" id="btnDownloadTemplate">Modèle</button>
+      <button class="btn ghost slim" id="btnRecalc">Recalculer</button>
+      <button class="btn save slim" id="btnSaveProjection">Enregistrer</button>
+      <a class="btn ghost slim" href="mes-budgets.html" data-year-link>Mes budgets</a>
+      <button class="btn ghost slim" id="btnExportXlsx">XLSX</button>
+      <button class="btn danger slim" id="btnReset">Reset</button>
     </div>
   </div>
 
@@ -450,6 +453,7 @@
   const el = {
     fileInput: document.getElementById("fileInput"),
     btnReload: document.getElementById("btnReload"),
+    btnDownloadTemplate: document.getElementById("btnDownloadTemplate"),
     btnRecalc: document.getElementById("btnRecalc"),
     btnSaveProjection: document.getElementById("btnSaveProjection"),
     btnExportXlsx: document.getElementById("btnExportXlsx"),
@@ -474,8 +478,8 @@
   };
 
   document.title = `Projection PSA ${APP_YEAR} — Prorata jours ouvrés`;
-  el.btnReload.textContent = `Charger / Recharger ${FILE_NAME}`;
-  el.btnExportXlsx.textContent = `Exporter ${EXPORT_FILE}`;
+  el.btnReload.title = `Charger manuellement ${FILE_NAME}`;
+  el.btnExportXlsx.title = `Exporter ${EXPORT_FILE}`;
   el.yearReal.value = String(PREV_YEAR);
   el.yearBudget.value = String(APP_YEAR);
   document.getElementById("pageTitle").textContent = `Projection PSA ${APP_YEAR}`;
@@ -500,7 +504,7 @@
   // =========================
   const saved = loadJSON(LS_KEY, null);
   if (saved?.days) days = saved.days;
-  if (saved?.basePivot) basePivot = saved.basePivot;
+  // La source Excel doit etre chargee volontairement pour eviter une projection obsolète.
 
   // set UI values
   el.yearReal.value = String(days.yearReal || PREV_YEAR);
@@ -516,15 +520,14 @@
     renderAll();
   } else {
     setStatus(false, "En attente du fichier…");
-    renderEmpty(`Charge ${FILE_NAME} pour générer la projection.`);
+    renderEmpty("Charge ton fichier Excel pour générer la projection.");
   }
-
-  autoFetchExcel(); // try from repo
 
   // =========================
   // EVENTS
   // =========================
   el.btnReload.addEventListener("click", () => el.fileInput.click());
+  el.btnDownloadTemplate.addEventListener("click", downloadProjectionTemplate);
   el.fileInput.addEventListener("change", async (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -556,8 +559,8 @@
     filterText = "";
     ensureDaysDefaults();
     renderDaysGrid();
-    setStatus(false, "Reset effectué. Recharge le fichier.");
-    renderEmpty(`Charge ${FILE_NAME} pour générer la projection.`);
+    setStatus(false, "Reset effectué. Recharge un fichier Excel.");
+    renderEmpty("Charge ton fichier Excel pour générer la projection.");
   });
 
   el.search.addEventListener("input", () => {
@@ -582,32 +585,6 @@
 
   el.uplift.addEventListener("input", () => { renderAll(); });
   el.rounding.addEventListener("change", () => { renderAll(); });
-
-  // =========================
-  // AUTO FETCH
-  // =========================
-  async function autoFetchExcel(){
-    let lastError = "";
-    for (const candidate of FILE_CANDIDATES){
-      try{
-        const res = await fetch(candidate, { cache: "no-store" });
-        if (!res.ok){
-          lastError = `HTTP ${res.status} sur ${candidate}`;
-          continue;
-        }
-        const buf = await res.arrayBuffer();
-        parseAndBuildPivot(buf, `auto (${candidate})`);
-        return;
-      }catch(err){
-        lastError = err?.message || String(err || "");
-      }
-    }
-
-    if (!basePivot?.clients?.length){
-      setStatus(false, `Fetch auto KO — vérifie ${FILE_NAME}.`);
-      if (lastError) console.warn(lastError);
-    }
-  }
 
   // =========================
   // PARSE + PIVOT (réel N-1)
@@ -826,7 +803,7 @@
   // =========================
   function renderAll(){
     if (!basePivot?.clients?.length){
-      renderEmpty(`Charge ${FILE_NAME} pour générer la projection.`);
+      renderEmpty("Charge ton fichier Excel pour générer la projection.");
       el.srcLabel.textContent = "—";
       el.clientsLabel.textContent = "0";
       el.updatedLabel.textContent = "—";
@@ -931,6 +908,29 @@
   // EXPORT (format compatible Budget)
   // Colonnes : CLIENT | N CLIENT | Janvier..Décembre | TOTAL | COMMENTAIRE
   // =========================
+  function downloadProjectionTemplate(){
+    const headers = ["N° client Interne", "Nom du client", "Montant prix achat KENT", "Mois2"];
+    const sampleClient = [
+      "10001",
+      "CLIENT EXEMPLE",
+      1000,
+      "Janvier"
+    ];
+    const helpRows = [
+      ["", "", "", ""],
+      ["Aide", "Une ligne = un client + un mois + un montant réel N-1.", "", ""],
+      ["Colonnes obligatoires", "N° client Interne, Nom du client, Montant prix achat KENT, Mois2", "", ""],
+      ["Mois acceptés", MONTHS.map(month => month.label).join(", "), "", ""]
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, sampleClient, ...helpRows]);
+    ws["!cols"] = [{ wch: 18 }, { wch: 32 }, { wch: 24 }, { wch: 18 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Modele projection");
+    XLSX.writeFile(wb, `modele_projection_${APP_YEAR}.xlsx`);
+  }
+
   function exportBudgetXlsx(){
     if (!projected?.clients?.length){
       void kentAlert("Rien à exporter.", { title: "Export projection", tone: "warning" });

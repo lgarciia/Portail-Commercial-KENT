@@ -118,6 +118,18 @@
     align-items:center;
     gap:8px;
   }
+  .btn.compact{
+    padding:8px 10px;
+    border-radius:999px;
+    font-size:12px;
+    gap:6px;
+  }
+  .btn .btnIcon{
+    width:15px;
+    height:15px;
+    display:block;
+    fill:currentColor;
+  }
   .btn:hover{background: rgba(255,255,255,0.09)}
   .btn:active{transform:scale(.98)}
   .btn.primary{
@@ -350,27 +362,19 @@
       <div class="logo"></div>
       <div class="title">
         <b id="pageTitle">Budget</b>
-        <span>Import Projection (XLSX) • Validation budget actif Supabase • Modifiable • Export XLSX/CSV/JSON</span>
+        <span>Projection enregistrée • Validation budget actif Supabase • Modifiable • Export Excel</span>
       </div>
     </div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <a class="btn" href="mes-budgets.html" data-year-link>Mes budgets</a>
-      <button class="btn" id="resetBtn">Réinitialiser</button>
-
-      <label class="btn green" style="display:inline-flex;align-items:center;gap:8px">
-        Importer Projection (.xlsx)
-        <input type="file" id="importProjectionFile" accept=".xlsx,.xls" style="display:none"/>
-      </label>
-
-      <button class="btn green" id="exportXlsxBtn">Exporter Excel (.xlsx)</button>
-      <button class="btn" id="exportCsvBtn">Exporter CSV</button>
-      <button class="btn" id="exportJsonBtn">Exporter JSON</button>
-
-      <label class="btn" style="display:inline-flex;align-items:center;gap:8px">
-        Importer JSON
-        <input type="file" id="importJsonFile" accept="application/json" style="display:none"/>
-      </label>
+      <a class="btn compact" href="mes-budgets.html" data-year-link>Mes budgets</a>
+      <button class="btn compact" id="resetBtn">Réinitialiser</button>
+      <button class="btn green compact" id="exportXlsxBtn" title="Exporter le budget en Excel" aria-label="Exporter le budget en Excel">
+        <svg class="btnIcon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1ZM5 19a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1Z"/>
+        </svg>
+        XLSX
+      </button>
     </div>
   </div>
 
@@ -428,7 +432,7 @@
         <div class="val">
           <button class="btn" id="pasteClientsBtn">Coller une liste</button>
           <span class="footnote">
-            Tu peux importer une projection XLSX, l'ajuster, puis la valider comme budget actif Supabase.
+            Charge une projection enregistrée, ajuste-la, puis valide-la comme budget actif Supabase.
           </span>
         </div>
 
@@ -687,7 +691,7 @@ function renderTable(){
 
   const body = `
     <tbody>
-      ${bodyRows || `<tr><td colspan="${MONTHS.length + 4}" style="color:rgba(255,255,255,.6)">Importe une projection XLSX pour commencer.</td></tr>`}
+      ${bodyRows || `<tr><td colspan="${MONTHS.length + 4}" style="color:rgba(255,255,255,.6)">Charge une projection enregistrée pour commencer.</td></tr>`}
     </tbody>
   `;
 
@@ -1320,25 +1324,11 @@ $("newClientNumber").addEventListener("keydown", (e) => {
 $("addDemoBtn").addEventListener("click", addDemo);
 $("resetBtn").addEventListener("click", resetAll);
 
-$("exportJsonBtn").addEventListener("click", exportJSON);
-$("exportCsvBtn").addEventListener("click", exportCSV);
 $("exportXlsxBtn").addEventListener("click", exportXLSX);
 $("refreshProjectionBtn").addEventListener("click", refreshBudgetSupabaseControls);
 $("loadProjectionBtn").addEventListener("click", loadSelectedProjection);
 $("newEntityBtn").addEventListener("click", createBudgetEntityFromPrompt);
 $("validateBudgetBtn").addEventListener("click", validateCurrentBudget);
-
-$("importJsonFile").addEventListener("change", (e) => {
-  const f = e.target.files?.[0];
-  if (f) importJSON(f);
-  e.target.value = "";
-});
-
-$("importProjectionFile").addEventListener("change", async (e) => {
-  const f = e.target.files?.[0];
-  if (f) await importProjectionXlsx(f);
-  e.target.value = "";
-});
 
 /* Paste modal */
 $("pasteClientsBtn").addEventListener("click", openPasteModal);
