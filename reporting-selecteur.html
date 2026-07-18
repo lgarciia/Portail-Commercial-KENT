@@ -4,9 +4,11 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Reporting - Sélecteur</title>
+  <title>Reporting - SÃ©lecteur</title>
   <script src="./app-data-config.js"></script>
   <script src="./shared-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./reel-supabase.js"></script>
   <style>
     :root{
       --bg:#07111f;
@@ -274,14 +276,14 @@
         <div>
           <span class="kicker" id="viewKicker">Reporting</span>
           <h1 id="viewTitle">Reporting</h1>
-          <p class="subtitle" id="viewSubtitle">Choisis une entité pour charger la vue correspondante.</p>
+          <p class="subtitle" id="viewSubtitle">Choisis une entitÃ© pour charger la vue correspondante.</p>
         </div>
         <div class="actions">
           <select class="select" id="viewSelect" aria-label="Type de reporting"></select>
-          <select class="select" id="yearSelect" aria-label="Année active"></select>
-          <select class="select" id="entitySelect" aria-label="Entité"></select>
+          <select class="select" id="yearSelect" aria-label="AnnÃ©e active"></select>
+          <select class="select" id="entitySelect" aria-label="EntitÃ©"></select>
           <a class="btn" href="accreport.html" data-year-link>Accueil reporting</a>
-          <button class="btn primary" id="openFullBtn" type="button">Ouvrir plein écran</button>
+          <button class="btn primary" id="openFullBtn" type="button">Ouvrir plein Ã©cran</button>
         </div>
       </div>
       <div class="optionGrid" id="optionGrid"></div>
@@ -289,98 +291,59 @@
 
     <section class="viewer">
       <div class="status" id="viewerStatus">Chargement...</div>
-      <iframe id="reportFrame" title="Vue reporting sélectionnée"></iframe>
+      <iframe id="reportFrame" title="Vue reporting sÃ©lectionnÃ©e"></iframe>
     </section>
   </main>
 
-  <script>
+    <script>
     (function(){
-      const DEFAULT_OPTIONS = [
-        { key:"psa", label:"PSA", page:"", state:"ready" },
-        { key:"gueudet", label:"Gueudet", page:"", state:"ready" },
-        { key:"ford", label:"Ford", page:"", state:"ready" },
-        { key:"direct", label:"Direct", page:"", state:"ready" }
+      const DEFAULT_ENTITIES = [
+        { key:"psa", label:"PSA" },
+        { key:"gueudet", label:"Gueudet" },
+        { key:"ford", label:"Ford" },
+        { key:"direct", label:"Direct" }
       ];
 
       const VIEWS = {
         "activite-reelle": {
-          kicker: "Activité",
-          title: "Activité réelle",
-          subtitle: "Charge la vue d'activité réelle de l'entité choisie. Les imports, exports et actions restent ceux de la page d'origine.",
-          options: DEFAULT_OPTIONS.map(option => ({
-            ...option,
-            page: {
-              psa: "activitereelpsa.html",
-              gueudet: "activitereelgueudet.html",
-              ford: "activitereelford.html",
-              direct: "activitereeldirect.html"
-            }[option.key],
-            description: "Activité réelle importée"
-          }))
+          kicker: "Activite",
+          title: "Activite reelle",
+          subtitle: "Choisis une entite : le reel vient directement de Supabase.",
+          description: "CA reel importe par client"
         },
         "annuel-budget": {
           kicker: "Budget",
           title: "Reporting annuel vs Budget",
-          subtitle: "Compare le réel et le budget actif Supabase par entité, avec les mêmes tableaux et exports qu'avant.",
-          options: DEFAULT_OPTIONS.map(option => ({
-            ...option,
-            page: {
-              psa: "reporting-annuelpsa.html",
-              gueudet: "reporting-annuelgueudet.html",
-              ford: "reporting-annuelford.html",
-              direct: "reporting-annueldirect.html"
-            }[option.key],
-            description: "Réel vs budget annuel"
-          }))
+          subtitle: "Compare le reel et le budget actif Supabase pour l'entite choisie.",
+          description: "Reel vs budget annuel"
         },
         "evol-reporting": {
-          kicker: "Évolution",
-          title: "Évol Reporting",
-          subtitle: "Sélectionne l'entité puis retrouve la vue d'évolution reporting existante.",
-          options: DEFAULT_OPTIONS.map(option => ({
-            ...option,
-            page: {
-              psa: "evol-reporting-psa.html",
-              gueudet: "evol-reporting-gueudet.html",
-              ford: "evol-reporting-ford.html",
-              direct: "evol-reporting-direct.html"
-            }[option.key],
-            description: option.key === "ford" || option.key === "direct" ? "Page existante en cours" : "Évolution reporting",
-            state: option.key === "ford" || option.key === "direct" ? "wait" : "ready"
-          }))
+          kicker: "Evolution",
+          title: "Evol Reporting",
+          subtitle: "Analyse mensuelle par entite, avec acces a la vue semaine.",
+          description: "Evolution reporting"
         },
         "evol-analyse": {
           kicker: "Analyse",
-          title: "Évol Analyse",
-          subtitle: "Analyse l'évolution par entité, avec l'option Cumul conservée comme dans le menu actuel.",
-          options: [
-            { key:"psa", label:"PSA", page:"evol-analyse-psa.html", description:"Évolution analyse", state:"ready" },
-            { key:"gueudet", label:"Gueudet", page:"evol-analyse-gueudet.html", description:"Évolution analyse", state:"ready" },
-            { key:"ford", label:"Ford", page:"evol-analyse-ford.html", description:"Évolution analyse", state:"ready" },
-            { key:"direct", label:"Direct", page:"evol-analyse-direct.html", description:"Évolution analyse", state:"ready" },
-            { key:"cumul", label:"Cumul", page:"evol-cumule.html", description:"PSA + Gueudet + Ford + Direct", state:"ready" }
-          ]
+          title: "Evol Analyse",
+          subtitle: "Analyse par entite ou cumul automatique de toutes les entites actives.",
+          description: "Analyse mensuelle"
         },
         "reel-n1": {
           kicker: "Comparatif",
-          title: "Réel vs N-1",
-          subtitle: "Charge la vue Réel vs N-1 de l'entité choisie. Les options en attente restent visibles comme avant.",
-          options: [
-            { key:"psa", label:"PSA", page:"reel-n1-psa.html", description:"Réel vs N-1 produits", state:"ready" },
-            { key:"gueudet", label:"Gueudet", page:"encours.html", description:"Page existante en cours", state:"wait" },
-            { key:"ford", label:"Ford", page:"encours.html", description:"Page existante en cours", state:"wait" },
-            { key:"direct", label:"Direct", page:"encours.html", description:"Page existante en cours", state:"wait" }
-          ]
+          title: "Reel vs N-1",
+          subtitle: "Compare les produits de l'annee active avec l'annee precedente.",
+          description: "Produits reel vs N-1"
         }
       };
 
       const VIEW_ORDER = ["activite-reelle", "annuel-budget", "evol-reporting", "evol-analyse", "reel-n1"];
       const VIEW_LABELS = {
-        "activite-reelle": "Activité réelle",
+        "activite-reelle": "Activite reelle",
         "annuel-budget": "Reporting annuel vs Budget",
-        "evol-reporting": "Évol Reporting",
-        "evol-analyse": "Évol Analyse",
-        "reel-n1": "Réel vs N-1"
+        "evol-reporting": "Evol Reporting",
+        "evol-analyse": "Evol Analyse",
+        "reel-n1": "Reel vs N-1"
       };
 
       const dom = {
@@ -398,7 +361,40 @@
 
       const params = new URLSearchParams(location.search);
       let currentViewKey = VIEWS[params.get("view")] ? params.get("view") : "activite-reelle";
-      let currentOptionKey = "";
+      let currentOptionKey = normalizeEntityKey(params.get("entityKey") || params.get("entity") || "");
+      let entities = DEFAULT_ENTITIES.slice();
+
+      init();
+
+      async function init(){
+        KentDataConfig.fillYearSelect(dom.yearSelect, { selectedYear: KentDataConfig.getActiveYear() });
+        const urlYear = params.get("year");
+        if (urlYear) dom.yearSelect.value = String(KentDataConfig.setActiveYear(Number(urlYear)));
+
+        renderViewSelect();
+        entities = await loadEntities();
+        if (!currentOptionKey) currentOptionKey = optionsForCurrentView()[0]?.key || "";
+        loadSelected();
+        bindEvents();
+      }
+
+      async function loadEntities(){
+        try{
+          if (window.ReelSupabase && typeof window.ReelSupabase.listEntities === "function"){
+            const rows = await window.ReelSupabase.listEntities();
+            const mapped = (rows || []).map(row => ({
+              key: normalizeEntityKey(row.key),
+              label: row.libelle || row.key || "Entite",
+              description: "Entite active Supabase",
+              state: "ready"
+            })).filter(row => row.key);
+            if (mapped.length) return mapped;
+          }
+        }catch(error){
+          console.warn("Entites Supabase indisponibles, fallback local:", error.message || error);
+        }
+        return DEFAULT_ENTITIES.map(entity => ({ ...entity, description: "Entite standard", state: "ready" }));
+      }
 
       function activeView(){
         return VIEWS[currentViewKey] || VIEWS["activite-reelle"];
@@ -408,23 +404,34 @@
         return Number(dom.yearSelect.value || KentDataConfig.getActiveYear());
       }
 
+      function optionsForCurrentView(){
+        const base = entities.map(entity => ({
+          ...entity,
+          page: "reporting-entite.html",
+          description: activeView().description,
+          state: "ready"
+        }));
+        if (currentViewKey === "evol-analyse"){
+          return base.concat([{ key:"cumul", label:"Cumul", page:"reporting-entite.html", description:"Somme automatique de toutes les entites", state:"ready", isCumul:true }]);
+        }
+        return base;
+      }
+
       function selectedOption(){
-        const view = activeView();
-        return view.options.find(option => option.key === currentOptionKey) || view.options[0];
+        const options = optionsForCurrentView();
+        return options.find(option => option.key === currentOptionKey) || options[0];
       }
 
       function buildPageUrl(option, year){
-        const raw = option.page || "encours.html";
-        const hashIndex = raw.indexOf("#");
-        const beforeHash = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
-        const hash = hashIndex >= 0 ? raw.slice(hashIndex) : "";
-        const queryIndex = beforeHash.indexOf("?");
-        const path = queryIndex >= 0 ? beforeHash.slice(0, queryIndex) : beforeHash;
-        const query = queryIndex >= 0 ? beforeHash.slice(queryIndex + 1) : "";
-        const params = new URLSearchParams(query);
-        params.set("year", String(year));
-        const nextQuery = params.toString();
-        return `${path}${nextQuery ? `?${nextQuery}` : ""}${hash}`;
+        const qs = new URLSearchParams({ year:String(year) });
+        if (option && option.isCumul){
+          qs.set("view", "evol-cumul");
+        }else{
+          qs.set("view", currentViewKey);
+          qs.set("entityKey", option.key);
+          qs.set("entity", option.label);
+        }
+        return `reporting-entite.html?${qs.toString()}`;
       }
 
       function syncUrl(){
@@ -436,9 +443,7 @@
       }
 
       function renderViewSelect(){
-        dom.viewSelect.innerHTML = VIEW_ORDER.map(key => (
-          `<option value="${key}">${VIEW_LABELS[key]}</option>`
-        )).join("");
+        dom.viewSelect.innerHTML = VIEW_ORDER.map(key => `<option value="${key}">${VIEW_LABELS[key]}</option>`).join("");
         dom.viewSelect.value = currentViewKey;
       }
 
@@ -447,33 +452,28 @@
         dom.kicker.textContent = view.kicker;
         dom.title.textContent = view.title;
         dom.subtitle.textContent = view.subtitle;
-        document.title = `${view.title} - Sélecteur`;
+        document.title = `${view.title} - Selecteur`;
       }
 
       function renderEntitySelect(){
-        const view = activeView();
-        dom.entitySelect.innerHTML = view.options.map(option => (
-          `<option value="${option.key}">${option.label}</option>`
-        )).join("");
-        if (!view.options.some(option => option.key === currentOptionKey)) {
-          currentOptionKey = view.options[0].key || "";
-        }
+        const options = optionsForCurrentView();
+        dom.entitySelect.innerHTML = options.map(option => `<option value="${escapeAttr(option.key)}">${escapeHtml(option.label)}</option>`).join("");
+        if (!options.some(option => option.key === currentOptionKey)) currentOptionKey = options[0]?.key || "";
         dom.entitySelect.value = currentOptionKey;
       }
 
       function renderCards(){
         const option = selectedOption();
-        dom.optionGrid.innerHTML = activeView().options.map(item => {
+        dom.optionGrid.innerHTML = optionsForCurrentView().map(item => {
           const active = item.key === option.key ? " active" : "";
-          const tagClass = item.state === "wait" ? "wait" : "ready";
-          const tag = item.state === "wait" ? "En cours" : "Dispo";
+          const tag = item.isCumul ? "Cumul" : "Supabase";
           return `
-            <article class="optionCard${active}" data-entity="${item.key}">
+            <article class="optionCard${active}" data-entity="${escapeAttr(item.key)}">
               <div class="optionName">
-                <span>${item.label}</span>
-                <span class="tag ${tagClass}">${tag}</span>
+                <span>${escapeHtml(item.label)}</span>
+                <span class="tag ready">${tag}</span>
               </div>
-              <div class="optionMeta">${item.description || ""}</div>
+              <div class="optionMeta">${escapeHtml(item.description || "")}</div>
             </article>
           `;
         }).join("");
@@ -496,46 +496,49 @@
         syncUrl();
       }
 
-      KentDataConfig.fillYearSelect(dom.yearSelect, { selectedYear: KentDataConfig.getActiveYear() });
-      const urlYear = params.get("year");
-      if (urlYear) dom.yearSelect.value = String(KentDataConfig.setActiveYear(Number(urlYear)));
-      currentOptionKey = params.get("entity") || activeView().options[0].key || "";
+      function bindEvents(){
+        dom.viewSelect.addEventListener("change", () => {
+          currentViewKey = VIEWS[dom.viewSelect.value] ? dom.viewSelect.value : "activite-reelle";
+          const options = optionsForCurrentView();
+          if (!options.some(option => option.key === currentOptionKey)) currentOptionKey = options[0]?.key || "";
+          loadSelected();
+        });
 
-      renderViewSelect();
-      loadSelected();
+        dom.entitySelect.addEventListener("change", () => {
+          currentOptionKey = dom.entitySelect.value;
+          loadSelected();
+        });
 
-      dom.viewSelect.addEventListener("change", () => {
-        currentViewKey = VIEWS[dom.viewSelect.value] ? dom.viewSelect.value : "activite-reelle";
-        currentOptionKey = activeView().options[0].key || "";
-        loadSelected();
-      });
+        dom.optionGrid.addEventListener("click", event => {
+          const card = event.target.closest("[data-entity]");
+          if (!card) return;
+          currentOptionKey = card.dataset.entity;
+          loadSelected();
+        });
 
-      dom.entitySelect.addEventListener("change", () => {
-        currentOptionKey = dom.entitySelect.value;
-        loadSelected();
-      });
+        dom.yearSelect.addEventListener("change", () => {
+          const year = KentDataConfig.setActiveYear(Number(dom.yearSelect.value));
+          dom.yearSelect.value = String(year);
+          loadSelected();
+        });
 
-      dom.optionGrid.addEventListener("click", event => {
-        const card = event.target.closest("[data-entity]");
-        if (!card) return;
-        currentOptionKey = card.dataset.entity;
-        loadSelected();
-      });
+        dom.openFullBtn.addEventListener("click", () => {
+          window.location.href = buildPageUrl(selectedOption(), activeYear());
+        });
 
-      dom.yearSelect.addEventListener("change", () => {
-        const year = KentDataConfig.setActiveYear(Number(dom.yearSelect.value));
-        dom.yearSelect.value = String(year);
-        loadSelected();
-      });
+        dom.frame.addEventListener("load", () => {
+          dom.status.textContent = "";
+          dom.status.hidden = true;
+        });
+      }
 
-      dom.openFullBtn.addEventListener("click", () => {
-        window.location.href = buildPageUrl(selectedOption(), activeYear());
-      });
-
-      dom.frame.addEventListener("load", () => {
-        dom.status.textContent = "";
-        dom.status.hidden = true;
-      });
+      function normalizeEntityKey(value){
+        return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      }
+      function escapeHtml(value){
+        return String(value ?? "").replace(/[&<>"']/g, s => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]));
+      }
+      function escapeAttr(value){ return escapeHtml(value).replace(/"/g, "&quot;"); }
     })();
   </script>
 </body>

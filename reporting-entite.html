@@ -1,0 +1,853 @@
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Reporting entite</title>
+  <script src="./app-data-config.js"></script>
+  <script src="./shared-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
+  <style>
+    :root{
+      --bg:#07111f;--panel:rgba(15,23,42,.84);--panel2:rgba(15,23,42,.62);
+      --line:rgba(148,163,184,.18);--text:#eef4ff;--muted:rgba(226,232,240,.66);
+      --blue:#38bdf8;--green:#22c55e;--gold:#f59e0b;--red:#ef4444;
+      --shadow:0 26px 78px rgba(0,0,0,.36);--radius:24px;
+    }
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
+    body{
+      margin:0;
+      font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(980px 700px at 10% -8%, rgba(56,189,248,.18), transparent 58%),
+        radial-gradient(900px 680px at 92% 0%, rgba(34,197,94,.13), transparent 55%),
+        radial-gradient(860px 720px at 54% 112%, rgba(245,158,11,.08), transparent 58%),
+        var(--bg);
+    }
+    .page{min-height:100vh;padding:20px;display:grid;gap:16px;grid-template-rows:auto auto 1fr}
+    .hero,.panel,.modal{
+      border:1px solid var(--line);background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(15,23,42,.70));
+      box-shadow:var(--shadow);backdrop-filter:blur(14px);border-radius:var(--radius);
+    }
+    .hero{padding:20px 22px}
+    .heroTop{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+    .kicker{
+      display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(56,189,248,.28);
+      background:rgba(56,189,248,.11);color:#d8f3ff;border-radius:999px;padding:6px 11px;
+      font-size:11px;font-weight:950;letter-spacing:.12em;text-transform:uppercase;
+    }
+    .kicker:before{content:"";width:7px;height:7px;border-radius:999px;background:var(--blue);box-shadow:0 0 18px rgba(56,189,248,.65)}
+    h1{margin:10px 0 6px;font-size:clamp(30px,4vw,54px);line-height:.98;letter-spacing:-.06em}
+    .subtitle{margin:0;max-width:900px;color:var(--muted);font-size:15px;line-height:1.45;font-weight:750}
+    .actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+    .btn,.select,.input{
+      min-height:39px;border:1px solid rgba(148,163,184,.22);border-radius:14px;background:rgba(255,255,255,.07);
+      color:var(--text);font-weight:950;font-size:13px;padding:0 12px;box-shadow:0 14px 34px rgba(0,0,0,.18);
+    }
+    .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;transition:.16s transform,.16s border-color,.16s background}
+    .btn:hover{transform:translateY(-1px);border-color:rgba(56,189,248,.38)}
+    .btn.primary{color:#fff;border-color:rgba(56,189,248,.42);background:linear-gradient(135deg,#38bdf8,#2563eb)}
+    .btn.gold{color:#111827;border-color:rgba(245,158,11,.38);background:linear-gradient(135deg,#fde68a,#f59e0b)}
+    .btn.small{min-height:32px;font-size:12px;padding:0 10px;border-radius:11px}
+    .select{min-width:170px;outline:none}
+    .input{min-width:260px;outline:none}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .stat{
+      border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.055);
+      border-radius:20px;padding:15px 16px;position:relative;overflow:hidden
+    }
+    .stat:after{content:"";position:absolute;right:-30px;top:-40px;width:120px;height:120px;border-radius:999px;background:rgba(56,189,248,.08)}
+    .stat .k{color:var(--muted);font-size:12px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
+    .stat .v{margin-top:8px;font-size:clamp(24px,3vw,36px);font-weight:1000;letter-spacing:-.04em}
+    .stat.good .v{color:#bbf7d0}.stat.bad .v{color:#fecaca}.stat.gold .v{color:#fde68a}
+    .panel{padding:16px;min-height:0}
+    .tableWrap{max-height:calc(100vh - 340px);overflow:auto;border:1px solid rgba(148,163,184,.12);border-radius:18px;background:rgba(2,6,23,.36)}
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:1020px;font-size:12px}
+    th,td{padding:10px 11px;border-bottom:1px solid rgba(148,163,184,.12);border-right:1px solid rgba(148,163,184,.10);white-space:nowrap;vertical-align:middle}
+    th{position:sticky;top:0;z-index:2;background:rgba(8,13,23,.94);color:rgba(226,232,240,.82);font-weight:1000;text-align:right}
+    th:first-child,td:first-child{text-align:left}
+    td{text-align:right;font-variant-numeric:tabular-nums}
+    tr:hover td{background:rgba(56,189,248,.045)}
+    .left{text-align:left!important}.num{font-weight:950}.muted{color:var(--muted)}
+    .pos{color:#86efac}.neg{color:#fca5a5}.zero{color:rgba(226,232,240,.58)}
+    .totalRow td{background:rgba(56,189,248,.09);font-weight:1000}
+    .monthHead{display:flex;align-items:center;justify-content:center;gap:8px}
+    .empty{border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.045);border-radius:18px;padding:22px;color:var(--muted);font-weight:850;text-align:center}
+    .comment{
+      width:100%;min-width:220px;min-height:32px;border:1px solid rgba(148,163,184,.18);border-radius:11px;
+      background:rgba(2,6,23,.32);color:var(--text);padding:0 10px;font-weight:800;outline:none;
+    }
+    .modalOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(2,6,23,.70);z-index:30}
+    .modalOverlay.show{display:flex}
+    .modal{width:min(1120px,96vw);max-height:88vh;overflow:auto;padding:18px}
+    .modalHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .modalTitle{font-size:25px;font-weight:1000;letter-spacing:-.04em}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .chip{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.06);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:12px;font-weight:900}
+    .miniGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    @media(max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.miniGrid{grid-template-columns:1fr}.page{padding:12px}.tableWrap{max-height:none}.actions{justify-content:flex-start}.select,.input{width:100%}}
+  </style>
+  <link rel="stylesheet" href="./shared-theme.css">
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="heroTop">
+        <div>
+          <span class="kicker" id="kicker">Reporting</span>
+          <h1 id="title">Reporting</h1>
+          <p class="subtitle" id="subtitle">Lecture dynamique depuis Supabase.</p>
+        </div>
+        <div class="actions">
+          <select class="select" id="viewSelect"></select>
+          <select class="select" id="yearSelect"></select>
+          <select class="select" id="entitySelect"></select>
+          <a class="btn" id="backBtn" href="reporting-selecteur.html">Selecteur</a>
+          <a class="btn primary" id="importBtn" href="import-reel-mensuel.html">Importer reel</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div class="actions">
+          <input class="input" id="searchInput" placeholder="Filtrer client, produit, code...">
+          <button class="btn small" id="reloadBtn" type="button">Recharger</button>
+        </div>
+        <div class="actions">
+          <button class="btn small" id="exportCsvBtn" type="button">CSV</button>
+          <button class="btn small" id="exportXlsxBtn" type="button">Excel</button>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="tableWrap" id="tableWrap">
+        <table id="mainTable"></table>
+      </div>
+      <div class="empty" id="emptyBox" style="display:none;">Aucune donnee disponible pour cette selection.</div>
+    </section>
+  </main>
+
+  <div class="modalOverlay" id="modalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modalHeader">
+        <div>
+          <div class="modalTitle" id="modalTitle">Detail</div>
+          <div class="muted" id="modalSub"></div>
+        </div>
+        <button class="btn small" id="modalClose" type="button">Fermer</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+<script>
+(async function(){
+  const MONTHS = [
+    { key:"jan", label:"Janvier", number:1 },
+    { key:"feb", label:"Fevrier", number:2 },
+    { key:"mar", label:"Mars", number:3 },
+    { key:"apr", label:"Avril", number:4 },
+    { key:"may", label:"Mai", number:5 },
+    { key:"jun", label:"Juin", number:6 },
+    { key:"jul", label:"Juillet", number:7 },
+    { key:"aug", label:"Aout", number:8 },
+    { key:"sep", label:"Septembre", number:9 },
+    { key:"oct", label:"Octobre", number:10 },
+    { key:"nov", label:"Novembre", number:11 },
+    { key:"dec", label:"Decembre", number:12 }
+  ];
+
+  const VIEWS = {
+    "activite-reelle": { label:"Activite reelle", kicker:"Activite", subtitle:"CA reel importe par client et par mois, sans fichier Excel local." },
+    "annuel-budget": { label:"Reporting annuel vs Budget", kicker:"Budget", subtitle:"Comparaison reel / budget actif Supabase, client par client." },
+    "evol-reporting": { label:"Evol Reporting", kicker:"Evolution", subtitle:"Evolution mensuelle reel / budget, avec acces semaine." },
+    "evol-analyse": { label:"Evol Analyse", kicker:"Analyse", subtitle:"Synthese mensuelle, commentaires et details clients." },
+    "reel-n1": { label:"Reel vs N-1", kicker:"Comparatif", subtitle:"Comparaison produits entre l'annee active et l'annee precedente." },
+    "evol-cumul": { label:"Evol Cumul", kicker:"Cumul", subtitle:"Somme automatique de toutes les entites actives Supabase." }
+  };
+  const VIEW_ORDER = ["activite-reelle", "annuel-budget", "evol-reporting", "evol-analyse", "reel-n1", "evol-cumul"];
+
+  const params = new URLSearchParams(location.search);
+  let view = VIEWS[params.get("view")] ? params.get("view") : "activite-reelle";
+  let year = Number(params.get("year")) || KentDataConfig.getActiveYear();
+  KentDataConfig.setActiveYear(year);
+  let entityKey = normalizeEntityKey(params.get("entityKey") || params.get("entity") || "");
+  let entityLabel = params.get("entity") || "";
+  let entities = [];
+  let data = null;
+  let exportRows = [];
+
+  const el = {
+    kicker: document.getElementById("kicker"),
+    title: document.getElementById("title"),
+    subtitle: document.getElementById("subtitle"),
+    viewSelect: document.getElementById("viewSelect"),
+    yearSelect: document.getElementById("yearSelect"),
+    entitySelect: document.getElementById("entitySelect"),
+    backBtn: document.getElementById("backBtn"),
+    importBtn: document.getElementById("importBtn"),
+    stats: document.getElementById("stats"),
+    search: document.getElementById("searchInput"),
+    reload: document.getElementById("reloadBtn"),
+    exportCsv: document.getElementById("exportCsvBtn"),
+    exportXlsx: document.getElementById("exportXlsxBtn"),
+    table: document.getElementById("mainTable"),
+    tableWrap: document.getElementById("tableWrap"),
+    empty: document.getElementById("emptyBox"),
+    modal: document.getElementById("modalOverlay"),
+    modalClose: document.getElementById("modalClose"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalSub: document.getElementById("modalSub"),
+    modalBody: document.getElementById("modalBody")
+  };
+
+  const nf0 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits:0 });
+  const nfQty = new Intl.NumberFormat("fr-FR", { maximumFractionDigits:2 });
+
+  await init();
+
+  async function init(){
+    renderViewSelect();
+    KentDataConfig.fillYearSelect(el.yearSelect, { selectedYear: year });
+    el.yearSelect.value = String(year);
+    entities = await loadEntities();
+    if (view !== "evol-cumul" && !entityKey) entityKey = entities[0]?.key || "psa";
+    entityLabel = entityLabel || labelForEntity(entityKey);
+    renderEntitySelect();
+    bindEvents();
+    await refresh();
+  }
+
+  function bindEvents(){
+    el.viewSelect.addEventListener("change", () => navigate({ view: el.viewSelect.value, entityKey }));
+    el.yearSelect.addEventListener("change", () => navigate({ view, entityKey, year: Number(el.yearSelect.value) }));
+    el.entitySelect.addEventListener("change", () => navigate({ view, entityKey: el.entitySelect.value }));
+    el.reload.addEventListener("click", refresh);
+    el.search.addEventListener("input", renderCurrentView);
+    el.exportCsv.addEventListener("click", exportCsv);
+    el.exportXlsx.addEventListener("click", exportXlsx);
+    el.modalClose.addEventListener("click", closeModal);
+    el.modal.addEventListener("click", event => { if (event.target === el.modal) closeModal(); });
+    window.addEventListener("keydown", event => { if (event.key === "Escape") closeModal(); });
+  }
+
+  function navigate(next){
+    const nextView = next.view || view;
+    const nextYear = next.year || year;
+    const nextEntity = normalizeEntityKey(next.entityKey || entityKey);
+    const qs = new URLSearchParams({ view: nextView, year: String(nextYear) });
+    if (nextView !== "evol-cumul") {
+      qs.set("entityKey", nextEntity);
+      qs.set("entity", labelForEntity(nextEntity));
+    }
+    location.href = `reporting-entite.html?${qs.toString()}`;
+  }
+
+  async function refresh(){
+    closeModal();
+    setLoading();
+    year = Number(el.yearSelect.value) || year;
+    KentDataConfig.setActiveYear(year);
+    entityLabel = labelForEntity(entityKey);
+    updateHeader();
+    try{
+      data = view === "evol-cumul" ? await loadCumulData(year) : await loadEntityData(entityKey, entityLabel, year, view);
+      renderCurrentView();
+    }catch(error){
+      console.error(error);
+      data = null;
+      renderError(error);
+    }
+  }
+
+  async function loadEntities(){
+    try{
+      if (window.ReelSupabase && typeof window.ReelSupabase.listEntities === "function"){
+        const rows = await window.ReelSupabase.listEntities();
+        return (rows || []).map(row => ({
+          key: normalizeEntityKey(row.key),
+          label: row.libelle || row.key,
+          id: row.id
+        })).filter(row => row.key);
+      }
+    }catch(error){
+      console.warn("Entites Supabase indisponibles:", error.message || error);
+    }
+    return [
+      { key:"psa", label:"PSA" },
+      { key:"gueudet", label:"Gueudet" },
+      { key:"ford", label:"Ford" },
+      { key:"direct", label:"Direct" }
+    ];
+  }
+
+  async function loadEntityData(key, label, selectedYear){
+    const budgetClients = await loadBudgetClients(key, selectedYear);
+    const realRows = await loadRealRows(key, selectedYear);
+    const prevRows = view === "reel-n1" ? await loadRealRows(key, selectedYear - 1) : [];
+    const clients = buildClientRows(budgetClients, realRows);
+    const monthly = computeMonthly(clients);
+    const summary = summarizeMonthly(monthly.real, monthly.budget);
+    return { type:"entity", key, label, year:selectedYear, budgetClients, realRows, prevRows, clients, monthly, summary };
+  }
+
+  async function loadCumulData(selectedYear){
+    const rows = [];
+    const monthly = { real:new Array(12).fill(0), budget:new Array(12).fill(0) };
+    for (const entity of entities){
+      const item = await loadEntityData(entity.key, entity.label, selectedYear, "evol-cumul");
+      rows.push({
+        key: entity.key,
+        label: entity.label,
+        real: item.monthly.real,
+        budget: item.monthly.budget,
+        totalReal: sum(item.monthly.real),
+        totalBudget: sum(item.monthly.budget),
+        clients: item.clients.length
+      });
+      for (let i=0;i<12;i++){
+        monthly.real[i] += item.monthly.real[i] || 0;
+        monthly.budget[i] += item.monthly.budget[i] || 0;
+      }
+    }
+    return { type:"cumul", year:selectedYear, entities: rows, monthly, summary: summarizeMonthly(monthly.real, monthly.budget) };
+  }
+
+  async function loadBudgetClients(key, selectedYear){
+    try{
+      if (!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return [];
+      const result = await window.BudgetSupabase.getActiveBudgetData(key, selectedYear);
+      const clients = result?.budgetData?.clients || [];
+      return clients.map(client => ({
+        key: clientKey(client.nclient, client.name),
+        code: String(client.nclient || "").trim(),
+        name: String(client.name || "").trim() || "Client",
+        budget: MONTHS.map(month => toNumber(client.budget?.[month.key])),
+        real: new Array(12).fill(0)
+      }));
+    }catch(error){
+      console.warn("Budget Supabase absent:", key, error.message || error);
+      return [];
+    }
+  }
+
+  async function loadRealRows(key, selectedYear){
+    try{
+      if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return [];
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(key, selectedYear);
+      return (rows || []).map(row => ({
+        monthIndex: Number(row.mois) - 1,
+        code: String(row.client_code || "").trim(),
+        name: String(row.client_nom || "").trim() || "Client",
+        amount: toNumber(row.montant),
+        qty: toNumber(row.quantite),
+        ref: String(row.reference || "").trim(),
+        designation: String(row.designation || "").trim(),
+        source: row
+      })).filter(row => row.monthIndex >= 0 && row.monthIndex < 12);
+    }catch(error){
+      console.warn("Reel Supabase absent:", key, selectedYear, error.message || error);
+      return [];
+    }
+  }
+
+  function buildClientRows(budgetClients, realRows){
+    const map = new Map();
+    for (const client of budgetClients || []){
+      map.set(client.key, { ...client, budget: client.budget.slice(), real: new Array(12).fill(0) });
+    }
+    for (const row of realRows || []){
+      if (!row.amount) continue;
+      const key = clientKey(row.code, row.name);
+      if (!map.has(key)){
+        map.set(key, { key, code: row.code, name: row.name, budget: new Array(12).fill(0), real: new Array(12).fill(0), isUnbudgeted:true });
+      }
+      map.get(key).real[row.monthIndex] += row.amount;
+    }
+    return Array.from(map.values()).sort((a,b) => (sum(b.real) + sum(b.budget)) - (sum(a.real) + sum(a.budget)));
+  }
+
+  function computeMonthly(clients){
+    const real = new Array(12).fill(0);
+    const budget = new Array(12).fill(0);
+    for (const client of clients || []){
+      for (let i=0;i<12;i++){
+        real[i] += client.real[i] || 0;
+        budget[i] += client.budget[i] || 0;
+      }
+    }
+    return { real, budget };
+  }
+
+  function summarizeMonthly(real, budget){
+    const totalReal = sum(real);
+    const totalBudget = sum(budget);
+    const ecart = totalReal - totalBudget;
+    return { totalReal, totalBudget, ecart, attain: totalBudget ? totalReal / totalBudget : 0 };
+  }
+
+  function updateHeader(){
+    const meta = VIEWS[view] || VIEWS["activite-reelle"];
+    el.kicker.textContent = meta.kicker;
+    el.title.textContent = view === "evol-cumul" ? meta.label : `${meta.label} - ${entityLabel}`;
+    el.subtitle.textContent = `${meta.subtitle} Annee active : ${year}.`;
+    document.title = el.title.textContent;
+    el.backBtn.href = `reporting-selecteur.html?view=${encodeURIComponent(view)}&entity=${encodeURIComponent(entityKey)}&year=${encodeURIComponent(year)}`;
+    el.importBtn.href = `import-reel-mensuel.html?year=${encodeURIComponent(year)}`;
+    el.entitySelect.style.display = view === "evol-cumul" ? "none" : "";
+  }
+
+  function renderViewSelect(){
+    el.viewSelect.innerHTML = VIEW_ORDER.map(key => `<option value="${key}">${esc(VIEWS[key].label)}</option>`).join("");
+    el.viewSelect.value = view;
+  }
+
+  function renderEntitySelect(){
+    el.entitySelect.innerHTML = entities.map(entity => `<option value="${escAttr(entity.key)}">${esc(entity.label)}</option>`).join("");
+    if (!entities.some(entity => entity.key === entityKey)) entityKey = entities[0]?.key || entityKey || "psa";
+    el.entitySelect.value = entityKey;
+  }
+
+  function renderStats(){
+    if (view === "activite-reelle"){
+      el.stats.innerHTML = `
+        <div class="stat"><div class="k">CA reel</div><div class="v">${fmtMoney(data.summary.totalReal)}</div></div>
+        <div class="stat"><div class="k">Clients</div><div class="v">${fmtInt(data.clients.length)}</div></div>
+        <div class="stat"><div class="k">Lignes reel</div><div class="v">${fmtInt(data.realRows.length)}</div></div>
+        <div class="stat gold"><div class="k">Annee</div><div class="v">${fmtInt(year)}</div></div>
+      `;
+      return;
+    }
+    if (view === "reel-n1"){
+      const products = aggregateProducts(data.realRows, data.prevRows);
+      const totalReal = products.reduce((total, row) => total + row.realCA, 0);
+      const totalPrev = products.reduce((total, row) => total + row.prevCA, 0);
+      const ecart = totalReal - totalPrev;
+      el.stats.innerHTML = `
+        <div class="stat"><div class="k">CA reel</div><div class="v">${fmtMoney(totalReal)}</div></div>
+        <div class="stat gold"><div class="k">CA N-1</div><div class="v">${fmtMoney(totalPrev)}</div></div>
+        <div class="stat ${ecart >= 0 ? "good" : "bad"}"><div class="k">Ecart</div><div class="v">${fmtMoney(ecart)}</div></div>
+        <div class="stat"><div class="k">Produits</div><div class="v">${fmtInt(products.length)}</div></div>
+      `;
+      return;
+    }
+    const s = data?.summary || { totalReal:0, totalBudget:0, ecart:0, attain:0 };
+    const countLabel = view === "evol-cumul" ? "Entites" : "Clients";
+    const count = view === "evol-cumul" ? data.entities.length : data.clients.length;
+    el.stats.innerHTML = `
+      <div class="stat"><div class="k">CA reel</div><div class="v">${fmtMoney(s.totalReal)}</div></div>
+      <div class="stat gold"><div class="k">Budget</div><div class="v">${fmtMoney(s.totalBudget)}</div></div>
+      <div class="stat ${s.ecart >= 0 ? "good" : "bad"}"><div class="k">Ecart</div><div class="v">${fmtMoney(s.ecart)}</div></div>
+      <div class="stat"><div class="k">${esc(countLabel)}</div><div class="v">${fmtInt(count)}</div></div>
+    `;
+  }
+
+  function renderCurrentView(){
+    if (!data) return renderError(new Error("Aucune donnee chargee."));
+    updateHeader();
+    renderStats();
+    if (view === "activite-reelle") return renderActivity();
+    if (view === "annuel-budget" || view === "evol-reporting") return renderAnnualBudget(view === "evol-reporting");
+    if (view === "evol-analyse") return renderEvolAnalyse();
+    if (view === "reel-n1") return renderReelN1();
+    if (view === "evol-cumul") return renderCumul();
+  }
+
+  function renderActivity(){
+    const rows = filterRows(data.clients, row => `${row.name} ${row.code}`);
+    exportRows = rows.map(client => makeFlatMonthlyRow(client.name, client.code, client.real, null));
+    renderSimpleMonthlyTable(rows, "CA reel", client => client.real);
+  }
+
+  function renderAnnualBudget(showWeekButtons){
+    const rows = filterRows(data.clients, row => `${row.name} ${row.code}`);
+    exportRows = rows.map(client => ({
+      Client: client.name,
+      "N client": client.code,
+      ...MONTHS.reduce((acc, month, i) => {
+        acc[`${month.label} reel`] = round(client.real[i]);
+        acc[`${month.label} budget`] = round(client.budget[i]);
+        acc[`${month.label} ecart`] = round((client.real[i] || 0) - (client.budget[i] || 0));
+        return acc;
+      }, {}),
+      "Total reel": round(sum(client.real)),
+      "Total budget": round(sum(client.budget)),
+      "Total ecart": round(sum(client.real) - sum(client.budget))
+    }));
+
+    const headerMonths = MONTHS.map(month => `
+      <th colspan="3">
+        <div class="monthHead">
+          <span>${esc(month.label)}</span>
+          ${showWeekButtons ? `<button class="btn small" data-week="${month.key}" data-label="${escAttr(month.label)}" type="button">Sem.</button>` : ""}
+        </div>
+      </th>`).join("");
+    const body = rows.map(client => `
+      <tr>
+        <td class="left">${esc(client.name)}</td>
+        <td class="left">${esc(client.code)}</td>
+        ${MONTHS.map((month, i) => monthlyTriplet(client.real[i], client.budget[i])).join("")}
+        ${monthlyTriplet(sum(client.real), sum(client.budget))}
+      </tr>
+    `).join("");
+    const totalRow = `
+      <tr class="totalRow">
+        <td class="left">TOTAL</td><td></td>
+        ${MONTHS.map((month, i) => monthlyTriplet(data.monthly.real[i], data.monthly.budget[i])).join("")}
+        ${monthlyTriplet(data.summary.totalReal, data.summary.totalBudget)}
+      </tr>`;
+
+    paintTable(`
+      <thead>
+        <tr><th rowspan="2" class="left">Client</th><th rowspan="2" class="left">N client</th>${headerMonths}<th colspan="3">Total</th></tr>
+        <tr>${MONTHS.map(() => `<th>Reel</th><th>Budget</th><th>Ecart</th>`).join("")}<th>Reel</th><th>Budget</th><th>Ecart</th></tr>
+      </thead>
+      <tbody>${body}${totalRow}</tbody>
+    `, rows.length);
+
+    el.table.querySelectorAll("[data-week]").forEach(button => {
+      button.addEventListener("click", () => openWeek(button.dataset.week, button.dataset.label));
+    });
+  }
+
+  function renderEvolAnalyse(){
+    const commentKey = `REPORTING_ENTITE_COMMENTS_${entityKey}_${year}`;
+    const comments = readJson(commentKey, {});
+    const rows = MONTHS.map((month, i) => ({
+      month, real:data.monthly.real[i] || 0, budget:data.monthly.budget[i] || 0,
+      ecart:(data.monthly.real[i] || 0) - (data.monthly.budget[i] || 0)
+    }));
+    exportRows = rows.map(row => ({
+      Mois: row.month.label,
+      Reel: round(row.real),
+      Budget: round(row.budget),
+      Ecart: round(row.ecart),
+      Commentaire: comments[row.month.key] || ""
+    }));
+    paintTable(`
+      <thead><tr><th class="left">Mois</th><th>Reel</th><th>Budget</th><th>Ecart</th><th>Atteinte</th><th class="left">Commentaire</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${rows.map(row => `
+          <tr data-month-row="${row.month.number - 1}">
+            <td class="left">${esc(row.month.label)}</td>
+            <td class="num">${fmtMoney(row.real)}</td>
+            <td class="num">${fmtMoney(row.budget)}</td>
+            <td class="num ${ecartClass(row.ecart)}">${fmtMoney(row.ecart)}</td>
+            <td class="num">${fmtPct(row.budget ? row.real / row.budget : 0)}</td>
+            <td class="left"><input class="comment" data-comment="${row.month.key}" value="${escAttr(comments[row.month.key] || "")}" placeholder="Note / analyse..."></td>
+            <td><button class="btn small" data-week="${row.month.key}" data-label="${escAttr(row.month.label)}" type="button">Sem.</button></td>
+          </tr>`).join("")}
+      </tbody>
+    `, rows.length);
+    el.table.querySelectorAll("[data-comment]").forEach(input => input.addEventListener("input", () => {
+      comments[input.dataset.comment] = input.value || "";
+      writeJson(commentKey, comments);
+    }));
+    el.table.querySelectorAll("[data-week]").forEach(button => button.addEventListener("click", event => {
+      event.stopPropagation();
+      openWeek(button.dataset.week, button.dataset.label);
+    }));
+    el.table.querySelectorAll("[data-month-row]").forEach(row => row.addEventListener("click", event => {
+      if (event.target.closest("button,input")) return;
+      openMonthDetail(Number(row.dataset.monthRow));
+    }));
+  }
+
+  function renderReelN1(){
+    const rows = filterRows(aggregateProducts(data.realRows, data.prevRows), row => row.product);
+    exportRows = rows.map(row => ({
+      Produit: row.product,
+      "Reel qte": round(row.realQty),
+      "Reel CA": round(row.realCA),
+      "N-1 qte": round(row.prevQty),
+      "N-1 CA": round(row.prevCA),
+      "Ecart CA": round(row.realCA - row.prevCA)
+    }));
+    paintTable(`
+      <thead><tr><th class="left">Produit</th><th>Reel qte</th><th>Reel CA</th><th>N-1 qte</th><th>N-1 CA</th><th>Ecart CA</th></tr></thead>
+      <tbody>${rows.map(row => `
+        <tr data-product="${escAttr(row.product)}">
+          <td class="left">${esc(row.product)}</td>
+          <td class="num">${fmtQty(row.realQty)}</td>
+          <td class="num">${fmtMoney(row.realCA)}</td>
+          <td class="num">${fmtQty(row.prevQty)}</td>
+          <td class="num">${fmtMoney(row.prevCA)}</td>
+          <td class="num ${ecartClass(row.realCA - row.prevCA)}">${fmtMoney(row.realCA - row.prevCA)}</td>
+        </tr>`).join("")}</tbody>
+    `, rows.length);
+    el.table.querySelectorAll("[data-product]").forEach(row => row.addEventListener("click", () => openProductDetail(row.dataset.product)));
+  }
+
+  function renderCumul(){
+    const rows = MONTHS.map((month, i) => ({
+      month, real:data.monthly.real[i] || 0, budget:data.monthly.budget[i] || 0,
+      ecart:(data.monthly.real[i] || 0) - (data.monthly.budget[i] || 0)
+    }));
+    exportRows = rows.map(row => ({ Mois: row.month.label, Reel: round(row.real), Budget: round(row.budget), Ecart: round(row.ecart) }));
+    paintTable(`
+      <thead><tr><th class="left">Mois</th><th>Reel cumule</th><th>Budget cumule</th><th>Ecart</th><th>Atteinte</th></tr></thead>
+      <tbody>
+        ${rows.map((row, i) => `
+          <tr data-cumul-month="${i}">
+            <td class="left">${esc(row.month.label)}</td>
+            <td class="num">${fmtMoney(row.real)}</td>
+            <td class="num">${fmtMoney(row.budget)}</td>
+            <td class="num ${ecartClass(row.ecart)}">${fmtMoney(row.ecart)}</td>
+            <td class="num">${fmtPct(row.budget ? row.real / row.budget : 0)}</td>
+          </tr>`).join("")}
+        <tr class="totalRow"><td class="left">TOTAL</td><td>${fmtMoney(data.summary.totalReal)}</td><td>${fmtMoney(data.summary.totalBudget)}</td><td class="${ecartClass(data.summary.ecart)}">${fmtMoney(data.summary.ecart)}</td><td>${fmtPct(data.summary.attain)}</td></tr>
+      </tbody>
+    `, rows.length);
+    el.table.querySelectorAll("[data-cumul-month]").forEach(row => row.addEventListener("click", () => openCumulMonthDetail(Number(row.dataset.cumulMonth))));
+  }
+
+  function renderSimpleMonthlyTable(rows, label, getMonthly){
+    paintTable(`
+      <thead><tr><th class="left">Client</th><th class="left">N client</th>${MONTHS.map(m => `<th>${esc(m.label)}</th>`).join("")}<th>Total</th></tr></thead>
+      <tbody>
+        ${rows.map(row => {
+          const values = getMonthly(row);
+          return `<tr><td class="left">${esc(row.name)}</td><td class="left">${esc(row.code)}</td>${values.map(v => `<td class="num">${fmtMoney(v)}</td>`).join("")}<td class="num">${fmtMoney(sum(values))}</td></tr>`;
+        }).join("")}
+        <tr class="totalRow"><td class="left">TOTAL</td><td></td>${data.monthly.real.map(v => `<td class="num">${fmtMoney(v)}</td>`).join("")}<td class="num">${fmtMoney(data.summary.totalReal)}</td></tr>
+      </tbody>
+    `, rows.length);
+  }
+
+  function monthlyTriplet(real, budget){
+    const ecart = (real || 0) - (budget || 0);
+    return `<td class="num">${fmtMoney(real)}</td><td class="num">${fmtMoney(budget)}</td><td class="num ${ecartClass(ecart)}">${fmtMoney(ecart)}</td>`;
+  }
+
+  function paintTable(html, count){
+    el.table.innerHTML = html;
+    el.empty.style.display = count ? "none" : "block";
+    el.tableWrap.style.display = count ? "block" : "none";
+  }
+
+  function openWeek(monthKey, monthLabel){
+    const qs = new URLSearchParams({
+      entityKey,
+      entity: entityLabel,
+      month: monthKey,
+      monthLabel: monthLabel || "",
+      year: String(year),
+      dateCol: "Date commande"
+    });
+    location.href = `vue_semaine.html?${qs.toString()}`;
+  }
+
+  function openMonthDetail(monthIndex){
+    const rows = data.clients.map(client => ({
+      name: client.name,
+      code: client.code,
+      real: client.real[monthIndex] || 0,
+      budget: client.budget[monthIndex] || 0
+    })).filter(row => row.real || row.budget).sort((a,b) => b.real - a.real);
+    openModal(`Detail ${MONTHS[monthIndex].label} - ${entityLabel}`, `${rows.length} client(s)`, clientRowsHtml(rows));
+  }
+
+  function openCumulMonthDetail(monthIndex){
+    const rows = data.entities.map(entity => ({
+      name: entity.label,
+      code: entity.key,
+      real: entity.real[monthIndex] || 0,
+      budget: entity.budget[monthIndex] || 0
+    })).sort((a,b) => b.real - a.real);
+    openModal(`Cumul ${MONTHS[monthIndex].label}`, `${rows.length} entite(s) actives`, clientRowsHtml(rows, "Entite"));
+  }
+
+  function openProductDetail(product){
+    const current = aggregateProductClients(data.realRows, product);
+    const previous = aggregateProductClients(data.prevRows, product);
+    const keys = new Set([...current.keys(), ...previous.keys()]);
+    const rows = Array.from(keys).map(key => {
+      const a = current.get(key) || { name:"", code:"", real:0, qty:0 };
+      const b = previous.get(key) || { name:"", code:"", real:0, qty:0 };
+      return { name:a.name || b.name, code:a.code || b.code, real:a.real, budget:b.real };
+    }).sort((a,b) => b.real - a.real);
+    openModal(`Detail produit - ${product}`, `${rows.length} client(s)`, clientRowsHtml(rows, "Client", "Reel", "N-1"));
+  }
+
+  function clientRowsHtml(rows, firstLabel = "Client", realLabel = "Reel", budgetLabel = "Budget"){
+    return `
+      <div class="tableWrap" style="max-height:60vh">
+        <table>
+          <thead><tr><th class="left">${esc(firstLabel)}</th><th class="left">Code</th><th>${esc(realLabel)}</th><th>${esc(budgetLabel)}</th><th>Ecart</th></tr></thead>
+          <tbody>${rows.map(row => {
+            const ecart = (row.real || 0) - (row.budget || 0);
+            return `<tr><td class="left">${esc(row.name)}</td><td class="left">${esc(row.code)}</td><td class="num">${fmtMoney(row.real)}</td><td class="num">${fmtMoney(row.budget)}</td><td class="num ${ecartClass(ecart)}">${fmtMoney(ecart)}</td></tr>`;
+          }).join("")}</tbody>
+        </table>
+      </div>`;
+  }
+
+  function openModal(title, sub, body){
+    el.modalTitle.textContent = title;
+    el.modalSub.textContent = sub || "";
+    el.modalBody.innerHTML = body || "";
+    el.modal.classList.add("show");
+    el.modal.setAttribute("aria-hidden", "false");
+  }
+  function closeModal(){
+    el.modal.classList.remove("show");
+    el.modal.setAttribute("aria-hidden", "true");
+  }
+
+  function aggregateProducts(currentRows, previousRows){
+    const map = new Map();
+    addRows(currentRows, "real");
+    addRows(previousRows, "prev");
+    return Array.from(map.values()).sort((a,b) => b.realCA - a.realCA);
+    function addRows(rows, type){
+      for (const row of rows || []){
+        const product = productName(row);
+        if (!map.has(product)) map.set(product, { product, realQty:0, realCA:0, prevQty:0, prevCA:0 });
+        const item = map.get(product);
+        if (type === "real"){
+          item.realQty += row.qty || 0;
+          item.realCA += row.amount || 0;
+        }else{
+          item.prevQty += row.qty || 0;
+          item.prevCA += row.amount || 0;
+        }
+      }
+    }
+  }
+
+  function aggregateProductClients(rows, product){
+    const map = new Map();
+    for (const row of rows || []){
+      if (productName(row) !== product) continue;
+      const key = clientKey(row.code, row.name);
+      if (!map.has(key)) map.set(key, { name:row.name, code:row.code, real:0, qty:0 });
+      map.get(key).real += row.amount || 0;
+      map.get(key).qty += row.qty || 0;
+    }
+    return map;
+  }
+
+  function productName(row){
+    return String(row.designation || row.ref || "Produit non renseigne").trim() || "Produit non renseigne";
+  }
+
+  function setLoading(){
+    el.stats.innerHTML = `<div class="stat"><div class="k">Chargement</div><div class="v">...</div></div>`;
+    el.table.innerHTML = "";
+    el.empty.textContent = "Chargement des donnees Supabase...";
+    el.empty.style.display = "block";
+    el.tableWrap.style.display = "none";
+  }
+
+  function renderError(error){
+    el.stats.innerHTML = `<div class="stat bad"><div class="k">Erreur</div><div class="v">KO</div></div>`;
+    el.empty.textContent = String(error.message || error || "Erreur inconnue");
+    el.empty.style.display = "block";
+    el.tableWrap.style.display = "none";
+  }
+
+  function filterRows(rows, textGetter){
+    const q = normalizeText(el.search.value || "");
+    const filtered = !q ? rows.slice() : rows.filter(row => normalizeText(textGetter(row)).includes(q));
+    return filtered;
+  }
+
+  function exportCsv(){
+    if (!exportRows.length) return alert("Aucune donnee a exporter.");
+    const headers = Object.keys(exportRows[0]);
+    const csv = [headers.join(";")].concat(exportRows.map(row => headers.map(key => csvCell(row[key])).join(";"))).join("\n");
+    downloadBlob(new Blob([csv], { type:"text/csv;charset=utf-8" }), exportName("csv"));
+  }
+
+  function exportXlsx(){
+    if (!exportRows.length) return alert("Aucune donnee a exporter.");
+    if (!window.XLSX) return exportCsv();
+    const ws = XLSX.utils.json_to_sheet(exportRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Reporting");
+    const out = XLSX.write(wb, { bookType:"xlsx", type:"array" });
+    downloadBlob(new Blob([out], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), exportName("xlsx"));
+  }
+
+  function makeFlatMonthlyRow(name, code, real, budget){
+    const row = { Client:name, "N client":code };
+    MONTHS.forEach((month, i) => {
+      row[month.label] = round(real[i]);
+      if (budget) row[`${month.label} budget`] = round(budget[i]);
+    });
+    row.Total = round(sum(real));
+    return row;
+  }
+
+  function exportName(ext){
+    const scope = view === "evol-cumul" ? "cumul" : entityKey;
+    return `${view}_${scope}_${year}.${ext}`;
+  }
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function labelForEntity(key){
+    const found = entities.find(entity => entity.key === normalizeEntityKey(key));
+    return found?.label || params.get("entity") || key || "Entite";
+  }
+
+  function clientKey(code, name){
+    const c = normalizeText(code).replace(/[^a-z0-9]+/g, "");
+    const n = normalizeText(name).replace(/[^a-z0-9]+/g, "-");
+    return c ? `${c}__${n}` : n || "client";
+  }
+
+  function normalizeEntityKey(value){
+    return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  }
+  function normalizeText(value){
+    return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+  function toNumber(value){
+    if (value === null || value === undefined) return 0;
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    const parsed = Number(String(value).trim().replace(/\s/g, "").replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  function sum(values){ return (values || []).reduce((total, value) => total + toNumber(value), 0); }
+  function round(value){ return Math.round(toNumber(value)); }
+  function fmtMoney(value){ return `${nf0.format(round(value))} €`; }
+  function fmtInt(value){ return nf0.format(round(value)); }
+  function fmtQty(value){ return nfQty.format(toNumber(value)); }
+  function fmtPct(value){ return `${nf0.format((toNumber(value) || 0) * 100)}%`; }
+  function ecartClass(value){ const n = round(value); return n > 0 ? "pos" : n < 0 ? "neg" : "zero"; }
+  function csvCell(value){
+    const raw = String(value ?? "");
+    return /[;"\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+  }
+  function readJson(key, fallback){
+    try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }catch{ return fallback; }
+  }
+  function writeJson(key, value){
+    try{ localStorage.setItem(key, JSON.stringify(value || {})); }catch{}
+  }
+  function esc(value){
+    return String(value ?? "").replace(/[&<>"']/g, s => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]));
+  }
+  function escAttr(value){ return esc(value).replace(/"/g, "&quot;"); }
+})();
+</script>
+</body>
+</html>

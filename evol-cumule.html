@@ -12,6 +12,15 @@
   <script src="./budget-supabase.js"></script>
   <script src="./reel-supabase.js"></script>
 
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+      if (params.get("legacy") === "1") return;
+      const year = params.get("year") || localStorage.getItem("APP_ACTIVE_YEAR") || String(new Date().getFullYear());
+      location.replace(`reporting-entite.html?view=evol-cumul&year=${encodeURIComponent(year)}`);
+    })();
+  </script>
+
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
