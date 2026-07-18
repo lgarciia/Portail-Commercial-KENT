@@ -432,7 +432,7 @@
       const rows = await window.ReelSupabase.listImports({
         year: Number($("yearSelect").value),
         month: Number($("monthSelect").value),
-        entiteId,
+        entiteId: entityId,
         includeInactive:true
       });
       const activeRows = rows.filter(row => row.statut === "active");
