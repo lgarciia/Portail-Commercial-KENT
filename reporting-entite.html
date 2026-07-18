@@ -95,9 +95,9 @@
     body.analysisLite .panel{padding:7px;border-radius:18px}
     body.analysisLite .tableWrap{max-height:calc(100vh - 48px)}
     body.analysisLite .btn.small{min-height:23px;font-size:10px;padding:0 7px;border-radius:9px}
-    .analysisMonthTable{min-width:760px;border-collapse:separate;border-spacing:0 3px;font-size:11px}
+    .analysisMonthTable{width:min(1040px,100%);min-width:760px;margin:0 auto;border-collapse:separate;border-spacing:0 4px;font-size:12px}
     .analysisMonthTable th{border:0;background:transparent;color:rgba(226,232,240,.62);font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px}
-    .analysisMonthTable td{border-top:1px solid rgba(148,163,184,.13);border-bottom:1px solid rgba(148,163,184,.13);border-right:0;background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.025));padding:5px 8px}
+    .analysisMonthTable td{border-top:1px solid rgba(148,163,184,.13);border-bottom:1px solid rgba(148,163,184,.13);border-right:0;background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.025));padding:6px 9px}
     .analysisMonthTable td:first-child{border-left:1px solid rgba(148,163,184,.13);border-radius:11px 0 0 11px}
     .analysisMonthTable td:last-child{border-right:1px solid rgba(148,163,184,.13);border-radius:0 11px 11px 0}
     .analysisMonthTable tr:hover td{background:linear-gradient(135deg,rgba(56,189,248,.105),rgba(255,255,255,.035));border-color:rgba(56,189,248,.22)}
@@ -106,10 +106,7 @@
     .analysisMonthTable .comment{min-height:24px;font-size:11px;border-radius:8px;padding:0 8px}
     .monthLine{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:1000}
     .monthHint{color:var(--muted);font-size:9px;font-weight:900}
-    .moneyBar{display:grid;gap:2px}
-    .moneyBar strong{font-size:11px}
-    .tinyBar{height:4px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
-    .tinyBar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#38bdf8,#22c55e)}
+    .moneyBar strong{font-size:12px}
     .empty{border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.045);border-radius:18px;padding:22px;color:var(--muted);font-weight:850;text-align:center}
     .comment{
       width:100%;min-width:220px;min-height:32px;border:1px solid rgba(148,163,184,.18);border-radius:11px;
@@ -690,7 +687,6 @@
       month, real:data.monthly.real[i] || 0, budget:data.monthly.budget[i] || 0,
       ecart:(data.monthly.real[i] || 0) - (data.monthly.budget[i] || 0)
     }));
-    const maxReal = Math.max(1, ...rows.map(row => Math.abs(row.real || 0)));
     const toDate = buildToDateSummary(data.monthly.real, data.monthly.budget, year);
     const annual = buildPeriodSummary(data.monthly.real, data.monthly.budget, 11, "Janvier -> Decembre");
     exportRows = rows.map(row => ({ Mois: row.month.label, Reel: round(row.real), Budget: round(row.budget), Ecart: round(row.ecart) }));
@@ -705,10 +701,7 @@
           <tr data-cumul-month="${i}">
             <td class="left"><div class="monthLine"><span>${esc(row.month.label)}</span><span class="monthHint">Analyse</span></div></td>
             <td class="num">
-              <div class="moneyBar">
-                <strong>${fmtMoney(row.real)}</strong>
-                <div class="tinyBar"><span style="width:${Math.max(3, Math.round(Math.abs(row.real || 0) / maxReal * 100))}%"></span></div>
-              </div>
+              <div class="moneyBar"><strong>${fmtMoney(row.real)}</strong></div>
             </td>
             <td class="num">${fmtMoney(row.budget)}</td>
             <td class="num ${ecartClass(row.ecart)}">${fmtMoney(row.ecart)}</td>
