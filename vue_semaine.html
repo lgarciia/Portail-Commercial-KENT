@@ -210,6 +210,7 @@
 
   const entityLabel = qs.get("entity") || "Entité";
   const entityKey = normalizeEntityKey(qs.get("entityKey") || entityLabel);
+  const requestedDateCol = qs.get("dateCol") || "";
   const year = Number(qs.get("year") || new Date().getFullYear());
   const monthKey = (qs.get("month") || "jan").toLowerCase();
   const month = MONTHS.find(item => item.key === monthKey) || MONTHS[0];
@@ -264,12 +265,13 @@
     const budgetWeek = budgetMonth / 4;
     el.sBw.textContent = nf0.format(Math.round(budgetWeek));
 
-    let realInfo = { weekly:[0,0,0,0], undated:0, usedLines:0, undatedLines:0, total:0 };
+    let realInfo = { weekly:[0,0,0,0], undated:0, usedLines:0, undatedLines:0, total:0, dateSources:{} };
     try{
       realInfo = await loadWeeklyReal();
       setDot(el.dotReel, "ok");
       el.sReel.textContent = nf0.format(Math.round(realInfo.total));
-      el.debugLine.textContent = `Réel Supabase OK - ${realInfo.usedLines} ligne(s)` + (realInfo.undatedLines ? ` - ${realInfo.undatedLines} ligne(s) sans date` : "");
+      const sourceText = formatDateSources(realInfo.dateSources);
+      el.debugLine.textContent = `Réel Supabase OK - ${realInfo.usedLines} ligne(s)` + (sourceText ? ` - Dates : ${sourceText}` : "") + (realInfo.undatedLines ? ` - ${realInfo.undatedLines} ligne(s) sans date` : "");
     }catch(err){
       console.error(err);
       setDot(el.dotReel, "bad");
@@ -304,14 +306,18 @@
     let undated = 0;
     let usedLines = 0;
     let undatedLines = 0;
+    const dateSources = {};
 
     for (const row of rows || []){
       if (Number(row.mois) !== month.number) continue;
       const amount = toNumber(row.montant);
       if (!amount) continue;
 
-      const dt = parseIsoDate(row.date_piece);
-      if (dt) weekly[weekBucket(dt)] += amount;
+      const resolved = resolveRowDate(row, requestedDateCol);
+      if (resolved.date) {
+        weekly[weekBucket(resolved.date)] += amount;
+        if (resolved.source) dateSources[resolved.source] = (dateSources[resolved.source] || 0) + 1;
+      }
       else {
         undated += amount;
         undatedLines += 1;
@@ -320,7 +326,7 @@
     }
 
     const total = weekly.reduce((sum, value) => sum + value, 0) + undated;
-    return { weekly, undated, usedLines, undatedLines, total };
+    return { weekly, undated, usedLines, undatedLines, total, dateSources };
   }
 
   function renderTable(realInfo, budgetWeek){
@@ -417,9 +423,77 @@
     return aliases[normalized] || normalized || "psa";
   }
 
+  function resolveRowDate(row, preferredDateCol){
+    const candidates = unique([
+      "Date commande",
+      "Date de commande",
+      preferredDateCol,
+      "Date vente",
+      "Date de vente",
+      "Date facturation",
+      "Date facture",
+      "Date",
+      "date_piece"
+    ]);
+
+    const rawData = row && row.raw_data && typeof row.raw_data === "object" ? row.raw_data : {};
+    const rawMap = buildRawKeyMap(rawData);
+
+    for (const candidate of candidates){
+      if (!candidate) continue;
+      const rawKey = rawMap[normalizeRawKey(candidate)];
+      if (!rawKey) continue;
+      const date = parseIsoDate(rawData[rawKey]);
+      if (date) return { date, source: rawKey };
+    }
+
+    const fallback = parseIsoDate(row && row.date_piece);
+    return fallback ? { date: fallback, source: "date_piece" } : { date: null, source: "" };
+  }
+
+  function buildRawKeyMap(rawData){
+    const map = {};
+    for (const key of Object.keys(rawData || {})){
+      const normalized = normalizeRawKey(key);
+      if (normalized && !map[normalized]) map[normalized] = key;
+    }
+    return map;
+  }
+
+  function normalizeRawKey(value){
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function unique(values){
+    const seen = new Set();
+    const out = [];
+    for (const value of values || []){
+      const key = normalizeRawKey(value);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(value);
+    }
+    return out;
+  }
+
+  function formatDateSources(sources){
+    const entries = Object.entries(sources || {}).sort((a,b) => b[1] - a[1]);
+    return entries.length ? entries.map(([key, count]) => `${key} (${count})`).join(", ") : "";
+  }
+
   function parseIsoDate(value){
     if (!value && value !== 0) return null;
     if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+    if (typeof value === "number" && Number.isFinite(value)){
+      const excelEpoch = Date.UTC(1899, 11, 30);
+      const date = new Date(excelEpoch + value * 86400000);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
     const raw = String(value || "").trim();
     if (!raw) return null;
 

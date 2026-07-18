@@ -507,7 +507,7 @@
 const WEEK_VIEW_PAGE = "vue_semaine.html";
 const ENTITY_KEY     = "PSA";
 const REAL_XLSX_FILE = "activitereelpsa.xlsx";
-const REAL_DATE_COL  = "Date vente";
+const REAL_DATE_COL  = "Date commande";
 (async function(){
   // ---------------------------
   // CONFIG PSA (fetch direct)
@@ -789,6 +789,7 @@ el.resultTable.addEventListener("click", (e) => {
   // on passe tout en querystring (copy/paste multi-entités)
   const qs = new URLSearchParams({
     entity: ENTITY_KEY,
+    entityKey: BUDGET_ENTITY_KEY,
     year: String(REPORT_YEAR),
     month: monthKey,
     monthLabel: monthLabel || "",

@@ -23,7 +23,7 @@
       clientNameCandidates: ["nom du client", "nom client", "client"],
       amountCandidates: ["montant prix achat kent", "montant achat kent", "montant"],
       monthCandidates: ["mois2", "mois", "month"],
-      dateCandidates: ["date facturation", "date de vente", "date vente", "date facture", "date", "date piece", "date pièce"],
+      dateCandidates: ["date commande", "date de commande", "date vente", "date de vente", "date facturation", "date facture", "date", "date piece", "date pièce"],
       refCandidates: ["nos réf kent", "nos ref kent", "reference produits", "reference produit", "référence produits", "référence produit", "code produit", "n° produit", "n produit", "reference", "référence", "ref"],
       desCandidates: ["designation", "désignation", "designation produit", "designation produits"],
       qtyCandidates: ["quantité payante servie", "quantite payante servie", "quantité servie", "quantite servie", "quantite", "quantité", "qte", "qté"]
@@ -33,7 +33,7 @@
       clientNameCandidates: ["nom du client", "nom client", "client"],
       amountCandidates: ["montant prix achat kent", "montant achat kent", "montant", "ca total", "ca", "chiffre d'affaires", "chiffre daffaires"],
       monthCandidates: ["mois2", "mois", "month"],
-      dateCandidates: ["date facturation", "date de vente", "date vente", "date facture", "date", "date piece", "date pièce"],
+      dateCandidates: ["date commande", "date de commande", "date vente", "date de vente", "date facturation", "date facture", "date", "date piece", "date pièce"],
       refCandidates: ["nos réf kent", "nos ref kent", "reference produits", "reference produit", "référence produits", "référence produit", "code produit", "n° produit", "n produit", "reference", "référence", "ref"],
       desCandidates: ["designation", "désignation", "designation produit", "designation produits"],
       qtyCandidates: ["quantité payante servie", "quantite payante servie", "quantité servie", "quantite servie", "quantite", "quantité", "qte", "qté"]
@@ -43,7 +43,7 @@
       clientNameCandidates: ["nom client", "nom du client", "client"],
       amountCandidates: ["ca total", "ca", "chiffre d'affaires", "chiffre daffaires", "montant"],
       monthCandidates: ["mois2", "mois", "month"],
-      dateCandidates: ["date facturation", "date de vente", "date vente", "date commande", "date facture", "date", "date piece", "date pièce"],
+      dateCandidates: ["date commande", "date de commande", "date vente", "date de vente", "date facturation", "date facture", "date", "date piece", "date pièce"],
       refCandidates: ["nos réf kent", "nos ref kent", "reference produits", "reference produit", "référence produits", "référence produit", "code produit", "n° produit", "n produit", "reference", "référence", "ref"],
       desCandidates: ["designation", "désignation", "designation produit", "designation produits"],
       qtyCandidates: ["quantité payante servie", "quantite payante servie", "quantité servie", "quantite servie", "quantite", "quantité", "qte", "qté"]

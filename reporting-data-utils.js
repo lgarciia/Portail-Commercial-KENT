@@ -311,6 +311,7 @@
     if (!options || options.preferSupabase === false) return null;
     const entityKey = inferEntityKey(options);
     const year = Number.isFinite(options.year) ? options.year : null;
+    const realConfig = options.realConfig || {};
     if (!entityKey || !year) return null;
     if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return null;
     const allowExcelFallback = options.allowExcelFallback !== false;
@@ -321,6 +322,7 @@
       const lookups = buildBudgetLookups(budgetData);
       const nextReal = {};
       const realRows = [];
+      const dateSources = {};
 
       for (const row of rows || []){
         const amount = toNumber(row && row.montant);
@@ -338,7 +340,9 @@
         if (!nextReal[budgetClient.id]) nextReal[budgetClient.id] = {};
         nextReal[budgetClient.id][month.key] = toNumber(nextReal[budgetClient.id][month.key]) + amount;
 
-        const date = parseAnyDate(row.date_piece);
+        const resolvedDate = resolveSupabaseRowDate(row, realConfig.dateCandidates);
+        const date = resolvedDate.date;
+        if (resolvedDate.source) dateSources[resolvedDate.source] = (dateSources[resolvedDate.source] || 0) + 1;
         realRows.push({
           monthIdx: MONTH_INDEX_BY_KEY[month.key],
           weekIdx: date ? weekBucket(date) : -1,
@@ -364,7 +368,7 @@
           fileName: "Supabase réel actif",
           usedUrl: "Supabase réel actif",
           sheetName: "v_reel_lignes_actives",
-          usedDateColumn: "date_piece",
+          usedDateColumn: topSource(dateSources) || "date_piece",
           usedMonthColumn: "mois",
           usedYearColumn: "annee",
         },
@@ -374,6 +378,54 @@
       console.warn("Reel Supabase indisponible, fallback Excel:", error?.message || error);
       return null;
     }
+  }
+
+  function resolveSupabaseRowDate(row, preferredCandidates){
+    const candidates = uniqueCandidates([
+      "Date commande",
+      "Date de commande",
+      ...(preferredCandidates || []),
+      "Date vente",
+      "Date de vente",
+      "Date facturation",
+      "Date facture",
+      "Date",
+      "date_piece"
+    ]);
+
+    const rawData = row && row.raw_data && typeof row.raw_data === "object" ? row.raw_data : {};
+    const rawMap = {};
+    for (const key of Object.keys(rawData)){
+      const normalized = normalizeKey(key);
+      if (normalized && !rawMap[normalized]) rawMap[normalized] = key;
+    }
+
+    for (const candidate of candidates){
+      const rawKey = rawMap[normalizeKey(candidate)];
+      if (!rawKey) continue;
+      const date = parseAnyDate(rawData[rawKey]);
+      if (date) return { date, source: rawKey };
+    }
+
+    const fallback = parseAnyDate(row && row.date_piece);
+    return fallback ? { date: fallback, source: "date_piece" } : { date: null, source: null };
+  }
+
+  function uniqueCandidates(values){
+    const seen = new Set();
+    const output = [];
+    for (const value of values || []){
+      const normalized = normalizeKey(value);
+      if (!normalized || seen.has(normalized)) continue;
+      seen.add(normalized);
+      output.push(value);
+    }
+    return output;
+  }
+
+  function topSource(sources){
+    const entries = Object.entries(sources || {}).sort((a,b) => b[1] - a[1]);
+    return entries.length ? entries[0][0] : "";
   }
 
   function ensureBudgetClient(budgetData, lookups, nclientInterne, clientName){
@@ -600,9 +652,15 @@
     if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
 
     if (typeof value === "number" && Number.isFinite(value)){
-      const parsed = XLSX.SSF.parse_date_code(value);
-      if (!parsed) return null;
-      const date = new Date(parsed.y, (parsed.m || 1) - 1, parsed.d || 1);
+      if (window.XLSX?.SSF?.parse_date_code) {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        if (parsed) {
+          const date = new Date(parsed.y, (parsed.m || 1) - 1, parsed.d || 1);
+          return Number.isNaN(date.getTime()) ? null : date;
+        }
+      }
+      const excelEpoch = Date.UTC(1899, 11, 30);
+      const date = new Date(excelEpoch + value * 86400000);
       return Number.isNaN(date.getTime()) ? null : date;
     }
 
