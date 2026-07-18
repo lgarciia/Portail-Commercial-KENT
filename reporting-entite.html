@@ -87,25 +87,28 @@
     .totalCol{background:rgba(245,158,11,.045)}
     .subHead{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:rgba(226,232,240,.72)}
     .monthHead{display:flex;align-items:center;justify-content:center;gap:8px}
-    body.analysisLite .page{grid-template-rows:auto 1fr;gap:8px}
-    body.analysisLite .hero{padding:4px 2px;border:0;background:transparent;box-shadow:none;backdrop-filter:none}
+    body.analysisLite .page{grid-template-rows:auto 1fr;gap:5px;padding-top:8px}
+    body.analysisLite .hero{padding:2px 2px;border:0;background:transparent;box-shadow:none;backdrop-filter:none}
     body.analysisLite .heroTop{display:block}
     body.analysisLite .kicker,body.analysisLite .subtitle,body.analysisLite .hero .actions,body.analysisLite .stats,body.analysisLite .toolbar{display:none}
-    body.analysisLite h1{margin:0 0 2px;font-size:22px;line-height:1.05;letter-spacing:-.035em}
-    body.analysisLite .panel{padding:10px;border-radius:20px}
-    body.analysisLite .tableWrap{max-height:calc(100vh - 76px)}
-    .analysisMonthTable{min-width:780px;border-collapse:separate;border-spacing:0 8px;font-size:12px}
-    .analysisMonthTable th{border:0;background:transparent;color:rgba(226,232,240,.62);font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px}
-    .analysisMonthTable td{border-top:1px solid rgba(148,163,184,.13);border-bottom:1px solid rgba(148,163,184,.13);border-right:0;background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.025));padding:10px}
-    .analysisMonthTable td:first-child{border-left:1px solid rgba(148,163,184,.13);border-radius:14px 0 0 14px}
-    .analysisMonthTable td:last-child{border-right:1px solid rgba(148,163,184,.13);border-radius:0 14px 14px 0}
+    body.analysisLite h1{margin:0 0 1px;font-size:18px;line-height:1.02;letter-spacing:-.03em}
+    body.analysisLite .panel{padding:7px;border-radius:18px}
+    body.analysisLite .tableWrap{max-height:calc(100vh - 48px)}
+    body.analysisLite .btn.small{min-height:23px;font-size:10px;padding:0 7px;border-radius:9px}
+    .analysisMonthTable{min-width:760px;border-collapse:separate;border-spacing:0 3px;font-size:11px}
+    .analysisMonthTable th{border:0;background:transparent;color:rgba(226,232,240,.62);font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px}
+    .analysisMonthTable td{border-top:1px solid rgba(148,163,184,.13);border-bottom:1px solid rgba(148,163,184,.13);border-right:0;background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.025));padding:5px 8px}
+    .analysisMonthTable td:first-child{border-left:1px solid rgba(148,163,184,.13);border-radius:11px 0 0 11px}
+    .analysisMonthTable td:last-child{border-right:1px solid rgba(148,163,184,.13);border-radius:0 11px 11px 0}
     .analysisMonthTable tr:hover td{background:linear-gradient(135deg,rgba(56,189,248,.105),rgba(255,255,255,.035));border-color:rgba(56,189,248,.22)}
     .analysisMonthTable .totalRow td{background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(255,255,255,.04));border-color:rgba(245,158,11,.30);font-weight:1000}
-    .monthLine{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:1000}
-    .monthHint{color:var(--muted);font-size:10px;font-weight:900}
-    .moneyBar{display:grid;gap:5px}
-    .moneyBar strong{font-size:13px}
-    .tinyBar{height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+    .analysisMonthTable .dateRow td{background:linear-gradient(135deg,rgba(56,189,248,.13),rgba(255,255,255,.035));border-color:rgba(56,189,248,.28);font-weight:1000}
+    .analysisMonthTable .comment{min-height:24px;font-size:11px;border-radius:8px;padding:0 8px}
+    .monthLine{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:1000}
+    .monthHint{color:var(--muted);font-size:9px;font-weight:900}
+    .moneyBar{display:grid;gap:2px}
+    .moneyBar strong{font-size:11px}
+    .tinyBar{height:4px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
     .tinyBar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#38bdf8,#22c55e)}
     .empty{border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.045);border-radius:18px;padding:22px;color:var(--muted);font-weight:850;text-align:center}
     .comment{
@@ -613,6 +616,8 @@
       month, real:data.monthly.real[i] || 0, budget:data.monthly.budget[i] || 0,
       ecart:(data.monthly.real[i] || 0) - (data.monthly.budget[i] || 0)
     }));
+    const toDate = buildToDateSummary(data.monthly.real, data.monthly.budget, year);
+    const annual = buildPeriodSummary(data.monthly.real, data.monthly.budget, 11, "Janvier -> Decembre");
     exportRows = rows.map(row => ({
       Mois: row.month.label,
       Reel: round(row.real),
@@ -620,6 +625,10 @@
       Ecart: round(row.ecart),
       Commentaire: comments[row.month.key] || ""
     }));
+    exportRows.push(
+      { Mois:`TOTAL A DATE (${toDate.label})`, Reel:round(toDate.real), Budget:round(toDate.budget), Ecart:round(toDate.ecart), Commentaire:totalStatusText(toDate.ecart) },
+      { Mois:"TOTAL ANNEE", Reel:round(annual.real), Budget:round(annual.budget), Ecart:round(annual.ecart), Commentaire:totalStatusText(annual.ecart) }
+    );
     paintTable(`
       <thead><tr><th class="left">Mois</th><th>Reel</th><th>Budget</th><th>Ecart</th><th>Atteinte</th><th class="left">Commentaire</th><th>Actions</th></tr></thead>
       <tbody>
@@ -633,8 +642,10 @@
             <td class="left"><input class="comment" data-comment="${row.month.key}" value="${escAttr(comments[row.month.key] || "")}" placeholder="Note / analyse..."></td>
             <td><button class="btn small" data-week="${row.month.key}" data-label="${escAttr(row.month.label)}" type="button">Sem.</button></td>
           </tr>`).join("")}
+        ${analysisSummaryRowHtml("TOTAL A DATE", toDate, true, "dateRow")}
+        ${analysisSummaryRowHtml("TOTAL ANNEE", annual, true, "totalRow")}
       </tbody>
-    `, rows.length, "analysisMonthTable");
+    `, rows.length + 2, "analysisMonthTable");
     el.table.querySelectorAll("[data-comment]").forEach(input => input.addEventListener("input", () => {
       comments[input.dataset.comment] = input.value || "";
       writeJson(commentKey, comments);
@@ -680,7 +691,13 @@
       ecart:(data.monthly.real[i] || 0) - (data.monthly.budget[i] || 0)
     }));
     const maxReal = Math.max(1, ...rows.map(row => Math.abs(row.real || 0)));
+    const toDate = buildToDateSummary(data.monthly.real, data.monthly.budget, year);
+    const annual = buildPeriodSummary(data.monthly.real, data.monthly.budget, 11, "Janvier -> Decembre");
     exportRows = rows.map(row => ({ Mois: row.month.label, Reel: round(row.real), Budget: round(row.budget), Ecart: round(row.ecart) }));
+    exportRows.push(
+      { Mois:`TOTAL A DATE (${toDate.label})`, Reel:round(toDate.real), Budget:round(toDate.budget), Ecart:round(toDate.ecart) },
+      { Mois:"TOTAL ANNEE", Reel:round(annual.real), Budget:round(annual.budget), Ecart:round(annual.ecart) }
+    );
     paintTable(`
       <thead><tr><th class="left">Mois</th><th>Reel cumule</th><th>Budget cumule</th><th>Ecart</th><th>Atteinte</th></tr></thead>
       <tbody>
@@ -697,9 +714,10 @@
             <td class="num ${ecartClass(row.ecart)}">${fmtMoney(row.ecart)}</td>
             <td class="num">${fmtPct(row.budget ? row.real / row.budget : 0)}</td>
           </tr>`).join("")}
-        <tr class="totalRow"><td class="left">TOTAL</td><td>${fmtMoney(data.summary.totalReal)}</td><td>${fmtMoney(data.summary.totalBudget)}</td><td class="${ecartClass(data.summary.ecart)}">${fmtMoney(data.summary.ecart)}</td><td>${fmtPct(data.summary.attain)}</td></tr>
+        ${analysisSummaryRowHtml("TOTAL A DATE", toDate, false, "dateRow")}
+        ${analysisSummaryRowHtml("TOTAL ANNEE", annual, false, "totalRow")}
       </tbody>
-    `, rows.length, "analysisMonthTable");
+    `, rows.length + 2, "analysisMonthTable");
     el.table.querySelectorAll("[data-cumul-month]").forEach(row => row.addEventListener("click", () => openCumulMonthDetail(Number(row.dataset.cumulMonth))));
   }
 
@@ -721,6 +739,55 @@
     const firstClass = markStart ? " mStart" : "";
     const totalClass = markTotal ? " totalCol" : "";
     return `<td class="num${firstClass}${totalClass}">${fmtMoney(real)}</td><td class="num${totalClass}">${fmtMoney(budget)}</td><td class="num ${ecartClass(ecart)}${totalClass}">${fmtMoney(ecart)}</td>`;
+  }
+
+  function buildToDateSummary(realValues, budgetValues, selectedYear){
+    const cutoff = lastClosedMonthIndex(selectedYear);
+    return buildPeriodSummary(realValues, budgetValues, cutoff, periodLabel(cutoff));
+  }
+
+  function buildPeriodSummary(realValues, budgetValues, cutoffIndex, label){
+    const safeCutoff = Math.max(-1, Math.min(11, Number(cutoffIndex)));
+    const real = safeCutoff >= 0 ? sum((realValues || []).slice(0, safeCutoff + 1)) : 0;
+    const budget = safeCutoff >= 0 ? sum((budgetValues || []).slice(0, safeCutoff + 1)) : 0;
+    const ecart = real - budget;
+    return { real, budget, ecart, attain: budget ? real / budget : 0, label: label || periodLabel(safeCutoff) };
+  }
+
+  function lastClosedMonthIndex(selectedYear){
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    if (selectedYear < currentYear) return 11;
+    if (selectedYear > currentYear) return -1;
+    return Math.max(-1, now.getMonth() - 1);
+  }
+
+  function periodLabel(cutoffIndex){
+    if (cutoffIndex < 0) return "Aucun mois clos";
+    return `Janvier -> ${MONTHS[Math.min(11, cutoffIndex)].label}`;
+  }
+
+  function totalStatusText(ecart){
+    const value = round(ecart);
+    if (value > 0) return `Avance de ${fmtMoney(value)}`;
+    if (value < 0) return `Retard de ${fmtMoney(Math.abs(value))}`;
+    return "A l'equilibre";
+  }
+
+  function analysisSummaryRowHtml(label, summary, withExtraColumns, rowClass){
+    const status = totalStatusText(summary.ecart);
+    const hint = withExtraColumns ? summary.label : `${summary.label} - ${status}`;
+    const extra = withExtraColumns ? `<td class="left" colspan="2">${esc(status)}</td>` : "";
+    return `
+      <tr class="${escAttr(rowClass || "totalRow")}">
+        <td class="left"><div class="monthLine"><span>${esc(label)}</span><span class="monthHint">${esc(hint)}</span></div></td>
+        <td class="num">${fmtMoney(summary.real)}</td>
+        <td class="num">${fmtMoney(summary.budget)}</td>
+        <td class="num ${ecartClass(summary.ecart)}">${fmtSignedMoney(summary.ecart)}</td>
+        <td class="num">${fmtPct(summary.attain)}</td>
+        ${extra}
+      </tr>
+    `;
   }
 
   function paintTable(html, count, tableClass = ""){
