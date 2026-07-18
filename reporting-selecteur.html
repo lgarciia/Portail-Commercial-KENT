@@ -418,12 +418,13 @@
         const hashIndex = raw.indexOf("#");
         const beforeHash = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
         const hash = hashIndex >= 0 ? raw.slice(hashIndex) : "";
-        const queryIndex = beforeHash.indexOf("");
+        const queryIndex = beforeHash.indexOf("?");
         const path = queryIndex >= 0 ? beforeHash.slice(0, queryIndex) : beforeHash;
         const query = queryIndex >= 0 ? beforeHash.slice(queryIndex + 1) : "";
         const params = new URLSearchParams(query);
         params.set("year", String(year));
-        return `${path}${params.toString()}${hash}`;
+        const nextQuery = params.toString();
+        return `${path}${nextQuery ? `?${nextQuery}` : ""}${hash}`;
       }
 
       function syncUrl(){
