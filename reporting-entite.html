@@ -96,6 +96,7 @@
     body.analysisLite .tableWrap{max-height:calc(100vh - 48px)}
     body.analysisLite .btn.small{min-height:23px;font-size:10px;padding:0 7px;border-radius:9px}
     .analysisMonthTable{width:min(1040px,100%);min-width:760px;margin:0 auto;border-collapse:separate;border-spacing:0 4px;font-size:12px}
+    .analysisMonthTable.cumulMonthTable{width:min(1280px,100%)}
     .analysisMonthTable th{border:0;background:transparent;color:rgba(226,232,240,.62);font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px}
     .analysisMonthTable td{border-top:1px solid rgba(148,163,184,.13);border-bottom:1px solid rgba(148,163,184,.13);border-right:0;background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.025));padding:6px 9px}
     .analysisMonthTable td:first-child{border-left:1px solid rgba(148,163,184,.13);border-radius:11px 0 0 11px}
@@ -710,7 +711,7 @@
         ${analysisSummaryRowHtml("TOTAL A DATE", toDate, false, "dateRow")}
         ${analysisSummaryRowHtml("TOTAL ANNEE", annual, false, "totalRow")}
       </tbody>
-    `, rows.length + 2, "analysisMonthTable");
+    `, rows.length + 2, "analysisMonthTable cumulMonthTable");
     el.table.querySelectorAll("[data-cumul-month]").forEach(row => row.addEventListener("click", () => openCumulMonthDetail(Number(row.dataset.cumulMonth))));
   }
 
