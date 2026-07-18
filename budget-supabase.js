@@ -317,6 +317,22 @@
     return data;
   }
 
+  async function deleteBudget(id){
+    const { budget } = await getBudget(id);
+    const { error: linesError } = await client()
+      .from("budget_lignes")
+      .delete()
+      .eq("budget_id", id);
+    if (linesError) throw linesError;
+
+    const { error } = await client()
+      .from("budgets")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+    return budget;
+  }
+
   async function getActiveBudgetData(entityKey, year){
     const { data: entities, error: entityError } = await client()
       .from("budget_entites")
@@ -356,6 +372,7 @@
     listBudgets,
     getBudget,
     setBudgetStatus,
+    deleteBudget,
     getActiveBudgetData
   };
 })();

@@ -266,6 +266,7 @@
                 ? `<button class="btn small red" type="button" data-action="inactive" data-id="${escapeHtml(budget.id)}">Desactiver</button>`
                 : `<button class="btn small" type="button" data-action="edit" data-id="${escapeHtml(budget.id)}">Modifier</button>
                    <button class="btn small green" type="button" data-action="active" data-id="${escapeHtml(budget.id)}">Activer</button>`}
+              <button class="btn small red" type="button" data-action="delete" data-id="${escapeHtml(budget.id)}">Supprimer</button>
             </td>
           </tr>
         `;
@@ -316,6 +317,28 @@
       }catch(error){
         console.error("Change budget status failed", error);
         await kentAlert(error?.message || "Impossible de changer le statut du budget.", { title: "Erreur statut", tone: "danger" });
+      }
+    }
+
+    async function deleteBudget(id){
+      const budget = budgets.find(item => String(item.id) === String(id));
+      const entity = budget ? entityById.get(String(budget.entite_id)) : null;
+      const label = budget
+        ? `${budget.nom} - ${entity?.libelle || "Entite"} ${budget.annee}`
+        : "ce budget";
+      const message = `Supprimer définitivement ${label} ?\n\nLes lignes de ce budget seront supprimées aussi. Cette action ne touche pas aux ventes, aux clients, aux projections, ni aux autres budgets.`;
+      if (!await kentConfirm(message, { title: "Supprimer le budget", tone: "danger", confirmText: "Supprimer" })) return;
+      try{
+        await window.BudgetSupabase.deleteBudget(id);
+        $("detailTitle").textContent = "Visualisation budget";
+        $("detailMeta").textContent = "Selectionne un budget pour voir le detail.";
+        $("detailHead").innerHTML = "";
+        $("detailRows").innerHTML = '<tr><td class="empty">Aucun budget selectionne.</td></tr>';
+        await refreshData();
+        await kentAlert("Budget supprimé.", { title: "Suppression terminée", tone: "success" });
+      }catch(error){
+        console.error("Delete budget failed", error);
+        await kentAlert(error?.message || "Impossible de supprimer ce budget.", { title: "Erreur suppression", tone: "danger" });
       }
     }
 
@@ -391,6 +414,7 @@
       if (action === "view") viewBudget(id);
       if (action === "edit") editBudget(id);
       if (action === "active" || action === "inactive") changeBudgetStatus(id, action);
+      if (action === "delete") deleteBudget(id);
     });
 
     refreshData();
