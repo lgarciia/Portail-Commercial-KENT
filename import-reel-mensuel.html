@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Import réel mensuel</title>
+  <script src="./app-data-config.js"></script>
+  <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
+  <style>
+    :root{
+      --bg:#08111f;
+      --panel:rgba(15,23,42,.86);
+      --panel2:rgba(2,6,23,.36);
+      --line:rgba(148,163,184,.18);
+      --text:#e8f0ff;
+      --muted:#9fb1ca;
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --gold:#f59e0b;
+      --red:#ef4444;
+      --shadow:0 24px 70px rgba(0,0,0,.34);
+      --r:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:"Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(56,189,248,.18), transparent 34%),
+        radial-gradient(circle at 88% 5%, rgba(245,158,11,.13), transparent 32%),
+        linear-gradient(135deg,#06111f 0%,#081827 54%,#04101c 100%);
+      padding:18px;
+    }
+    .wrap{max-width:1580px;margin:0 auto}
+    .topbar,.card{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg,rgba(15,23,42,.90),rgba(8,15,28,.84));
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(14px);
+    }
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      border-radius:26px;
+      padding:14px;
+      margin-bottom:12px;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:42px;height:42px;border-radius:15px;
+      background:linear-gradient(135deg,var(--blue),var(--gold));
+      box-shadow:0 16px 34px rgba(56,189,248,.18);
+    }
+    .title b{display:block;font-size:19px}
+    .title span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+    .actions,.row,.inline{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+    .actions{justify-content:flex-end}
+    .btn,.input{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      border-radius:14px;
+      font-weight:900;
+      text-decoration:none;
+      min-height:40px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:9px 12px;
+      cursor:pointer;
+      transition:.16s transform,.16s background,.16s border-color;
+      white-space:nowrap;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11)}
+    .btn.primary{background:linear-gradient(135deg,var(--blue),#2563eb);border-color:transparent}
+    .btn.green{background:linear-gradient(135deg,var(--green),#059669);border-color:transparent}
+    .btn.gold{color:#101827;background:linear-gradient(135deg,#fde68a,var(--gold));border-color:transparent}
+    .btn.red{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.34)}
+    .btn.small{min-height:31px;padding:5px 8px;border-radius:10px;font-size:11px}
+    .input{padding:0 12px;outline:none;min-width:190px}
+    .input.file{padding:9px 12px;min-width:310px}
+    .card{border-radius:var(--r);padding:14px;margin-top:12px}
+    .grid{display:grid;grid-template-columns:minmax(360px,.85fr) minmax(520px,1.35fr);gap:12px;align-items:start}
+    .field{display:flex;flex-direction:column;gap:6px}
+    label{font-size:11px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.04em}
+    .hint{color:var(--muted);font-size:12px;font-weight:750;line-height:1.4}
+    .drop{
+      border:1px dashed rgba(56,189,248,.34);
+      background:rgba(56,189,248,.06);
+      border-radius:18px;
+      padding:13px;
+      margin-top:10px;
+    }
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+    .kpi{border:1px solid rgba(255,255,255,.10);background:rgba(2,6,23,.28);border-radius:16px;padding:12px}
+    .kpi span{display:block;color:var(--muted);font-size:11px;font-weight:950;text-transform:uppercase}
+    .kpi strong{display:block;margin-top:5px;font-size:20px}
+    .status{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:5px 8px;border-radius:999px;font-size:11px;font-weight:950;
+      border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.07);
+    }
+    .status.active{color:#bbf7d0;background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.35)}
+    .status.inactive{color:#cbd5e1;background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.24)}
+    .tableWrap{overflow:auto;border-radius:16px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.30)}
+    table{border-collapse:collapse;width:100%;min-width:1060px}
+    th,td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.07);text-align:left;white-space:nowrap}
+    th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em;background:rgba(8,15,28,.96);position:sticky;top:0}
+    td{font-weight:820;font-size:13px}
+    .right{text-align:right}
+    .empty{padding:18px;color:var(--muted);font-weight:850}
+    .previewBox{
+      border:1px solid rgba(255,255,255,.10);
+      background:var(--panel2);
+      border-radius:18px;
+      padding:13px;
+      margin-top:10px;
+    }
+    .previewTitle{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+    .previewTitle strong{font-size:16px}
+    .cols{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .chip{border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.06);border-radius:999px;padding:5px 8px;color:var(--muted);font-size:11px;font-weight:900}
+    @media(max-width:1050px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:680px){body{padding:12px}.kpis{grid-template-columns:1fr}.input,.input.file,.btn{width:100%}.actions{width:100%;justify-content:stretch}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="title">
+          <b>Import réel mensuel</b>
+          <span>Importe un fichier Excel pour un mois, une année et une entité. Les reportings liront ensuite Supabase.</span>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn" href="index.html">Portail</a>
+        <a class="btn" href="accreport.html" data-year-link>Mes Reporting</a>
+        <a class="btn primary" href="reporting-selecteur.html?view=activite-reelle" data-year-link>Activité réelle</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="row">
+          <div class="field">
+            <label for="entitySelect">Entité</label>
+            <select class="input" id="entitySelect"></select>
+          </div>
+          <div class="field">
+            <label for="yearSelect">Année</label>
+            <select class="input" id="yearSelect"></select>
+          </div>
+          <div class="field">
+            <label for="monthSelect">Mois importé</label>
+            <select class="input" id="monthSelect"></select>
+          </div>
+        </div>
+
+        <div class="drop">
+          <div class="field">
+            <label for="fileInput">Fichier Excel du mois</label>
+            <input class="input file" id="fileInput" type="file" accept=".xlsx,.xls" />
+          </div>
+          <p class="hint">
+            L'outil lit tout le fichier, repère les colonnes utiles selon l'entité, puis affecte toutes les lignes au mois sélectionné.
+            Si le même mois existe déjà, l'ancien import actif passe en inactif.
+          </p>
+          <div class="inline">
+            <button class="btn" id="previewBtn" type="button">Prévisualiser</button>
+            <button class="btn green" id="importBtn" type="button" disabled>Importer dans Supabase</button>
+          </div>
+        </div>
+
+        <div class="previewBox" id="previewBox">
+          <div class="previewTitle">
+            <strong>Aucun fichier prévisualisé</strong>
+            <span class="status inactive">En attente</span>
+          </div>
+          <div class="hint">Choisis un fichier Excel, puis clique sur Prévisualiser.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="previewTitle">
+          <div>
+            <strong>Historique des imports réels</strong>
+            <div class="hint">Les imports actifs alimentent les reportings. Les imports inactifs restent supprimables si besoin.</div>
+          </div>
+          <button class="btn" id="refreshBtn" type="button">Actualiser</button>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><span>Imports</span><strong id="kpiImports">-</strong></div>
+          <div class="kpi"><span>Actifs</span><strong id="kpiActive">-</strong></div>
+          <div class="kpi"><span>Total actifs</span><strong id="kpiTotal">-</strong></div>
+          <div class="kpi"><span>Lignes actives</span><strong id="kpiLines">-</strong></div>
+        </div>
+        <div class="tableWrap" style="margin-top:12px">
+          <table>
+            <thead>
+              <tr>
+                <th>Entité</th>
+                <th>Année</th>
+                <th>Mois</th>
+                <th>Statut</th>
+                <th class="right">Total</th>
+                <th class="right">Lignes</th>
+                <th>Fichier</th>
+                <th>Importé le</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="importsRows"><tr><td colspan="9" class="empty">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="previewTitle">
+        <div>
+          <strong id="detailTitle">Détail import</strong>
+          <div class="hint" id="detailMeta">Sélectionne un import pour voir ses premières lignes.</div>
+        </div>
+      </div>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Client code</th>
+              <th>Client</th>
+              <th class="right">Montant</th>
+              <th>Référence</th>
+              <th>Désignation</th>
+              <th class="right">Quantité</th>
+            </tr>
+          </thead>
+          <tbody id="detailRows"><tr><td colspan="6" class="empty">Aucun import sélectionné.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
+    const num = new Intl.NumberFormat("fr-FR");
+    let entities = [];
+    let currentFile = null;
+    let currentParsed = null;
+    let currentSheetName = "";
+
+    function escapeHtml(value){
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function fmtCurrency(value){
+      return eur.format(Number(value || 0));
+    }
+
+    function fmtDate(value){
+      if (!value) return "-";
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("fr-FR", { dateStyle:"short", timeStyle:"short" });
+    }
+
+    function monthLabel(monthNumber){
+      return window.ReelSupabase.MONTHS.find(month => month.number === Number(monthNumber))?.label || `Mois ${monthNumber}`;
+    }
+
+    function selectedEntity(){
+      const id = $("entitySelect").value;
+      return entities.find(entity => String(entity.id) === String(id)) || null;
+    }
+
+    function pickBestSheet(workbook){
+      let bestName = workbook.SheetNames[0];
+      let bestScore = -1;
+      for (const sheetName of workbook.SheetNames){
+        const ws = workbook.Sheets[sheetName];
+        const ref = ws && ws["!ref"];
+        if (!ref) continue;
+        const range = XLSX.utils.decode_range(ref);
+        const score = (range.e.r - range.s.r + 1) * (range.e.c - range.s.c + 1);
+        if (score > bestScore){
+          bestScore = score;
+          bestName = sheetName;
+        }
+      }
+      return bestName;
+    }
+
+    function resetPreview(){
+      currentFile = null;
+      currentParsed = null;
+      currentSheetName = "";
+      $("importBtn").disabled = true;
+      $("previewBox").innerHTML = `
+        <div class="previewTitle">
+          <strong>Aucun fichier prévisualisé</strong>
+          <span class="status inactive">En attente</span>
+        </div>
+        <div class="hint">Choisis un fichier Excel, puis clique sur Prévisualiser.</div>
+      `;
+    }
+
+    async function previewFile(){
+      const entity = selectedEntity();
+      const file = $("fileInput").files?.[0] || null;
+      if (!entity) return await kentAlert("Sélectionne une entité.", { title:"Entité manquante", tone:"warning" });
+      if (!file) return await kentAlert("Sélectionne un fichier Excel.", { title:"Fichier manquant", tone:"warning" });
+
+      try{
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type:"array" });
+        currentSheetName = pickBestSheet(workbook);
+        const ws = workbook.Sheets[currentSheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
+        const parsed = window.ReelSupabase.parseRows(rows, {
+          entityKey: entity.key,
+          month: Number($("monthSelect").value)
+        });
+        currentFile = file;
+        currentParsed = parsed;
+        $("importBtn").disabled = !parsed.lines.length;
+        renderPreview(parsed, file.name, entity);
+      }catch(error){
+        console.error("Preview reel failed", error);
+        resetPreview();
+        await kentAlert(error?.message || "Impossible de lire ce fichier.", { title:"Prévisualisation impossible", tone:"danger" });
+      }
+    }
+
+    function renderPreview(parsed, fileName, entity){
+      const skipped = parsed.skipped || {};
+      const columns = parsed.columns || {};
+      const columnItems = Object.entries(columns)
+        .filter(([, value]) => value)
+        .map(([key, value]) => `<span class="chip">${escapeHtml(key)} : ${escapeHtml(value)}</span>`)
+        .join("");
+      $("previewBox").innerHTML = `
+        <div class="previewTitle">
+          <strong>${escapeHtml(fileName)}</strong>
+          <span class="status ${parsed.lines.length ? "active" : "inactive"}">${parsed.lines.length ? "Prêt" : "Aucune ligne"}</span>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><span>Entité</span><strong>${escapeHtml(entity.libelle)}</strong></div>
+          <div class="kpi"><span>Mois</span><strong>${escapeHtml(monthLabel($("monthSelect").value))}</strong></div>
+          <div class="kpi"><span>Total détecté</span><strong>${fmtCurrency(parsed.total)}</strong></div>
+          <div class="kpi"><span>Lignes</span><strong>${num.format(parsed.lines.length)}</strong></div>
+        </div>
+        <div class="hint" style="margin-top:10px">
+          Ignorées : ${num.format(skipped.empty || 0)} vide(s), ${num.format(skipped.noAmount || 0)} sans montant.
+        </div>
+        <div class="cols">${columnItems || '<span class="chip">Colonnes non détaillées</span>'}</div>
+      `;
+    }
+
+    async function importCurrentFile(){
+      const entity = selectedEntity();
+      if (!entity) return await kentAlert("Sélectionne une entité.", { title:"Entité manquante", tone:"warning" });
+      if (!currentParsed?.lines?.length || !currentFile) return await kentAlert("Prévisualise un fichier avant l'import.", { title:"Prévisualisation manquante", tone:"warning" });
+
+      const year = Number($("yearSelect").value);
+      const month = Number($("monthSelect").value);
+      const activeSameMonth = (await window.ReelSupabase.listImports({ year, entiteId: entity.id, includeInactive:false }))
+        .filter(row => Number(row.mois) === month);
+      const message = activeSameMonth.length
+        ? `Un réel actif existe déjà pour ${entity.libelle} ${monthLabel(month)} ${year}.\n\nLe nouvel import deviendra actif et l'ancien passera en inactif. Aucune ligne ne sera supprimée.`
+        : `Importer ${currentParsed.lines.length} ligne(s) pour ${entity.libelle} ${monthLabel(month)} ${year} ?`;
+      const confirmOptions = { title:"Importer le réel mensuel", confirmText:"Importer" };
+      if (activeSameMonth.length) confirmOptions.tone = "warning";
+      const ok = await kentConfirm(message, confirmOptions);
+      if (!ok) return;
+
+      try{
+        const saved = await window.ReelSupabase.saveMonthlyImport({
+          entiteId: entity.id,
+          entiteKey: entity.key,
+          entiteLabel: entity.libelle,
+          year,
+          month,
+          sourceFile: currentFile.name,
+          sheetName: currentSheetName,
+          parsed: currentParsed,
+          replaceActive: true
+        });
+        await kentAlert(
+          `Import enregistré : ${fmtCurrency(saved.importRow.total_mois)} - ${saved.importRow.nb_lignes} ligne(s).\nAncien(s) import(s) désactivé(s) : ${saved.replaced.length}.`,
+          { title:"Import terminé", tone:"success" }
+        );
+        $("fileInput").value = "";
+        resetPreview();
+        await refreshImports();
+      }catch(error){
+        console.error("Save reel import failed", error);
+        await kentAlert(error?.message || "Impossible d'enregistrer l'import réel.", { title:"Erreur import", tone:"danger" });
+      }
+    }
+
+    async function refreshEntities(){
+      entities = await window.BudgetSupabase.listEntities();
+      $("entitySelect").innerHTML = entities.map(entity => (
+        `<option value="${escapeHtml(entity.id)}">${escapeHtml(entity.libelle)}</option>`
+      )).join("");
+    }
+
+    async function refreshImports(){
+      const entityId = $("entitySelect").value || null;
+      const rows = await window.ReelSupabase.listImports({ year: Number($("yearSelect").value), entiteId, includeInactive:true });
+      const activeRows = rows.filter(row => row.statut === "active");
+      $("kpiImports").textContent = num.format(rows.length);
+      $("kpiActive").textContent = num.format(activeRows.length);
+      $("kpiTotal").textContent = fmtCurrency(activeRows.reduce((sum, row) => sum + Number(row.total_mois || 0), 0));
+      $("kpiLines").textContent = num.format(activeRows.reduce((sum, row) => sum + Number(row.nb_lignes || 0), 0));
+
+      if (!rows.length){
+        $("importsRows").innerHTML = '<tr><td colspan="9" class="empty">Aucun import réel trouvé pour ce filtre.</td></tr>';
+        return;
+      }
+
+      $("importsRows").innerHTML = rows.map(row => {
+        const active = row.statut === "active";
+        const entityLabel = row.budget_entites?.libelle || "-";
+        return `
+          <tr>
+            <td>${escapeHtml(entityLabel)}</td>
+            <td>${escapeHtml(row.annee)}</td>
+            <td>${escapeHtml(monthLabel(row.mois))}</td>
+            <td><span class="status ${active ? "active" : "inactive"}">${active ? "Actif" : "Inactif"}</span></td>
+            <td class="right">${fmtCurrency(row.total_mois)}</td>
+            <td class="right">${num.format(Number(row.nb_lignes || 0))}</td>
+            <td>${escapeHtml(row.source_file || "-")}</td>
+            <td>${fmtDate(row.imported_at || row.created_at)}</td>
+            <td>
+              <button class="btn small" type="button" data-action="view" data-id="${escapeHtml(row.id)}">Voir</button>
+              ${active ? "" : `<button class="btn small green" type="button" data-action="active" data-id="${escapeHtml(row.id)}">Activer</button>
+                <button class="btn small red" type="button" data-action="delete" data-id="${escapeHtml(row.id)}">Supprimer</button>`}
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function viewImport(id){
+      try{
+        const { importRow, lines } = await window.ReelSupabase.getImport(id);
+        const entityLabel = importRow.budget_entites?.libelle || "Entité";
+        $("detailTitle").textContent = `${entityLabel} - ${monthLabel(importRow.mois)} ${importRow.annee}`;
+        $("detailMeta").textContent = `${fmtCurrency(importRow.total_mois)} - ${lines.length} ligne(s) - affichage des 120 premières lignes.`;
+        $("detailRows").innerHTML = lines.slice(0, 120).map(line => `
+          <tr>
+            <td>${escapeHtml(line.client_code || "")}</td>
+            <td>${escapeHtml(line.client_nom || "")}</td>
+            <td class="right">${fmtCurrency(line.montant)}</td>
+            <td>${escapeHtml(line.reference || "")}</td>
+            <td>${escapeHtml(line.designation || "")}</td>
+            <td class="right">${num.format(Number(line.quantite || 0))}</td>
+          </tr>
+        `).join("") || '<tr><td colspan="6" class="empty">Aucune ligne.</td></tr>';
+      }catch(error){
+        console.error("View import failed", error);
+        await kentAlert(error?.message || "Impossible de charger cet import.", { title:"Erreur détail", tone:"danger" });
+      }
+    }
+
+    async function activateImport(id){
+      const ok = await kentConfirm(
+        "Rendre cet import actif ?\n\nL'import actif actuel du même mois passera en inactif. Aucune ligne ne sera supprimée.",
+        { title:"Activer l'import", tone:"warning", confirmText:"Activer" }
+      );
+      if (!ok) return;
+      try{
+        await window.ReelSupabase.activateImport(id);
+        await refreshImports();
+        await kentAlert("Import activé.", { title:"Activation terminée", tone:"success" });
+      }catch(error){
+        console.error("Activate import failed", error);
+        await kentAlert(error?.message || "Impossible d'activer cet import.", { title:"Erreur activation", tone:"danger" });
+      }
+    }
+
+    async function deleteImport(id){
+      const { importRow } = await window.ReelSupabase.getImport(id);
+      if (importRow.statut === "active") {
+        await kentAlert("Par sécurité, un import actif ne peut pas être supprimé ici. Active d'abord un autre import du même mois.", { title:"Import actif protégé", tone:"warning" });
+        return;
+      }
+      const first = await kentConfirm(
+        `Supprimer définitivement l'import inactif "${importRow.nom}" ?\n\nLes lignes de cet import seront supprimées. Les autres imports, budgets, ventes et clients ne seront pas touchés.`,
+        { title:"Supprimer l'import", tone:"danger", confirmText:"Continuer" }
+      );
+      if (!first) return;
+      const typed = await kentPrompt("Dernière sécurité : tape SUPPRIMER pour confirmer.", "", { title:"Confirmation finale" });
+      if (String(typed || "").trim().toUpperCase() !== "SUPPRIMER") return;
+      try{
+        await window.ReelSupabase.deleteImport(id);
+        await refreshImports();
+        await kentAlert("Import supprimé.", { title:"Suppression terminée", tone:"success" });
+      }catch(error){
+        console.error("Delete import failed", error);
+        await kentAlert(error?.message || "Impossible de supprimer cet import.", { title:"Erreur suppression", tone:"danger" });
+      }
+    }
+
+    function initControls(){
+      KentDataConfig.fillYearSelect($("yearSelect"), { selectedYear: KentDataConfig.getActiveYear() });
+      KentDataConfig.applyYearToLinks(document, Number($("yearSelect").value));
+      const now = new Date();
+      const defaultMonth = now.getMonth() === 0 ? 12 : now.getMonth();
+      $("monthSelect").innerHTML = window.ReelSupabase.MONTHS.map(month => (
+        `<option value="${month.number}">${escapeHtml(month.label)}</option>`
+      )).join("");
+      $("monthSelect").value = String(defaultMonth);
+    }
+
+    async function init(){
+      try{
+        initControls();
+        await refreshEntities();
+        await refreshImports();
+      }catch(error){
+        console.error("Init import reel failed", error);
+        $("importsRows").innerHTML = '<tr><td colspan="9" class="empty">Supabase réel non prêt. Vérifie que le SQL reel_mensuel est bien lancé.</td></tr>';
+        await kentAlert(error?.message || "Impossible d'initialiser l'import réel.", { title:"Initialisation impossible", tone:"danger" });
+      }
+    }
+
+    $("previewBtn").addEventListener("click", previewFile);
+    $("importBtn").addEventListener("click", importCurrentFile);
+    $("refreshBtn").addEventListener("click", refreshImports);
+    $("fileInput").addEventListener("change", resetPreview);
+    $("entitySelect").addEventListener("change", async () => { resetPreview(); await refreshImports(); });
+    $("monthSelect").addEventListener("change", resetPreview);
+    $("yearSelect").addEventListener("change", async () => {
+      const year = KentDataConfig.setActiveYear(Number($("yearSelect").value));
+      $("yearSelect").value = String(year);
+      KentDataConfig.applyYearToLinks(document, year);
+      resetPreview();
+      await refreshImports();
+    });
+    $("importsRows").addEventListener("click", event => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const action = button.dataset.action;
+      const id = button.dataset.id;
+      if (action === "view") viewImport(id);
+      if (action === "active") activateImport(id);
+      if (action === "delete") deleteImport(id);
+    });
+
+    init();
+  </script>
+</body>
+</html>
