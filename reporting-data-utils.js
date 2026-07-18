@@ -246,8 +246,21 @@
 
   async function loadBudgetData(options){
     options = options || {};
+    const allowExcelFallback = options.allowExcelFallback !== false;
     const supabaseBudget = await loadActiveBudgetDataFromSupabase(options || {});
     if (supabaseBudget) return supabaseBudget;
+
+    if (!allowExcelFallback) {
+      return {
+        budgetData: { clients: [] },
+        meta: {
+          source: "supabase_empty",
+          fileName: "Aucun budget actif",
+          usedUrl: "Supabase budgets actifs",
+          sheetName: "Aucun budget actif",
+        },
+      };
+    }
 
     const fileName = options.fileName || options.fileCandidates;
     const budgetConfig = options.budgetConfig || {};
@@ -269,10 +282,12 @@
     if (!options || options.preferSupabase === false) return null;
     if (!options.entityKey || !options.year) return null;
     if (!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return null;
+    const allowExcelFallback = options.allowExcelFallback !== false;
 
     try{
       return await window.BudgetSupabase.getActiveBudgetData(options.entityKey, options.year);
     }catch(error){
+      if (!allowExcelFallback) throw error;
       console.warn("Budget actif Supabase indisponible, fallback Excel:", error?.message || error);
       return null;
     }
@@ -298,6 +313,7 @@
     const year = Number.isFinite(options.year) ? options.year : null;
     if (!entityKey || !year) return null;
     if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return null;
+    const allowExcelFallback = options.allowExcelFallback !== false;
 
     try{
       const rows = await window.ReelSupabase.getActiveLinesByEntityYear(entityKey, year);
@@ -354,6 +370,7 @@
         },
       };
     }catch(error){
+      if (!allowExcelFallback) throw error;
       console.warn("Reel Supabase indisponible, fallback Excel:", error?.message || error);
       return null;
     }
@@ -463,6 +480,23 @@
 
     const supabaseReal = await loadRealDataFromSupabase(options);
     if (supabaseReal) return supabaseReal;
+
+    if (options.allowExcelFallback === false) {
+      return {
+        realData: {},
+        realRows: [],
+        activiteClients: [],
+        meta: {
+          source: "supabase_empty",
+          fileName: "Aucun reel actif",
+          usedUrl: "Supabase reel actif",
+          sheetName: "v_reel_lignes_actives",
+          usedDateColumn: "date_piece",
+          usedMonthColumn: "mois",
+          usedYearColumn: "annee",
+        },
+      };
+    }
 
     const { buffer, usedUrl, usedFileName } = await fetchXlsxWithFallback(fileName);
     const workbook = XLSX.read(buffer, { type: "array" });

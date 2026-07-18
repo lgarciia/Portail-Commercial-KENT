@@ -7,10 +7,11 @@
   <title>Vue semaine</title>
   <script src="./shared-ui.js"></script>
 
-  <!-- SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
 
-  <style>
+    <style>
     :root{
       --bg:#0b0f17;
       --panel:rgba(255,255,255,0.06);
@@ -131,7 +132,7 @@
       font-weight:950;
     }
 
-    /* ✅ colonne commentaire */
+    /* âœ… colonne commentaire */
     .cmt{
       width:100%;
       min-width:320px;
@@ -160,11 +161,11 @@
       <div class="logo"></div>
       <div class="titleWrap">
         <div class="title" id="tTitle">Vue semaine</div>
-        <div class="subtitle" id="tSub">—</div>
+        <div class="subtitle" id="tSub">-</div>
       </div>
     </div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-      <button class="btn" id="btnBack">← Retour</button>
+      <button class="btn" id="btnBack">Retour</button>
       <button class="btn primary" id="btnReload">Recharger</button>
     </div>
   </div>
@@ -173,12 +174,12 @@
     <div class="card">
       <div class="status">
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-          <div class="chip"><span class="dot" id="dotBudget"></span>Budget (fetch) : <b id="sBudget">—</b></div>
-          <div class="chip"><span class="dot" id="dotReel"></span>Réel (fetch) : <b id="sReel">—</b></div>
-          <div class="chip">Mois : <b id="sMonth">—</b></div>
-          <div class="chip">Budget semaine = <b id="sBw">—</b></div>
+          <div class="chip"><span class="dot" id="dotBudget"></span>Budget Supabase : <b id="sBudget">-</b></div>
+          <div class="chip"><span class="dot" id="dotReel"></span>Réel Supabase : <b id="sReel">-</b></div>
+          <div class="chip">Mois : <b id="sMonth">-</b></div>
+          <div class="chip">Budget semaine = <b id="sBw">-</b></div>
         </div>
-        <div class="chip" id="debugLine" style="max-width:100%;overflow:hidden;text-overflow:ellipsis;">—</div>
+        <div class="chip" id="debugLine" style="max-width:100%;overflow:hidden;text-overflow:ellipsis;">-</div>
       </div>
 
       <div class="tableWrap">
@@ -190,19 +191,29 @@
 
 <script>
 (async function(){
-  // ============================
-  // QUERY PARAMS (COPY/PASTE)
-  // ============================
   const qs = new URLSearchParams(location.search);
 
-  const entity     = qs.get("entity") || "ENTITY";
-  const year       = Number(qs.get("year") || new Date().getFullYear());
-  const monthKey   = (qs.get("month") || "jan").toLowerCase();
-  const monthLabel = qs.get("monthLabel") || monthKey;
+  const MONTHS = [
+    { key:"jan", label:"Janvier", number:1 },
+    { key:"feb", label:"Fevrier", number:2 },
+    { key:"mar", label:"Mars", number:3 },
+    { key:"apr", label:"Avril", number:4 },
+    { key:"may", label:"Mai", number:5 },
+    { key:"jun", label:"Juin", number:6 },
+    { key:"jul", label:"Juillet", number:7 },
+    { key:"aug", label:"Aout", number:8 },
+    { key:"sep", label:"Septembre", number:9 },
+    { key:"oct", label:"Octobre", number:10 },
+    { key:"nov", label:"Novembre", number:11 },
+    { key:"dec", label:"Decembre", number:12 },
+  ];
 
-  const realFile   = qs.get("realFile") || "";
-  const dateColStr = qs.get("dateCol") || "Date vente";
-  const budgetFile = qs.get("budgetFile") || "";
+  const entityLabel = qs.get("entity") || "Entité";
+  const entityKey = normalizeEntityKey(qs.get("entityKey") || entityLabel);
+  const year = Number(qs.get("year") || new Date().getFullYear());
+  const monthKey = (qs.get("month") || "jan").toLowerCase();
+  const month = MONTHS.find(item => item.key === monthKey) || MONTHS[0];
+  const monthLabel = qs.get("monthLabel") || month.label;
 
   const el = {
     tTitle: document.getElementById("tTitle"),
@@ -220,13 +231,11 @@
   };
 
   const nf0 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits:0 });
+  const COMMENT_KEY = `WEEK_VIEW_COMMENTS_${slug(entityKey)}_${year}_${month.key}`;
 
-  el.tTitle.textContent = `Vue semaine — ${entity}`;
-  el.tSub.textContent = `Réel: ${realFile || "?"} • Budget: ${budgetFile || "?"} • Date: "${dateColStr}"`;
+  el.tTitle.textContent = `Vue semaine - ${entityLabel}`;
+  el.tSub.textContent = "Source Supabase : budget actif + réel actif";
   el.sMonth.textContent = `${monthLabel} ${year}`;
-
-  // ✅ commentaires : clé stable (entité + année + mois)
-  const COMMENT_KEY = `WEEK_VIEW_COMMENTS_${slug(entity)}_${year}_${monthKey}`;
 
   el.btnBack.addEventListener("click", () => history.back());
   el.btnReload.addEventListener("click", () => run());
@@ -234,20 +243,17 @@
   await run();
 
   async function run(){
-    // init
     setDot(el.dotBudget, "warn");
     setDot(el.dotReel, "warn");
-    el.sBudget.textContent = "chargement…";
-    el.sReel.textContent = "chargement…";
-    el.sBw.textContent = "—";
-    el.debugLine.textContent = "—";
+    el.sBudget.textContent = "chargement...";
+    el.sReel.textContent = "chargement...";
+    el.sBw.textContent = "-";
+    el.debugLine.textContent = "Supabase en cours de lecture...";
 
-    // 1) fetch budget month total
     let budgetMonth = 0;
     try{
-      if (!budgetFile) throw new Error("budgetFile manquant");
-      budgetMonth = await fetchBudgetMonthTotal(budgetFile, monthLabel);
-      setDot(el.dotBudget, "ok");
+      budgetMonth = await loadBudgetMonthTotal();
+      setDot(el.dotBudget, budgetMonth ? "ok" : "warn");
       el.sBudget.textContent = nf0.format(Math.round(budgetMonth));
     }catch(err){
       console.error(err);
@@ -255,74 +261,85 @@
       el.sBudget.textContent = "erreur";
     }
 
-    // budget / 4 (4 semaines fixes)
     const budgetWeek = budgetMonth / 4;
     el.sBw.textContent = nf0.format(Math.round(budgetWeek));
 
-    // 2) fetch real weekly totals
-    let wReal = [0,0,0,0];
-    let usedLines = 0;
-    let dbg = "";
-
+    let realInfo = { weekly:[0,0,0,0], undated:0, usedLines:0, undatedLines:0, total:0 };
     try{
-      if (!realFile) throw new Error("realFile manquant");
-
-      const rows = await fetchXlsxRows(realFile);
-      const headerMap = buildHeaderMap(rows[0] || {});
-
-      const colDate = findCol(headerMap, [dateColStr, "date vente", "date"]);
-      const colAmt  = findCol(headerMap, [
-        "ca total",
-        "montant prix achat kent",
-        "montant",
-        "ca",
-        "chiffre d'affaire",
-        "chiffre affaire"
-      ]);
-
-      if (!colAmt) throw new Error("colonne montant introuvable");
-      if (!colDate) throw new Error(`colonne date introuvable (attendu "${dateColStr}")`);
-
-      for (const r of rows){
-        const dt = parseAnyDate_FR(r[colDate]); // ✅ DD/MM/YYYY
-        if (!dt) continue;
-        if (dt.getFullYear() !== year) continue;
-        if (monthFromDate(dt) !== monthKey) continue;
-
-        const amt = toNumber(r[colAmt]);
-        if (!amt) continue;
-
-        const wi = weekBucket(dt); // 0..3
-        wReal[wi] += amt;
-        usedLines++;
-      }
-
-      dbg = `Réel OK • lignes retenues: ${usedLines} • colDate="${colDate}" • colAmt="${colAmt}"`;
+      realInfo = await loadWeeklyReal();
       setDot(el.dotReel, "ok");
-      el.sReel.textContent = nf0.format(Math.round(wReal.reduce((a,b)=>a+b,0)));
+      el.sReel.textContent = nf0.format(Math.round(realInfo.total));
+      el.debugLine.textContent = `Réel Supabase OK - ${realInfo.usedLines} ligne(s)` + (realInfo.undatedLines ? ` - ${realInfo.undatedLines} ligne(s) sans date` : "");
     }catch(err){
       console.error(err);
-      dbg = `Réel KO • ${String(err.message || err)}`;
       setDot(el.dotReel, "bad");
       el.sReel.textContent = "erreur";
+      el.debugLine.textContent = `Réel Supabase KO - ${String(err.message || err)}`;
     }
 
-    el.debugLine.textContent = dbg;
-
-    // 3) render + commentaires
-    renderTable(wReal, budgetWeek);
+    renderTable(realInfo, budgetWeek);
     bindComments();
   }
 
-  function renderTable(wReal, budgetWeek){
-    const wBudget = [budgetWeek, budgetWeek, budgetWeek, budgetWeek];
-    const wEcart = wReal.map((r,i)=> r - wBudget[i]);
+  async function loadBudgetMonthTotal(){
+    if (!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") {
+      throw new Error("Budget Supabase indisponible.");
+    }
+    const result = await window.BudgetSupabase.getActiveBudgetData(entityKey, year);
+    const clients = result?.budgetData?.clients || [];
+    if (!clients.length) return 0;
 
-    const cumReal = wReal.reduce((a,b)=>a+b,0);
-    const cumBudget = wBudget.reduce((a,b)=>a+b,0);
-    const cumEcart = cumReal - cumBudget;
+    return clients.reduce((sum, client) => {
+      const value = client?.budget?.[month.key];
+      return sum + toNumber(value);
+    }, 0);
+  }
+
+  async function loadWeeklyReal(){
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") {
+      throw new Error("Réel Supabase indisponible.");
+    }
+    const rows = await window.ReelSupabase.getActiveLinesByEntityYear(entityKey, year);
+    const weekly = [0,0,0,0];
+    let undated = 0;
+    let usedLines = 0;
+    let undatedLines = 0;
+
+    for (const row of rows || []){
+      if (Number(row.mois) !== month.number) continue;
+      const amount = toNumber(row.montant);
+      if (!amount) continue;
+
+      const dt = parseIsoDate(row.date_piece);
+      if (dt) weekly[weekBucket(dt)] += amount;
+      else {
+        undated += amount;
+        undatedLines += 1;
+      }
+      usedLines += 1;
+    }
+
+    const total = weekly.reduce((sum, value) => sum + value, 0) + undated;
+    return { weekly, undated, usedLines, undatedLines, total };
+  }
+
+  function renderTable(realInfo, budgetWeek){
+    const wReal = realInfo.weekly || [0,0,0,0];
+    const rows = [0,1,2,3].map(index => ({
+      key: `w${index + 1}`,
+      label: `Semaine ${index + 1}`,
+      real: wReal[index] || 0,
+      budget: budgetWeek,
+    }));
+
+    if (realInfo.undated){
+      rows.push({ key:"undated", label:"Sans date", real: realInfo.undated, budget:0 });
+    }
 
     const cmts = loadComments();
+    const totalReal = rows.reduce((sum, row) => sum + row.real, 0);
+    const totalBudget = budgetWeek * 4;
+    const totalEcart = totalReal - totalBudget;
 
     el.table.innerHTML = `
       <thead>
@@ -335,24 +352,27 @@
         </tr>
       </thead>
       <tbody>
-        ${[0,1,2,3].map(i => `
-          <tr>
-            <td>Semaine ${i+1}</td>
-            <td class="num">${fmt(wReal[i])}</td>
-            <td class="num">${fmt(wBudget[i])}</td>
-            <td class="num ${ecartClass(wEcart[i])}">${fmt(wEcart[i])}</td>
-            <td style="text-align:left">
-              <input class="cmt" data-cmt="w${i+1}" placeholder="Note semaine ${i+1}…" value="${escAttr(cmts[`w${i+1}`] || "")}">
-            </td>
-          </tr>
-        `).join("")}
+        ${rows.map(row => {
+          const ecart = row.real - row.budget;
+          return `
+            <tr>
+              <td>${esc(row.label)}</td>
+              <td class="num">${fmt(row.real)}</td>
+              <td class="num">${fmt(row.budget)}</td>
+              <td class="num ${ecartClass(ecart)}">${fmt(ecart)}</td>
+              <td style="text-align:left">
+                <input class="cmt" data-cmt="${escAttr(row.key)}" placeholder="Note ${escAttr(row.label.toLowerCase())}..." value="${escAttr(cmts[row.key] || "")}">
+              </td>
+            </tr>
+          `;
+        }).join("")}
         <tr class="rowTotal">
           <td>Cumul</td>
-          <td class="num">${fmt(cumReal)}</td>
-          <td class="num">${fmt(cumBudget)}</td>
-          <td class="num ${ecartClass(cumEcart)}">${fmt(cumEcart)}</td>
+          <td class="num">${fmt(totalReal)}</td>
+          <td class="num">${fmt(totalBudget)}</td>
+          <td class="num ${ecartClass(totalEcart)}">${fmt(totalEcart)}</td>
           <td style="text-align:left">
-            <input class="cmt" data-cmt="cum" placeholder="Note cumul…" value="${escAttr(cmts.cum || "")}">
+            <input class="cmt" data-cmt="cum" placeholder="Note cumul..." value="${escAttr(cmts.cum || "")}">
           </td>
         </tr>
       </tbody>
@@ -362,8 +382,7 @@
   }
 
   function bindComments(){
-    const inputs = el.table.querySelectorAll("input[data-cmt]");
-    inputs.forEach(inp => {
+    el.table.querySelectorAll("input[data-cmt]").forEach(inp => {
       inp.addEventListener("input", () => {
         const key = inp.getAttribute("data-cmt");
         const data = loadComments();
@@ -379,149 +398,65 @@
       return raw ? JSON.parse(raw) : {};
     }catch{ return {}; }
   }
+
   function saveComments(obj){
     try{ localStorage.setItem(COMMENT_KEY, JSON.stringify(obj || {})); }catch{}
   }
 
-  // ============================
-  // FETCH XLSX (GitHub safe + PK check)
-  // ============================
-  async function fetchXlsxRows(file){
-    const url = file + (file.includes("?") ? "&" : "?") + "v=" + Date.now();
-    const res = await fetch(url, { cache:"no-store" });
-    const buf = await res.arrayBuffer();
-    if (!res.ok) throw new Error("HTTP " + res.status);
-
-    const u8 = new Uint8Array(buf);
-    if (!(u8[0] === 0x50 && u8[1] === 0x4B)) throw new Error("pas un XLSX (PK manquant)");
-
-    const wb = XLSX.read(buf, { type:"array" });
-    const sheet = pickBestSheet(wb);
-    const ws = wb.Sheets[sheet];
-    const rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
-    if (!rows.length) throw new Error("xlsx vide");
-    return rows;
+  function normalizeEntityKey(value){
+    const normalized = slug(value);
+    const aliases = {
+      psa:"psa",
+      gueudet:"gueudet",
+      ford:"ford",
+      direct:"direct",
+      gd:"gueudet",
+      floraldirect:"direct",
+      "floral-direct":"direct"
+    };
+    return aliases[normalized] || normalized || "psa";
   }
 
-  // ============================
-  // BUDGET fetch : somme de la colonne du mois
-  // ============================
-  async function fetchBudgetMonthTotal(budgetFile, monthLabelFR){
-    const rows = await fetchXlsxRows(budgetFile);
-    const headerMap = buildHeaderMap(rows[0] || {});
-    const colMonth = findCol(headerMap, [monthLabelFR]);
-    if (!colMonth) throw new Error(`colonne budget mois introuvable: "${monthLabelFR}"`);
+  function parseIsoDate(value){
+    if (!value && value !== 0) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+    const raw = String(value || "").trim();
+    if (!raw) return null;
 
-    let sum = 0;
-    for (const r of rows) sum += toNumber(r[colMonth]);
-    return sum;
-  }
-
-  // ============================
-  // DATE parsing : ✅ DD/MM/YYYY prioritaire
-  // ============================
-  function parseAnyDate_FR(v){
-    if (!v && v !== 0) return null;
-
-    if (v instanceof Date && !isNaN(v.getTime())) return v;
-
-    // Excel serial
-    if (typeof v === "number" && isFinite(v)){
-      const d = XLSX.SSF.parse_date_code(v);
-      if (!d) return null;
-      const dt = new Date(d.y, (d.m||1)-1, d.d||1);
-      return isNaN(dt.getTime()) ? null : dt;
+    const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (iso){
+      const date = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+      return Number.isNaN(date.getTime()) ? null : date;
     }
 
-    const s = String(v).trim();
-    if (!s) return null;
-
-    // ✅ dd/mm/yyyy (ou dd-mm-yyyy / dd.mm.yyyy)
-    const m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
-    if (m){
-      const dd = Number(m[1]);
-      const mm = Number(m[2]);
-      const yy = Number(m[3]);
-      const yyyy = yy < 100 ? (2000 + yy) : yy;
-      const dt = new Date(yyyy, mm-1, dd);
-      return isNaN(dt.getTime()) ? null : dt;
+    const fr = raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+    if (fr){
+      const yearValue = Number(fr[3]) < 100 ? 2000 + Number(fr[3]) : Number(fr[3]);
+      const date = new Date(yearValue, Number(fr[2]) - 1, Number(fr[1]));
+      return Number.isNaN(date.getTime()) ? null : date;
     }
 
-    const t = Date.parse(s);
-    return isNaN(t) ? null : new Date(t);
+    const timestamp = Date.parse(raw);
+    return Number.isNaN(timestamp) ? null : new Date(timestamp);
   }
 
-  // 4 semaines fixes : 1..7 / 8..14 / 15..21 / 22..fin
   function weekBucket(date){
-    const d = date.getDate();
-    if (d <= 7) return 0;
-    if (d <= 14) return 1;
-    if (d <= 21) return 2;
+    const day = date.getDate();
+    if (day <= 7) return 0;
+    if (day <= 14) return 1;
+    if (day <= 21) return 2;
     return 3;
   }
 
-  function monthFromDate(date){
-    const keys = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
-    return keys[date.getMonth()] || "jan";
+  function toNumber(value){
+    if (value === null || value === undefined) return 0;
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    const parsed = Number(String(value).trim().replace(/\s/g, "").replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  // ============================
-  // XLSX helpers
-  // ============================
-  function pickBestSheet(wb){
-    let best = wb.SheetNames[0];
-    let bestScore = -1;
-    for (const name of wb.SheetNames){
-      const ws = wb.Sheets[name];
-      const ref = ws && ws["!ref"];
-      if (!ref) continue;
-      const range = XLSX.utils.decode_range(ref);
-      const rows = (range.e.r - range.s.r + 1);
-      const cols = (range.e.c - range.s.c + 1);
-      const score = rows * cols;
-      if (score > bestScore){
-        bestScore = score;
-        best = name;
-      }
-    }
-    return best;
-  }
-
-  function buildHeaderMap(sampleRow){
-    const map = {};
-    for (const k of Object.keys(sampleRow || {})){
-      map[normKey(k)] = k;
-    }
-    return map;
-  }
-
-  function findCol(headerMap, candidates){
-    for (const c of candidates){
-      const nk = normKey(c);
-      if (headerMap[nk]) return headerMap[nk];
-    }
-    return null;
-  }
-
-  function normKey(s){
-    return String(s || "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-      .replace(/\s+/g," ");
-  }
-
-  function toNumber(v){
-    if (v === null || v === undefined) return 0;
-    if (typeof v === "number") return isFinite(v) ? v : 0;
-    const s = String(v).trim();
-    if (!s) return 0;
-    const n = Number(s.replace(/\s/g,"").replace(",","."));
-    return isFinite(n) ? n : 0;
-  }
-
-  function ecartClass(v){
-    const n = Math.round(Number(v)||0);
+  function ecartClass(value){
+    const n = Math.round(Number(value)||0);
     if (n > 0) return "pos";
     if (n < 0) return "neg";
     return "zero";
@@ -531,24 +466,22 @@
     dotEl.className = "dot " + (type === "ok" ? "ok" : type === "bad" ? "bad" : "warn");
   }
 
-  function escAttr(str){
-    return String(str ?? "")
-      .replace(/&/g,"&amp;")
-      .replace(/</g,"&lt;")
-      .replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;")
-      .replace(/'/g,"&#39;");
+  function esc(str){
+    return String(str ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+    }[s]));
   }
+
+  function escAttr(str){ return esc(str).replace(/"/g, "&quot;"); }
 
   function slug(str){
     return String(str || "")
       .trim()
       .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g,"-")
       .replace(/(^-|-$)/g,"");
   }
-
 })();
 </script>
 </body>

@@ -10,10 +10,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
   <script src="./reel-supabase.js"></script>
-
-  <!-- SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
   <style>
     :root{
       --bg:#0b0f17;
@@ -344,16 +340,6 @@
     YEAR_MIN: 2024,
     YEAR_MAX: 2028,
 
-    BUDGET_FILES: {
-    2024: "budgetford.xlsx",
-    2025: "budgetford.xlsx",
-    2026: "budgetford.xlsx",
-    2027: "budgetford.xlsx",
-    2028: "budgetford.xlsx",
-    },
-
-    REAL_FILE: "activitereelford.xlsx",
-
     // ✅ IMPORTANT : Ford/Direct = Date commande
     REAL_DATE_COL: "Date commande",
 
@@ -440,100 +426,55 @@
     el.yearText.textContent = `Année : ${selectedYear}`;
   }
 
-  async function loadSupabaseBudgetMonthly(entityKey, year){
-    if(!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return null;
-    try{
-      const result = await window.BudgetSupabase.getActiveBudgetData(entityKey, year);
-      const clients = result && result.budgetData && Array.isArray(result.budgetData.clients)
-        ? result.budgetData.clients
-        : [];
-      if(!clients.length) return null;
-
-      const monthKeys = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
-      const monthly = monthKeys.map(key => clients.reduce((sum, client) => {
-        const budget = client.budget || {};
-        const value = Number(budget[key]);
-        return sum + (Number.isFinite(value) ? value : 0);
-      }, 0));
-
-      return { monthly, meta: result.meta || {}, clientCount: clients.length };
-    }catch(error){
-      console.warn("Budget actif Supabase indisponible, fallback Excel:", error && error.message ? error.message : error);
-      return null;
-    }
+  function computeBudgetMonthlyFromClients(clients){
+    const monthKeys = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+    return monthKeys.map(key => (clients || []).reduce((sum, client) => {
+      const budget = client?.budget || {};
+      const value = Number(budget[key]);
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0));
   }
-  /* =========================
-     BUDGET
-  ========================= */
+
   async function loadBudgetForYear(year){
-    const file = KentDataConfig.getEntityFile("ford", "budget", year);
-    el.budgetText.textContent = "Budget : chargement du budget actif...";
+    el.budgetText.textContent = "Budget : chargement Supabase...";
     setDot(el.dotBudget, "warn");
     setDot(el.dotUrlBudget, "warn");
-    el.urlBudgetText.textContent = "Source budget : —";
-    const supabaseBudget = await loadSupabaseBudgetMonthly("ford", year);
-    if(supabaseBudget){
-      budgetMonthly = supabaseBudget.monthly;
-      el.urlBudgetText.textContent = "Source budget : Supabase budgets actifs";
-      setDot(el.dotUrlBudget, "ok");
-      el.budgetText.textContent = "Budget : OK Supabase actif (FORD) - " + supabaseBudget.clientCount + " client(s)";
-      setDot(el.dotBudget, "ok");
-      return;
-    }
+    el.urlBudgetText.textContent = "Source budget : Supabase budgets actifs";
 
     try{
-      const {buffer, usedUrl} = await fetchXlsxWithFallback(file);
-      el.urlBudgetText.textContent = `Source budget : Excel secours (${usedUrl})`;
-      setDot(el.dotUrlBudget, "ok");
-
-      const wb = XLSX.read(buffer, { type: "array" });
-      const sheetName = pickBestSheet(wb);
-      const ws = wb.Sheets[sheetName];
-      const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
-
-      if (!raw.length){
-        budgetMonthly = new Array(12).fill(0);
-        el.budgetText.textContent = `Budget : fichier vide`;
-        setDot(el.dotBudget, "bad");
-        return;
+      if(!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function"){
+        throw new Error("Budget Supabase indisponible");
       }
-
-      const headerMap = buildHeaderMap(raw[0]);
-      const monthCols = MONTHS.map(m => findCol(headerMap, [m]));
-      const missing = monthCols.map((c,i)=>!c?MONTHS[i]:null).filter(Boolean);
-      if (missing.length){
-        budgetMonthly = new Array(12).fill(0);
-        el.budgetText.textContent = `Budget : colonnes mois manquantes (${missing.join(", ")})`;
-        setDot(el.dotBudget, "bad");
-        return;
-      }
-
-      const sums = new Array(12).fill(0);
-      for (const r of raw){
-        for (let i=0;i<12;i++) sums[i] += toNumber(r[monthCols[i]]);
-      }
-      budgetMonthly = sums;
-
-      el.budgetText.textContent = `Budget : OK Excel secours - ${sheetName}`;
-      setDot(el.dotBudget, "ok");
-    }catch(err){
-      console.error(err);
+      const result = await window.BudgetSupabase.getActiveBudgetData(CONFIG.ENTITY_KEY, year);
+      const clients = result?.budgetData?.clients || [];
+      budgetMonthly = computeBudgetMonthlyFromClients(clients);
+      const hasBudget = Boolean(result && clients.length);
+      setDot(el.dotUrlBudget, hasBudget ? "ok" : "warn");
+      setDot(el.dotBudget, hasBudget ? "ok" : "warn");
+      el.budgetText.textContent = hasBudget
+        ? `Budget : OK Supabase actif (${CONFIG.LABEL}) - ${clients.length} client(s)`
+        : `Budget : Supabase actif à 0 (${CONFIG.LABEL})`;
+      el.urlBudgetText.textContent = "Source budget : Supabase budgets actifs";
+    }catch(error){
+      console.error(error);
       budgetMonthly = new Array(12).fill(0);
-      el.budgetText.textContent = "Budget : source indisponible";
+      el.budgetText.textContent = "Budget : erreur Supabase";
       setDot(el.dotBudget, "bad");
       setDot(el.dotUrlBudget, "bad");
-      el.urlBudgetText.textContent = "Source budget : erreur";
+      el.urlBudgetText.textContent = "Source budget : erreur Supabase";
     }
   }
 
-  /* =========================
-     REAL
-     ✅ FIX PRODUIT : colDes inclut "Description produit"
-  ========================= */
-  async function loadRealFromSupabase(year){
-    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return false;
+  async function loadRealForYear(year){
+    el.realText.textContent = "Réalisé : chargement Supabase...";
+    setDot(el.dotReal, "warn");
+    setDot(el.dotUrlReal, "warn");
+    el.urlRealText.textContent = "URL réalisé : Supabase réel actif";
 
     try{
+      if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") {
+        throw new Error("Reel Supabase indisponible");
+      }
       const sourceRows = await window.ReelSupabase.getActiveLinesByEntityYear(CONFIG.ENTITY_KEY, year);
       const sums = new Array(12).fill(0);
       const rows = [];
@@ -565,125 +506,16 @@
       el.urlRealText.textContent = "URL réalisé : Supabase réel actif";
       setDot(el.dotUrlReal, "ok");
       const countProducts = rows.filter(row => row.ref || row.des).length;
-      el.realText.textContent = `Réalisé : OK Supabase réel actif - ${rows.length} ligne(s) - ${countProducts} produit(s) détecté(s)`;
+      el.realText.textContent = `Réalisé : OK Supabase - ${rows.length} ligne(s) - ${countProducts} produit(s) détecté(s)`;
       setDot(el.dotReal, "ok");
-      return true;
     }catch(error){
-      console.warn("Reel Supabase indisponible, fallback Excel:", error && error.message ? error.message : error);
-      return false;
-    }
-  }
-  async function loadRealForYear(year){
-    const file = KentDataConfig.getEntityFile("ford", "real", year);
-
-    el.realText.textContent = `Réalisé : chargement… (${file})`;
-    setDot(el.dotReal, "warn");
-    setDot(el.dotUrlReal, "warn");
-    el.urlRealText.textContent = `URL réalisé : —`;
-
-    if (await loadRealFromSupabase(year)) return;
-
-    try{
-      const {buffer, usedUrl} = await fetchXlsxWithFallback(file);
-      el.urlRealText.textContent = `URL réalisé : ${usedUrl}`;
-      setDot(el.dotUrlReal, "ok");
-
-      const wb = XLSX.read(buffer, { type: "array" });
-      const sheetName = pickBestSheet(wb);
-      const ws = wb.Sheets[sheetName];
-      const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
-
-      if (!raw.length){
-        realMonthly = new Array(12).fill(0);
-        realRows = [];
-        el.realText.textContent = `Réalisé : fichier vide`;
-        setDot(el.dotReal, "bad");
-        return;
-      }
-
-      const headerMap = buildHeaderMap(raw[0]);
-
-      const colDate = findCol(headerMap, [CONFIG.REAL_DATE_COL, "date commande", "date vente", "date"]);
-      const colMonth = findCol(headerMap, ["mois","mois2","month"]);
-      const colAmt = findCol(headerMap, ["ca total","ca","montant","montant ca","chiffre d'affaire"]);
-
-      const colClientInt = findCol(headerMap, [
-        "n° client interne","no client interne","n client interne","numero client interne",
-        "n° client","code livré","code livre","code"
-      ]);
-      const colClientName = findCol(headerMap, ["nom du client","nom client","client"]);
-
-      // ✅ Produit
-      const colRef = findCol(headerMap, [
-        "reference produits","référence produits","reference produit","référence produit","ref produit","ref",
-        "code produit","code article","article"
-      ]);
-
-      // ✅ FIX : ici on ajoute "Description produit"
-      const colDes = findCol(headerMap, [
-        "description produit",      // <-- TA COLONNE
-        "description",
-        "libelle produit","libellé produit",
-        "désignation","designation","design",
-        "produit","article libelle","article libellé"
-      ]);
-
-      const colQty = findCol(headerMap, ["quantité payante servie","quantite payante servie","quantité","quantite","qte","qté"]);
-
-      if (!colAmt || (!colDate && !colMonth)){
-        realMonthly = new Array(12).fill(0);
-        realRows = [];
-        el.realText.textContent = `Réalisé : colonnes Date/Mois ou CA introuvables`;
-        setDot(el.dotReal, "bad");
-        return;
-      }
-
-      const sums = new Array(12).fill(0);
-      const rows = [];
-
-      for (const r of raw){
-        const amount = toNumber(r[colAmt]);
-        if (!amount) continue;
-
-        let dt = null;
-        if (colDate) dt = parseAnyDate(r[colDate]);
-        if (dt && dt.getFullYear() !== year) continue;
-
-        let mi = -1;
-        if (dt) mi = dt.getMonth();
-        if (mi < 0 && colMonth) mi = monthToIndex(String(r[colMonth] ?? "").trim());
-        if (mi < 0) continue;
-
-        sums[mi] += amount;
-
-        rows.push({
-          monthIdx: mi,
-          weekIdx: dt ? weekBucket(dt) : -1,
-          date: dt,
-          clientInternal: colClientInt ? String(r[colClientInt] ?? "").trim() : "",
-          clientName: colClientName ? String(r[colClientName] ?? "").trim() : "",
-          amount,
-          ref: colRef ? String(r[colRef] ?? "").trim() : "",
-          des: colDes ? String(r[colDes] ?? "").trim() : "",   // ✅ maintenant ça remplira
-          qty: colQty ? toNumber(r[colQty]) : 0,
-        });
-      }
-
-      realMonthly = sums;
-      realRows = rows;
-
-      const dateInfo = colDate ? `Date OK (${CONFIG.REAL_DATE_COL})` : `Sans date (mode mois2)`;
-      const prodInfo = (colDes || colRef) ? `Produit OK (${colDes || colRef})` : `Produit: non détecté`;
-      el.realText.textContent = `Réalisé : OK (${file}) — sheet: ${sheetName} — ${dateInfo} — ${prodInfo}`;
-      setDot(el.dotReal, "ok");
-    }catch(err){
-      console.error(err);
+      console.error(error);
       realMonthly = new Array(12).fill(0);
       realRows = [];
-      el.realText.textContent = `Réalisé : erreur fetch/lecture`;
+      el.realText.textContent = "Réalisé : erreur Supabase";
       setDot(el.dotReal, "bad");
       setDot(el.dotUrlReal, "bad");
-      el.urlRealText.textContent = `URL réalisé : erreur`;
+      el.urlRealText.textContent = "URL réalisé : erreur Supabase";
     }
   }
 
@@ -780,14 +612,11 @@
         const mk = monthIdxToKey(mi);
 
         const qs = new URLSearchParams({
+          entityKey: CONFIG.ENTITY_KEY,
           entity: CONFIG.LABEL,
           month: mk,
           monthLabel,
-          realFile: KentDataConfig.getEntityFile("ford", "real", selectedYear),
-          dateCol: CONFIG.REAL_DATE_COL,
-          amountColHint: "CA Total", // Ford/Direct
           year: String(selectedYear),
-      budgetFile: KentDataConfig.getEntityFile("ford", "budget", selectedYear)
         });
 
         window.location.href = `${CONFIG.WEEK_VIEW_PAGE}?${qs.toString()}`;
@@ -1031,68 +860,6 @@
   function saveComments(year){
     try{ localStorage.setItem(commentsKey(year), JSON.stringify(comments || {})); }catch{}
   }
-
-  async function fetchXlsxWithFallback(fileName){
-    const pageDir = location.href.replace(/[#?].*$/,"").replace(/\/[^\/]*$/, "/");
-    const urlSame = new URL(fileName, pageDir).toString();
-    const urlData = new URL("data/" + fileName, pageDir).toString();
-
-    const candidates = [urlSame, urlData];
-    let lastErr = "";
-
-    for (const u of candidates){
-      const url = u + (u.includes("?") ? "&" : "?") + "v=" + Date.now();
-      const res = await fetch(url, { cache: "no-store" });
-      const buf = await res.arrayBuffer();
-
-      if (!res.ok){
-        lastErr = `HTTP ${res.status} sur ${u}`;
-        continue;
-      }
-
-      const sniff = sniffBuffer(buf);
-      if (sniff.looksHtml || !sniff.isZip){
-        lastErr = `Contenu invalide sur ${u} (HTML/404 ou pas XLSX)`;
-        continue;
-      }
-
-      return { buffer: buf, usedUrl: u };
-    }
-
-    throw new Error(lastErr || "fetchXlsxWithFallback failed");
-  }
-
-  function sniffBuffer(arrayBuffer){
-    const u8 = new Uint8Array(arrayBuffer);
-    const a = u8[0], b = u8[1];
-    const isZip = (a === 0x50 && b === 0x4B);
-    const head = u8.slice(0, Math.min(220, u8.length));
-    let preview = "";
-    try{ preview = new TextDecoder("utf-8").decode(head).trim(); }catch{ preview = ""; }
-    const p = (preview || "").toLowerCase();
-    const looksHtml = p.startsWith("<") || p.includes("<!doctype html") || p.includes("<html");
-    return { isZip, looksHtml };
-  }
-
-  function pickBestSheet(wb){
-    let best = wb.SheetNames[0];
-    let bestScore = -1;
-    for (const name of wb.SheetNames){
-      const ws = wb.Sheets[name];
-      const ref = ws && ws["!ref"];
-      if (!ref) continue;
-      const range = XLSX.utils.decode_range(ref);
-      const rows = (range.e.r - range.s.r + 1);
-      const cols = (range.e.c - range.s.c + 1);
-      const score = rows * cols;
-      if (score > bestScore){
-        bestScore = score;
-        best = name;
-      }
-    }
-    return best;
-  }
-
   function buildHeaderMap(sampleRow){
     const map = {};
     for (const k of Object.keys(sampleRow || {})) map[norm(k)] = k;
@@ -1170,11 +937,8 @@
   function parseAnyDate(v){
     if (!v && v !== 0) return null;
     if (v instanceof Date && !isNaN(v.getTime())) return v;
-
     if (typeof v === "number" && isFinite(v)){
-      const d = XLSX.SSF.parse_date_code(v);
-      if (!d) return null;
-      const dt = new Date(d.y, (d.m||1)-1, d.d||1);
+      const dt = new Date(1899, 11, 30 + Math.round(v));
       return isNaN(dt.getTime()) ? null : dt;
     }
 

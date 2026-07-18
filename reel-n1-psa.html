@@ -910,10 +910,12 @@
   /* ======================================================
      CONFIG — ICI tu changes pour Gueudet/Ford/Direct
   ====================================================== */
+  const ENTITY_KEY = "psa";
+  const ENTITY_LABEL = "PSA";
   const APP_YEAR = KentDataConfig.getActiveYear();
   const PREV_YEAR = KentDataConfig.getPreviousYear(APP_YEAR);
-  const FILE_REAL = KentDataConfig.getEntityFile("psa", "real", APP_YEAR);
-  const FILE_N1   = KentDataConfig.getEntityFile("psa", "realN1", APP_YEAR);
+  const FILE_REAL = `Supabase ${ENTITY_LABEL} ${APP_YEAR}`;
+  const FILE_N1   = `Supabase ${ENTITY_LABEL} ${PREV_YEAR}`;
 
   /* ======================================================
      MOIS (mapping Mois2 -> index)
@@ -1146,8 +1148,7 @@
         cache.realRows = await loadCurrentRealRows();
       }
       if (!cache.n1Rows){
-        const { buffer, sheetName } = await fetchAndPickSheet(FILE_N1);
-        cache.n1Rows = sheetToRows(buffer, sheetName);
+        cache.n1Rows = await loadPreviousRealRows();
       }
 
       // aggregate by product
@@ -1188,7 +1189,7 @@
 
     }catch(err){
       console.error(err);
-      setStatus("bad", "Erreur fetch/lecture : " + (err.message || err));
+      setStatus("bad", "Erreur Supabase : " + (err.message || err));
     }
   }
 
@@ -1412,23 +1413,25 @@
   ====================================================== */
 
   async function loadCurrentRealRows(){
-    const supabaseRows = await loadCurrentRealRowsFromSupabase();
-    if (supabaseRows) return supabaseRows;
-
-    const { buffer, sheetName } = await fetchAndPickSheet(FILE_REAL);
-    return sheetToRows(buffer, sheetName);
+    return await loadRealRowsFromSupabase(APP_YEAR);
   }
 
-  async function loadCurrentRealRowsFromSupabase(){
-    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return null;
+  async function loadPreviousRealRows(){
+    return await loadRealRowsFromSupabase(PREV_YEAR);
+  }
+
+  async function loadRealRowsFromSupabase(year){
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") {
+      throw new Error("Reel Supabase indisponible.");
+    }
 
     try{
-      const rows = await window.ReelSupabase.getActiveLinesByEntityYear("psa", APP_YEAR);
-      if (!rows || !rows.length) return null;
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(ENTITY_KEY, year);
       return rows.map(row => {
         const month = MONTHS[Number(row.mois) - 1];
+        const designation = String(row.designation || row.reference || "").trim();
         return {
-          "Designation": String(row.designation || "").trim(),
+          "Designation": designation,
           "Quantite Payante servie": toNumber(row.quantite),
           "Montant prix achat KENT": toNumber(row.montant),
           "Mois2": month ? month.label : String(row.mois || ""),
@@ -1437,18 +1440,12 @@
         };
       });
     }catch(error){
-      console.warn("R\u00e9el Supabase indisponible, fallback Excel:", error.message || error);
-      return null;
+      throw new Error(`Reel Supabase ${year} indisponible : ${error.message || error}`);
     }
   }
 
-  function sheetToRows(arrayBuffer, sheetName){
-    const wb = XLSX.read(arrayBuffer, { type:"array" });
-    const ws = wb.Sheets[sheetName];
-    return XLSX.utils.sheet_to_json(ws, { defval:"" }) || [];
-  }
-
   function aggregateByProduct(rows, monthsArr){
+    if (!Array.isArray(rows) || !rows.length) return new Map();
     const headerMap = buildHeaderMap(rows[0] || {});
     const colDes = findCol(headerMap, ["désignation","designation","design"]);
     const colQty = findCol(headerMap, ["quantité payante servie","quantite payante servie","quantité","quantite"]);
@@ -1490,6 +1487,7 @@
   }
 
   function aggregateClientsForProduct(rows, monthsArr, product){
+    if (!Array.isArray(rows) || !rows.length) return new Map();
     // tolerant header map
     const headerMap = buildHeaderMap(rows[0] || {});
     const colDes = findCol(headerMap, ["désignation","designation","design"]);
@@ -1557,77 +1555,6 @@
       if (k.includes(name)) return MONTH_MAP[name];
     }
     return null;
-  }
-
-  /* ======================================================
-     GitHub-safe XLSX fetch (anti cache + fallback /data)
-  ====================================================== */
-  async function fetchAndPickSheet(fileName){
-    const { buffer } = await fetchXlsxWithFallback(fileName);
-    const wb = XLSX.read(buffer, { type:"array" });
-    const sheetName = pickBestSheet(wb);
-    return { buffer, sheetName };
-  }
-
-  async function fetchXlsxWithFallback(fileName){
-    const pageDir = location.href.replace(/[#].*$/,"").replace(/\/[^\/]*$/, "/");
-    const urlSame = new URL(fileName, pageDir).toString();
-    const urlData = new URL("data/" + fileName, pageDir).toString();
-
-    const candidates = [urlSame, urlData];
-    let lastErr = "";
-
-    for (const base of candidates){
-      const url = base + (base.includes("?") ? "&" : "?") + "v=" + Date.now();
-      const res = await fetch(url, { cache:"no-store" });
-      const buf = await res.arrayBuffer();
-
-      if (!res.ok){
-        lastErr = `HTTP ${res.status} sur ${base}`;
-        continue;
-      }
-
-      const sniff = sniffBuffer(buf);
-      if (sniff.looksHtml || !sniff.isZip){
-        lastErr = `Contenu invalide sur ${base} (HTML/404 ou pas XLSX)`;
-        continue;
-      }
-
-      return { buffer: buf };
-    }
-
-    throw new Error(lastErr || "Fetch XLSX impossible");
-  }
-
-  function sniffBuffer(arrayBuffer){
-    const u8 = new Uint8Array(arrayBuffer);
-    const a = u8[0], b = u8[1];
-    const isZip = (a === 0x50 && b === 0x4B); // PK
-    const head = u8.slice(0, Math.min(220, u8.length));
-    let preview = "";
-    try{ preview = new TextDecoder("utf-8").decode(head).trim(); }catch{ preview = ""; }
-    const p = (preview || "").toLowerCase();
-    const looksHtml = p.startsWith("<") || p.includes("<!doctype html") || p.includes("<html");
-    return { isZip, looksHtml };
-  }
-
-  function pickBestSheet(wb){
-    let best = wb.SheetNames[0];
-    let bestScore = -1;
-    for (const name of wb.SheetNames){
-      const ws = wb.Sheets[name];
-      const ref = ws && ws["!ref"];
-      if (!ref) continue;
-      const range = XLSX.utils.decode_range(ref);
-      const rows = (range.e.r - range.s.r + 1);
-      const cols = (range.e.c - range.s.c + 1);
-      const score = rows * cols;
-      if (score > bestScore){
-        bestScore = score;
-        best = name;
-      }
-    }
-    return best;
   }
 
   /* ======================================================
