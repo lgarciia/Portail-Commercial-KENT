@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Reporting - Sélecteur</title>
+  <script src="./app-data-config.js"></script>
+  <script src="./shared-ui.js"></script>
+  <style>
+    :root{
+      --bg:#07111f;
+      --panel:rgba(15,23,42,.84);
+      --panel2:rgba(15,23,42,.62);
+      --line:rgba(148,163,184,.18);
+      --text:#eef4ff;
+      --muted:rgba(226,232,240,.66);
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --gold:#f59e0b;
+      --red:#ef4444;
+      --shadow:0 26px 78px rgba(0,0,0,.36);
+    }
+
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
+    body{
+      margin:0;
+      font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(980px 700px at 10% -8%, rgba(56,189,248,.18), transparent 58%),
+        radial-gradient(900px 680px at 92% 0%, rgba(34,197,94,.13), transparent 55%),
+        radial-gradient(860px 720px at 54% 112%, rgba(245,158,11,.08), transparent 58%),
+        var(--bg);
+      overflow:hidden;
+    }
+
+    .page{
+      min-height:100vh;
+      display:grid;
+      grid-template-rows:auto 1fr;
+      gap:14px;
+      padding:18px;
+    }
+
+    .hero,.viewer{
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(14px);
+    }
+
+    .hero{
+      border-radius:28px;
+      background:
+        linear-gradient(135deg, rgba(15,23,42,.95), rgba(15,23,42,.72)),
+        radial-gradient(620px 280px at 96% 0%, rgba(56,189,248,.14), transparent 64%);
+      padding:18px;
+    }
+
+    .heroTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid rgba(56,189,248,.28);
+      background:rgba(56,189,248,.11);
+      color:#d8f3ff;
+      border-radius:999px;
+      padding:7px 12px;
+      font-size:12px;
+      font-weight:950;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+    .kicker::before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:var(--blue);
+      box-shadow:0 0 18px rgba(56,189,248,.65);
+    }
+
+    h1{
+      margin:12px 0 7px;
+      font-size:clamp(30px,3.8vw,54px);
+      line-height:.96;
+      letter-spacing:-.055em;
+    }
+    .subtitle{
+      margin:0;
+      max-width:860px;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.5;
+      font-weight:750;
+    }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:9px;
+      flex-wrap:wrap;
+    }
+    .btn,.select{
+      min-height:42px;
+      border:1px solid rgba(148,163,184,.20);
+      border-radius:15px;
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      font-weight:950;
+      font-size:13px;
+      padding:0 14px;
+      box-shadow:0 14px 34px rgba(0,0,0,.20);
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      cursor:pointer;
+      transition:.16s transform,.16s border-color,.16s background;
+    }
+    .btn:hover{transform:translateY(-1px);border-color:rgba(56,189,248,.36)}
+    .btn.primary{
+      color:#fff;
+      border-color:rgba(56,189,248,.38);
+      background:linear-gradient(135deg,#38bdf8,#2563eb);
+    }
+    .select{
+      min-width:190px;
+      outline:none;
+      cursor:pointer;
+    }
+
+    .optionGrid{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:9px;
+      margin-top:16px;
+    }
+    .optionCard{
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:19px;
+      background:rgba(255,255,255,.055);
+      padding:13px;
+      cursor:pointer;
+      min-height:82px;
+      transition:.16s transform,.16s border-color,.16s background,.16s box-shadow;
+    }
+    .optionCard:hover{
+      transform:translateY(-2px);
+      border-color:rgba(56,189,248,.34);
+      background:rgba(255,255,255,.075);
+    }
+    .optionCard.active{
+      border-color:rgba(56,189,248,.60);
+      background:linear-gradient(135deg,rgba(56,189,248,.16),rgba(255,255,255,.06));
+      box-shadow:0 18px 42px rgba(56,189,248,.13);
+    }
+    .optionName{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      font-size:17px;
+      font-weight:980;
+      letter-spacing:-.03em;
+    }
+    .optionMeta{
+      margin-top:7px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      line-height:1.35;
+    }
+    .tag{
+      flex:0 0 auto;
+      border:1px solid rgba(255,255,255,.13);
+      background:rgba(255,255,255,.075);
+      color:rgba(226,232,240,.76);
+      border-radius:999px;
+      padding:4px 7px;
+      font-size:10px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+    .tag.ready{color:#bbf7d0;border-color:rgba(34,197,94,.26);background:rgba(34,197,94,.11)}
+    .tag.wait{color:#fde68a;border-color:rgba(245,158,11,.30);background:rgba(245,158,11,.10)}
+
+    .viewer{
+      position:relative;
+      min-height:0;
+      border-radius:28px;
+      background:rgba(2,6,23,.42);
+      overflow:hidden;
+    }
+    iframe{
+      width:100%;
+      height:100%;
+      min-height:570px;
+      border:0;
+      display:block;
+      background:#0b0f17;
+    }
+    .status{
+      position:absolute;
+      right:16px;
+      top:16px;
+      z-index:2;
+      border:1px solid rgba(148,163,184,.18);
+      background:rgba(15,23,42,.88);
+      color:rgba(226,232,240,.76);
+      border-radius:999px;
+      padding:8px 11px;
+      font-size:12px;
+      font-weight:900;
+      pointer-events:none;
+    }
+
+    html[data-theme="light"] body{
+      background:
+        radial-gradient(980px 700px at 10% -8%, rgba(56,189,248,.14), transparent 58%),
+        radial-gradient(900px 680px at 92% 0%, rgba(34,197,94,.10), transparent 55%),
+        #f6f7fb;
+      color:#0f172a;
+    }
+    html[data-theme="light"] .hero,
+    html[data-theme="light"] .viewer{
+      background:rgba(255,255,255,.84);
+      color:#0f172a;
+      border-color:rgba(15,23,42,.10);
+      box-shadow:0 24px 60px rgba(15,23,42,.12);
+    }
+    html[data-theme="light"] .subtitle,
+    html[data-theme="light"] .optionMeta{color:rgba(15,23,42,.60)}
+    html[data-theme="light"] .optionCard,
+    html[data-theme="light"] .select,
+    html[data-theme="light"] .btn:not(.primary){
+      background:rgba(255,255,255,.80);
+      color:#0f172a;
+      border-color:rgba(15,23,42,.10);
+    }
+
+    @media(max-width:1180px){
+      body{overflow:auto}
+      .page{grid-template-rows:auto auto}
+      .optionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      iframe{height:72vh}
+    }
+    @media(max-width:620px){
+      .page{padding:12px}
+      .optionGrid{grid-template-columns:1fr}
+      .actions{justify-content:flex-start;width:100%}
+      .select,.btn{width:100%}
+    }
+  </style>
+  <link rel="stylesheet" href="./shared-theme.css">
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="heroTop">
+        <div>
+          <span class="kicker" id="viewKicker">Reporting</span>
+          <h1 id="viewTitle">Reporting</h1>
+          <p class="subtitle" id="viewSubtitle">Choisis une entité pour charger la vue correspondante.</p>
+        </div>
+        <div class="actions">
+          <select class="select" id="viewSelect" aria-label="Type de reporting"></select>
+          <select class="select" id="yearSelect" aria-label="Année active"></select>
+          <select class="select" id="entitySelect" aria-label="Entité"></select>
+          <a class="btn" href="accreport.html" data-year-link>Accueil reporting</a>
+          <button class="btn primary" id="openFullBtn" type="button">Ouvrir plein écran</button>
+        </div>
+      </div>
+      <div class="optionGrid" id="optionGrid"></div>
+    </section>
+
+    <section class="viewer">
+      <div class="status" id="viewerStatus">Chargement...</div>
+      <iframe id="reportFrame" title="Vue reporting sélectionnée"></iframe>
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const DEFAULT_OPTIONS = [
+        { key:"psa", label:"PSA", page:"", state:"ready" },
+        { key:"gueudet", label:"Gueudet", page:"", state:"ready" },
+        { key:"ford", label:"Ford", page:"", state:"ready" },
+        { key:"direct", label:"Direct", page:"", state:"ready" }
+      ];
+
+      const VIEWS = {
+        "activite-reelle": {
+          kicker: "Activité",
+          title: "Activité réelle",
+          subtitle: "Charge la vue d'activité réelle de l'entité choisie. Les imports, exports et actions restent ceux de la page d'origine.",
+          options: DEFAULT_OPTIONS.map(option => ({
+            ...option,
+            page: {
+              psa: "activitereelpsa.html",
+              gueudet: "activitereelgueudet.html",
+              ford: "activitereelford.html",
+              direct: "activitereeldirect.html"
+            }[option.key],
+            description: "Activité réelle importée"
+          }))
+        },
+        "annuel-budget": {
+          kicker: "Budget",
+          title: "Reporting annuel vs Budget",
+          subtitle: "Compare le réel et le budget actif Supabase par entité, avec les mêmes tableaux et exports qu'avant.",
+          options: DEFAULT_OPTIONS.map(option => ({
+            ...option,
+            page: {
+              psa: "reporting-annuelpsa.html",
+              gueudet: "reporting-annuelgueudet.html",
+              ford: "reporting-annuelford.html",
+              direct: "reporting-annueldirect.html"
+            }[option.key],
+            description: "Réel vs budget annuel"
+          }))
+        },
+        "evol-reporting": {
+          kicker: "Évolution",
+          title: "Évol Reporting",
+          subtitle: "Sélectionne l'entité puis retrouve la vue d'évolution reporting existante.",
+          options: DEFAULT_OPTIONS.map(option => ({
+            ...option,
+            page: {
+              psa: "evol-reporting-psa.html",
+              gueudet: "evol-reporting-gueudet.html",
+              ford: "evol-reporting-ford.html",
+              direct: "evol-reporting-direct.html"
+            }[option.key],
+            description: option.key === "ford" || option.key === "direct" ? "Page existante en cours" : "Évolution reporting",
+            state: option.key === "ford" || option.key === "direct" ? "wait" : "ready"
+          }))
+        },
+        "evol-analyse": {
+          kicker: "Analyse",
+          title: "Évol Analyse",
+          subtitle: "Analyse l'évolution par entité, avec l'option Cumul conservée comme dans le menu actuel.",
+          options: [
+            { key:"psa", label:"PSA", page:"evol-analyse-psa.html", description:"Évolution analyse", state:"ready" },
+            { key:"gueudet", label:"Gueudet", page:"evol-analyse-gueudet.html", description:"Évolution analyse", state:"ready" },
+            { key:"ford", label:"Ford", page:"evol-analyse-ford.html", description:"Évolution analyse", state:"ready" },
+            { key:"direct", label:"Direct", page:"evol-analyse-direct.html", description:"Évolution analyse", state:"ready" },
+            { key:"cumul", label:"Cumul", page:"evol-cumule.html", description:"PSA + Gueudet + Ford + Direct", state:"ready" }
+          ]
+        },
+        "reel-n1": {
+          kicker: "Comparatif",
+          title: "Réel vs N-1",
+          subtitle: "Charge la vue Réel vs N-1 de l'entité choisie. Les options en attente restent visibles comme avant.",
+          options: [
+            { key:"psa", label:"PSA", page:"reel-n1-psa.html", description:"Réel vs N-1 produits", state:"ready" },
+            { key:"gueudet", label:"Gueudet", page:"encours.html", description:"Page existante en cours", state:"wait" },
+            { key:"ford", label:"Ford", page:"encours.html", description:"Page existante en cours", state:"wait" },
+            { key:"direct", label:"Direct", page:"encours.html", description:"Page existante en cours", state:"wait" }
+          ]
+        }
+      };
+
+      const VIEW_ORDER = ["activite-reelle", "annuel-budget", "evol-reporting", "evol-analyse", "reel-n1"];
+      const VIEW_LABELS = {
+        "activite-reelle": "Activité réelle",
+        "annuel-budget": "Reporting annuel vs Budget",
+        "evol-reporting": "Évol Reporting",
+        "evol-analyse": "Évol Analyse",
+        "reel-n1": "Réel vs N-1"
+      };
+
+      const dom = {
+        viewSelect: document.getElementById("viewSelect"),
+        yearSelect: document.getElementById("yearSelect"),
+        entitySelect: document.getElementById("entitySelect"),
+        optionGrid: document.getElementById("optionGrid"),
+        frame: document.getElementById("reportFrame"),
+        status: document.getElementById("viewerStatus"),
+        openFullBtn: document.getElementById("openFullBtn"),
+        kicker: document.getElementById("viewKicker"),
+        title: document.getElementById("viewTitle"),
+        subtitle: document.getElementById("viewSubtitle")
+      };
+
+      const params = new URLSearchParams(location.search);
+      let currentViewKey = VIEWS[params.get("view")] ? params.get("view") : "activite-reelle";
+      let currentOptionKey = "";
+
+      function activeView(){
+        return VIEWS[currentViewKey] || VIEWS["activite-reelle"];
+      }
+
+      function activeYear(){
+        return Number(dom.yearSelect.value || KentDataConfig.getActiveYear());
+      }
+
+      function selectedOption(){
+        const view = activeView();
+        return view.options.find(option => option.key === currentOptionKey) || view.options[0];
+      }
+
+      function buildPageUrl(option, year){
+        const raw = option.page || "encours.html";
+        const hashIndex = raw.indexOf("#");
+        const beforeHash = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
+        const hash = hashIndex >= 0 ? raw.slice(hashIndex) : "";
+        const queryIndex = beforeHash.indexOf("?");
+        const path = queryIndex >= 0 ? beforeHash.slice(0, queryIndex) : beforeHash;
+        const query = queryIndex >= 0 ? beforeHash.slice(queryIndex + 1) : "";
+        const params = new URLSearchParams(query);
+        params.set("year", String(year));
+        return `${path}?${params.toString()}${hash}`;
+      }
+
+      function syncUrl(){
+        const next = new URL(location.href);
+        next.searchParams.set("view", currentViewKey);
+        next.searchParams.set("entity", selectedOption().key);
+        next.searchParams.set("year", String(activeYear()));
+        history.replaceState(null, "", next.pathname.split("/").pop() + next.search);
+      }
+
+      function renderViewSelect(){
+        dom.viewSelect.innerHTML = VIEW_ORDER.map(key => (
+          `<option value="${key}">${VIEW_LABELS[key]}</option>`
+        )).join("");
+        dom.viewSelect.value = currentViewKey;
+      }
+
+      function renderHeader(){
+        const view = activeView();
+        dom.kicker.textContent = view.kicker;
+        dom.title.textContent = view.title;
+        dom.subtitle.textContent = view.subtitle;
+        document.title = `${view.title} - Sélecteur`;
+      }
+
+      function renderEntitySelect(){
+        const view = activeView();
+        dom.entitySelect.innerHTML = view.options.map(option => (
+          `<option value="${option.key}">${option.label}</option>`
+        )).join("");
+        if (!view.options.some(option => option.key === currentOptionKey)) {
+          currentOptionKey = view.options[0]?.key || "";
+        }
+        dom.entitySelect.value = currentOptionKey;
+      }
+
+      function renderCards(){
+        const option = selectedOption();
+        dom.optionGrid.innerHTML = activeView().options.map(item => {
+          const active = item.key === option.key ? " active" : "";
+          const tagClass = item.state === "wait" ? "wait" : "ready";
+          const tag = item.state === "wait" ? "En cours" : "Dispo";
+          return `
+            <article class="optionCard${active}" data-entity="${item.key}">
+              <div class="optionName">
+                <span>${item.label}</span>
+                <span class="tag ${tagClass}">${tag}</span>
+              </div>
+              <div class="optionMeta">${item.description || ""}<br>${item.page || "encours.html"}</div>
+            </article>
+          `;
+        }).join("");
+      }
+
+      function loadSelected(){
+        const year = activeYear();
+        KentDataConfig.setActiveYear(year);
+        KentDataConfig.applyYearToLinks(document, year);
+        renderViewSelect();
+        renderHeader();
+        renderEntitySelect();
+        renderCards();
+
+        const option = selectedOption();
+        const src = buildPageUrl(option, year);
+        dom.status.textContent = `${activeView().title} - ${option.label}`;
+        dom.frame.src = src;
+        syncUrl();
+      }
+
+      KentDataConfig.fillYearSelect(dom.yearSelect, { selectedYear: KentDataConfig.getActiveYear() });
+      const urlYear = params.get("year");
+      if (urlYear) dom.yearSelect.value = String(KentDataConfig.setActiveYear(Number(urlYear)));
+      currentOptionKey = params.get("entity") || activeView().options[0]?.key || "";
+
+      renderViewSelect();
+      loadSelected();
+
+      dom.viewSelect.addEventListener("change", () => {
+        currentViewKey = VIEWS[dom.viewSelect.value] ? dom.viewSelect.value : "activite-reelle";
+        currentOptionKey = activeView().options[0]?.key || "";
+        loadSelected();
+      });
+
+      dom.entitySelect.addEventListener("change", () => {
+        currentOptionKey = dom.entitySelect.value;
+        loadSelected();
+      });
+
+      dom.optionGrid.addEventListener("click", event => {
+        const card = event.target.closest("[data-entity]");
+        if (!card) return;
+        currentOptionKey = card.dataset.entity;
+        loadSelected();
+      });
+
+      dom.yearSelect.addEventListener("change", () => {
+        const year = KentDataConfig.setActiveYear(Number(dom.yearSelect.value));
+        dom.yearSelect.value = String(year);
+        loadSelected();
+      });
+
+      dom.openFullBtn.addEventListener("click", () => {
+        window.location.href = buildPageUrl(selectedOption(), activeYear());
+      });
+
+      dom.frame.addEventListener("load", () => {
+        dom.status.textContent = `${activeView().title} - ${selectedOption().label} chargé`;
+      });
+    })();
+  </script>
+</body>
+</html>

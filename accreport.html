@@ -90,6 +90,7 @@
       transition:.15s;
       user-select:none;
       white-space:nowrap;
+      text-decoration:none;
     }
     .ddBtn:hover{
       background:rgba(255,255,255,0.12);
@@ -432,76 +433,11 @@
 
     <div class="navBtns">
 
-      <!-- ✅ Activité réelle (dropdown) -->
-      <div class="dd" id="ddReel">
-        <button class="ddBtn" id="btnReel" type="button">
-          Activité réelle <span class="chev"></span>
-        </button>
-
-        <div class="menu" id="menuReel" aria-hidden="true">
-          <a href="activitereelpsa.html">PSA <small>→</small></a>
-          <a href="activitereelgueudet.html">Gueudet <small>→</small></a>
-          <a href="activitereelford.html">Ford <small>→</small></a>
-          <a href="activitereeldirect.html">Direct <small>→</small></a>
-        </div>
-      </div>
-
-      <!-- ✅ Reporting annuel vs Budget -->
-      <div class="dd" id="ddAnnuel">
-        <button class="ddBtn" id="btnAnnuel" type="button">
-          Reporting annuel vs Budget <span class="chev"></span>
-        </button>
-
-        <div class="menu" id="menuAnnuel" aria-hidden="true">
-          <a href="reporting-annuelpsa.html">PSA <small>→</small></a>
-          <a href="reporting-annuelgueudet.html">Gueudet <small>→</small></a>
-          <a href="reporting-annuelford.html">Ford <small>→</small></a>
-          <a href="reporting-annueldirect.html">Direct <small>→</small></a>
-        </div>
-      </div>
-
-      <!-- ✅ Evol Reporting -->
-      <div class="dd" id="ddEvol">
-        <button class="ddBtn" id="btnEvol" type="button">
-          Évol Reporting <span class="chev"></span>
-        </button>
-
-        <div class="menu" id="menuEvol" aria-hidden="true">
-          <a href="evol-reporting-psa.html">PSA <small>→</small></a>
-          <a href="evol-reporting-gueudet.html">Gueudet <small>→</small></a>
-          <a href="evol-reporting-ford.html">Ford <small>→</small></a>
-          <a href="evol-reporting-direct.html">Direct <small>→</small></a>
-        </div>
-      </div>
-
-      <!-- ✅ Evol Analyse -->
-      <div class="dd" id="ddEvolAnalyse">
-        <button class="ddBtn" id="btnEvolAnalyse" type="button">
-          Evol Analyse <span class="chev"></span>
-        </button>
-
-        <div class="menu" id="menuEvolAnalyse" aria-hidden="true">
-          <a href="evol-analyse-psa.html">Evol PSA <small>→</small></a>
-          <a href="evol-analyse-gueudet.html">Evol GUEUDET <small>→</small></a>
-          <a href="evol-analyse-ford.html">Evol FORD <small>→</small></a>
-          <a href="evol-analyse-direct.html">Evol DIRECT <small>→</small></a>
-          <a href="evol-cumule.html">Evol Cumul <small>→</small></a>
-        </div>
-      </div>
-
-      <!-- ✅ Réel vs N-1 -->
-      <div class="dd" id="ddReelN1">
-        <button class="ddBtn" id="btnReelN1" type="button">
-          Réel vs N-1 <span class="chev"></span>
-        </button>
-
-        <div class="menu" id="menuReelN1" aria-hidden="true">
-          <a href="reel-n1-psa.html">PSA <small>→</small></a>
-          <a href="encours.html">Gueudet <small>→</small></a>
-          <a href="encours.html">Ford <small>→</small></a>
-          <a href="encours.html">Direct <small>→</small></a>
-        </div>
-      </div>
+      <a class="ddBtn" href="reporting-selecteur.html?view=activite-reelle" data-year-link>Activité réelle</a>
+      <a class="ddBtn" href="reporting-selecteur.html?view=annuel-budget" data-year-link>Reporting annuel vs Budget</a>
+      <a class="ddBtn" href="reporting-selecteur.html?view=evol-reporting" data-year-link>Évol Reporting</a>
+      <a class="ddBtn" href="reporting-selecteur.html?view=evol-analyse" data-year-link>Évol Analyse</a>
+      <a class="ddBtn" href="reporting-selecteur.html?view=reel-n1" data-year-link>Réel vs N-1</a>
 
     </div>
   </div>
@@ -543,55 +479,6 @@
   </div>
 
   <script>
-  (function(){
-    const dds = [
-      { btn: document.getElementById("btnReel"),        menu: document.getElementById("menuReel") },
-      { btn: document.getElementById("btnAnnuel"),      menu: document.getElementById("menuAnnuel") },
-      { btn: document.getElementById("btnEvol"),        menu: document.getElementById("menuEvol") },
-      { btn: document.getElementById("btnEvolAnalyse"), menu: document.getElementById("menuEvolAnalyse") },
-      { btn: document.getElementById("btnReelN1"),      menu: document.getElementById("menuReelN1") },
-    ].filter(x => x.btn && x.menu);
-
-    function open(menu){
-      menu.classList.add("show");
-      menu.setAttribute("aria-hidden","false");
-    }
-
-    function close(menu){
-      menu.classList.remove("show");
-      menu.setAttribute("aria-hidden","true");
-    }
-
-    function closeAll(exceptMenu){
-      dds.forEach(x => { if (x.menu !== exceptMenu) close(x.menu); });
-    }
-
-    function toggle(menu){
-      const isOpen = menu.classList.contains("show");
-      closeAll();
-      if (!isOpen) open(menu);
-    }
-
-    dds.forEach(({btn, menu}) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggle(menu);
-      });
-
-      menu.addEventListener("click", (e) => e.stopPropagation());
-
-      menu.querySelectorAll("a").forEach(a => {
-        a.addEventListener("click", () => closeAll());
-      });
-    });
-
-    window.addEventListener("click", () => closeAll());
-    window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
-    window.addEventListener("pageshow", () => closeAll());
-    window.addEventListener("blur", () => closeAll());
-  })();
-
   (function(){
     const chart = document.getElementById("annualChart");
     const status = document.getElementById("reportStatus");
