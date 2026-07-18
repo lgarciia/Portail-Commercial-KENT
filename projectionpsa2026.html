@@ -12,6 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
 
   <style>
     :root{
@@ -173,15 +174,15 @@
     .row2{
       display:flex;
       align-items:flex-end;
-      gap:12px;
+      gap:8px;
       flex-wrap:wrap;
-      padding:12px 14px;
+      padding:8px 10px;
     }
     .field{
       display:flex;
       flex-direction:column;
-      gap:6px;
-      min-width:240px;
+      gap:4px;
+      min-width:220px;
     }
     label{
       font-size:11px;
@@ -203,50 +204,53 @@
     }
     input::placeholder{ color: var(--muted2); font-weight:800; }
     .miniHelp{
-      font-size:11px;
+      font-size:10px;
       color: var(--muted);
       font-weight:800;
-      margin-top:2px;
+      margin-top:1px;
     }
 
     .gridDays{
-      padding:12px 14px 14px;
+      padding:7px 10px 9px;
       display:grid;
-      grid-template-columns: 220px repeat(12, minmax(90px, 1fr)) 130px;
-      gap:8px;
+      grid-template-columns: 150px repeat(12, minmax(58px, 1fr)) 78px;
+      gap:4px;
       align-items:center;
       border-top:1px solid rgba(255,255,255,0.06);
     }
     .daysHead{
-      font-size:11px;
+      font-size:9px;
       color: rgba(255,255,255,0.75);
       font-weight:1000;
       text-transform:uppercase;
       letter-spacing:0.2px;
       text-align:center;
-      padding:6px 8px;
+      padding:4px 5px;
       border:1px solid rgba(255,255,255,0.10);
-      border-radius:12px;
+      border-radius:9px;
       background: rgba(0,0,0,0.18);
     }
     .daysLabel{
+      font-size:11px;
       font-weight:1000;
       color: rgba(255,255,255,0.86);
       display:flex;
       align-items:center;
-      gap:10px;
-      padding:6px 8px;
+      gap:6px;
+      padding:4px 5px;
     }
     .daysInput{
-      height:36px;
-      border-radius:12px;
+      height:27px;
+      border-radius:9px;
       text-align:center;
-      padding:0 8px;
+      padding:0 5px;
       font-weight:1000;
+      font-size:11px;
     }
     .daysSum{
       text-align:right;
-      padding:0 8px;
+      padding:0 5px;
+      font-size:11px;
       font-weight:1000;
       color: rgba(255,255,255,0.86);
     }
@@ -378,7 +382,15 @@
       </div>
 
       <div class="row2">
-        <div class="field" style="min-width:340px;">
+        <div class="field" style="min-width:300px;">
+          <label>Réel N-1 Supabase</label>
+          <select id="realSourceSelect">
+            <option value="">Chargement des entités...</option>
+          </select>
+          <div class="miniHelp">Sélectionne une entité pour charger son réel N-1.</div>
+        </div>
+
+        <div class="field" style="min-width:300px;">
           <label>Filtre client</label>
           <input id="search" placeholder="Recherche (N° client interne ou nom)..." />
           <div class="miniHelp">Filtre uniquement l’affichage (n’impacte pas l’export).</div>
@@ -467,6 +479,7 @@
     status: document.getElementById("status"),
     statusText: document.getElementById("statusText"),
 
+    realSourceSelect: document.getElementById("realSourceSelect"),
     search: document.getElementById("search"),
     yearReal: document.getElementById("yearReal"),
     yearBudget: document.getElementById("yearBudget"),
@@ -497,6 +510,7 @@
     budget: {}, // jan..dec
   };
   let filterText = "";
+  let realEntities = [];
 
 
   // =========================
@@ -520,8 +534,9 @@
     renderAll();
   } else {
     setStatus(false, "En attente du fichier…");
-    renderEmpty("Charge ton fichier Excel pour générer la projection.");
+    renderEmpty("Charge ton fichier Excel ou sélectionne un réel N-1 Supabase pour générer la projection.");
   }
+  void refreshRealSourceSelect();
 
   // =========================
   // EVENTS
@@ -544,6 +559,7 @@
 
   el.btnExportXlsx.addEventListener("click", exportBudgetXlsx);
   el.btnSaveProjection.addEventListener("click", saveProjectionSupabase);
+  el.realSourceSelect.addEventListener("change", loadSelectedSupabaseReal);
 
   el.btnReset.addEventListener("click", async () => {
     if (!await kentConfirm("Reset projection PSA (cache + jours ouvrés) ?", { title: "Réinitialiser la projection", tone: "danger", confirmText: "Réinitialiser" })) return;
@@ -560,7 +576,7 @@
     ensureDaysDefaults();
     renderDaysGrid();
     setStatus(false, "Reset effectué. Recharge un fichier Excel.");
-    renderEmpty("Charge ton fichier Excel pour générer la projection.");
+    renderEmpty("Charge ton fichier Excel ou sélectionne un réel N-1 Supabase pour générer la projection.");
   });
 
   el.search.addEventListener("input", () => {
@@ -572,6 +588,7 @@
     days.yearReal = clampYear(el.yearReal.value, PREV_YEAR);
     ensureDaysDefaults(true);
     renderDaysGrid();
+    renderRealSourceOptions();
     saveLS();
     renderAll();
   });
@@ -585,6 +602,122 @@
 
   el.uplift.addEventListener("input", () => { renderAll(); });
   el.rounding.addEventListener("change", () => { renderAll(); });
+
+  // =========================
+  // SUPABASE REAL N-1
+  // =========================
+  async function refreshRealSourceSelect(){
+    if (!window.ReelSupabase || typeof window.ReelSupabase.listEntities !== "function"){
+      el.realSourceSelect.innerHTML = '<option value="">Supabase réel indisponible</option>';
+      return;
+    }
+    try{
+      realEntities = await window.ReelSupabase.listEntities();
+      renderRealSourceOptions();
+    }catch(error){
+      console.warn("Chargement entités réel impossible", error);
+      el.realSourceSelect.innerHTML = '<option value="">Impossible de charger les entités</option>';
+    }
+  }
+
+  function renderRealSourceOptions(){
+    const selected = el.realSourceSelect.value || basePivot?.meta?.entityKey || "";
+    const realYear = clampYear(el.yearReal.value, PREV_YEAR);
+    const options = (realEntities || []).map(entity => `
+        <option value="${escapeHtml(entity.key || "")}">${escapeHtml(entity.libelle || entity.key || "Entité")} - réel ${realYear}</option>
+      `).join("");
+    el.realSourceSelect.innerHTML = `
+      <option value="">Choisir un réel ${realYear}...</option>
+      ${options}
+    `;
+    if ((realEntities || []).some(entity => String(entity.key) === selected)) {
+      el.realSourceSelect.value = selected;
+    }
+  }
+
+  async function loadSelectedSupabaseReal(){
+    const entityKey = String(el.realSourceSelect?.value || "").trim();
+    if (!entityKey) return;
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function"){
+      await kentAlert("Module Supabase réel indisponible. Recharge la page.", { title: "Supabase indisponible", tone: "danger" });
+      return;
+    }
+
+    const realYear = clampYear(el.yearReal.value, PREV_YEAR);
+    const entity = (realEntities || []).find(item => String(item.key) === entityKey) || { key: entityKey, libelle: entityKey };
+    const originalStatus = el.statusText.textContent;
+
+    try{
+      setStatus(false, `Chargement réel ${realYear} - ${entity.libelle || entity.key}...`);
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(entityKey, realYear);
+      if (!rows.length){
+        basePivot = null;
+        projected = null;
+        saveLS();
+        renderEmpty(`Aucun réel actif trouvé pour ${entity.libelle || entity.key} ${realYear}.`);
+        setStatus(false, `Aucun réel actif pour ${entity.libelle || entity.key} ${realYear}`);
+        return;
+      }
+      buildPivotFromSupabaseRows(rows, entity, realYear);
+    }catch(error){
+      console.error("Chargement réel Supabase impossible", error);
+      setStatus(false, originalStatus || "Erreur chargement réel Supabase.");
+      await kentAlert(error?.message || "Impossible de charger le réel Supabase.", { title: "Erreur réel N-1", tone: "danger" });
+    }
+  }
+
+  function buildPivotFromSupabaseRows(rows, entity, realYear){
+    const agg = new Map();
+
+    for (const row of rows || []){
+      const monthNumber = Number(row.mois || row.mois_source || row.month || 0);
+      const month = MONTHS[monthNumber - 1];
+      if (!month) continue;
+
+      const clientInternal = String(row.client_code || row.clientInternal || "").trim();
+      const clientName = String(row.client_nom || row.clientName || "").trim() || `Client ${clientInternal}`;
+      if (!clientInternal && !clientName) continue;
+
+      const montant = toNumber(row.montant ?? row.amount ?? row.ca ?? 0);
+      if (!montant) continue;
+
+      const id = makeClientId(clientInternal, clientName);
+      if (!agg.has(id)){
+        const months = {};
+        for (const m of MONTHS) months[m.key] = 0;
+        agg.set(id, { id, clientInternal, clientName, months });
+      }
+      agg.get(id).months[month.key] += montant;
+    }
+
+    const clients = Array.from(agg.values())
+      .sort((a,b) => (a.clientName || "").localeCompare((b.clientName || ""), "fr"));
+
+    if (!clients.length){
+      basePivot = null;
+      projected = null;
+      saveLS();
+      renderEmpty(`Aucun montant exploitable pour ${entity.libelle || entity.key} ${realYear}.`);
+      setStatus(false, `Aucun montant exploitable pour ${entity.libelle || entity.key} ${realYear}`);
+      return;
+    }
+
+    basePivot = {
+      meta: {
+        source: `Supabase réel ${realYear} - ${entity.libelle || entity.key}`,
+        sheet: "v_reel_lignes_actives",
+        updatedAt: new Date().toISOString(),
+        file: "Supabase réel actif",
+        entityKey: entity.key || "",
+        entityLabel: entity.libelle || entity.key || ""
+      },
+      clients
+    };
+
+    saveLS();
+    setStatus(true, `Réel N-1 chargé - ${clients.length} clients`);
+    renderAll();
+  }
 
   // =========================
   // PARSE + PIVOT (réel N-1)
@@ -803,7 +936,7 @@
   // =========================
   function renderAll(){
     if (!basePivot?.clients?.length){
-      renderEmpty("Charge ton fichier Excel pour générer la projection.");
+      renderEmpty("Charge ton fichier Excel ou sélectionne un réel N-1 Supabase pour générer la projection.");
       el.srcLabel.textContent = "—";
       el.clientsLabel.textContent = "0";
       el.updatedLabel.textContent = "—";
@@ -983,7 +1116,8 @@
       return;
     }
 
-    const defaultName = `Projection PSA ${APP_YEAR}`;
+    const projectionLabel = basePivot?.meta?.entityLabel || "PSA";
+    const defaultName = `Projection ${projectionLabel} ${APP_YEAR}`;
     const name = await kentPrompt("Nom de la projection :", defaultName, { title: "Enregistrer la projection" });
     if (!name || !name.trim()) return;
 
@@ -995,7 +1129,7 @@
         nom: name.trim(),
         annee: Number(el.yearBudget.value || APP_YEAR),
         sourceLabel: projected.meta?.source || FILE_NAME,
-        sourceEntityKey: ENTITY_KEY,
+        sourceEntityKey: basePivot?.meta?.entityKey || ENTITY_KEY,
         rows: projected.clients,
         meta: {
           origin: "projectionpsa2026",
