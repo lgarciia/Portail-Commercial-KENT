@@ -597,7 +597,7 @@
       const id = makeClientKey(name, code);
 
       const budget = {};
-      for (const m of MONTHS) budget[m.key] = Math.round(toNumber(r[monthCols[m.key]]));
+      for (const m of MONTHS) budget[m.key] = toNumber(r[monthCols[m.key]]);
 
       clients.push({ id, name: name || `Client ${code}`, nclient: code, budget });
     }
@@ -650,6 +650,13 @@
   }
   async function tryAutoFetchBudget(){
     try{
+      const loadedFromSupabase = await tryLoadActiveBudgetFromSupabase();
+      if (loadedFromSupabase) {
+        await loadRealFromFetch();
+        render();
+        return;
+      }
+
       const { buffer } = await fetchXlsxWithFallback(BUDGET_FILE);
       // si OK, on charge comme si import
       parseBudget(buffer, BUDGET_FILE);
@@ -883,7 +890,7 @@
       let sumBudget = 0;
       let sumReal = 0;
       for (const c of clients){
-        sumBudget += Math.round(toNumber(c.budget?.[m.key]));
+        sumBudget += toNumber(c.budget?.[m.key]);
         sumReal += Math.round(toNumber(realData?.[c.id]?.[m.key]));
       }
       perMonth[m.key] = { real: sumReal, budget: sumBudget, ecart: sumReal - sumBudget };
@@ -922,12 +929,12 @@
   }
 
   function renderClientRow(client){
-    const annualBudget = MONTHS.reduce((a,m)=>a + Math.round(toNumber(client.budget?.[m.key])), 0);
+    const annualBudget = MONTHS.reduce((a,m)=>a + toNumber(client.budget?.[m.key]), 0);
     const annualReal = MONTHS.reduce((a,m)=>a + Math.round(toNumber(realData?.[client.id]?.[m.key])), 0);
     const annualEcart = annualReal - annualBudget;
 
     const cells = MONTHS.map(m => {
-      const budget = Math.round(toNumber(client.budget?.[m.key]));
+      const budget = toNumber(client.budget?.[m.key]);
       const real = Math.round(toNumber(realData?.[client.id]?.[m.key]));
       const ecart = real - budget;
 
@@ -988,7 +995,7 @@
       const r = { CLIENT: c.name, "CODE LIVRÃ‰": c.nclient || "" };
       let annualB = 0, annualR = 0;
       for (const m of MONTHS){
-        const b = Math.round(toNumber(c.budget?.[m.key]));
+        const b = toNumber(c.budget?.[m.key]);
         const rr = Math.round(toNumber(realData?.[c.id]?.[m.key]));
         annualB += b; annualR += rr;
         r[`${m.label} RÃ©el`] = rr;

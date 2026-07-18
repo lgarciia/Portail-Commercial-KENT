@@ -233,7 +233,7 @@
       const nclient = colNClient ? String(row[colNClient] || "").trim() : "";
       const budget = {};
       for (const month of MONTHS){
-        budget[month.key] = toInt(row[monthCols[month.key]]);
+        budget[month.key] = toNumber(row[monthCols[month.key]]);
       }
 
       const id = makeClientMatchKey(name, nclient);
@@ -352,7 +352,7 @@
     const totals = new Array(12).fill(0);
     for (const client of budgetData && budgetData.clients ? budgetData.clients : []){
       for (const month of MONTHS){
-        totals[MONTH_INDEX_BY_KEY[month.key]] += toInt(client && client.budget && client.budget[month.key]);
+        totals[MONTH_INDEX_BY_KEY[month.key]] += toNumber(client && client.budget && client.budget[month.key]);
       }
     }
     return totals;
