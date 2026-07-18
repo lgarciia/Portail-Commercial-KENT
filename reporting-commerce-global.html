@@ -1563,7 +1563,7 @@
       });
 
       if (!snapshot.autoAvailable) {
-        snapshot.status = "Budget auto non disponible. Verifie les fichiers budget PSA, Gueudet, Ford et Direct.";
+        snapshot.status = "Budget auto non disponible. Verifie les budgets actifs Supabase PSA, Gueudet, Ford et Direct.";
       } else if (snapshot.autoFailed.length) {
         snapshot.status = `Budget auto charge partiellement : ${snapshot.autoLoaded.join(", ")} OK. A verifier : ${snapshot.autoFailed.join(", ")}.`;
       } else {

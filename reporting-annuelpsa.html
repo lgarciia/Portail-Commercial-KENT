@@ -371,13 +371,13 @@
         <div class="logo"></div>
         <div class="titleWrap">
           <div class="title">Reporting annuel (PSA)</div>
-          <div class="subtitle">Budget (Excel) + Réel (fetch Excel) → Écarts mensuels & cumul annuel</div>
+          <div class="subtitle">Budget actif Supabase + r&eacute;el import&eacute; &rarr; &eacute;carts mensuels & cumul annuel</div>
         </div>
       </div>
 
       <div class="actions">
         <input id="fileBudget" class="fileInput" type="file" accept=".xlsx,.xls" />
-        <button class="btn primary" id="btnImport">Importer / Recharger le budget</button>
+        <button class="btn primary" id="btnImport">Importer Excel manuel</button>
         <button class="btn" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn" id="btnExportCsv">Exporter CSV</button>
         <button class="btn" id="btnExportJson">Exporter JSON</button>
@@ -389,7 +389,7 @@
       <div class="card">
         <div class="meta">
           <div class="metaLeft">
-            <div class="pill">Fichier budget : <strong id="budgetFileLabel">non chargé</strong></div>
+            <div class="pill">Budget actif : <strong id="budgetFileLabel">non charg&eacute;</strong></div>
             <div class="pill">Clients : <strong id="clientsCount">0</strong></div>
             <div class="pill">Dernière maj : <strong id="lastUpdate">—</strong></div>
             <div class="pill">Réel PSA : <strong id="reelStatus">chargement…</strong></div>
@@ -401,7 +401,7 @@
         </div>
 
         <div class="gridWrap" id="dropZone">
-          <div class="dropHint" id="dropHint">Dépose le fichier budget pour recharger</div>
+          <div class="dropHint" id="dropHint">D&eacute;pose un budget Excel manuel si besoin</div>
 
           <div class="tableScroller" id="tableScroller">
             <table id="reportTable"></table>
@@ -412,7 +412,7 @@
           </div>
 
           <div class="mutedNote">
-            ✅ Budget et réel sont relus directement depuis les fichiers de l’année active. L’import manuel reste disponible.
+            Budget prioritaire : Supabase actif. L'import Excel reste seulement un outil manuel de secours.
           </div>
         </div>
       </div>
@@ -468,8 +468,8 @@
     hScrollInner: document.getElementById("hScrollInner"),
   };
 
-  el.btnImport.textContent = `Importer / Recharger ${BUDGET_FILE}`;
-  el.dropHint.textContent = `Dépose ${BUDGET_FILE} pour recharger`;
+  el.btnImport.textContent = "Importer Excel manuel";
+  el.dropHint.textContent = "D\u00e9pose un budget Excel manuel si besoin";
 
   renderEmpty();
   updateReelStatus("chargement…");

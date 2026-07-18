@@ -735,7 +735,7 @@ el.resultTable.addEventListener("click", (e) => {
   // ---------------------------
   function generate(){
     if (!budgetData?.clients?.length){
-      el.resultTable.innerHTML = emptyTable("Aucune donnée Budget PSA (fetch XLSX).");
+      el.resultTable.innerHTML = emptyTable("Aucune donnee Budget PSA active. Verifie le budget actif Supabase ou charge un Excel de secours.");
       setKpis(0,0,0,0);
       lastExportRows = [];
       return;

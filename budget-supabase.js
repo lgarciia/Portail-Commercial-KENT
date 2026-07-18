@@ -199,16 +199,31 @@
     if (error) throw error;
   }
 
-  async function validateBudget({ nom, annee, entityId, projectionId = null, rows = [], meta = {} }){
+  async function validateBudget({ nom, annee, entityId, projectionId = null, rows = [], meta = {}, replaceActive = false }){
     const lines = normalizeLines(rows);
     if (!lines.length) throw new Error("Aucune ligne budget a valider.");
     const active = await activeBudgetForEntityYear(entityId, annee);
-    if (active) {
+    if (active && !replaceActive) {
       const err = new Error(`Un budget actif existe deja pour cette entite et ${annee}. Desactive-le avant d'en valider un autre.`);
       err.code = "ACTIVE_BUDGET_EXISTS";
       err.activeBudget = active;
       throw err;
     }
+    let replacedActive = null;
+    if (active && replaceActive) {
+      const oldMeta = active.meta && typeof active.meta === "object" ? active.meta : {};
+      const { error: deactivateError } = await client()
+        .from("budgets")
+        .update({
+          statut: "inactive",
+          meta: { ...oldMeta, replaced_at: new Date().toISOString() }
+        })
+        .eq("id", active.id);
+      if (deactivateError) throw deactivateError;
+      replacedActive = active;
+    }
+    const payloadMeta = meta && typeof meta === "object" ? { ...meta } : {};
+    if (replacedActive) payloadMeta.replaced_budget_id = replacedActive.id;
     const payload = {
       projection_id: projectionId || null,
       entite_id: entityId,
@@ -217,22 +232,36 @@
       statut: "active",
       total_annuel: totalRows(lines),
       nb_lignes: lines.length,
-      meta: meta || {},
+      meta: payloadMeta,
       validated_at: new Date().toISOString()
     };
-    const { data, error } = await client()
-      .from("budgets")
-      .insert(payload)
-      .select("*")
-      .single();
-    if (error) throw error;
     try{
-      await insertBudgetLines(data.id, lines);
-    }catch(errorLines){
-      await client().from("budgets").delete().eq("id", data.id);
-      throw errorLines;
+      const { data, error } = await client()
+        .from("budgets")
+        .insert(payload)
+        .select("*")
+        .single();
+      if (error) throw error;
+      try{
+        await insertBudgetLines(data.id, lines);
+      }catch(errorLines){
+        await client().from("budgets").delete().eq("id", data.id);
+        throw errorLines;
+      }
+      return data;
+    }catch(error){
+      if (replacedActive) {
+        const { error: restoreError } = await client()
+          .from("budgets")
+          .update({
+            statut: "active",
+            validated_at: replacedActive.validated_at || new Date().toISOString()
+          })
+          .eq("id", replacedActive.id);
+        if (restoreError) console.warn("Impossible de reactiver l'ancien budget actif apres erreur:", restoreError);
+      }
+      throw error;
     }
-    return data;
   }
 
   async function listBudgets(year){

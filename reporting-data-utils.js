@@ -257,6 +257,7 @@
     return {
       budgetData: { clients: parsed.clients },
       meta: {
+        source: "excel",
         fileName: usedFileName || (Array.isArray(fileName) ? fileName[0] : fileName),
         usedUrl,
         sheetName: parsed.sheetName,

@@ -302,7 +302,7 @@
       <span class="chip"><span class="dot ok" id="dotYear"></span><span id="yearText">Année : —</span></span>
     </div>
     <div class="meta" style="margin-top:8px;">
-      <span class="chip"><span class="dot" id="dotUrlBudget"></span><span id="urlBudgetText">URL budget : —</span></span>
+      <span class="chip"><span class="dot" id="dotUrlBudget"></span><span id="urlBudgetText">Source budget : —</span></span>
       <span class="chip"><span class="dot" id="dotUrlReal"></span><span id="urlRealText">URL réalisé : —</span></span>
     </div>
   </div>
@@ -465,23 +465,23 @@
   ========================= */
   async function loadBudgetForYear(year){
     const file = KentDataConfig.getEntityFile("ford", "budget", year);
-    el.budgetText.textContent = `Budget : chargement… (${file})`;
+    el.budgetText.textContent = "Budget : chargement du budget actif...";
     setDot(el.dotBudget, "warn");
     setDot(el.dotUrlBudget, "warn");
-    el.urlBudgetText.textContent = `URL budget : —`;
+    el.urlBudgetText.textContent = "Source budget : —";
     const supabaseBudget = await loadSupabaseBudgetMonthly("ford", year);
     if(supabaseBudget){
       budgetMonthly = supabaseBudget.monthly;
-      el.urlBudgetText.textContent = "URL budget : Supabase budgets actifs";
+      el.urlBudgetText.textContent = "Source budget : Supabase budgets actifs";
       setDot(el.dotUrlBudget, "ok");
-      el.budgetText.textContent = "Budget : OK Supabase (FORD) - " + supabaseBudget.clientCount + " client(s)";
+      el.budgetText.textContent = "Budget : OK Supabase actif (FORD) - " + supabaseBudget.clientCount + " client(s)";
       setDot(el.dotBudget, "ok");
       return;
     }
 
     try{
       const {buffer, usedUrl} = await fetchXlsxWithFallback(file);
-      el.urlBudgetText.textContent = `URL budget : ${usedUrl}`;
+      el.urlBudgetText.textContent = `Source budget : Excel secours (${usedUrl})`;
       setDot(el.dotUrlBudget, "ok");
 
       const wb = XLSX.read(buffer, { type: "array" });
@@ -512,15 +512,15 @@
       }
       budgetMonthly = sums;
 
-      el.budgetText.textContent = `Budget : OK (${file}) — sheet: ${sheetName}`;
+      el.budgetText.textContent = `Budget : OK Excel secours - ${sheetName}`;
       setDot(el.dotBudget, "ok");
     }catch(err){
       console.error(err);
       budgetMonthly = new Array(12).fill(0);
-      el.budgetText.textContent = `Budget : fetch/lecture impossible`;
+      el.budgetText.textContent = "Budget : source indisponible";
       setDot(el.dotBudget, "bad");
       setDot(el.dotUrlBudget, "bad");
-      el.urlBudgetText.textContent = `URL budget : erreur`;
+      el.urlBudgetText.textContent = "Source budget : erreur";
     }
   }
 

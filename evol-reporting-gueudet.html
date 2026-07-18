@@ -563,7 +563,7 @@
   // ---------------------------
   function generate(){
     if (!budgetData?.clients?.length){
-      el.resultTable.innerHTML = emptyTable("Aucune donnée Budget (fetch XLSX). Vérifie le fichier / nom / chemin.");
+      el.resultTable.innerHTML = emptyTable("Aucune donnee Budget active. Verifie le budget actif Supabase ou charge un Excel de secours.");
       setKpis(0,0,0,0);
       lastExportRows = [];
       return;

@@ -306,7 +306,7 @@
       <span class="chip"><span class="dot ok" id="dotYear"></span><span id="yearText">Année : —</span></span>
     </div>
     <div class="meta" style="margin-top:8px;">
-      <span class="chip"><span class="dot" id="dotUrlBudget"></span><span id="urlBudgetText">URL budget : —</span></span>
+      <span class="chip"><span class="dot" id="dotUrlBudget"></span><span id="urlBudgetText">Source budget : —</span></span>
       <span class="chip"><span class="dot" id="dotUrlReal"></span><span id="urlRealText">URL réalisé : —</span></span>
     </div>
   </div>
@@ -477,10 +477,10 @@
   ========================= */
   async function loadBudgetForYear(year){
     const file = KentDataConfig.getEntityFile("psa", "budget", year);
-    el.budgetText.textContent = `Budget : chargement… (${file})`;
+    el.budgetText.textContent = "Budget : chargement du budget actif...";
     setDot(el.dotBudget, "warn");
     setDot(el.dotUrlBudget, "warn");
-    el.urlBudgetText.textContent = `URL budget : —`;
+    el.urlBudgetText.textContent = "Source budget : —";
 
     try{
       budgetDataset = await window.ReportingDataUtils.loadBudgetData({
@@ -490,18 +490,19 @@
         budgetConfig: DATA_SOURCE.budget,
       });
       budgetMonthly = window.ReportingDataUtils.computeBudgetMonthlyTotals(budgetDataset.budgetData);
-      el.urlBudgetText.textContent = `URL budget : ${budgetDataset.meta.usedUrl}`;
+      const sourceLabel = budgetDataset.meta.source === "supabase" ? "Supabase actif" : "Excel secours";
+      el.urlBudgetText.textContent = `Source budget : ${budgetDataset.meta.usedUrl || sourceLabel}`;
       setDot(el.dotUrlBudget, "ok");
-      el.budgetText.textContent = `Budget : OK (${file}) — sheet: ${budgetDataset.meta.sheetName}`;
+      el.budgetText.textContent = `Budget : OK ${sourceLabel} - ${budgetDataset.meta.sheetName || "budget"}`;
       setDot(el.dotBudget, "ok");
     }catch(err){
       console.error(err);
       budgetDataset = null;
       budgetMonthly = new Array(12).fill(0);
-      el.budgetText.textContent = `Budget : fetch/lecture impossible`;
+      el.budgetText.textContent = "Budget : source indisponible";
       setDot(el.dotBudget, "bad");
       setDot(el.dotUrlBudget, "bad");
-      el.urlBudgetText.textContent = `URL budget : erreur`;
+      el.urlBudgetText.textContent = "Source budget : erreur";
     }
   }
 

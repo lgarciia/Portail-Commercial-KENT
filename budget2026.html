@@ -349,7 +349,7 @@
       <div class="logo"></div>
       <div class="title">
         <b id="pageTitle">Budget</b>
-        <span>Import Projection (XLSX) • N CLIENT • Commentaires • Modifiable • Export XLSX/CSV/JSON</span>
+        <span>Import Projection (XLSX) • Validation budget actif Supabase • Modifiable • Export XLSX/CSV/JSON</span>
       </div>
     </div>
 
@@ -392,7 +392,7 @@
           <button class="btn" id="newEntityBtn">Nouvelle entite</button>
           <button class="btn green" id="validateBudgetBtn">Valider budget actif</button>
         </div>
-        <div class="footnote" id="budgetSupabaseHint" style="margin-top:10px">Excel reste disponible. Supabase prend le relais uniquement quand tu charges/valides un budget.</div>
+        <div class="footnote" id="budgetSupabaseHint" style="margin-top:10px">Excel sert &agrave; construire une projection. Le reporting lit ensuite le budget actif Supabase.</div>
       </div>
       <div class="field">
         <div class="lab">Enveloppe globale</div>
@@ -427,7 +427,7 @@
         <div class="val">
           <button class="btn" id="pasteClientsBtn">Coller une liste</button>
           <span class="footnote">
-            Tu peux importer une projection XLSX (CLIENT + N CLIENT + Mois + TOTAL + COMMENTAIRE).
+            Tu peux importer une projection XLSX, l'ajuster, puis la valider comme budget actif Supabase.
           </span>
         </div>
 
@@ -1183,7 +1183,7 @@ async function validateCurrentBudget(){
   const name = prompt("Nom du budget valide :", defaultName);
   if (!name || !name.trim()) return;
 
-  if (!confirm(`Valider ce budget actif pour ${entityLabel} ${APP_YEAR} ?\n\nS'il existe deja un budget actif, l'action sera bloquee.`)) return;
+  if (!confirm(`Valider ce budget actif pour ${entityLabel} ${APP_YEAR} ?\n\nSi un budget actif existe deja, je te proposerai de le remplacer sans le supprimer.`)) return;
 
   try{
     const saved = await window.BudgetSupabase.validateBudget({
@@ -1194,8 +1194,36 @@ async function validateCurrentBudget(){
       rows: budgetRowsFromState(),
       meta: { origin: "budget2026", sourceProjectionId: currentProjectionId || null }
     });
+    await refreshBudgetSupabaseControls();
     alert(`Budget valide : ${saved.nom}`);
   }catch(error){
+    if (error?.code === "ACTIVE_BUDGET_EXISTS") {
+      const activeName = error.activeBudget?.nom || "budget actif actuel";
+      const replace = confirm(
+        `Un budget actif existe deja pour ${entityLabel} ${APP_YEAR} : ${activeName}.\n\n` +
+        "Tu veux le remplacer par ce nouveau budget ?\n\n" +
+        "L'ancien budget sera conserve en inactif, aucune ligne budget ne sera supprimee."
+      );
+      if (!replace) return;
+      try{
+        const saved = await window.BudgetSupabase.validateBudget({
+          nom: name.trim(),
+          annee: APP_YEAR,
+          entityId,
+          projectionId: currentProjectionId || null,
+          rows: budgetRowsFromState(),
+          meta: { origin: "budget2026", sourceProjectionId: currentProjectionId || null },
+          replaceActive: true
+        });
+        await refreshBudgetSupabaseControls();
+        alert(`Budget actif remplace : ${saved.nom}\n\nL'ancien budget est conserve en inactif.`);
+        return;
+      }catch(replaceError){
+        console.error("Replace active budget failed", replaceError);
+        alert(replaceError?.message || "Impossible de remplacer le budget actif.");
+        return;
+      }
+    }
     console.error("Validate budget failed", error);
     alert(error?.message || "Impossible de valider le budget.");
   }
