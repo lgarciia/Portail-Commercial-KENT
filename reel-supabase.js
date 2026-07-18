@@ -23,30 +23,30 @@
       clientNameCandidates: ["nom du client", "nom client", "client"],
       amountCandidates: ["montant prix achat kent", "montant achat kent", "montant"],
       monthCandidates: ["mois2", "mois", "month"],
-      dateCandidates: ["date", "date piece", "date pièce", "date facture"],
-      refCandidates: ["reference", "référence", "ref", "code produit"],
+      dateCandidates: ["date facturation", "date de vente", "date vente", "date facture", "date", "date piece", "date pièce"],
+      refCandidates: ["nos réf kent", "nos ref kent", "reference produits", "reference produit", "référence produits", "référence produit", "code produit", "n° produit", "n produit", "reference", "référence", "ref"],
       desCandidates: ["designation", "désignation", "designation produit", "designation produits"],
-      qtyCandidates: ["quantite", "quantité", "qte", "qté"]
+      qtyCandidates: ["quantité payante servie", "quantite payante servie", "quantité servie", "quantite servie", "quantite", "quantité", "qte", "qté"]
     },
     gueudet: {
       clientCodeCandidates: ["n° client interne", "no client interne", "n client interne", "numero client interne", "n° client", "no client", "n client", "numero client", "nclient"],
       clientNameCandidates: ["nom du client", "nom client", "client"],
       amountCandidates: ["montant prix achat kent", "montant achat kent", "montant", "ca total", "ca", "chiffre d'affaires", "chiffre daffaires"],
       monthCandidates: ["mois2", "mois", "month"],
-      dateCandidates: ["date", "date piece", "date pièce", "date facture"],
-      refCandidates: ["reference", "référence", "ref", "code produit"],
+      dateCandidates: ["date facturation", "date de vente", "date vente", "date facture", "date", "date piece", "date pièce"],
+      refCandidates: ["nos réf kent", "nos ref kent", "reference produits", "reference produit", "référence produits", "référence produit", "code produit", "n° produit", "n produit", "reference", "référence", "ref"],
       desCandidates: ["designation", "désignation", "designation produit", "designation produits"],
-      qtyCandidates: ["quantite", "quantité", "qte", "qté"]
+      qtyCandidates: ["quantité payante servie", "quantite payante servie", "quantité servie", "quantite servie", "quantite", "quantité", "qte", "qté"]
     },
     default: {
       clientCodeCandidates: ["code livré", "code livre", "code", "code livre client"],
       clientNameCandidates: ["nom client", "nom du client", "client"],
       amountCandidates: ["ca total", "ca", "chiffre d'affaires", "chiffre daffaires", "montant"],
       monthCandidates: ["mois2", "mois", "month"],
-      dateCandidates: ["date", "date piece", "date pièce", "date facture"],
-      refCandidates: ["reference", "référence", "ref", "code produit"],
+      dateCandidates: ["date facturation", "date de vente", "date vente", "date commande", "date facture", "date", "date piece", "date pièce"],
+      refCandidates: ["nos réf kent", "nos ref kent", "reference produits", "reference produit", "référence produits", "référence produit", "code produit", "n° produit", "n produit", "reference", "référence", "ref"],
       desCandidates: ["designation", "désignation", "designation produit", "designation produits"],
-      qtyCandidates: ["quantite", "quantité", "qte", "qté"]
+      qtyCandidates: ["quantité payante servie", "quantite payante servie", "quantité servie", "quantite servie", "quantite", "quantité", "qte", "qté"]
     }
   };
 
@@ -415,6 +415,31 @@
     return data || [];
   }
 
+  async function selectAllPaged(buildQuery, pageSize = 1000){
+    const all = [];
+    for (let start = 0; ; start += pageSize){
+      const { data, error } = await buildQuery().range(start, start + pageSize - 1);
+      if (error) throw error;
+      const page = data || [];
+      all.push(...page);
+      if (page.length < pageSize) break;
+    }
+    return all;
+  }
+
+  async function getActiveLinesByEntityYear(entityKey, year){
+    if (!entityKey) throw new Error("Entite obligatoire.");
+    if (!Number(year)) throw new Error("Annee obligatoire.");
+    return await selectAllPaged(() => client()
+      .from("v_reel_lignes_actives")
+      .select("*")
+      .eq("entite_key", String(entityKey))
+      .eq("annee", Number(year))
+      .order("mois", { ascending: true })
+      .order("ordre", { ascending: true })
+    );
+  }
+
   window.ReelSupabase = {
     MONTHS,
     REAL_COLUMN_CONFIGS,
@@ -428,6 +453,7 @@
     getImport,
     deleteImport,
     activateImport,
-    getAnnualRealByEntity
+    getAnnualRealByEntity,
+    getActiveLinesByEntityYear
   };
 })();

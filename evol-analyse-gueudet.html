@@ -11,6 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
   <script src="./reporting-data-utils.js"></script>
 
   <style>
@@ -335,6 +336,7 @@
 <script>
 (function(){
   const CONFIG = {
+    ENTITY_KEY: "gueudet",
     LABEL: "GUEUDET",
     YEAR_MIN: 2024,
     YEAR_MAX: 2028,
@@ -500,6 +502,7 @@
 
     try{
       realDataset = await window.ReportingDataUtils.loadRealDataAgainstBudget({
+        entityKey: CONFIG.ENTITY_KEY,
         fileName: file,
         budgetData: budgetDataset.budgetData,
         realConfig: DATA_SOURCE.real,

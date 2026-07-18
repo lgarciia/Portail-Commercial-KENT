@@ -10,6 +10,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
 
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -1128,6 +1129,9 @@
      REAL entity -> [12]
   ========================= */
   async function loadRealEntity(ent, year){
+    const supabaseSums = await loadRealEntityFromSupabase(ent, year);
+    if (supabaseSums) return supabaseSums;
+
     const file = ent.realFile;
     if (!file) throw new Error("Real file manquant");
 
@@ -1170,6 +1174,23 @@
     }
 
     return sums;
+  }
+
+  async function loadRealEntityFromSupabase(ent, year){
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return null;
+    try{
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(ent.key, year);
+      const sums = new Array(12).fill(0);
+      for (const row of rows || []){
+        const index = Number(row.mois) - 1;
+        if (index < 0 || index > 11) continue;
+        sums[index] += toNumber(row.montant);
+      }
+      return sums;
+    }catch(error){
+      console.warn("Reel Supabase indisponible, fallback Excel:", error && error.message ? error.message : error);
+      return null;
+    }
   }
 
   function extractRealRowYear(row, colYear, colDate){

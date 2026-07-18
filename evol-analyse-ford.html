@@ -4,11 +4,12 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Evol Analyse — FORD</title>
+  <title>Evol Analyse â€” FORD</title>
   <script src="./shared-ui.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
 
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -281,29 +282,29 @@
     <div class="brand">
       <div class="logo"></div>
       <div class="title">
-        <b>Evol Analyse — FORD</b>
-        <span>Budget vs Réalisé — clic mois → clients → achats</span>
+        <b>Evol Analyse â€” FORD</b>
+        <span>Budget vs RÃ©alisÃ© â€” clic mois â†’ clients â†’ achats</span>
       </div>
     </div>
 
     <div class="navRight">
-      <span class="muted" style="font-weight:900;font-size:12px;">Année</span>
-      <select id="yearSelect" title="Choix de l'année"></select>
+      <span class="muted" style="font-weight:900;font-size:12px;">AnnÃ©e</span>
+      <select id="yearSelect" title="Choix de l'annÃ©e"></select>
       <button class="btn primary" id="btnReload">Recharger</button>
-      <button class="btn ghost" id="btnOpenEvol">Évol Report vs Budget</button>
+      <button class="btn ghost" id="btnOpenEvol">Ã‰vol Report vs Budget</button>
     </div>
   </div>
 
   <div class="card">
     <p class="sectionTitle">Sources</p>
     <div class="meta">
-      <span class="chip"><span class="dot" id="dotBudget"></span><span id="budgetText">Budget : —</span></span>
-      <span class="chip"><span class="dot" id="dotReal"></span><span id="realText">Réalisé : —</span></span>
-      <span class="chip"><span class="dot ok" id="dotYear"></span><span id="yearText">Année : —</span></span>
+      <span class="chip"><span class="dot" id="dotBudget"></span><span id="budgetText">Budget : â€”</span></span>
+      <span class="chip"><span class="dot" id="dotReal"></span><span id="realText">RÃ©alisÃ© : â€”</span></span>
+      <span class="chip"><span class="dot ok" id="dotYear"></span><span id="yearText">AnnÃ©e : â€”</span></span>
     </div>
     <div class="meta" style="margin-top:8px;">
-      <span class="chip"><span class="dot" id="dotUrlBudget"></span><span id="urlBudgetText">Source budget : —</span></span>
-      <span class="chip"><span class="dot" id="dotUrlReal"></span><span id="urlRealText">URL réalisé : —</span></span>
+      <span class="chip"><span class="dot" id="dotUrlBudget"></span><span id="urlBudgetText">Source budget : â€”</span></span>
+      <span class="chip"><span class="dot" id="dotUrlReal"></span><span id="urlRealText">URL rÃ©alisÃ© : â€”</span></span>
     </div>
   </div>
 
@@ -313,7 +314,7 @@
       <table id="tbl"></table>
     </div>
     <div class="meta" style="margin-top:10px;">
-      <span class="muted" style="font-weight:850;">Clic sur un mois = drilldown. (Le commentaire est sauvegardé localement.)</span>
+      <span class="muted" style="font-weight:850;">Clic sur un mois = drilldown. (Le commentaire est sauvegardÃ© localement.)</span>
     </div>
   </div>
 
@@ -323,11 +324,11 @@
 <div class="drawer" id="drawer">
   <div class="drawerHeader">
     <div style="min-width:0">
-      <b id="drawerTitle">—</b><br>
-      <span id="drawerSub">—</span>
+      <b id="drawerTitle">â€”</b><br>
+      <span id="drawerSub">â€”</span>
       <div class="drawerActions" id="drawerActions"></div>
     </div>
-    <button class="btn" id="btnCloseDrawer" style="padding:9px 10px">✕</button>
+    <button class="btn" id="btnCloseDrawer" style="padding:9px 10px">âœ•</button>
   </div>
   <div class="drawerBody" id="drawerBody"></div>
 </div>
@@ -338,6 +339,7 @@
      CONFIG
   ======================= */
   const CONFIG = {
+    ENTITY_KEY: "ford",
     LABEL: "FORD",
     YEAR_MIN: 2024,
     YEAR_MAX: 2028,
@@ -352,7 +354,7 @@
 
     REAL_FILE: "activitereelford.xlsx",
 
-    // ✅ IMPORTANT : Ford/Direct = Date commande
+    // âœ… IMPORTANT : Ford/Direct = Date commande
     REAL_DATE_COL: "Date commande",
 
     EVOL_REPORT_PAGE: "evol-reporting-ford.html",
@@ -362,8 +364,8 @@
   };
 
   const MONTHS = [
-    "Janvier","Février","Mars","Avril","Mai","Juin",
-    "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
+    "Janvier","FÃ©vrier","Mars","Avril","Mai","Juin",
+    "Juillet","AoÃ»t","Septembre","Octobre","Novembre","DÃ©cembre"
   ];
 
   const now = new Date();
@@ -424,7 +426,7 @@
   });
 
   async function refreshAll(){
-    el.yearText.textContent = `Année : ${selectedYear}`;
+    el.yearText.textContent = `AnnÃ©e : ${selectedYear}`;
     await loadBudgetForYear(selectedYear);
     await loadRealForYear(selectedYear);
     renderTable();
@@ -435,7 +437,7 @@
     for(let y=CONFIG.YEAR_MIN;y<=CONFIG.YEAR_MAX;y++) years.push(y);
     el.yearSelect.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join("");
     el.yearSelect.value = String(selectedYear);
-    el.yearText.textContent = `Année : ${selectedYear}`;
+    el.yearText.textContent = `AnnÃ©e : ${selectedYear}`;
   }
 
   async function loadSupabaseBudgetMonthly(entityKey, year){
@@ -468,7 +470,7 @@
     el.budgetText.textContent = "Budget : chargement du budget actif...";
     setDot(el.dotBudget, "warn");
     setDot(el.dotUrlBudget, "warn");
-    el.urlBudgetText.textContent = "Source budget : —";
+    el.urlBudgetText.textContent = "Source budget : â€”";
     const supabaseBudget = await loadSupabaseBudgetMonthly("ford", year);
     if(supabaseBudget){
       budgetMonthly = supabaseBudget.monthly;
@@ -526,19 +528,64 @@
 
   /* =========================
      REAL
-     ✅ FIX PRODUIT : colDes inclut "Description produit"
+     âœ… FIX PRODUIT : colDes inclut "Description produit"
   ========================= */
+  async function loadRealFromSupabase(year){
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return false;
+
+    try{
+      const sourceRows = await window.ReelSupabase.getActiveLinesByEntityYear(CONFIG.ENTITY_KEY, year);
+      const sums = new Array(12).fill(0);
+      const rows = [];
+
+      for (const row of sourceRows || []){
+        const amount = toNumber(row.montant);
+        if (!amount) continue;
+
+        const mi = Number(row.mois) - 1;
+        if (mi < 0 || mi > 11) continue;
+        sums[mi] += amount;
+
+        const dt = parseAnyDate(row.date_piece);
+        rows.push({
+          monthIdx: mi,
+          weekIdx: dt ? weekBucket(dt) : -1,
+          date: dt,
+          clientInternal: String(row.client_code || "").trim(),
+          clientName: String(row.client_nom || "").trim(),
+          amount,
+          ref: String(row.reference || "").trim(),
+          des: String(row.designation || "").trim(),
+          qty: toNumber(row.quantite),
+        });
+      }
+
+      realMonthly = sums;
+      realRows = rows;
+      el.urlRealText.textContent = "URL réalisé : Supabase réel actif";
+      setDot(el.dotUrlReal, "ok");
+      const countProducts = rows.filter(row => row.ref || row.des).length;
+      el.realText.textContent = `Réalisé : OK Supabase réel actif - ${rows.length} ligne(s) - ${countProducts} produit(s) détecté(s)`;
+      setDot(el.dotReal, "ok");
+      return true;
+    }catch(error){
+      console.warn("Reel Supabase indisponible, fallback Excel:", error && error.message ? error.message : error);
+      return false;
+    }
+  }
   async function loadRealForYear(year){
     const file = KentDataConfig.getEntityFile("ford", "real", year);
 
-    el.realText.textContent = `Réalisé : chargement… (${file})`;
+    el.realText.textContent = `RÃ©alisÃ© : chargementâ€¦ (${file})`;
     setDot(el.dotReal, "warn");
     setDot(el.dotUrlReal, "warn");
-    el.urlRealText.textContent = `URL réalisé : —`;
+    el.urlRealText.textContent = `URL rÃ©alisÃ© : â€”`;
+
+    if (await loadRealFromSupabase(year)) return;
 
     try{
       const {buffer, usedUrl} = await fetchXlsxWithFallback(file);
-      el.urlRealText.textContent = `URL réalisé : ${usedUrl}`;
+      el.urlRealText.textContent = `URL rÃ©alisÃ© : ${usedUrl}`;
       setDot(el.dotUrlReal, "ok");
 
       const wb = XLSX.read(buffer, { type: "array" });
@@ -549,7 +596,7 @@
       if (!raw.length){
         realMonthly = new Array(12).fill(0);
         realRows = [];
-        el.realText.textContent = `Réalisé : fichier vide`;
+        el.realText.textContent = `RÃ©alisÃ© : fichier vide`;
         setDot(el.dotReal, "bad");
         return;
       }
@@ -561,32 +608,32 @@
       const colAmt = findCol(headerMap, ["ca total","ca","montant","montant ca","chiffre d'affaire"]);
 
       const colClientInt = findCol(headerMap, [
-        "n° client interne","no client interne","n client interne","numero client interne",
-        "n° client","code livré","code livre","code"
+        "nÂ° client interne","no client interne","n client interne","numero client interne",
+        "nÂ° client","code livrÃ©","code livre","code"
       ]);
       const colClientName = findCol(headerMap, ["nom du client","nom client","client"]);
 
-      // ✅ Produit
+      // âœ… Produit
       const colRef = findCol(headerMap, [
-        "reference produits","référence produits","reference produit","référence produit","ref produit","ref",
+        "reference produits","rÃ©fÃ©rence produits","reference produit","rÃ©fÃ©rence produit","ref produit","ref",
         "code produit","code article","article"
       ]);
 
-      // ✅ FIX : ici on ajoute "Description produit"
+      // âœ… FIX : ici on ajoute "Description produit"
       const colDes = findCol(headerMap, [
         "description produit",      // <-- TA COLONNE
         "description",
-        "libelle produit","libellé produit",
-        "désignation","designation","design",
-        "produit","article libelle","article libellé"
+        "libelle produit","libellÃ© produit",
+        "dÃ©signation","designation","design",
+        "produit","article libelle","article libellÃ©"
       ]);
 
-      const colQty = findCol(headerMap, ["quantité payante servie","quantite payante servie","quantité","quantite","qte","qté"]);
+      const colQty = findCol(headerMap, ["quantitÃ© payante servie","quantite payante servie","quantitÃ©","quantite","qte","qtÃ©"]);
 
       if (!colAmt || (!colDate && !colMonth)){
         realMonthly = new Array(12).fill(0);
         realRows = [];
-        el.realText.textContent = `Réalisé : colonnes Date/Mois ou CA introuvables`;
+        el.realText.textContent = `RÃ©alisÃ© : colonnes Date/Mois ou CA introuvables`;
         setDot(el.dotReal, "bad");
         return;
       }
@@ -617,7 +664,7 @@
           clientName: colClientName ? String(r[colClientName] ?? "").trim() : "",
           amount,
           ref: colRef ? String(r[colRef] ?? "").trim() : "",
-          des: colDes ? String(r[colDes] ?? "").trim() : "",   // ✅ maintenant ça remplira
+          des: colDes ? String(r[colDes] ?? "").trim() : "",   // âœ… maintenant Ã§a remplira
           qty: colQty ? toNumber(r[colQty]) : 0,
         });
       }
@@ -626,17 +673,17 @@
       realRows = rows;
 
       const dateInfo = colDate ? `Date OK (${CONFIG.REAL_DATE_COL})` : `Sans date (mode mois2)`;
-      const prodInfo = (colDes || colRef) ? `Produit OK (${colDes || colRef})` : `Produit: non détecté`;
-      el.realText.textContent = `Réalisé : OK (${file}) — sheet: ${sheetName} — ${dateInfo} — ${prodInfo}`;
+      const prodInfo = (colDes || colRef) ? `Produit OK (${colDes || colRef})` : `Produit: non dÃ©tectÃ©`;
+      el.realText.textContent = `RÃ©alisÃ© : OK (${file}) â€” sheet: ${sheetName} â€” ${dateInfo} â€” ${prodInfo}`;
       setDot(el.dotReal, "ok");
     }catch(err){
       console.error(err);
       realMonthly = new Array(12).fill(0);
       realRows = [];
-      el.realText.textContent = `Réalisé : erreur fetch/lecture`;
+      el.realText.textContent = `RÃ©alisÃ© : erreur fetch/lecture`;
       setDot(el.dotReal, "bad");
       setDot(el.dotUrlReal, "bad");
-      el.urlRealText.textContent = `URL réalisé : erreur`;
+      el.urlRealText.textContent = `URL rÃ©alisÃ© : erreur`;
     }
   }
 
@@ -666,9 +713,9 @@
       <thead>
         <tr>
           <th style="text-align:left;min-width:190px">Mois</th>
-          <th style="min-width:150px">CA Réalisé</th>
+          <th style="min-width:150px">CA RÃ©alisÃ©</th>
           <th style="min-width:150px">Budget</th>
-          <th style="min-width:150px">Écart</th>
+          <th style="min-width:150px">Ã‰cart</th>
           <th style="text-align:left;min-width:340px">Commentaire</th>
         </tr>
       </thead>
@@ -691,7 +738,7 @@
             <td>${fmt(r.budget)}</td>
             <td>${fmtEcart(r.ecart)}</td>
             <td style="text-align:left">
-              <input class="comment" data-month="${r.idx}" placeholder="Note / analyse…" value="${escAttr(r.comment)}" />
+              <input class="comment" data-month="${r.idx}" placeholder="Note / analyseâ€¦" value="${escAttr(r.comment)}" />
             </td>
           </tr>
         `).join("")}
@@ -710,7 +757,7 @@
           <td>${fmt(cumBudget)}</td>
           <td>${fmtEcart(cumEcart)}</td>
           <td class="muted" style="text-align:left">
-            ${prevMonthIdx >= 0 ? `Somme Jan → ${MONTHS[prevMonthIdx]}` : `Aucun mois à cumuler (année future)`}
+            ${prevMonthIdx >= 0 ? `Somme Jan â†’ ${MONTHS[prevMonthIdx]}` : `Aucun mois Ã  cumuler (annÃ©e future)`}
           </td>
         </tr>
       </tbody>
@@ -784,19 +831,19 @@
     const total = clients.reduce((s,x)=>s+x.amount,0);
 
     showDrawer({
-      title: `Détail clients — ${monthName}`,
-      sub: `${CONFIG.LABEL} • ${selectedYear} • ${clients.length} clients • CA ${fmt(total)}`,
+      title: `DÃ©tail clients â€” ${monthName}`,
+      sub: `${CONFIG.LABEL} â€¢ ${selectedYear} â€¢ ${clients.length} clients â€¢ CA ${fmt(total)}`,
       actions: [
-        { label: "Évol Report vs Budget", onClick: () => goEvolReport(monthIdx) },
+        { label: "Ã‰vol Report vs Budget", onClick: () => goEvolReport(monthIdx) },
         { label: "Fermer", onClick: closeDrawer },
       ],
       bodyHtml: `
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-          <input id="clientSearch" type="text" placeholder="Rechercher un client…" style="flex:1;min-width:220px;">
-          <button class="pill" id="sortClientBtn">Tri CA: ▼</button>
+          <input id="clientSearch" type="text" placeholder="Rechercher un clientâ€¦" style="flex:1;min-width:220px;">
+          <button class="pill" id="sortClientBtn">Tri CA: â–¼</button>
         </div>
         <div id="clientList">
-          ${clients.length ? clients.map(c => clientCardHtml(c)).join("") : `<div class="empty">Aucune ligne réel pour ce mois.</div>`}
+          ${clients.length ? clients.map(c => clientCardHtml(c)).join("") : `<div class="empty">Aucune ligne rÃ©el pour ce mois.</div>`}
         </div>
       `,
       afterRender: () => {
@@ -833,7 +880,7 @@
 
         sortBtn.addEventListener("click", () => {
           desc = !desc;
-          sortBtn.textContent = `Tri CA: ${desc ? "▼" : "▲"}`;
+          sortBtn.textContent = `Tri CA: ${desc ? "â–¼" : "â–²"}`;
           apply();
         });
 
@@ -847,11 +894,11 @@
       return `
         <div class="listCard" data-client="${escAttr(id)}">
           <div class="listTop">
-            <div class="name">${esc(c.clientName || "—")}</div>
+            <div class="name">${esc(c.clientName || "â€”")}</div>
             <div class="val">${fmt(c.amount)}</div>
           </div>
           <div class="listSub">
-            <span class="tag">N°: <b>${esc(c.clientInternal || "—")}</b></span>
+            <span class="tag">NÂ°: <b>${esc(c.clientInternal || "â€”")}</b></span>
             <span class="tag">Lignes: <b>${c.lines}</b></span>
           </div>
         </div>
@@ -891,12 +938,12 @@
         ${items.map(it => `
           <div class="listCard" style="cursor:default;">
             <div class="listTop">
-              <div class="name">${esc(it.des || it.ref || "—")}</div>
+              <div class="name">${esc(it.des || it.ref || "â€”")}</div>
               <div class="val">${fmt(it.amount)}</div>
             </div>
             <div class="listSub">
-              <span class="tag">Ref: <b>${esc(it.ref || "—")}</b></span>
-              <span class="tag">Qté: <b>${fmt(it.qty)}</b></span>
+              <span class="tag">Ref: <b>${esc(it.ref || "â€”")}</b></span>
+              <span class="tag">QtÃ©: <b>${fmt(it.qty)}</b></span>
               <span class="tag">Lignes: <b>${it.lines}</b></span>
             </div>
           </div>
@@ -904,7 +951,7 @@
       `;
     } else {
       blocksHtml = `
-        <div class="empty">Pas de colonnes produit détectées → vérifie "Description produit" / "Ref".</div>
+        <div class="empty">Pas de colonnes produit dÃ©tectÃ©es â†’ vÃ©rifie "Description produit" / "Ref".</div>
         ${rows.slice(0, 300).map(r => `
           <div class="listCard" style="cursor:default;">
             <div class="listTop">
@@ -917,11 +964,11 @@
     }
 
     showDrawer({
-      title: `Achats — ${monthName}`,
-      sub: `${esc(clientName || "—")} • ${esc(clientInternal || "—")} • CA ${fmt(total)}`,
+      title: `Achats â€” ${monthName}`,
+      sub: `${esc(clientName || "â€”")} â€¢ ${esc(clientInternal || "â€”")} â€¢ CA ${fmt(total)}`,
       actions: [
-        { label: "← Clients", onClick: () => openMonthDetails(monthIdx) },
-        { label: "Évol Report vs Budget", onClick: () => goEvolReport(monthIdx) },
+        { label: "â† Clients", onClick: () => openMonthDetails(monthIdx) },
+        { label: "Ã‰vol Report vs Budget", onClick: () => goEvolReport(monthIdx) },
         { label: "Fermer", onClick: closeDrawer },
       ],
       bodyHtml: blocksHtml
@@ -940,8 +987,8 @@
   }
 
   function showDrawer({title, sub, actions, bodyHtml, afterRender}){
-    el.drawerTitle.textContent = title || "—";
-    el.drawerSub.textContent = sub || "—";
+    el.drawerTitle.textContent = title || "â€”";
+    el.drawerSub.textContent = sub || "â€”";
     el.drawerBody.innerHTML = bodyHtml || "";
     el.drawerActions.innerHTML = (actions || []).map((a, i) =>
       `<button class="pill" data-act="${i}">${esc(a.label)}</button>`
@@ -1092,17 +1139,17 @@
   function monthToIndex(m){
     const map = {
       "janvier":0,"jan":0,"1":0,
-      "fevrier":1,"février":1,"fev":1,"2":1,
+      "fevrier":1,"fÃ©vrier":1,"fev":1,"2":1,
       "mars":2,"3":2,
       "avril":3,"4":3,
       "mai":4,"5":4,
       "juin":5,"6":5,
       "juillet":6,"7":6,
-      "aout":7,"août":7,"8":7,
+      "aout":7,"aoÃ»t":7,"8":7,
       "septembre":8,"sep":8,"9":8,
       "octobre":9,"oct":9,"10":9,
       "novembre":10,"nov":10,"11":10,
-      "decembre":11,"décembre":11,"dec":11,"12":11
+      "decembre":11,"dÃ©cembre":11,"dec":11,"12":11
     };
     return map[norm(m)] ?? -1;
   }

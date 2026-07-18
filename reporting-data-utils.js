@@ -278,6 +278,87 @@
     }
   }
 
+  function inferEntityKey(options){
+    if (options && options.entityKey) return String(options.entityKey || "").trim().toLowerCase();
+    const files = [];
+    if (options && options.fileName) files.push(options.fileName);
+    if (options && Array.isArray(options.fileCandidates)) files.push(...options.fileCandidates);
+    else if (options && options.fileCandidates) files.push(options.fileCandidates);
+    const text = files.join(" ").toLowerCase();
+    if (text.includes("psa")) return "psa";
+    if (text.includes("gueudet")) return "gueudet";
+    if (text.includes("ford")) return "ford";
+    if (text.includes("direct")) return "direct";
+    return "";
+  }
+
+  async function loadRealDataFromSupabase(options){
+    if (!options || options.preferSupabase === false) return null;
+    const entityKey = inferEntityKey(options);
+    const year = Number.isFinite(options.year) ? options.year : null;
+    if (!entityKey || !year) return null;
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return null;
+
+    try{
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(entityKey, year);
+      const budgetData = options.budgetData;
+      const lookups = buildBudgetLookups(budgetData);
+      const nextReal = {};
+      const realRows = [];
+
+      for (const row of rows || []){
+        const amount = toNumber(row && row.montant);
+        if (!amount) continue;
+
+        const monthNumber = Number(row && row.mois);
+        const month = MONTHS[monthNumber - 1];
+        if (!month) continue;
+
+        const rawClientCode = String(row.client_code || "").trim();
+        const rawClientName = String(row.client_nom || "").trim();
+        const budgetClient = ensureBudgetClient(budgetData, lookups, rawClientCode, rawClientName);
+        if (!budgetClient) continue;
+
+        if (!nextReal[budgetClient.id]) nextReal[budgetClient.id] = {};
+        nextReal[budgetClient.id][month.key] = toNumber(nextReal[budgetClient.id][month.key]) + amount;
+
+        const date = parseAnyDate(row.date_piece);
+        realRows.push({
+          monthIdx: MONTH_INDEX_BY_KEY[month.key],
+          weekIdx: date ? weekBucket(date) : -1,
+          date,
+          clientInternal: rawClientCode,
+          clientName: rawClientName || budgetClient.name || "",
+          budgetClientId: budgetClient.id,
+          budgetClientName: budgetClient.name || "",
+          budgetClientNClient: budgetClient.nclient || "",
+          amount,
+          ref: String(row.reference || "").trim(),
+          des: String(row.designation || "").trim(),
+          qty: toNumber(row.quantite),
+        });
+      }
+
+      return {
+        realData: nextReal,
+        realRows,
+        activiteClients: buildActivityClients(budgetData, nextReal),
+        meta: {
+          source: "supabase",
+          fileName: "Supabase réel actif",
+          usedUrl: "Supabase réel actif",
+          sheetName: "v_reel_lignes_actives",
+          usedDateColumn: "date_piece",
+          usedMonthColumn: "mois",
+          usedYearColumn: "annee",
+        },
+      };
+    }catch(error){
+      console.warn("Reel Supabase indisponible, fallback Excel:", error?.message || error);
+      return null;
+    }
+  }
+
   function ensureBudgetClient(budgetData, lookups, nclientInterne, clientName){
     const known = findMatchedClient(
       lookups.exact,
@@ -370,6 +451,7 @@
   }
 
   async function loadRealDataAgainstBudget(options){
+    options = options || {};
     const fileName = options.fileName || options.fileCandidates;
     const budgetData = options.budgetData;
     const realConfig = options.realConfig || {};
@@ -378,6 +460,9 @@
     if (!budgetData || !Array.isArray(budgetData.clients)) {
       throw new Error("budgetData absent");
     }
+
+    const supabaseReal = await loadRealDataFromSupabase(options);
+    if (supabaseReal) return supabaseReal;
 
     const { buffer, usedUrl, usedFileName } = await fetchXlsxWithFallback(fileName);
     const workbook = XLSX.read(buffer, { type: "array" });
@@ -406,7 +491,7 @@
     const colAmt = findCol(headerMap, realConfig.amountCandidates || ["montant", "ca"]);
     const colMonth = findCol(headerMap, realConfig.monthCandidates || ["mois2", "mois", "month"]);
     const colDate = findCol(headerMap, realConfig.dateCandidates || []);
-    const colYear = findCol(headerMap, realConfig.yearCandidates || ["annee", "année", "year"]);
+    const colYear = findCol(headerMap, realConfig.yearCandidates || ["annee", "annÃ©e", "year"]);
     const colRef = findCol(headerMap, realConfig.refCandidates || []);
     const colDes = findCol(headerMap, realConfig.desCandidates || []);
     const colQty = findCol(headerMap, realConfig.qtyCandidates || []);
@@ -542,6 +627,7 @@
     fetchXlsxWithFallback,
     loadBudgetData,
     loadRealDataAgainstBudget,
+    loadRealDataFromSupabase,
     computeBudgetMonthlyTotals,
     computeRealMonthlyTotals,
     buildActivityClients,

@@ -10,6 +10,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
 
   <!-- SheetJS (XLSX) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -382,7 +383,7 @@
         <button class="btn" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn" id="btnExportCsv">Exporter CSV</button>
         <button class="btn" id="btnExportJson">Exporter JSON</button>
-        <button class="btn danger" id="btnResetReal">Reset Réel</button>
+        <button class="btn danger" id="btnResetReal">Reset RÃ©el</button>
       </div>
     </div>
 
@@ -392,12 +393,12 @@
           <div class="metaLeft">
             <div class="pill">Budget actif : <strong id="budgetFileLabel">non charg&eacute;</strong></div>
             <div class="pill">Clients : <strong id="clientsCount">0</strong></div>
-            <div class="pill">Dernière maj : <strong id="lastUpdate">—</strong></div>
-            <div class="pill">Réel PSA : <strong id="reelStatus">chargement…</strong></div>
+            <div class="pill">DerniÃ¨re maj : <strong id="lastUpdate">â€”</strong></div>
+            <div class="pill">RÃ©el PSA : <strong id="reelStatus">chargementâ€¦</strong></div>
             <input class="search" id="search" placeholder="Filtrer client (nom ou n client)..." />
           </div>
           <div class="pill">
-            Astuce : drag&drop le fichier Excel ici • <span class="kbd">Ctrl</span>+<span class="kbd">F</span>
+            Astuce : drag&drop le fichier Excel ici â€¢ <span class="kbd">Ctrl</span>+<span class="kbd">F</span>
           </div>
         </div>
 
@@ -424,17 +425,17 @@
 (async function(){
   const MONTHS = [
     { key: "jan", label: "Janvier", excel: "Janvier" },
-    { key: "feb", label: "Février", excel: "Février" },
+    { key: "feb", label: "FÃ©vrier", excel: "FÃ©vrier" },
     { key: "mar", label: "Mars", excel: "Mars" },
     { key: "apr", label: "Avril", excel: "Avril" },
     { key: "may", label: "Mai", excel: "Mai" },
     { key: "jun", label: "Juin", excel: "Juin" },
     { key: "jul", label: "Juillet", excel: "Juillet" },
-    { key: "aug", label: "Août", excel: "Août" },
+    { key: "aug", label: "AoÃ»t", excel: "AoÃ»t" },
     { key: "sep", label: "Septembre", excel: "Septembre" },
     { key: "oct", label: "Octobre", excel: "Octobre" },
     { key: "nov", label: "Novembre", excel: "Novembre" },
-    { key: "dec", label: "Décembre", excel: "Décembre" },
+    { key: "dec", label: "DÃ©cembre", excel: "DÃ©cembre" },
   ];
 
   const ENTITY_KEY = "psa";
@@ -473,7 +474,7 @@
   el.dropHint.textContent = "D\u00e9pose un budget Excel manuel si besoin";
 
   renderEmpty();
-  updateReelStatus("chargement…");
+  updateReelStatus("chargementâ€¦");
   syncBottomScrollbar();
   await tryAutoFetchBudget();
 
@@ -491,7 +492,7 @@
   });
 
   el.btnResetReal.addEventListener("click", async () => {
-    if (!await kentConfirm(`Recharger toutes les valeurs Réel depuis ${REAL_FILE} ?`, { title: "Recharger le r\u00e9el", confirmText: "Recharger" })) return;
+    if (!await kentConfirm(`Recharger toutes les valeurs RÃ©el depuis ${REAL_FILE} ?`, { title: "Recharger le r\u00e9el", confirmText: "Recharger" })) return;
     loadRealFromFetch().then(render).catch(console.error);
   });
 
@@ -518,7 +519,7 @@
     await importBudgetFile(file);
   });
 
-  // ✅ sync scroll horizontal : tableScroller (X hidden) <-> hScroll (X visible)
+  // âœ… sync scroll horizontal : tableScroller (X hidden) <-> hScroll (X visible)
   let syncing = false;
 
   el.tableScroller.addEventListener("scroll", () => {
@@ -542,7 +543,7 @@
       const arrayBuffer = await file.arrayBuffer();
       parseBudget(arrayBuffer, file.name || BUDGET_FILE);
 
-      // ✅ NOUVEAU : recharge réel fetch (écrase)
+      // âœ… NOUVEAU : recharge rÃ©el fetch (Ã©crase)
       await loadRealFromFetch();
 
       render();
@@ -565,7 +566,7 @@
     const colClient = findCol(headerMap, ["client", "clients"]);
     if (!colClient) throw new Error("Colonne CLIENT introuvable dans le fichier.");
 
-    const colNClient = findCol(headerMap, ["n client","n° client","no client","numero client","num client","nclient"]);
+    const colNClient = findCol(headerMap, ["n client","nÂ° client","no client","numero client","num client","nclient"]);
 
     const monthCols = {};
     for (const m of MONTHS){
@@ -661,8 +662,8 @@
   function applyMeta(meta){
     budgetMeta = meta || null;
     if (!meta) {
-      el.budgetFileLabel.textContent = "non chargé";
-      el.lastUpdate.textContent = "—";
+      el.budgetFileLabel.textContent = "non chargÃ©";
+      el.lastUpdate.textContent = "â€”";
       return;
     }
     el.budgetFileLabel.textContent = meta.filename || BUDGET_FILE;
@@ -670,16 +671,82 @@
   }
 
   /* ======================================================
-     ✅ NOUVEAU : FETCH RÉEL (activitereelpsa.xlsx)
+     âœ… NOUVEAU : FETCH RÃ‰EL (activitereelpsa.xlsx)
      Reconstruit realData[clientId][monthKey] = somme CA
   ====================================================== */
+  async function loadRealFromSupabase(){
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return false;
+
+    try{
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(ENTITY_KEY, APP_YEAR);
+
+      const budgetByExact = new Map();
+      const budgetByCode = new Map();
+      const budgetByName = new Map();
+      for (const bc of budgetData.clients){
+        const exactKey = makeClientMatchKey(bc.name, bc.nclient);
+        if (exactKey) budgetByExact.set(exactKey, bc);
+        addLookupCandidate(budgetByCode, compactClientCode(bc.nclient), bc);
+        addLookupCandidate(budgetByName, compactClientName(bc.name), bc);
+      }
+
+      function ensureRealBudgetClient(clientCode, clientName){
+        const knownClient = findMatchedClient(budgetByExact, budgetByCode, budgetByName, clientCode, clientName);
+        if (knownClient) return knownClient;
+
+        const rawCode = String(clientCode || "").trim();
+        const rawName = String(clientName || "").trim();
+        if (!rawCode && !rawName) return null;
+
+        const name = rawName || `Client ${rawCode}`;
+        const id = makeClientKey(name, rawCode);
+        const budget = {};
+        for (const m of MONTHS) budget[m.key] = 0;
+
+        const bc = { id, name, nclient: rawCode, budget, isUnbudgeted: true };
+        budgetData.clients.push(bc);
+        const exactKey = makeClientMatchKey(name, rawCode);
+        if (exactKey) budgetByExact.set(exactKey, bc);
+        addLookupCandidate(budgetByCode, compactClientCode(rawCode), bc);
+        addLookupCandidate(budgetByName, compactClientName(name), bc);
+        return bc;
+      }
+
+      const nextReal = {};
+      for (const row of rows || []){
+        const amount = Math.round(toNumber(row.montant));
+        if (!amount) continue;
+
+        const month = MONTHS[Number(row.mois) - 1];
+        if (!month) continue;
+
+        const clientCode = String(row.client_code || "").trim();
+        const clientName = String(row.client_nom || "").trim();
+        const bc = ensureRealBudgetClient(clientCode, clientName);
+        if (!bc) continue;
+
+        if (!nextReal[bc.id]) nextReal[bc.id] = {};
+        nextReal[bc.id][month.key] = Math.round(toNumber(nextReal[bc.id][month.key])) + amount;
+      }
+
+      realData = nextReal;
+      const countClients = Object.keys(realData).length;
+      updateReelStatus(`OK (${countClients} clients) - Supabase réel actif`);
+      return true;
+    }catch(err){
+      console.warn("Reel Supabase indisponible, fallback Excel:", err?.message || err);
+      return false;
+    }
+  }
   async function loadRealFromFetch(){
     if (!budgetData?.clients?.length){
       updateReelStatus("budget absent");
       return;
     }
 
-    updateReelStatus("chargement…");
+    updateReelStatus("chargementâ€¦");
+
+    if (await loadRealFromSupabase()) return;
 
     try{
       const { buffer } = await fetchXlsxWithFallback(REAL_FILE);
@@ -695,9 +762,9 @@
         return;
       }
 
-      // colonnes attendues (tolérance accents/casse)
+      // colonnes attendues (tolÃ©rance accents/casse)
       const headerMap = buildHeaderMap(rows[0] || {});
-      const colClientInt = findCol(headerMap, ["n° client interne","no client interne","n client interne","numero client interne","n° client"]);
+      const colClientInt = findCol(headerMap, ["nÂ° client interne","no client interne","n client interne","numero client interne","nÂ° client"]);
       const colClientName = findCol(headerMap, ["nom du client","nom client","client"]);
       const colAmt = findCol(headerMap, ["montant prix achat kent","montant","ca","chiffre d'affaire","chiffre affaire"]);
       const colMonth = findCol(headerMap, ["mois2","mois","month"]);
@@ -726,7 +793,7 @@ function ensureBudgetClient(nclientInterne, clientName){
   const rawName = String(clientName || "").trim();
   if (!rawNClient && !rawName) return null;
 
-  // ✅ Sinon : on crée un "client hors budget"
+  // âœ… Sinon : on crÃ©e un "client hors budget"
   const name = rawName || `Client ${rawNClient}`;
   const id = makeClientKey(name, rawNClient);
 
@@ -758,7 +825,7 @@ function ensureBudgetClient(nclientInterne, clientName){
         const nclientInterne = colClientInt ? String(r[colClientInt] ?? "").trim() : "";
         const clientName = colClientName ? String(r[colClientName] ?? "").trim() : "";
 
-        // matching prioritaire : N CLIENT (budget) vs N° client interne (réel)
+        // matching prioritaire : N CLIENT (budget) vs NÂ° client interne (rÃ©el)
 const bc = ensureBudgetClient(nclientInterne, clientName);
 if (!bc) continue;
         if (!nextReal[bc.id]) nextReal[bc.id] = {};
@@ -767,11 +834,11 @@ if (!bc) continue;
 
       realData = nextReal;
       const countClients = Object.keys(realData).length;
-      updateReelStatus(`OK (${countClients} clients) — ${REAL_FILE}`);
+      updateReelStatus(`OK (${countClients} clients) â€” ${REAL_FILE}`);
     }catch(err){
       console.error(err);
       updateReelStatus("erreur fetch/lecture");
-      // on ne détruit pas le cache realData existant en cas d'erreur
+      // on ne dÃ©truit pas le cache realData existant en cas d'erreur
     }
   }
 
@@ -779,23 +846,23 @@ if (!bc) continue;
     const k = normKey(m);
     const map = {
       "janvier":"jan","jan":"jan",
-      "fevrier":"feb","février":"feb","fev":"feb","fév":"feb",
+      "fevrier":"feb","fÃ©vrier":"feb","fev":"feb","fÃ©v":"feb",
       "mars":"mar",
       "avril":"apr",
       "mai":"may",
       "juin":"jun",
       "juillet":"jul",
-      "aout":"aug","août":"aug",
+      "aout":"aug","aoÃ»t":"aug",
       "septembre":"sep","sep":"sep",
       "octobre":"oct","oct":"oct",
       "novembre":"nov","nov":"nov",
-      "decembre":"dec","décembre":"dec","dec":"dec","déc":"dec"
+      "decembre":"dec","dÃ©cembre":"dec","dec":"dec","dÃ©c":"dec"
     };
     return map[k] || null;
   }
 
   function updateReelStatus(msg){
-    el.reelStatus.textContent = msg || "—";
+    el.reelStatus.textContent = msg || "â€”";
   }
 
   function renderEmpty(){
@@ -809,18 +876,18 @@ if (!bc) continue;
           <th class="dividerL" colspan="3">Cumul</th>
         </tr>
         <tr>
-          <th class="col-client">—</th>
-          <th class="col-nclient">—</th>
-          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
-          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
+          <th class="col-client">â€”</th>
+          <th class="col-nclient">â€”</th>
+          ${MONTHS.map(() => `<th>RÃ©el</th><th>Budget</th><th>Ã‰cart</th>`).join("")}
+          <th class="dividerL">RÃ©el</th><th>Budget</th><th>Ã‰cart</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td class="col-client">Aucun budget chargé</td>
-          <td class="col-nclient">—</td>
-          ${MONTHS.map(() => `<td class="num">—</td><td class="num">—</td><td class="num">—</td>`).join("")}
-          <td class="num dividerL">—</td><td class="num">—</td><td class="num">—</td>
+          <td class="col-client">Aucun budget chargÃ©</td>
+          <td class="col-nclient">â€”</td>
+          ${MONTHS.map(() => `<td class="num">â€”</td><td class="num">â€”</td><td class="num">â€”</td>`).join("")}
+          <td class="num dividerL">â€”</td><td class="num">â€”</td><td class="num">â€”</td>
         </tr>
       </tbody>
     `;
@@ -847,10 +914,10 @@ if (!bc) continue;
           <th class="dividerL" colspan="3">Cumul</th>
         </tr>
         <tr>
-          <th class="col-client">—</th>
-          <th class="col-nclient">—</th>
-          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
-          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
+          <th class="col-client">â€”</th>
+          <th class="col-nclient">â€”</th>
+          ${MONTHS.map(() => `<th>RÃ©el</th><th>Budget</th><th>Ã‰cart</th>`).join("")}
+          <th class="dividerL">RÃ©el</th><th>Budget</th><th>Ã‰cart</th>
         </tr>
       </thead>
     `;
@@ -900,7 +967,7 @@ if (!bc) continue;
     return `
       <tr class="row-cumul">
         <td class="col-client">Cumul</td>
-        <td class="col-nclient">—</td>
+        <td class="col-nclient">â€”</td>
         ${cells}
         <td class="num dividerL">${fmt(cumul.annual.real)}</td>
         <td class="num budget">${fmt(cumul.annual.budget)}</td>
@@ -929,7 +996,7 @@ if (!bc) continue;
     return `
       <tr>
         <td class="col-client">${escapeHtml(client.name)}</td>
-        <td class="col-nclient">${escapeHtml(client.nclient || "—")}</td>
+        <td class="col-nclient">${escapeHtml(client.nclient || "â€”")}</td>
         ${cells}
         <td class="num dividerL">${fmt(annualReal)}</td>
         <td class="num budget">${fmt(annualBudget)}</td>
@@ -960,13 +1027,13 @@ if (!bc) continue;
       const r = { CLIENT: "Cumul", "N CLIENT": "" };
       for (const m of MONTHS){
         const v = c.perMonth[m.key];
-        r[`${m.label} Réel`] = v.real;
+        r[`${m.label} RÃ©el`] = v.real;
         r[`${m.label} Budget`] = v.budget;
-        r[`${m.label} Écart`] = v.ecart;
+        r[`${m.label} Ã‰cart`] = v.ecart;
       }
-      r["Cumul Réel"] = c.annual.real;
+      r["Cumul RÃ©el"] = c.annual.real;
       r["Cumul Budget"] = c.annual.budget;
-      r["Cumul Écart"] = c.annual.ecart;
+      r["Cumul Ã‰cart"] = c.annual.ecart;
       return r;
     }
 
@@ -977,13 +1044,13 @@ if (!bc) continue;
         const b = toNumber(c.budget?.[m.key]);
         const rr = Math.round(toNumber(realData?.[c.id]?.[m.key]));
         annualB += b; annualR += rr;
-        r[`${m.label} Réel`] = rr;
+        r[`${m.label} RÃ©el`] = rr;
         r[`${m.label} Budget`] = b;
-        r[`${m.label} Écart`] = rr - b;
+        r[`${m.label} Ã‰cart`] = rr - b;
       }
-      r["Cumul Réel"] = annualR;
+      r["Cumul RÃ©el"] = annualR;
       r["Cumul Budget"] = annualB;
-      r["Cumul Écart"] = annualR - annualB;
+      r["Cumul Ã‰cart"] = annualR - annualB;
       return r;
     }
   }
@@ -1063,7 +1130,7 @@ if (!bc) continue;
       const d = new Date(iso);
       return d.toLocaleString("fr-FR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
     }catch{
-      return "—";
+      return "â€”";
     }
   }
 

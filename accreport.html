@@ -10,6 +10,7 @@
   <script src="./app-data-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
   <script src="./reporting-data-utils.js"></script>
 
   <style>
@@ -571,6 +572,7 @@
         budgetConfig
       });
       const { realData } = await utils.loadRealDataAgainstBudget({
+        entityKey: entity.key,
         fileCandidates: realFiles,
         budgetData,
         realConfig,
