@@ -15,7 +15,7 @@
       --bg:#07111f;--panel:rgba(15,23,42,.84);--panel2:rgba(15,23,42,.62);
       --line:rgba(148,163,184,.18);--text:#eef4ff;--muted:rgba(226,232,240,.66);
       --blue:#38bdf8;--green:#22c55e;--gold:#f59e0b;--red:#ef4444;
-      --shadow:0 26px 78px rgba(0,0,0,.36);--radius:24px;
+      --shadow:0 14px 38px rgba(0,0,0,.26);--radius:18px;
     }
     *{box-sizing:border-box}
     html,body{min-height:100%}
@@ -29,54 +29,63 @@
         radial-gradient(860px 720px at 54% 112%, rgba(245,158,11,.08), transparent 58%),
         var(--bg);
     }
-    .page{min-height:100vh;padding:20px;display:grid;gap:16px;grid-template-rows:auto auto 1fr}
+    .page{min-height:100vh;padding:12px;display:grid;gap:10px;grid-template-rows:auto auto 1fr}
     .hero,.panel,.modal{
       border:1px solid var(--line);background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(15,23,42,.70));
       box-shadow:var(--shadow);backdrop-filter:blur(14px);border-radius:var(--radius);
     }
-    .hero{padding:20px 22px}
-    .heroTop{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+    .hero{padding:12px 14px}
+    .heroTop{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
     .kicker{
       display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(56,189,248,.28);
-      background:rgba(56,189,248,.11);color:#d8f3ff;border-radius:999px;padding:6px 11px;
-      font-size:11px;font-weight:950;letter-spacing:.12em;text-transform:uppercase;
+      background:rgba(56,189,248,.10);color:#d8f3ff;border-radius:999px;padding:4px 9px;
+      font-size:10px;font-weight:950;letter-spacing:.12em;text-transform:uppercase;
     }
-    .kicker:before{content:"";width:7px;height:7px;border-radius:999px;background:var(--blue);box-shadow:0 0 18px rgba(56,189,248,.65)}
-    h1{margin:10px 0 6px;font-size:clamp(30px,4vw,54px);line-height:.98;letter-spacing:-.06em}
-    .subtitle{margin:0;max-width:900px;color:var(--muted);font-size:15px;line-height:1.45;font-weight:750}
+    .kicker:before{content:"";width:6px;height:6px;border-radius:999px;background:var(--blue);box-shadow:0 0 12px rgba(56,189,248,.55)}
+    h1{margin:6px 0 3px;font-size:clamp(21px,2.4vw,32px);line-height:1;letter-spacing:-.045em}
+    .subtitle{margin:0;max-width:860px;color:var(--muted);font-size:12px;line-height:1.35;font-weight:750}
     .actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
     .btn,.select,.input{
-      min-height:39px;border:1px solid rgba(148,163,184,.22);border-radius:14px;background:rgba(255,255,255,.07);
-      color:var(--text);font-weight:950;font-size:13px;padding:0 12px;box-shadow:0 14px 34px rgba(0,0,0,.18);
+      min-height:34px;border:1px solid rgba(148,163,184,.22);border-radius:12px;background:rgba(255,255,255,.065);
+      color:var(--text);font-weight:950;font-size:12px;padding:0 10px;box-shadow:none;
     }
     .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;transition:.16s transform,.16s border-color,.16s background}
     .btn:hover{transform:translateY(-1px);border-color:rgba(56,189,248,.38)}
     .btn.primary{color:#fff;border-color:rgba(56,189,248,.42);background:linear-gradient(135deg,#38bdf8,#2563eb)}
     .btn.gold{color:#111827;border-color:rgba(245,158,11,.38);background:linear-gradient(135deg,#fde68a,#f59e0b)}
-    .btn.small{min-height:32px;font-size:12px;padding:0 10px;border-radius:11px}
-    .select{min-width:170px;outline:none}
-    .input{min-width:260px;outline:none}
+    .btn.small{min-height:29px;font-size:11px;padding:0 9px;border-radius:10px}
+    .select{min-width:158px;outline:none}
+    .input{min-width:240px;outline:none}
     .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .stats{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
     .stat{
-      border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.055);
-      border-radius:20px;padding:15px 16px;position:relative;overflow:hidden
+      min-height:32px;display:inline-flex;align-items:center;gap:8px;
+      border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.045);
+      border-radius:999px;padding:0 10px;position:relative;overflow:hidden
     }
-    .stat:after{content:"";position:absolute;right:-30px;top:-40px;width:120px;height:120px;border-radius:999px;background:rgba(56,189,248,.08)}
-    .stat .k{color:var(--muted);font-size:12px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
-    .stat .v{margin-top:8px;font-size:clamp(24px,3vw,36px);font-weight:1000;letter-spacing:-.04em}
+    .stat:after{display:none}
+    .stat .k{color:var(--muted);font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
+    .stat .v{margin-top:0;font-size:13px;font-weight:1000;letter-spacing:-.025em}
     .stat.good .v{color:#bbf7d0}.stat.bad .v{color:#fecaca}.stat.gold .v{color:#fde68a}
-    .panel{padding:16px;min-height:0}
-    .tableWrap{max-height:calc(100vh - 340px);overflow:auto;border:1px solid rgba(148,163,184,.12);border-radius:18px;background:rgba(2,6,23,.36)}
-    table{width:100%;border-collapse:separate;border-spacing:0;min-width:1020px;font-size:12px}
-    th,td{padding:10px 11px;border-bottom:1px solid rgba(148,163,184,.12);border-right:1px solid rgba(148,163,184,.10);white-space:nowrap;vertical-align:middle}
+    .panel{padding:11px;min-height:0}
+    .tableWrap{max-height:calc(100vh - 178px);overflow:auto;border:1px solid rgba(148,163,184,.12);border-radius:15px;background:rgba(2,6,23,.36)}
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:1020px;font-size:11px}
+    table.annualTable{min-width:2450px}
+    th,td{padding:7px 8px;border-bottom:1px solid rgba(148,163,184,.12);border-right:1px solid rgba(148,163,184,.10);white-space:nowrap;vertical-align:middle}
     th{position:sticky;top:0;z-index:2;background:rgba(8,13,23,.94);color:rgba(226,232,240,.82);font-weight:1000;text-align:right}
     th:first-child,td:first-child{text-align:left}
     td{text-align:right;font-variant-numeric:tabular-nums}
     tr:hover td{background:rgba(56,189,248,.045)}
     .left{text-align:left!important}.num{font-weight:950}.muted{color:var(--muted)}
     .pos{color:#86efac}.neg{color:#fca5a5}.zero{color:rgba(226,232,240,.58)}
-    .totalRow td{background:rgba(56,189,248,.09);font-weight:1000}
+    .totalRow td{background:rgba(56,189,248,.10);font-weight:1000}
+    .globalTotal td{background:rgba(245,158,11,.12);border-top:2px solid rgba(245,158,11,.42);font-weight:1000}
+    .mStart{border-left:2px solid rgba(56,189,248,.26)!important}
+    .monthBand{background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(255,255,255,.045))!important;color:#d8f3ff}
+    .monthBand:nth-of-type(odd){background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(255,255,255,.04))!important}
+    .totalBand{background:linear-gradient(135deg,rgba(245,158,11,.20),rgba(255,255,255,.05))!important;color:#fde68a}
+    .totalCol{background:rgba(245,158,11,.045)}
+    .subHead{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:rgba(226,232,240,.72)}
     .monthHead{display:flex;align-items:center;justify-content:center;gap:8px}
     .empty{border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.045);border-radius:18px;padding:22px;color:var(--muted);font-weight:850;text-align:center}
     .comment{
@@ -484,7 +493,7 @@
     }));
 
     const headerMonths = MONTHS.map(month => `
-      <th colspan="3">
+      <th class="monthBand mStart" colspan="3">
         <div class="monthHead">
           <span>${esc(month.label)}</span>
           ${showWeekButtons ? `<button class="btn small" data-week="${month.key}" data-label="${escAttr(month.label)}" type="button">Sem.</button>` : ""}
@@ -494,24 +503,24 @@
       <tr>
         <td class="left">${esc(client.name)}</td>
         <td class="left">${esc(client.code)}</td>
-        ${MONTHS.map((month, i) => monthlyTriplet(client.real[i], client.budget[i])).join("")}
-        ${monthlyTriplet(sum(client.real), sum(client.budget))}
+        ${MONTHS.map((month, i) => monthlyTriplet(client.real[i], client.budget[i], true)).join("")}
+        ${monthlyTriplet(sum(client.real), sum(client.budget), true, true)}
       </tr>
     `).join("");
     const totalRow = `
-      <tr class="totalRow">
-        <td class="left">TOTAL</td><td></td>
-        ${MONTHS.map((month, i) => monthlyTriplet(data.monthly.real[i], data.monthly.budget[i])).join("")}
-        ${monthlyTriplet(data.summary.totalReal, data.summary.totalBudget)}
+      <tr class="globalTotal">
+        <td class="left">TOTAL GLOBAL</td><td></td>
+        ${MONTHS.map((month, i) => monthlyTriplet(data.monthly.real[i], data.monthly.budget[i], true)).join("")}
+        ${monthlyTriplet(data.summary.totalReal, data.summary.totalBudget, true, true)}
       </tr>`;
 
     paintTable(`
       <thead>
-        <tr><th rowspan="2" class="left">Client</th><th rowspan="2" class="left">N client</th>${headerMonths}<th colspan="3">Total</th></tr>
-        <tr>${MONTHS.map(() => `<th>Reel</th><th>Budget</th><th>Ecart</th>`).join("")}<th>Reel</th><th>Budget</th><th>Ecart</th></tr>
+        <tr><th rowspan="2" class="left">Client</th><th rowspan="2" class="left">N client</th>${headerMonths}<th class="totalBand mStart" colspan="3">TOTAL GLOBAL</th></tr>
+        <tr>${MONTHS.map(() => `<th class="subHead mStart">Reel</th><th class="subHead">Budget</th><th class="subHead">Ecart</th>`).join("")}<th class="subHead mStart">Reel</th><th class="subHead">Budget</th><th class="subHead">Ecart</th></tr>
       </thead>
       <tbody>${body}${totalRow}</tbody>
-    `, rows.length);
+    `, rows.length, "annualTable");
 
     el.table.querySelectorAll("[data-week]").forEach(button => {
       button.addEventListener("click", () => openWeek(button.dataset.week, button.dataset.label));
@@ -622,12 +631,15 @@
     `, rows.length);
   }
 
-  function monthlyTriplet(real, budget){
+  function monthlyTriplet(real, budget, markStart = false, markTotal = false){
     const ecart = (real || 0) - (budget || 0);
-    return `<td class="num">${fmtMoney(real)}</td><td class="num">${fmtMoney(budget)}</td><td class="num ${ecartClass(ecart)}">${fmtMoney(ecart)}</td>`;
+    const firstClass = markStart ? " mStart" : "";
+    const totalClass = markTotal ? " totalCol" : "";
+    return `<td class="num${firstClass}${totalClass}">${fmtMoney(real)}</td><td class="num${totalClass}">${fmtMoney(budget)}</td><td class="num ${ecartClass(ecart)}${totalClass}">${fmtMoney(ecart)}</td>`;
   }
 
-  function paintTable(html, count){
+  function paintTable(html, count, tableClass = ""){
+    el.table.className = tableClass;
     el.table.innerHTML = html;
     el.empty.style.display = count ? "none" : "block";
     el.tableWrap.style.display = count ? "block" : "none";
