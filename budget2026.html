@@ -354,6 +354,7 @@
     </div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="btn" href="mes-budgets.html" data-year-link>Mes budgets</a>
       <button class="btn" id="resetBtn">Réinitialiser</button>
 
       <label class="btn green" style="display:inline-flex;align-items:center;gap:8px">
@@ -374,6 +375,25 @@
 
   <div class="card">
     <div class="row">
+
+      <div class="field" style="min-width:620px">
+        <div class="lab">Projections / validation</div>
+        <div class="val">
+          <select class="input wide" id="projectionSelect">
+            <option value="">Chargement des projections...</option>
+          </select>
+          <button class="btn" id="loadProjectionBtn">Charger projection</button>
+          <button class="btn" id="refreshProjectionBtn">Actualiser</button>
+        </div>
+        <div class="val" style="margin-top:10px">
+          <select class="input mid" id="budgetEntitySelect">
+            <option value="">Entite...</option>
+          </select>
+          <button class="btn" id="newEntityBtn">Nouvelle entite</button>
+          <button class="btn green" id="validateBudgetBtn">Valider budget actif</button>
+        </div>
+        <div class="footnote" id="budgetSupabaseHint" style="margin-top:10px">Excel reste disponible. Supabase prend le relais uniquement quand tu charges/valides un budget.</div>
+      </div>
       <div class="field">
         <div class="lab">Enveloppe globale</div>
         <div class="val">
@@ -459,6 +479,8 @@ Client C"></textarea>
 
 <!-- SheetJS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./budget-supabase.js"></script>
 
 <script>
 /***********************
@@ -492,6 +514,7 @@ let state = {
   clients: [] // {id,name,number,comment,values,lastMonthKey}
 };
 let sortTotalDesc = true;
+let currentProjectionId = "";
 
 function uid(){
   return "c_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
@@ -1059,6 +1082,125 @@ function exportXLSX(){
   XLSX.writeFile(wb, `budget_${APP_YEAR}_${Date.now()}.xlsx`);
 }
 
+function budgetRowsFromState(){
+  return state.clients.map((client, index) => ({
+    ordre: index,
+    client_nom: client.name || "Client",
+    numero_client: client.number || "",
+    commentaire: client.comment || "",
+    ...MONTHS.reduce((acc, month) => {
+      acc[month.key] = Number(client.values?.[month.key] || 0);
+      return acc;
+    }, {})
+  }));
+}
+
+function applyRowsToBudgetState(rows, projectionId = ""){
+  const normalized = window.BudgetSupabase.normalizeLines(rows);
+  state.clients = normalized.map(line => ({
+    id: uid(),
+    name: line.client_nom || "Client",
+    number: line.numero_client || "",
+    comment: line.commentaire || "",
+    values: MONTHS.reduce((acc, month) => {
+      acc[month.key] = Number(line[month.key] || 0);
+      return acc;
+    }, {}),
+    lastMonthKey: "jan"
+  }));
+  state.globalBudget = window.BudgetSupabase.totalRows(normalized);
+  currentProjectionId = projectionId || "";
+  save();
+  renderAll();
+}
+
+function setBudgetSupabaseHint(message){
+  const hint = $("budgetSupabaseHint");
+  if (hint) hint.textContent = message;
+}
+
+async function refreshBudgetSupabaseControls(){
+  if (!window.BudgetSupabase){
+    setBudgetSupabaseHint("Module Supabase budget indisponible. Recharge la page.");
+    return;
+  }
+  try{
+    const [entities, projections] = await Promise.all([
+      window.BudgetSupabase.listEntities(),
+      window.BudgetSupabase.listProjections(APP_YEAR)
+    ]);
+
+    $("budgetEntitySelect").innerHTML = entities.map(entity => (
+      `<option value="${escapeHtml(entity.id)}">${escapeHtml(entity.libelle)}</option>`
+    )).join("");
+
+    $("projectionSelect").innerHTML = projections.length
+      ? projections.map(projection => `<option value="${escapeHtml(projection.id)}">${escapeHtml(projection.nom)} - ${Number(projection.total_annuel || 0).toLocaleString("fr-FR")} EUR</option>`).join("")
+      : '<option value="">Aucune projection enregistree</option>';
+
+    setBudgetSupabaseHint(`${projections.length} projection(s) enregistree(s) - ${entities.length} entite(s) disponible(s).`);
+  }catch(error){
+    console.warn("Budget Supabase controls unavailable", error);
+    $("projectionSelect").innerHTML = '<option value="">Supabase non pret</option>';
+    $("budgetEntitySelect").innerHTML = '<option value="">Supabase non pret</option>';
+    setBudgetSupabaseHint("Supabase budget non pret. Lance le SQL budget_system avant d'utiliser ces boutons.");
+  }
+}
+
+async function loadSelectedProjection(){
+  const projectionId = $("projectionSelect").value;
+  if (!projectionId) return alert("Selectionne une projection.");
+  try{
+    const { projection, lines } = await window.BudgetSupabase.getProjection(projectionId);
+    applyRowsToBudgetState(lines, projection.id);
+    alert(`Projection chargee : ${projection.nom}`);
+  }catch(error){
+    console.error("Load projection failed", error);
+    alert(error?.message || "Impossible de charger la projection.");
+  }
+}
+
+async function createBudgetEntityFromPrompt(){
+  const label = prompt("Nom de la nouvelle entite :");
+  if (!label || !label.trim()) return;
+  try{
+    const entity = await window.BudgetSupabase.createEntity(label.trim());
+    await refreshBudgetSupabaseControls();
+    $("budgetEntitySelect").value = entity.id;
+  }catch(error){
+    console.error("Create entity failed", error);
+    alert(error?.message || "Impossible de creer l'entite.");
+  }
+}
+
+async function validateCurrentBudget(){
+  if (!state.clients.length) return alert("Aucun client dans le budget.");
+  const entityId = $("budgetEntitySelect").value;
+  if (!entityId) return alert("Selectionne une entite.");
+
+  const entityLabel = $("budgetEntitySelect").selectedOptions[0]?.textContent || "Entite";
+  const defaultName = `Budget ${entityLabel} ${APP_YEAR}`;
+  const name = prompt("Nom du budget valide :", defaultName);
+  if (!name || !name.trim()) return;
+
+  if (!confirm(`Valider ce budget actif pour ${entityLabel} ${APP_YEAR} ?\n\nS'il existe deja un budget actif, l'action sera bloquee.`)) return;
+
+  try{
+    const saved = await window.BudgetSupabase.validateBudget({
+      nom: name.trim(),
+      annee: APP_YEAR,
+      entityId,
+      projectionId: currentProjectionId || null,
+      rows: budgetRowsFromState(),
+      meta: { origin: "budget2026", sourceProjectionId: currentProjectionId || null }
+    });
+    alert(`Budget valide : ${saved.nom}`);
+  }catch(error){
+    console.error("Validate budget failed", error);
+    alert(error?.message || "Impossible de valider le budget.");
+  }
+}
+
 async function importJSON(file){
   try{
     const txt = await file.text();
@@ -1151,6 +1293,10 @@ $("resetBtn").addEventListener("click", resetAll);
 $("exportJsonBtn").addEventListener("click", exportJSON);
 $("exportCsvBtn").addEventListener("click", exportCSV);
 $("exportXlsxBtn").addEventListener("click", exportXLSX);
+$("refreshProjectionBtn").addEventListener("click", refreshBudgetSupabaseControls);
+$("loadProjectionBtn").addEventListener("click", loadSelectedProjection);
+$("newEntityBtn").addEventListener("click", createBudgetEntityFromPrompt);
+$("validateBudgetBtn").addEventListener("click", validateCurrentBudget);
 
 $("importJsonFile").addEventListener("change", (e) => {
   const f = e.target.files?.[0];
@@ -1181,6 +1327,7 @@ window.toggleTotalSort = function(){
 bindTableActions();
 
 renderAll();
+refreshBudgetSupabaseControls();
 </script>
 </body>
 </html>

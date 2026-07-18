@@ -643,7 +643,7 @@
               <span>Outils de pilotage, atterrissage, exports, reporting.</span>
             </div>
           </div>
-          <div class="badge">1 module</div>
+          <div class="badge">2 modules</div>
         </div>
 
         <div class="links">
@@ -653,6 +653,14 @@
               <div class="desc">Etablissement du budget N+1</div>
             </div>
             <div class="chev">›</div>
+          </a>
+
+          <a class="link app" href="mes-budgets.html" data-tags="budget budgets valides actifs entites projections">
+            <div class="left">
+              <div class="name">Mes budgets</div>
+              <div class="desc">Suivi des budgets actifs et inactifs par entite</div>
+            </div>
+            <div class="chev">&rsaquo;</div>
           </a>
         </div>
       </section>
@@ -827,6 +835,11 @@
   const apps = [...document.querySelectorAll(".app")];
   const cards = [...document.querySelectorAll(".card")];
   const RELEASE_NOTES = [
+    {
+      id: "2026-07-18-budget-system",
+      date: "18/07/2026",
+      title: "Nouveau suivi des projections et budgets valides"
+    },
     {
       id: "2026-07-17-requetes-selection",
       date: "17/07/2026",

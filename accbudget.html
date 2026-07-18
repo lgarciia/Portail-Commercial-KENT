@@ -8,6 +8,8 @@
   <script src="./app-data-config.js"></script>
   <script src="./shared-ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
   <script src="./reporting-data-utils.js"></script>
 
   <style>
@@ -605,6 +607,7 @@
       <select class="ddBtn" id="yearSelect" title="Choix de l'année active"></select>
     </div>
 <a class="btn primary" href="budget2026.html" data-year-link>Budget annuel</a>
+<a class="btn" href="mes-budgets.html" data-year-link>Mes budgets</a>
 
     <!-- Réel N-1 -->
     <div class="dd" id="ddReel">
@@ -853,6 +856,8 @@ document.addEventListener("keydown",(e)=>{
   async function loadEntityBudget(entity, year, utils){
     const budgetFiles = window.KentDataConfig.getEntityFileCandidates(entity.key, "budget", year)
     const { budgetData } = await utils.loadBudgetData({
+      entityKey: entity.key,
+      year,
       fileCandidates: budgetFiles,
       budgetConfig
     })

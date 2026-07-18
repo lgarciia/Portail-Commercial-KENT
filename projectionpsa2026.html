@@ -9,6 +9,8 @@
 
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
 
   <style>
     :root{
@@ -349,6 +351,8 @@
       <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
       <button class="btn primary" id="btnReload">Charger / Recharger le réel N-1</button>
       <button class="btn ghost" id="btnRecalc">Recalculer projection</button>
+      <button class="btn primary" id="btnSaveProjection">Enregistrer projection</button>
+      <a class="btn ghost" href="mes-budgets.html" data-year-link>Mes budgets</a>
       <button class="btn ghost" id="btnExportXlsx">Exporter la projection</button>
       <button class="btn danger" id="btnReset">Reset local</button>
     </div>
@@ -446,6 +450,7 @@
     fileInput: document.getElementById("fileInput"),
     btnReload: document.getElementById("btnReload"),
     btnRecalc: document.getElementById("btnRecalc"),
+    btnSaveProjection: document.getElementById("btnSaveProjection"),
     btnExportXlsx: document.getElementById("btnExportXlsx"),
     btnReset: document.getElementById("btnReset"),
 
@@ -534,6 +539,7 @@
   });
 
   el.btnExportXlsx.addEventListener("click", exportBudgetXlsx);
+  el.btnSaveProjection.addEventListener("click", saveProjectionSupabase);
 
   el.btnReset.addEventListener("click", () => {
     if (!confirm("Reset projection PSA (cache + jours ouvrés) ?")) return;
@@ -962,6 +968,50 @@
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, `PROJECTION_PSA_${APP_YEAR}`);
     XLSX.writeFile(wb, `${EXPORT_FILE.replace(/\.xlsx$/i, "")}_${stamp()}.xlsx`);
+  }
+
+
+
+  async function saveProjectionSupabase(){
+    if (!projected?.clients?.length){
+      alert("Rien a enregistrer. Genere une projection avant.");
+      return;
+    }
+    if (!window.BudgetSupabase){
+      alert("Module Supabase budget indisponible. Recharge la page.");
+      return;
+    }
+
+    const defaultName = `Projection PSA ${APP_YEAR}`;
+    const name = prompt("Nom de la projection :", defaultName);
+    if (!name || !name.trim()) return;
+
+    const originalLabel = el.btnSaveProjection.textContent;
+    try{
+      el.btnSaveProjection.disabled = true;
+      el.btnSaveProjection.textContent = "Enregistrement...";
+      const saved = await window.BudgetSupabase.saveProjection({
+        nom: name.trim(),
+        annee: Number(el.yearBudget.value || APP_YEAR),
+        sourceLabel: projected.meta?.source || FILE_NAME,
+        sourceEntityKey: ENTITY_KEY,
+        rows: projected.clients,
+        meta: {
+          origin: "projectionpsa2026",
+          yearReal: days.yearReal,
+          yearBudget: days.yearBudget,
+          upliftPct: projected.meta?.upliftPct || 0,
+          rounding: projected.meta?.rounding || 0
+        }
+      });
+      alert(`Projection enregistree : ${saved.nom}`);
+    }catch(error){
+      console.error("Save projection Supabase failed", error);
+      alert(error?.message || "Impossible d'enregistrer la projection.");
+    }finally{
+      el.btnSaveProjection.disabled = false;
+      el.btnSaveProjection.textContent = originalLabel || "Enregistrer projection";
+    }
   }
 
   // =========================

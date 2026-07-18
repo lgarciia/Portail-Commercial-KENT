@@ -245,6 +245,10 @@
   }
 
   async function loadBudgetData(options){
+    options = options || {};
+    const supabaseBudget = await loadActiveBudgetDataFromSupabase(options || {});
+    if (supabaseBudget) return supabaseBudget;
+
     const fileName = options.fileName || options.fileCandidates;
     const budgetConfig = options.budgetConfig || {};
     const { buffer, usedUrl, usedFileName } = await fetchXlsxWithFallback(fileName);
@@ -258,6 +262,19 @@
         sheetName: parsed.sheetName,
       },
     };
+  }
+
+  async function loadActiveBudgetDataFromSupabase(options){
+    if (!options || options.preferSupabase === false) return null;
+    if (!options.entityKey || !options.year) return null;
+    if (!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return null;
+
+    try{
+      return await window.BudgetSupabase.getActiveBudgetData(options.entityKey, options.year);
+    }catch(error){
+      console.warn("Budget actif Supabase indisponible, fallback Excel:", error?.message || error);
+      return null;
+    }
   }
 
   function ensureBudgetClient(budgetData, lookups, nclientInterne, clientName){

@@ -8,6 +8,8 @@
   <script src="./shared-ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./app-data-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./budget-supabase.js"></script>
   <script src="./reporting-data-utils.js"></script>
 
   <style>
@@ -675,6 +677,8 @@
       const budgetFiles = KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
       const realFiles = KentDataConfig.getEntityFileCandidates(entity.key, "real", year);
       const { budgetData } = await utils.loadBudgetData({
+        entityKey: entity.key,
+        year,
         fileCandidates: budgetFiles,
         budgetConfig
       });
