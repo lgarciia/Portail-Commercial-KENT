@@ -606,8 +606,9 @@
     <div class="yearSelectWrap">
       <select class="ddBtn" id="yearSelect" title="Choix de l'année active"></select>
     </div>
-<a class="btn primary" href="budget2026.html" data-year-link>Budget annuel</a>
-<a class="btn" href="mes-budgets.html" data-year-link>Mes budgets</a>
+    <a class="btn" href="projectionpsa2026.html" data-year-link>Mes projections</a>
+    <a class="btn primary" href="budget2026.html" data-year-link>Budget annuel</a>
+    <a class="btn" href="mes-budgets.html" data-year-link>Mes budgets</a>
 
     <!-- Réel N-1 -->
     <div class="dd" id="ddReel">
@@ -622,23 +623,6 @@
         <a href="activitereeldirect.html?scope=n1" data-year-link>Direct <small>→</small></a>
       </div>
     </div>
-
-    <!-- Histo Budget -->
-    <div class="dd" id="ddHisto">
-      <button class="ddBtn" id="btnHisto" type="button">
-        Histo Budget <span class="chev"></span>
-      </button>
-
-      <div class="menu" id="menuHisto">
-        <a href="histo-budget-psa.html" data-year-link>PSA <small>→</small></a>
-        <a href="histo-budget-gueudet.html" data-year-link>Gueudet <small>→</small></a>
-        <a href="histo-budget-ford.html" data-year-link>Ford <small>→</small></a>
-        <a href="histo-budget-direct.html" data-year-link>Direct <small>→</small></a>
-      </div>
-    </div>
-
-    <!-- Projection -->
-    <a class="btn" href="projectionpsa2026.html" data-year-link>Projection PSA</a>
 
   </div>
 </div>
@@ -696,8 +680,8 @@
       <h3>1. Réel N-1</h3>
       <p>Les données sont récupérées dans la page <b>Réel N-1</b>.</p>
 
-      <h3>2. Projection PSA</h3>
-      <p>Ces données sont injectées dans la page <b>Projection PSA</b>.</p>
+      <h3>2. Mes projections</h3>
+      <p>Ces données sont injectées dans la page <b>Mes projections</b>.</p>
 
       <ul>
         <li>réel N-1</li>
@@ -743,8 +727,7 @@
 (function(){
 
   const dropdowns = [
-    { btn:"btnReel", menu:"menuReel"},
-    { btn:"btnHisto", menu:"menuHisto"}
+    { btn:"btnReel", menu:"menuReel"}
   ].map(x=>({
     btn:document.getElementById(x.btn),
     menu:document.getElementById(x.menu)
@@ -947,8 +930,7 @@ const yearSelect = document.getElementById("yearSelect")
 function refreshYearLinks(year){
   window.KentDataConfig.applyYearToLinks(document, year)
 }
-const calendarYear = new Date().getFullYear()
-const initialYear = window.KentDataConfig.setActiveYear(calendarYear)
+const initialYear = window.KentDataConfig.setActiveYear(window.KentDataConfig.getActiveYear())
 window.KentDataConfig.fillYearSelect(yearSelect, { selectedYear: initialYear })
 yearSelect.value = String(initialYear)
 refreshYearLinks(initialYear)
