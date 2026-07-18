@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Activité Réelle — Gueudet</title>
   <script src="./shared-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./reel-supabase.js"></script>
 
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -412,7 +414,7 @@
   // =========================
   // INIT
   // =========================
-  if (pivot?.clients?.length) {
+  if (pivot.clients.length) {
     render();
     updateSyncLabel();
   } else {
@@ -420,7 +422,7 @@
     updateSyncLabel();
   }
 
-  autoFetchExcel();
+  autoLoadRealSource();
 
   // =========================
   // EVENTS
@@ -441,8 +443,8 @@
 
   el.btnReset.addEventListener("click", () => {
     const confirmLabel = IS_N1_VIEW
-      ? `Supprimer les données Réel N-1 Gueudet (${TARGET_YEAR}) stockées en local ?`
-      : "Supprimer les données Activité Réelle Gueudet stockées en local ?";
+      ? `Supprimer les données Réel N-1 Gueudet (${TARGET_YEAR}) stockées en local `
+      : "Supprimer les données Activité Réelle Gueudet stockées en local ";
     if (!confirm(confirmLabel)) return;
     removeStorageKeys(STORAGE_KEY_PIVOT_CANDIDATES);
     if (!IS_N1_VIEW) removeStorageKeys(STORAGE_KEY_REPORTING_CANDIDATES);
@@ -468,7 +470,7 @@
     el.dropHint.classList.remove("show");
   }));
   el.dropZone.addEventListener("drop", async (e) => {
-    const file = e.dataTransfer?.files?.[0];
+    const file = e.dataTransfer.files?.[0];
     if (!file) return;
     const name = (file.name || "").toLowerCase();
     if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
@@ -481,10 +483,80 @@
   // =========================
   // AUTO FETCH (GitHub-safe + anti-cache)
   // =========================
+
+  async function autoLoadRealSource(){
+    if (await loadSupabasePivot()) return;
+    await autoFetchExcel();
+  }
+
+  async function loadSupabasePivot(){
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return false;
+
+    try{
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(ENTITY_KEY, APP_YEAR);
+      if (!rows || !rows.length) return false;
+
+      const agg = new Map();
+      for (const row of rows){
+        const month = MONTHS[Number(row.mois) - 1];
+        if (!month) continue;
+
+        const montant = toNumber(row.montant);
+        if (!montant) continue;
+
+        const clientInternal = String(row.client_code || "").trim();
+        const clientName = String(row.client_nom || "").trim();
+        if (!clientInternal && !clientName) continue;
+
+        const id = makeClientId(clientInternal, clientName);
+        if (!agg.has(id)){
+          const months = {};
+          for (const m of MONTHS) months[m.key] = 0;
+          agg.set(id, { id, clientInternal, clientName, months });
+        }
+        agg.get(id).months[month.key] += montant;
+      }
+
+      const clients = Array.from(agg.values())
+        .sort((a,b) => (a.clientName || "").localeCompare((b.clientName || ""), "fr"));
+      if (!clients.length) return false;
+
+      pivot = {
+        meta: {
+          source: "Supabase r\u00e9el actif",
+          sheet: "v_reel_lignes_actives",
+          updatedAt: new Date().toISOString(),
+          file: "Supabase"
+        },
+        clients
+      };
+
+      saveJSON(STORAGE_KEY_PIVOT, pivot);
+      const isN1 = typeof IS_N1_VIEW !== "undefined" && IS_N1_VIEW;
+      if (!isN1) saveReportingFromPivot(pivot);
+
+      sortTotalDir = null;
+      render();
+      updateSyncLabel();
+      return true;
+    }catch(error){
+      console.warn("R\u00e9el Supabase indisponible, fallback Excel:", error.message || error);
+      return false;
+    }
+  }
+
+  function saveReportingFromPivot(p){
+    if (typeof saveActiviteReelPSAFromPivot === "function") return saveActiviteReelPSAFromPivot(p);
+    if (typeof saveActiviteReelGueudetFromPivot === "function") return saveActiviteReelGueudetFromPivot(p);
+    if (typeof saveActiviteReelFordFromPivot === "function") return saveActiviteReelFordFromPivot(p);
+    if (typeof saveActiviteReelDirectFromPivot === "function") return saveActiviteReelDirectFromPivot(p);
+    return null;
+  }
+
   async function autoFetchExcel(){
     for (const candidate of FILE_CANDIDATES){
       try{
-        const url = `${candidate}?v=${Date.now()}`;
+        const url = `${candidate}v=${Date.now()}`;
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) continue;
         const buf = await res.arrayBuffer();
@@ -503,7 +575,7 @@
       parseAndBuildPivot(buf, `manuel (${file.name || FILE_NAME})`);
     }catch(err){
       console.error(err);
-      alert("Import impossible : " + (err?.message || err));
+      alert("Import impossible : " + (err.message || err));
     }
   }
 
@@ -625,15 +697,15 @@
   // =========================
   function saveActiviteReelGueudetFromPivot(p){
     const nowIso = new Date().toISOString();
-    const clients = (p?.clients || []).map(c => ({
+    const clients = (p.clients || []).map(c => ({
       clientKey: makeReportingClientKey(c.clientInternal, c.clientName),
       nclient: String(c.clientInternal || "").trim(), // ✅ clé stable
       name: String(c.clientName || "").trim(),
       months: {
-        jan: toNumber(c.months?.jan), feb: toNumber(c.months?.feb), mar: toNumber(c.months?.mar),
-        apr: toNumber(c.months?.apr), may: toNumber(c.months?.may), jun: toNumber(c.months?.jun),
-        jul: toNumber(c.months?.jul), aug: toNumber(c.months?.aug), sep: toNumber(c.months?.sep),
-        oct: toNumber(c.months?.oct), nov: toNumber(c.months?.nov), dec: toNumber(c.months?.dec),
+        jan: toNumber(c.months.jan), feb: toNumber(c.months.feb), mar: toNumber(c.months.mar),
+        apr: toNumber(c.months.apr), may: toNumber(c.months.may), jun: toNumber(c.months.jun),
+        jul: toNumber(c.months.jul), aug: toNumber(c.months.aug), sep: toNumber(c.months.sep),
+        oct: toNumber(c.months.oct), nov: toNumber(c.months.nov), dec: toNumber(c.months.dec),
       }
     }));
 
@@ -642,8 +714,8 @@
         source: "activitereelgueudet.html",
         updatedAt: nowIso,
         fromPivotKey: STORAGE_KEY_PIVOT,
-        sheet: p?.meta?.sheet || "",
-        file: p?.meta?.file || FILE_NAME
+        sheet: p.meta.sheet || "",
+        file: p.meta.file || FILE_NAME
       },
       clients
     };
@@ -657,7 +729,7 @@
       return;
     }
     const payload = loadJSONAny(STORAGE_KEY_REPORTING_CANDIDATES, null);
-    if (payload?.clients?.length){
+    if (payload.clients.length){
       el.syncLabel.textContent = `OK (${payload.clients.length})`;
     } else {
       el.syncLabel.textContent = "—";
@@ -678,7 +750,7 @@
   // =========================
   function renderEmpty(msg){
     el.clientsCount.textContent = "0";
-    el.srcLabel.textContent = pivot?.meta?.source || `Cible auto : ${FILE_NAME}`;
+    el.srcLabel.textContent = pivot.meta.source || `Cible auto : ${FILE_NAME}`;
     el.lastUpdate.textContent = "—";
 
     el.table.innerHTML = `
@@ -702,13 +774,13 @@
   }
 
   function render(){
-    if (!pivot?.clients?.length){
+    if (!pivot.clients.length){
       renderEmpty("Aucune donnée. Charge le fichier.");
       return;
     }
 
-    el.srcLabel.textContent = pivot.meta?.source || "—";
-    el.lastUpdate.textContent = formatDateTime(pivot.meta?.updatedAt);
+    el.srcLabel.textContent = pivot.meta.source || "—";
+    el.lastUpdate.textContent = formatDateTime(pivot.meta.updatedAt);
     el.clientsCount.textContent = String(pivot.clients.length);
 
     let clients = pivot.clients.filter(c => {
@@ -728,7 +800,7 @@
     for (const m of MONTHS) colSums[m.key] = 0;
     let grandTotal = 0;
 
-    const sortArrow = sortTotalDir === "desc" ? "▼" : (sortTotalDir === "asc" ? "▲" : "↕");
+    const sortArrow = sortTotalDir === "desc" ? "\u25bc" : (sortTotalDir === "asc" ? "\u25b2" : "\u2195");
 
     el.table.innerHTML = `
       <thead>
@@ -781,12 +853,12 @@
   // EXPORTS
   // =========================
   function exportJSON(){
-    if (!pivot?.clients?.length) return alert("Aucune donnée.");
+    if (!pivot.clients.length) return alert("Aucune donnée.");
     downloadBlob(JSON.stringify(pivot, null, 2), `activitereel-gueudet-pivot.json`, "application/json");
   }
 
   function exportCSV(){
-    if (!pivot?.clients?.length) return alert("Aucune donnée.");
+    if (!pivot.clients.length) return alert("Aucune donnée.");
     const headers = ["Code livré","Nom client", ...MONTHS.map(m=>m.label), "TOTAL"];
     const lines = [headers.join(";")];
     for (const c of pivot.clients){
@@ -806,7 +878,7 @@
   }
 
   function exportXLSX(){
-    if (!pivot?.clients?.length) return alert("Aucune donnée.");
+    if (!pivot.clients.length) return alert("Aucune donnée.");
     const aoa = [];
     aoa.push(["Code livré","Nom client", ...MONTHS.map(m=>m.label), "TOTAL"]);
     for (const c of pivot.clients){

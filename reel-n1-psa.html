@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Réel vs N-1 — PSA (Produits)</title>
   <script src="./shared-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./reel-supabase.js"></script>
 
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -1041,7 +1043,7 @@
   });
 
   el.btnReset.addEventListener("click", () => {
-    if (!confirm("Reset complet (mois + filtre + résultats) ?")) return;
+    if (!confirm("Reset complet (mois + filtre + résultats) ")) return;
     selectedMonths = new Set([m0]);
     el.q.value = "";
     cache.realRows = null; cache.n1Rows = null;
@@ -1141,8 +1143,7 @@
       const monthsArr = Array.from(selectedMonths.values()).sort((a,b)=>a-b);
 
       if (!cache.realRows){
-        const { buffer, sheetName } = await fetchAndPickSheet(FILE_REAL);
-        cache.realRows = sheetToRows(buffer, sheetName);
+        cache.realRows = await loadCurrentRealRows();
       }
       if (!cache.n1Rows){
         const { buffer, sheetName } = await fetchAndPickSheet(FILE_N1);
@@ -1187,7 +1188,7 @@
 
     }catch(err){
       console.error(err);
-      setStatus("bad", "Erreur fetch/lecture : " + (err?.message || err));
+      setStatus("bad", "Erreur fetch/lecture : " + (err.message || err));
     }
   }
 
@@ -1274,7 +1275,7 @@
       <span class="tag"><i class="warn"></i>Clients: <b style="color:rgba(255,255,255,.90)">${rows.length}</b></span>
       <span class="tag"><i class="ok"></i>CA Réel: <b style="color:rgba(255,255,255,.90)">${fmtMoney(sumReal)}</b></span>
       <span class="tag"><i class="warn"></i>CA N-1: <b style="color:rgba(255,255,255,.90)">${fmtMoney(sumN1)}</b></span>
-      <span class="tag"><i class="${sumE>=0?'ok':'bad'}"></i>Écart: <b style="color:rgba(255,255,255,.90)">${fmtMoney(sumE)}</b></span>
+      <span class="tag"><i class="${sumE>=0 ? 'ok' : 'bad'}"></i>Écart: <b style="color:rgba(255,255,255,.90)">${fmtMoney(sumE)}</b></span>
     `;
 
     renderDetailTable();
@@ -1364,7 +1365,7 @@
      EXPORTS (detail)
   ====================================================== */
   function exportDetailCSV(){
-    if (!detail.rows?.length){ alert("Aucun détail à exporter."); return; }
+    if (!detail.rows.length){ alert("Aucun détail à exporter."); return; }
 
     const rows = detail.rows.map(r => ({
       "Produit": detail.product,
@@ -1383,7 +1384,7 @@
   }
 
   function exportDetailXLSX(){
-    if (!detail.rows?.length){ alert("Aucun détail à exporter."); return; }
+    if (!detail.rows.length){ alert("Aucun détail à exporter."); return; }
 
     const rows = detail.rows.map(r => ({
       "Produit": detail.product,
@@ -1409,6 +1410,38 @@
   /* ======================================================
      DATA — parsing / aggregation
   ====================================================== */
+
+  async function loadCurrentRealRows(){
+    const supabaseRows = await loadCurrentRealRowsFromSupabase();
+    if (supabaseRows) return supabaseRows;
+
+    const { buffer, sheetName } = await fetchAndPickSheet(FILE_REAL);
+    return sheetToRows(buffer, sheetName);
+  }
+
+  async function loadCurrentRealRowsFromSupabase(){
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return null;
+
+    try{
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear("psa", APP_YEAR);
+      if (!rows || !rows.length) return null;
+      return rows.map(row => {
+        const month = MONTHS[Number(row.mois) - 1];
+        return {
+          "Designation": String(row.designation || "").trim(),
+          "Quantite Payante servie": toNumber(row.quantite),
+          "Montant prix achat KENT": toNumber(row.montant),
+          "Mois2": month ? month.label : String(row.mois || ""),
+          "N client interne": String(row.client_code || "").trim(),
+          "Nom du client": String(row.client_nom || "").trim(),
+        };
+      });
+    }catch(error){
+      console.warn("R\u00e9el Supabase indisponible, fallback Excel:", error.message || error);
+      return null;
+    }
+  }
+
   function sheetToRows(arrayBuffer, sheetName){
     const wb = XLSX.read(arrayBuffer, { type:"array" });
     const ws = wb.Sheets[sheetName];
@@ -1537,7 +1570,7 @@
   }
 
   async function fetchXlsxWithFallback(fileName){
-    const pageDir = location.href.replace(/[#?].*$/,"").replace(/\/[^\/]*$/, "/");
+    const pageDir = location.href.replace(/[#].*$/,"").replace(/\/[^\/]*$/, "/");
     const urlSame = new URL(fileName, pageDir).toString();
     const urlData = new URL("data/" + fileName, pageDir).toString();
 
@@ -1673,7 +1706,7 @@
     return new Intl.NumberFormat("fr-FR", { maximumFractionDigits:0 }).format(v);
   }
   function fmtPct(p){
-    const v = Number(p || 0) * 100;
+    const v = Number(p ?? 0) * 100;
     return new Intl.NumberFormat("fr-FR", { maximumFractionDigits:1 }).format(v) + "%";
   }
 

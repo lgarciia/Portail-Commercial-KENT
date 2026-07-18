@@ -10,6 +10,7 @@
   <!-- ✅ SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
@@ -404,7 +405,7 @@
 
   const INITIAL_MONTH_LABEL =
     Number.isFinite(REQUESTED_MONTH) && REQUESTED_MONTH >= 1 && REQUESTED_MONTH <= MONTHS.length
-      ? MONTHS[REQUESTED_MONTH - 1].label
+       ? MONTHS[REQUESTED_MONTH - 1].label
       : "";
 
   const nf0 = new Intl.NumberFormat("fr-FR", { minimumFractionDigits:0, maximumFractionDigits:0 });
@@ -448,10 +449,7 @@
   el.sReel.textContent = "chargement…";
 
   try{
-    const [supabaseBudgetData, reelWB] = await Promise.all([
-      loadActiveBudgetFromSupabase(BUDGET_ENTITY_KEY, REPORT_YEAR),
-      fetchWorkbook(FILES.reel),
-    ]);
+    const supabaseBudgetData = await loadActiveBudgetFromSupabase(BUDGET_ENTITY_KEY, REPORT_YEAR);
 
     if(supabaseBudgetData && supabaseBudgetData.clients && supabaseBudgetData.clients.length){
       budgetData = supabaseBudgetData;
@@ -462,11 +460,15 @@
       budgetSourceLabel = "Excel";
     }
 
-    if (!(budgetData?.clients?.length)) {
+    if (!(budgetData.clients.length)) {
       throw new Error("Budget Gueudet introuvable ou colonnes mois non reconnues");
     }
 
-    const realResult = parseRealWorkbook(reelWB, budgetData);
+    let realResult = await loadRealFromSupabase(budgetData);
+    if (!realResult) {
+      const reelWB = await fetchWorkbook(FILES.reel);
+      realResult = parseRealWorkbook(reelWB, budgetData);
+    }
     if (realResult.error){
       throw new Error(realResult.error);
     }
@@ -481,12 +483,80 @@
   }
   paintStatus();
 
+
+  async function loadRealFromSupabase(currentBudgetData){
+    if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return null;
+
+    try{
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(BUDGET_ENTITY_KEY, REPORT_YEAR);
+      if (!rows || !rows.length) return null;
+
+      const exact = new Map();
+      const byCode = new Map();
+      const byName = new Map();
+      for (const bc of currentBudgetData.clients || []){
+        const exactKey = makeClientMatchKey(bc.name, bc.nclient);
+        if (exactKey) exact.set(exactKey, bc);
+        addLookupCandidate(byCode, compactClientCode(bc.nclient), bc);
+        addLookupCandidate(byName, compactClientName(bc.name), bc);
+      }
+
+      function ensureClient(clientCode, clientName){
+        const known = findMatchedClient(exact, byCode, byName, clientCode, clientName);
+        if (known) return known;
+
+        const nclient = String(clientCode || "").trim();
+        const name = String(clientName || "").trim() || `Client ${nclient}`;
+        if (!nclient && !name) return null;
+
+        const budget = {};
+        for (const month of MONTHS) budget[month.key] = 0;
+        const client = { id: makeClientMatchKey(name, nclient), name, nclient, budget, isUnbudgeted: true };
+        currentBudgetData.clients.push(client);
+
+        const exactKey = makeClientMatchKey(name, nclient);
+        if (exactKey) exact.set(exactKey, client);
+        addLookupCandidate(byCode, compactClientCode(nclient), client);
+        addLookupCandidate(byName, compactClientName(name), client);
+        return client;
+      }
+
+      const nextReal = {};
+      for (const row of rows){
+        const amount = toInt(row.montant);
+        if (!amount) continue;
+        const month = MONTHS[Number(row.mois) - 1];
+        if (!month) continue;
+
+        const client = ensureClient(row.client_code, row.client_nom);
+        if (!client) continue;
+        if (!nextReal[client.id]) nextReal[client.id] = {};
+        nextReal[client.id][month.key] = toInt(nextReal[client.id][month.key]) + amount;
+      }
+
+      const clients = (currentBudgetData.clients || []).map(client => ({
+        id: client.id,
+        name: client.name || "",
+        nclient: String(client.nclient || "").trim(),
+        months: MONTHS.reduce((acc, month) => {
+          acc[month.key] = toInt(nextReal?.[client.id]?.[month.key]);
+          return acc;
+        }, {})
+      })).filter(client => MONTHS.some(month => toInt(client.months[month.key])));
+
+      return { clients, realData: nextReal, source: "supabase" };
+    }catch(error){
+      console.warn("R\u00e9el Supabase indisponible, fallback Excel:", error.message || error);
+      return null;
+    }
+  }
+
   async function loadActiveBudgetFromSupabase(entityKey, year){
     if(!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return null;
     try{
       const result = await window.BudgetSupabase.getActiveBudgetData(entityKey, year);
       const clients = result && result.budgetData && Array.isArray(result.budgetData.clients)
-        ? result.budgetData.clients
+         ? result.budgetData.clients
         : [];
       if(!clients.length) return null;
 
@@ -526,8 +596,8 @@
   const values = {
     ANNEE: [String(REPORT_YEAR)],
     MOIS: MONTHS.map(m=>m.label),
-    CLIENT: (budgetData?.clients || []).map(c => c.name || "").filter(Boolean).sort((a,b)=>a.localeCompare(b, "fr")),
-    NCLIENT: (budgetData?.clients || []).map(c => String(c.nclient || "").trim()).filter(Boolean).sort((a,b)=>a.localeCompare(b, "fr")),
+    CLIENT: (budgetData.clients || []).map(c => c.name || "").filter(Boolean).sort((a,b)=>a.localeCompare(b, "fr")),
+    NCLIENT: (budgetData.clients || []).map(c => String(c.nclient || "").trim()).filter(Boolean).sort((a,b)=>a.localeCompare(b, "fr")),
   };
 
   const filters = {
@@ -562,7 +632,7 @@
   // CORE
   // ---------------------------
   function generate(){
-    if (!budgetData?.clients?.length){
+    if (!budgetData.clients.length){
       el.resultTable.innerHTML = emptyTable("Aucune donnee Budget active. Verifie le budget actif Supabase ou charge un Excel de secours.");
       setKpis(0,0,0,0);
       lastExportRows = [];
@@ -590,7 +660,7 @@
       let cumReal=0, cumBudget=0;
 
       for (const m of selectedMonths){
-        const b = toInt(c?.budget?.[m.key]);
+        const b = toInt(c.budget?.[m.key]);
         const r = getRealForClientMonth(c, m.key);
         const e = r - b;
         per[m.key] = { real:r, budget:b, ecart:e };
@@ -845,7 +915,7 @@
   }
 
   function paintStatus(){
-    const bOk = !!(budgetData?.clients?.length);
+    const bOk = !!(budgetData.clients.length);
     const realClientsCount = Object.keys(realData || {}).length;
     const rOk = realClientsCount > 0;
 
@@ -989,7 +1059,7 @@
   }
 
   async function fetchXlsxWithFallback(fileName){
-    const pageDir = location.href.replace(/[#?].*$/,"").replace(/\/[^\/]*$/, "/");
+    const pageDir = location.href.replace(/[#].*$/,"").replace(/\/[^\/]*$/, "/");
     const urlSame = new URL(fileName, pageDir).toString();
     const urlData = new URL("data/" + fileName, pageDir).toString();
 
@@ -1145,7 +1215,7 @@
       return { clients: [], realData: {}, error: "Réel Gueudet introuvable ou colonnes Mois2/CA non reconnues" };
     }
 
-    const budgetClients = currentBudgetData?.clients || [];
+    const budgetClients = currentBudgetData.clients || [];
     const budgetByExact = new Map();
     const budgetByNClient = new Map();
     const budgetByName = new Map();
@@ -1189,7 +1259,7 @@
       const mi = monthToIndex(monthLabel);
       if (mi < 0) continue;
 
-      const mk = MONTHS[mi]?.key;
+      const mk = MONTHS[mi].key;
       if (!mk) continue;
 
       const rowYear = extractRealRowYear(r, colYear, colDate);
@@ -1274,7 +1344,7 @@
       "novembre":10,"nov":10,"11":10,
       "decembre":11,"décembre":11,"dec":11,"12":11
     };
-    return map[normKey(m)] ?? -1;
+    return map[normKey(m)] -1;
   }
 
 })();

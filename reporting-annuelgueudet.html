@@ -328,7 +328,7 @@
       margin:0 3px;
     }
 
-    /* sÃ©parateurs visuels (copie PSA) */
+    /* séparateurs visuels (copie PSA) */
     #reportTable th:nth-child(3),
     #reportTable th:nth-child(6),
     #reportTable th:nth-child(9),
@@ -384,7 +384,7 @@
         <button class="btn" id="btnExportXlsx">Exporter XLSX</button>
         <button class="btn" id="btnExportCsv">Exporter CSV</button>
         <button class="btn" id="btnExportJson">Exporter JSON</button>
-        <button class="btn danger" id="btnResetReal">Reset RÃ©el</button>
+        <button class="btn danger" id="btnResetReal">Reset Réel</button>
       </div>
     </div>
 
@@ -394,12 +394,12 @@
           <div class="metaLeft">
             <div class="pill">Budget actif : <strong id="budgetFileLabel">non charg&eacute;</strong></div>
             <div class="pill">Clients : <strong id="clientsCount">0</strong></div>
-            <div class="pill">DerniÃ¨re maj : <strong id="lastUpdate">â€”</strong></div>
-            <div class="pill">RÃ©el Gueudet : <strong id="reelStatus">chargementâ€¦</strong></div>
+            <div class="pill">Dernière maj : <strong id="lastUpdate">—</strong></div>
+            <div class="pill">Réel Gueudet : <strong id="reelStatus">chargement…</strong></div>
             <input class="search" id="search" placeholder="Filtrer client (nom ou n client)..." />
           </div>
           <div class="pill">
-            Astuce : drag&drop le fichier Excel ici â€¢ <span class="kbd">Ctrl</span>+<span class="kbd">F</span>
+            Astuce : drag&drop le fichier Excel ici • <span class="kbd">Ctrl</span>+<span class="kbd">F</span>
           </div>
         </div>
 
@@ -426,17 +426,17 @@
 (async function(){
   const MONTHS = [
     { key: "jan", label: "Janvier", excel: "Janvier" },
-    { key: "feb", label: "FÃ©vrier", excel: "FÃ©vrier" },
+    { key: "feb", label: "Février", excel: "Février" },
     { key: "mar", label: "Mars", excel: "Mars" },
     { key: "apr", label: "Avril", excel: "Avril" },
     { key: "may", label: "Mai", excel: "Mai" },
     { key: "jun", label: "Juin", excel: "Juin" },
     { key: "jul", label: "Juillet", excel: "Juillet" },
-    { key: "aug", label: "AoÃ»t", excel: "AoÃ»t" },
+    { key: "aug", label: "Août", excel: "Août" },
     { key: "sep", label: "Septembre", excel: "Septembre" },
     { key: "oct", label: "Octobre", excel: "Octobre" },
     { key: "nov", label: "Novembre", excel: "Novembre" },
-    { key: "dec", label: "DÃ©cembre", excel: "DÃ©cembre" },
+    { key: "dec", label: "Décembre", excel: "Décembre" },
   ];
 
   const ENTITY_KEY = "gueudet";
@@ -475,7 +475,7 @@
   el.dropHint.textContent = "D\u00e9pose un budget Excel manuel si besoin";
 
   renderEmpty();
-  updateReelStatus("chargementâ€¦");
+  updateReelStatus("chargement…");
   syncBottomScrollbar();
   await tryAutoFetchBudget();
 
@@ -493,7 +493,7 @@
   });
 
   el.btnResetReal.addEventListener("click", async () => {
-    if (!await kentConfirm(`Recharger toutes les valeurs RÃ©el depuis ${REAL_FILE} ?`, { title: "Recharger le r\u00e9el", confirmText: "Recharger" })) return;
+    if (!await kentConfirm(`Recharger toutes les valeurs Réel depuis ${REAL_FILE} `, { title: "Recharger le r\u00e9el", confirmText: "Recharger" })) return;
     loadRealFromFetch().then(render).catch(console.error);
   });
 
@@ -510,7 +510,7 @@
     el.dropHint.classList.remove("show");
   }));
   el.dropZone.addEventListener("drop", async (e) => {
-    const file = e.dataTransfer?.files?.[0];
+    const file = e.dataTransfer.files?.[0];
     if (!file) return;
     const name = (file.name || "").toLowerCase();
     if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
@@ -520,7 +520,7 @@
     await importBudgetFile(file);
   });
 
-  // âœ… sync scroll horizontal : tableScroller (X hidden) <-> hScroll (X visible)
+  // ✅ sync scroll horizontal : tableScroller (X hidden) <-> hScroll (X visible)
   let syncing = false;
 
   el.tableScroller.addEventListener("scroll", () => {
@@ -548,7 +548,7 @@
       render();
     }catch(err){
       console.error(err);
-      await kentAlert("Import impossible : " + (err?.message || err), { title: "Import impossible", tone: "danger" });
+      await kentAlert("Import impossible : " + (err.message || err), { title: "Import impossible", tone: "danger" });
     }
   }
 
@@ -565,7 +565,7 @@
     const colClient = findCol(headerMap, ["client", "clients"]);
     if (!colClient) throw new Error("Colonne CLIENT introuvable dans le fichier.");
 
-    const colNClient = findCol(headerMap, ["n client","nÂ° client","no client","numero client","num client","nclient"]);
+    const colNClient = findCol(headerMap, ["n client","n° client","no client","numero client","num client","nclient"]);
 
     const monthCols = {};
     for (const m of MONTHS){
@@ -606,7 +606,7 @@
     try{
       const result = await window.BudgetSupabase.getActiveBudgetData(ENTITY_KEY, APP_YEAR);
       const clients = result && result.budgetData && Array.isArray(result.budgetData.clients)
-        ? result.budgetData.clients
+         ? result.budgetData.clients
         : [];
       if(!clients.length) return false;
 
@@ -661,8 +661,8 @@
   function applyMeta(meta){
     budgetMeta = meta || null;
     if (!meta) {
-      el.budgetFileLabel.textContent = "non chargÃ©";
-      el.lastUpdate.textContent = "â€”";
+      el.budgetFileLabel.textContent = "non chargé";
+      el.lastUpdate.textContent = "—";
       return;
     }
     el.budgetFileLabel.textContent = meta.filename || BUDGET_FILE;
@@ -670,7 +670,7 @@
   }
 
   /* ======================================================
-     âœ… FETCH RÃ‰EL (Gueudet)
+     ✅ FETCH RÉEL (Gueudet)
      Reconstruit realData[clientId][monthKey] = somme CA
   ====================================================== */
   async function loadRealFromSupabase(){
@@ -733,17 +733,17 @@
       updateReelStatus(`OK (${countClients} clients) - Supabase réel actif`);
       return true;
     }catch(err){
-      console.warn("Reel Supabase indisponible, fallback Excel:", err?.message || err);
+      console.warn("Reel Supabase indisponible, fallback Excel:", err.message || err);
       return false;
     }
   }
   async function loadRealFromFetch(){
-    if (!budgetData?.clients?.length){
+    if (!budgetData.clients.length){
       updateReelStatus("budget absent");
       return;
     }
 
-    updateReelStatus("chargementâ€¦");
+    updateReelStatus("chargement…");
 
     if (await loadRealFromSupabase()) return;
 
@@ -763,12 +763,12 @@
 
       const headerMap = buildHeaderMap(rows[0] || {});
 
-      // âœ… Colonnes attendues Gueudet (avec tolÃ©rance si le fichier est â€œPSA-likeâ€)
+      // ✅ Colonnes attendues Gueudet (avec tolérance si le fichier est “PSA-like”)
       const colClientInt = findCol(headerMap, [
         // Gueudet
-        "code livrÃ©","code livre","code",
-        // PSA-like (au cas oÃ¹)
-        "nÂ° client interne","no client interne","n client interne","numero client interne","nÂ° client"
+        "code livré","code livre","code",
+        // PSA-like (au cas où)
+        "n° client interne","no client interne","n client interne","numero client interne","n° client"
       ]);
 
       const colClientName = findCol(headerMap, [
@@ -849,7 +849,7 @@
 
       realData = nextReal;
       const countClients = Object.keys(realData).length;
-      updateReelStatus(`OK (${countClients} clients) â€” ${REAL_FILE}`);
+      updateReelStatus(`OK (${countClients} clients) — ${REAL_FILE}`);
     }catch(err){
       console.error(err);
       updateReelStatus("erreur fetch/lecture");
@@ -860,23 +860,23 @@
     const k = normKey(m);
     const map = {
       "janvier":"jan","jan":"jan","janv":"jan","janv.":"jan",
-      "fevrier":"feb","fÃ©vrier":"feb","fev":"feb","fÃ©v":"feb","fevr":"feb","fÃ©vr":"feb","fevr.":"feb","fÃ©vr.":"feb",
+      "fevrier":"feb","février":"feb","fev":"feb","fév":"feb","fevr":"feb","févr":"feb","fevr.":"feb","févr.":"feb",
       "mars":"mar","mar":"mar",
       "avril":"apr","avr":"apr","avr.":"apr",
       "mai":"may",
       "juin":"jun",
       "juillet":"jul","juil":"jul","juil.":"jul",
-      "aout":"aug","aoÃ»t":"aug",
+      "aout":"aug","août":"aug",
       "septembre":"sep","sep":"sep","sept":"sep","sept.":"sep",
       "octobre":"oct","oct":"oct","oct.":"oct",
       "novembre":"nov","nov":"nov","nov.":"nov",
-      "decembre":"dec","dÃ©cembre":"dec","dec":"dec","dÃ©c":"dec","dec.":"dec","dÃ©c.":"dec"
+      "decembre":"dec","décembre":"dec","dec":"dec","déc":"dec","dec.":"dec","déc.":"dec"
     };
     return map[k] || null;
   }
 
   function updateReelStatus(msg){
-    el.reelStatus.textContent = msg || "â€”";
+    el.reelStatus.textContent = msg || "—";
   }
 
   function renderEmpty(){
@@ -890,25 +890,25 @@
           <th class="dividerL" colspan="3">Cumul</th>
         </tr>
         <tr>
-          <th class="col-client">â€”</th>
-          <th class="col-nclient">â€”</th>
-          ${MONTHS.map(() => `<th>RÃ©el</th><th>Budget</th><th>Ã‰cart</th>`).join("")}
-          <th class="dividerL">RÃ©el</th><th>Budget</th><th>Ã‰cart</th>
+          <th class="col-client">—</th>
+          <th class="col-nclient">—</th>
+          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
+          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td class="col-client">Aucun budget chargÃ©</td>
-          <td class="col-nclient">â€”</td>
-          ${MONTHS.map(() => `<td class="num">â€”</td><td class="num">â€”</td><td class="num">â€”</td>`).join("")}
-          <td class="num dividerL">â€”</td><td class="num">â€”</td><td class="num">â€”</td>
+          <td class="col-client">Aucun budget chargé</td>
+          <td class="col-nclient">—</td>
+          ${MONTHS.map(() => `<td class="num">—</td><td class="num">—</td><td class="num">—</td>`).join("")}
+          <td class="num dividerL">—</td><td class="num">—</td><td class="num">—</td>
         </tr>
       </tbody>
     `;
   }
 
   function render(){
-    if (!budgetData?.clients?.length){
+    if (!budgetData.clients.length){
       renderEmpty();
       syncBottomScrollbar();
       return;
@@ -928,10 +928,10 @@
           <th class="dividerL" colspan="3">Cumul</th>
         </tr>
         <tr>
-          <th class="col-client">â€”</th>
-          <th class="col-nclient">â€”</th>
-          ${MONTHS.map(() => `<th>RÃ©el</th><th>Budget</th><th>Ã‰cart</th>`).join("")}
-          <th class="dividerL">RÃ©el</th><th>Budget</th><th>Ã‰cart</th>
+          <th class="col-client">—</th>
+          <th class="col-nclient">—</th>
+          ${MONTHS.map(() => `<th>Réel</th><th>Budget</th><th>Écart</th>`).join("")}
+          <th class="dividerL">Réel</th><th>Budget</th><th>Écart</th>
         </tr>
       </thead>
     `;
@@ -981,7 +981,7 @@
     return `
       <tr class="row-cumul">
         <td class="col-client">Cumul</td>
-        <td class="col-nclient">â€”</td>
+        <td class="col-nclient">—</td>
         ${cells}
         <td class="num dividerL">${fmt(cumul.annual.real)}</td>
         <td class="num budget">${fmt(cumul.annual.budget)}</td>
@@ -1010,7 +1010,7 @@
     return `
       <tr>
         <td class="col-client">${escapeHtml(client.name)}</td>
-        <td class="col-nclient">${escapeHtml(client.nclient || "â€”")}</td>
+        <td class="col-nclient">${escapeHtml(client.nclient || "—")}</td>
         ${cells}
         <td class="num dividerL">${fmt(annualReal)}</td>
         <td class="num budget">${fmt(annualBudget)}</td>
@@ -1020,14 +1020,14 @@
   }
 
   function syncBottomScrollbar(){
-    const w = el.table?.scrollWidth || 0;
+    const w = el.table.scrollWidth || 0;
     el.hScrollInner.style.width = w ? (w + "px") : "0px";
     el.hScroll.scrollLeft = el.tableScroller.scrollLeft;
   }
 
   // EXPORTS
   function buildExportRows(){
-    if (!budgetData?.clients?.length) return [];
+    if (!budgetData.clients.length) return [];
     const clients = budgetData.clients
       .filter(c => !filterText || (c.name||"").toLowerCase().includes(filterText) || String(c.nclient||"").toLowerCase().includes(filterText));
 
@@ -1041,13 +1041,13 @@
       const r = { CLIENT: "Cumul", "N CLIENT": "" };
       for (const m of MONTHS){
         const v = c.perMonth[m.key];
-        r[`${m.label} RÃ©el`] = v.real;
+        r[`${m.label} Réel`] = v.real;
         r[`${m.label} Budget`] = v.budget;
-        r[`${m.label} Ã‰cart`] = v.ecart;
+        r[`${m.label} Écart`] = v.ecart;
       }
-      r["Cumul RÃ©el"] = c.annual.real;
+      r["Cumul Réel"] = c.annual.real;
       r["Cumul Budget"] = c.annual.budget;
-      r["Cumul Ã‰cart"] = c.annual.ecart;
+      r["Cumul Écart"] = c.annual.ecart;
       return r;
     }
 
@@ -1058,13 +1058,13 @@
         const b = toNumber(c.budget?.[m.key]);
         const rr = Math.round(toNumber(realData?.[c.id]?.[m.key]));
         annualB += b; annualR += rr;
-        r[`${m.label} RÃ©el`] = rr;
+        r[`${m.label} Réel`] = rr;
         r[`${m.label} Budget`] = b;
-        r[`${m.label} Ã‰cart`] = rr - b;
+        r[`${m.label} Écart`] = rr - b;
       }
-      r["Cumul RÃ©el"] = annualR;
+      r["Cumul Réel"] = annualR;
       r["Cumul Budget"] = annualB;
-      r["Cumul Ã‰cart"] = annualR - annualB;
+      r["Cumul Écart"] = annualR - annualB;
       return r;
     }
   }
@@ -1144,7 +1144,7 @@
       const d = new Date(iso);
       return d.toLocaleString("fr-FR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
     }catch{
-      return "â€”";
+      return "—";
     }
   }
 
@@ -1207,7 +1207,7 @@
     if (!Array.isArray(clients)) return false;
     let changed = false;
     for (const client of clients){
-      const nextId = makeClientKey(client?.name, client?.nclient);
+      const nextId = makeClientKey(client.name, client.nclient);
       if (nextId && client.id !== nextId){
         client.id = nextId;
         changed = true;
@@ -1260,7 +1260,7 @@
      GitHub-safe XLSX fetch
   ========================= */
   async function fetchXlsxWithFallback(fileName){
-    const pageDir = location.href.replace(/[#?].*$/,"").replace(/\/[^\/]*$/, "/");
+    const pageDir = location.href.replace(/[#].*$/,"").replace(/\/[^\/]*$/, "/");
     const urlSame = new URL(fileName, pageDir).toString();
     const urlData = new URL("data/" + fileName, pageDir).toString();
 

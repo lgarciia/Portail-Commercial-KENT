@@ -418,12 +418,12 @@
         const hashIndex = raw.indexOf("#");
         const beforeHash = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
         const hash = hashIndex >= 0 ? raw.slice(hashIndex) : "";
-        const queryIndex = beforeHash.indexOf("?");
+        const queryIndex = beforeHash.indexOf("");
         const path = queryIndex >= 0 ? beforeHash.slice(0, queryIndex) : beforeHash;
         const query = queryIndex >= 0 ? beforeHash.slice(queryIndex + 1) : "";
         const params = new URLSearchParams(query);
         params.set("year", String(year));
-        return `${path}?${params.toString()}${hash}`;
+        return `${path}${params.toString()}${hash}`;
       }
 
       function syncUrl(){
@@ -455,7 +455,7 @@
           `<option value="${option.key}">${option.label}</option>`
         )).join("");
         if (!view.options.some(option => option.key === currentOptionKey)) {
-          currentOptionKey = view.options[0]?.key || "";
+          currentOptionKey = view.options[0].key || "";
         }
         dom.entitySelect.value = currentOptionKey;
       }
@@ -489,7 +489,8 @@
 
         const option = selectedOption();
         const src = buildPageUrl(option, year);
-        dom.status.textContent = `${activeView().title} - ${option.label}`;
+        dom.status.hidden = false;
+        dom.status.textContent = "Chargement...";
         dom.frame.src = src;
         syncUrl();
       }
@@ -497,14 +498,14 @@
       KentDataConfig.fillYearSelect(dom.yearSelect, { selectedYear: KentDataConfig.getActiveYear() });
       const urlYear = params.get("year");
       if (urlYear) dom.yearSelect.value = String(KentDataConfig.setActiveYear(Number(urlYear)));
-      currentOptionKey = params.get("entity") || activeView().options[0]?.key || "";
+      currentOptionKey = params.get("entity") || activeView().options[0].key || "";
 
       renderViewSelect();
       loadSelected();
 
       dom.viewSelect.addEventListener("change", () => {
         currentViewKey = VIEWS[dom.viewSelect.value] ? dom.viewSelect.value : "activite-reelle";
-        currentOptionKey = activeView().options[0]?.key || "";
+        currentOptionKey = activeView().options[0].key || "";
         loadSelected();
       });
 
@@ -531,7 +532,8 @@
       });
 
       dom.frame.addEventListener("load", () => {
-        dom.status.textContent = `${activeView().title} - ${selectedOption().label} chargé`;
+        dom.status.textContent = "";
+        dom.status.hidden = true;
       });
     })();
   </script>
