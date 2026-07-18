@@ -88,9 +88,18 @@
   }
 
   async function ensureDefaultEntities(){
+    const { data: existing, error: existingError } = await client()
+      .from("budget_entites")
+      .select("key");
+    if (existingError) throw existingError;
+
+    const existingKeys = new Set((existing || []).map(entity => String(entity.key || "")));
+    const missing = DEFAULT_ENTITIES.filter(entity => !existingKeys.has(entity.key));
+    if (!missing.length) return;
+
     const { error } = await client()
       .from("budget_entites")
-      .upsert(DEFAULT_ENTITIES, { onConflict: "key" });
+      .insert(missing);
     if (error) throw error;
   }
 
@@ -117,6 +126,48 @@
       .single();
     if (error) throw error;
     return data;
+  }
+
+  async function updateEntity(id, updates = {}){
+    const payload = {};
+    if (Object.prototype.hasOwnProperty.call(updates, "libelle")) {
+      const libelle = String(updates.libelle || "").trim();
+      if (!libelle) throw new Error("Nom entite obligatoire.");
+      payload.libelle = libelle;
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, "actif")) {
+      payload.actif = Boolean(updates.actif);
+    }
+    if (!Object.keys(payload).length) throw new Error("Aucune modification entite.");
+    payload.updated_at = new Date().toISOString();
+
+    const { data, error } = await client()
+      .from("budget_entites")
+      .update(payload)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  function renameEntity(id, label){
+    return updateEntity(id, { libelle: label });
+  }
+
+  function deactivateEntity(id){
+    return updateEntity(id, { actif: false });
+  }
+
+  async function listBudgetsForEntity(entityId){
+    const { data, error } = await client()
+      .from("budgets")
+      .select("*")
+      .eq("entite_id", entityId)
+      .order("annee", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
   }
 
   async function listProjections(year){
@@ -365,6 +416,9 @@
     ensureDefaultEntities,
     listEntities,
     createEntity,
+    renameEntity,
+    deactivateEntity,
+    listBudgetsForEntity,
     listProjections,
     saveProjection,
     getProjection,

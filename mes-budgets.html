@@ -86,6 +86,8 @@
     .btn.gold{color:#101827;background:linear-gradient(135deg,#fde68a,var(--gold));border-color:transparent}
     .btn.red{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.34)}
     .btn.small{min-height:32px;padding:6px 9px;border-radius:11px;font-size:12px}
+    .entityActions{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+    .entityActions .btn{min-height:36px;padding:7px 10px;border-radius:12px;font-size:12px}
     .input{padding:0 12px;outline:none;min-width:190px}
     .card{border-radius:var(--r);padding:14px;margin-top:12px}
     .filters{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
@@ -144,6 +146,10 @@
         </div>
         <button class="btn" id="refreshBtn" type="button">Actualiser</button>
         <button class="btn gold" id="newEntityBtn" type="button">Nouvelle entite</button>
+        <div class="entityActions" aria-label="Gestion entites">
+          <button class="btn" id="renameEntityBtn" type="button">Renommer entite</button>
+          <button class="btn red" id="deleteEntityBtn" type="button">Supprimer entite</button>
+        </div>
       </div>
       <div class="kpis">
         <div class="kpi"><span>Budgets</span><strong id="kpiBudgets">-</strong></div>
@@ -233,6 +239,12 @@
     function filteredBudgets(){
       const entityFilter = $("entityFilter").value;
       return budgets.filter(budget => entityFilter === "all" || String(budget.entite_id) === String(entityFilter));
+    }
+
+    function selectedEntity(){
+      const entityId = $("entityFilter").value;
+      if (!entityId || entityId === "all") return null;
+      return entities.find(entity => String(entity.id) === String(entityId)) || null;
     }
 
     function renderBudgets(){
@@ -395,6 +407,78 @@
       }
     }
 
+    async function renameSelectedEntity(){
+      const entity = selectedEntity();
+      if (!entity) {
+        await kentAlert("Selectionne une entite avant de la renommer.", { title: "Entite manquante", tone: "warning" });
+        return;
+      }
+      const nextLabel = await kentPrompt("Nouveau nom de l'entite :", entity.libelle, { title: "Renommer l'entite" });
+      if (!nextLabel || !nextLabel.trim()) return;
+      if (nextLabel.trim() === entity.libelle) return;
+      const ok = await kentConfirm(
+        `Renommer "${entity.libelle}" en "${nextLabel.trim()}" ?\n\nLes budgets existants restent lies a la meme entite, seule l'appellation change.`,
+        { title: "Confirmer le renommage", confirmText: "Renommer" }
+      );
+      if (!ok) return;
+      try{
+        const updated = await window.BudgetSupabase.renameEntity(entity.id, nextLabel.trim());
+        await refreshData();
+        $("entityFilter").value = updated.id;
+        renderBudgets();
+        await kentAlert("Entite renommee.", { title: "Renommage termine", tone: "success" });
+      }catch(error){
+        console.error("Rename entity failed", error);
+        await kentAlert(error?.message || "Impossible de renommer cette entite.", { title: "Erreur entite", tone: "danger" });
+      }
+    }
+
+    async function deactivateSelectedEntity(){
+      const entity = selectedEntity();
+      if (!entity) {
+        await kentAlert("Selectionne une entite avant de la supprimer.", { title: "Entite manquante", tone: "warning" });
+        return;
+      }
+      let linkedBudgets = [];
+      try{
+        linkedBudgets = await window.BudgetSupabase.listBudgetsForEntity(entity.id);
+      }catch(error){
+        console.warn("Unable to count entity budgets", error);
+      }
+
+      const firstConfirm = await kentConfirm(
+        `Supprimer "${entity.libelle}" de la liste des entites ?\n\nPar securite, l'entite sera seulement masquee. Aucun budget, aucune ligne budget et aucune vente ne seront supprimes.`,
+        { title: "Supprimer l'entite", tone: "warning", confirmText: "Continuer" }
+      );
+      if (!firstConfirm) return;
+
+      const budgetMessage = linkedBudgets.length
+        ? `${linkedBudgets.length} budget(s) restent conserves pour cette entite. Ils ne seront plus visibles dans les listes actives, mais les donnees restent en base.`
+        : "Aucun budget lie n'a ete trouve pour cette entite.";
+      const secondConfirm = await kentConfirm(
+        `${budgetMessage}\n\nConfirmer le masquage de "${entity.libelle}" ?`,
+        { title: "Double confirmation", tone: "danger", confirmText: "Masquer l'entite" }
+      );
+      if (!secondConfirm) return;
+
+      const typed = await kentPrompt(`Derniere securite : tape SUPPRIMER pour masquer "${entity.libelle}".`, "", { title: "Confirmation finale" });
+      if (String(typed || "").trim().toUpperCase() !== "SUPPRIMER") return;
+
+      try{
+        await window.BudgetSupabase.deactivateEntity(entity.id);
+        $("entityFilter").value = "all";
+        await refreshData();
+        $("detailTitle").textContent = "Visualisation budget";
+        $("detailMeta").textContent = "Selectionne un budget pour voir le detail.";
+        $("detailHead").innerHTML = "";
+        $("detailRows").innerHTML = '<tr><td class="empty">Aucun budget selectionne.</td></tr>';
+        await kentAlert("Entite masquee. Les donnees historiques sont conservees.", { title: "Entite supprimee de la liste", tone: "success" });
+      }catch(error){
+        console.error("Deactivate entity failed", error);
+        await kentAlert(error?.message || "Impossible de supprimer cette entite.", { title: "Erreur entite", tone: "danger" });
+      }
+    }
+
     KentDataConfig.fillYearSelect($("yearSelect"), { selectedYear: KentDataConfig.getActiveYear() });
     KentDataConfig.applyYearToLinks(document, Number($("yearSelect").value));
     $("yearSelect").addEventListener("change", async () => {
@@ -406,6 +490,8 @@
     $("entityFilter").addEventListener("change", renderBudgets);
     $("refreshBtn").addEventListener("click", refreshData);
     $("newEntityBtn").addEventListener("click", createEntity);
+    $("renameEntityBtn").addEventListener("click", renameSelectedEntity);
+    $("deleteEntityBtn").addEventListener("click", deactivateSelectedEntity);
     $("budgetRows").addEventListener("click", event => {
       const button = event.target.closest("button[data-action]");
       if (!button) return;

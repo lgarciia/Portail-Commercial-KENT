@@ -40,8 +40,8 @@
       min-height:100vh;
       display:grid;
       grid-template-rows:auto 1fr;
-      gap:14px;
-      padding:18px;
+      gap:10px;
+      padding:14px;
     }
 
     .hero,.viewer{
@@ -51,18 +51,18 @@
     }
 
     .hero{
-      border-radius:28px;
+      border-radius:24px;
       background:
         linear-gradient(135deg, rgba(15,23,42,.95), rgba(15,23,42,.72)),
         radial-gradient(620px 280px at 96% 0%, rgba(56,189,248,.14), transparent 64%);
-      padding:18px;
+      padding:13px 14px;
     }
 
     .heroTop{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       justify-content:space-between;
-      gap:16px;
+      gap:12px;
       flex-wrap:wrap;
     }
 
@@ -74,33 +74,33 @@
       background:rgba(56,189,248,.11);
       color:#d8f3ff;
       border-radius:999px;
-      padding:7px 12px;
-      font-size:12px;
+      padding:5px 10px;
+      font-size:11px;
       font-weight:950;
       letter-spacing:.12em;
       text-transform:uppercase;
     }
     .kicker::before{
       content:"";
-      width:8px;
-      height:8px;
+      width:7px;
+      height:7px;
       border-radius:999px;
       background:var(--blue);
       box-shadow:0 0 18px rgba(56,189,248,.65);
     }
 
     h1{
-      margin:12px 0 7px;
-      font-size:clamp(30px,3.8vw,54px);
-      line-height:.96;
+      margin:8px 0 4px;
+      font-size:clamp(25px,3vw,40px);
+      line-height:1;
       letter-spacing:-.055em;
     }
     .subtitle{
       margin:0;
-      max-width:860px;
+      max-width:760px;
       color:var(--muted);
-      font-size:15px;
-      line-height:1.5;
+      font-size:13px;
+      line-height:1.35;
       font-weight:750;
     }
 
@@ -108,18 +108,18 @@
       display:flex;
       align-items:center;
       justify-content:flex-end;
-      gap:9px;
+      gap:7px;
       flex-wrap:wrap;
     }
     .btn,.select{
-      min-height:42px;
+      min-height:36px;
       border:1px solid rgba(148,163,184,.20);
-      border-radius:15px;
+      border-radius:13px;
       background:rgba(255,255,255,.07);
       color:var(--text);
       font-weight:950;
-      font-size:13px;
-      padding:0 14px;
+      font-size:12px;
+      padding:0 11px;
       box-shadow:0 14px 34px rgba(0,0,0,.20);
     }
     .btn{
@@ -137,7 +137,7 @@
       background:linear-gradient(135deg,#38bdf8,#2563eb);
     }
     .select{
-      min-width:190px;
+      min-width:170px;
       outline:none;
       cursor:pointer;
     }
@@ -145,16 +145,16 @@
     .optionGrid{
       display:grid;
       grid-template-columns:repeat(5,minmax(0,1fr));
-      gap:9px;
-      margin-top:16px;
+      gap:7px;
+      margin-top:10px;
     }
     .optionCard{
       border:1px solid rgba(148,163,184,.16);
-      border-radius:19px;
+      border-radius:16px;
       background:rgba(255,255,255,.055);
-      padding:13px;
+      padding:9px 10px;
       cursor:pointer;
-      min-height:82px;
+      min-height:60px;
       transition:.16s transform,.16s border-color,.16s background,.16s box-shadow;
     }
     .optionCard:hover{
@@ -172,16 +172,16 @@
       align-items:center;
       justify-content:space-between;
       gap:8px;
-      font-size:17px;
+      font-size:15px;
       font-weight:980;
       letter-spacing:-.03em;
     }
     .optionMeta{
-      margin-top:7px;
+      margin-top:4px;
       color:var(--muted);
-      font-size:12px;
+      font-size:11px;
       font-weight:800;
-      line-height:1.35;
+      line-height:1.25;
     }
     .tag{
       flex:0 0 auto;
@@ -189,8 +189,8 @@
       background:rgba(255,255,255,.075);
       color:rgba(226,232,240,.76);
       border-radius:999px;
-      padding:4px 7px;
-      font-size:10px;
+      padding:3px 6px;
+      font-size:9px;
       font-weight:950;
       text-transform:uppercase;
       letter-spacing:.06em;
@@ -201,7 +201,7 @@
     .viewer{
       position:relative;
       min-height:0;
-      border-radius:28px;
+      border-radius:24px;
       background:rgba(2,6,23,.42);
       overflow:hidden;
     }
@@ -472,7 +472,7 @@
                 <span>${item.label}</span>
                 <span class="tag ${tagClass}">${tag}</span>
               </div>
-              <div class="optionMeta">${item.description || ""}<br>${item.page || "encours.html"}</div>
+              <div class="optionMeta">${item.description || ""}</div>
             </article>
           `;
         }).join("");
