@@ -10,23 +10,25 @@
   <style>
     :root{
       --bg:#07111f;
-      --panel:rgba(255,255,255,.066);
-      --panel-soft:rgba(255,255,255,.04);
+      --panel:rgba(255,255,255,.064);
+      --panel-soft:rgba(255,255,255,.038);
       --line:rgba(255,255,255,.13);
       --line-strong:rgba(255,255,255,.22);
       --text:rgba(255,255,255,.94);
       --muted:rgba(255,255,255,.64);
-      --muted-2:rgba(255,255,255,.48);
+      --muted-2:rgba(255,255,255,.46);
       --blue:#38bdf8;
       --green:#22c55e;
       --gold:#f59e0b;
       --purple:#8b5cf6;
       --red:#ef4444;
-      --shadow:0 22px 60px rgba(0,0,0,.42);
+      --shadow:0 22px 60px rgba(0,0,0,.38);
     }
     *{box-sizing:border-box}
     body{
-      margin:0;min-height:100vh;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      margin:0;
+      min-height:100vh;
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
       color:var(--text);
       background:
         radial-gradient(1100px 720px at 14% -8%, rgba(56,189,248,.18), transparent 58%),
@@ -36,100 +38,211 @@
     }
     button,input,select{font:inherit}
     button{cursor:pointer}
-    .wrap{max-width:1440px;margin:0 auto;padding:26px}
+    .wrap{width:min(1660px,100%);margin:0 auto;padding:22px}
     .identity{
-      margin-bottom:14px;border:1px solid var(--line);background:linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.035));
-      border-radius:22px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+      margin-bottom:14px;
+      border:1px solid var(--line);
+      background:linear-gradient(135deg, rgba(255,255,255,.083), rgba(255,255,255,.035));
+      border-radius:22px;
+      padding:11px 13px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
       box-shadow:0 14px 34px rgba(0,0,0,.22);
     }
     .identity-left{display:flex;align-items:center;gap:12px;min-width:0}
     .avatar{
       width:42px;height:42px;border-radius:15px;display:grid;place-items:center;flex:0 0 auto;
-      background:linear-gradient(135deg, rgba(56,189,248,.90), rgba(34,197,94,.76));
+      background:linear-gradient(135deg, rgba(56,189,248,.92), rgba(34,197,94,.76));
       font-weight:1000;box-shadow:0 14px 26px rgba(56,189,248,.20);
     }
-    .identity-copy{display:grid;gap:3px;min-width:0}
-    .identity-copy small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:11px}
-    .identity-copy strong{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .identity-copy{display:grid;gap:2px;min-width:0}
+    .identity-copy small{color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.08em;font-size:11px}
+    .identity-copy strong{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .identity-copy span{color:rgba(255,255,255,.72);font-size:13px}
-    .top-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     .btn{
-      min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 15px;
+      min-height:39px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;
       border-radius:15px;border:1px solid var(--line);background:rgba(255,255,255,.075);
       color:var(--text);text-decoration:none;font-weight:950;white-space:nowrap;transition:.15s;
     }
     .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.12)}
-    .btn.primary{background:linear-gradient(135deg, rgba(56,189,248,.82), rgba(34,197,94,.70));border-color:rgba(255,255,255,.18)}
+    .btn.primary{background:linear-gradient(135deg, rgba(56,189,248,.86), rgba(34,197,94,.68));border-color:rgba(255,255,255,.18)}
     .btn.green{background:linear-gradient(135deg, rgba(34,197,94,.82), rgba(16,185,129,.62));border-color:rgba(34,197,94,.30)}
     .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.30);color:#fecaca}
     .btn.ghost{background:rgba(255,255,255,.04)}
     .btn.small{min-height:32px;border-radius:12px;padding:0 10px;font-size:12px}
     .hero{
-      border:1px solid var(--line);background:linear-gradient(135deg, rgba(15,23,42,.84), rgba(6,78,59,.28));
-      border-radius:28px;padding:24px;box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;
+      border:1px solid var(--line);
+      background:linear-gradient(135deg, rgba(15,23,42,.85), rgba(6,78,59,.25));
+      border-radius:28px;
+      padding:20px;
+      box-shadow:var(--shadow);
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(460px,.55fr);
+      gap:18px;
+      align-items:stretch;
     }
     .badge{
-      display:inline-flex;align-items:center;height:32px;padding:0 13px;border-radius:999px;border:1px solid rgba(56,189,248,.32);
+      display:inline-flex;align-items:center;height:30px;padding:0 13px;border-radius:999px;border:1px solid rgba(56,189,248,.32);
       background:rgba(56,189,248,.10);color:#bae6fd;font-weight:950;letter-spacing:.08em;text-transform:uppercase;font-size:12px;
     }
-    h1{font-size:clamp(32px,4.2vw,56px);line-height:.98;margin:18px 0 10px;letter-spacing:-.055em}
-    p{color:var(--muted);font-size:16px;line-height:1.52;max-width:900px;margin:0}
+    h1{font-size:clamp(30px,4vw,52px);line-height:.98;margin:14px 0 9px;letter-spacing:-.055em}
+    p{color:var(--muted);font-size:15px;line-height:1.48;max-width:900px;margin:0}
     .notice{
-      margin-top:14px;border:1px solid rgba(245,158,11,.24);background:rgba(245,158,11,.095);
-      border-radius:18px;padding:12px 14px;color:#fde68a;font-weight:850;line-height:1.45;
+      margin-top:13px;border:1px solid rgba(245,158,11,.24);background:rgba(245,158,11,.095);
+      border-radius:17px;padding:11px 13px;color:#fde68a;font-weight:850;line-height:1.42;font-size:13px;
     }
-    .stats{margin-top:16px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-    .stat{border:1px solid var(--line);background:var(--panel-soft);border-radius:18px;padding:13px;min-height:84px}
-    .stat span{display:block;color:var(--muted-2);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
-    .stat strong{display:block;margin-top:8px;font-size:26px;letter-spacing:-.035em}
-    .layout{margin-top:16px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,.85fr);gap:16px}
-    .panel{border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.048);box-shadow:0 18px 46px rgba(0,0,0,.22);padding:18px;min-width:0}
-    .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
-    .panel h2{margin:0;font-size:22px;letter-spacing:-.03em}
+    .controls{
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:rgba(255,255,255,.045);
+      padding:14px;
+      display:grid;
+      gap:12px;
+      align-content:start;
+    }
+    .control-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    .field{display:grid;gap:6px}
+    .field span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted-2);font-weight:950}
+    input,select{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(3,7,18,.22);
+      color:var(--text);
+      outline:none;
+      padding:10px 12px;
+      min-height:41px;
+    }
+    input:focus,select:focus{border-color:rgba(56,189,248,.62);box-shadow:0 0 0 4px rgba(56,189,248,.14)}
+    .quick-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .kpis{margin-top:14px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+    .kpi{
+      position:relative;overflow:hidden;
+      border:1px solid var(--line);
+      background:linear-gradient(135deg, rgba(255,255,255,.065), rgba(255,255,255,.032));
+      border-radius:20px;
+      padding:13px;
+      min-height:92px;
+    }
+    .kpi:after{
+      content:"";position:absolute;right:-24px;top:-28px;width:76px;height:76px;border-radius:999px;background:rgba(56,189,248,.10);
+    }
+    .kpi.green:after{background:rgba(34,197,94,.12)}
+    .kpi.gold:after{background:rgba(245,158,11,.13)}
+    .kpi.red:after{background:rgba(239,68,68,.12)}
+    .kpi span{display:block;color:var(--muted-2);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .kpi strong{display:block;margin-top:8px;font-size:clamp(20px,2.4vw,30px);letter-spacing:-.04em}
+    .kpi small{display:block;color:var(--muted);font-size:12px;margin-top:6px;line-height:1.35}
+    .tabs{
+      margin:15px 0 12px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.045);
+      border-radius:20px;
+      padding:7px;
+      display:flex;
+      gap:7px;
+      overflow-x:auto;
+    }
+    .tab{
+      border:0;
+      min-height:38px;
+      border-radius:14px;
+      padding:0 13px;
+      color:rgba(255,255,255,.70);
+      background:transparent;
+      font-weight:950;
+      white-space:nowrap;
+    }
+    .tab.active{background:linear-gradient(135deg, #ffd86b, #f59e0b);color:#101827;box-shadow:0 12px 26px rgba(245,158,11,.20)}
+    .view{display:none}
+    .view.active{display:block}
+    .panel{
+      border:1px solid var(--line);
+      border-radius:24px;
+      background:rgba(255,255,255,.048);
+      box-shadow:0 18px 46px rgba(0,0,0,.20);
+      padding:16px;
+      min-width:0;
+    }
+    .panel + .panel{margin-top:14px}
+    .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:13px}
+    .panel h2{margin:0;font-size:21px;letter-spacing:-.03em}
     .sub{margin-top:5px;color:var(--muted);font-size:13px;line-height:1.4}
     .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .search{
-      width:100%;max-width:290px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.055);
-      color:var(--text);outline:none;padding:11px 13px;min-height:40px;
-    }
-    .search:focus{border-color:rgba(56,189,248,.62);box-shadow:0 0 0 4px rgba(56,189,248,.14)}
-    .commercial-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .search{width:100%;max-width:290px}
+    .dashboard-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr);gap:14px}
+    .commercial-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
     .commercial-card{
-      border:1px solid var(--line);border-radius:22px;background:linear-gradient(135deg, rgba(255,255,255,.062), rgba(255,255,255,.032));
-      padding:15px;display:grid;gap:12px;min-width:0;
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:linear-gradient(135deg, rgba(255,255,255,.062), rgba(255,255,255,.032));
+      padding:14px;
+      display:grid;
+      gap:11px;
+      min-width:0;
     }
-    .commercial-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .commercial-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
     .commercial-name{display:grid;gap:3px;min-width:0}
-    .commercial-name strong{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .commercial-name strong{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .commercial-name span{color:var(--muted);font-size:12px}
     .chip{
-      display:inline-flex;align-items:center;height:28px;padding:0 9px;border-radius:999px;border:1px solid var(--line);
+      display:inline-flex;align-items:center;justify-content:center;height:27px;padding:0 9px;border-radius:999px;border:1px solid var(--line);
       font-size:11px;font-weight:950;white-space:nowrap;
     }
     .chip-principal{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.28);color:#fde68a}
     .chip-exceptionnel{background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.30);color:#ddd6fe}
     .chip-none{background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.22);color:#cbd5e1}
+    .chip-green{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.30);color:#bbf7d0}
+    .chip-red{background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.30);color:#fecaca}
+    .chip-blue{background:rgba(56,189,248,.13);border-color:rgba(56,189,248,.30);color:#bae6fd}
     .metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-    .metric{
-      border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(3,7,18,.18);padding:10px;
-    }
+    .metric{border:1px solid rgba(255,255,255,.09);border-radius:15px;background:rgba(3,7,18,.18);padding:9px}
     .metric span{display:block;color:var(--muted-2);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
-    .metric strong{display:block;margin-top:5px;font-size:15px;color:#e5e7eb}
+    .metric strong{display:block;margin-top:5px;font-size:14px;color:#e5e7eb}
     .commercial-foot{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:12px}
-    .relations-list{display:grid;gap:10px}
-    .relation-row{
-      border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.045);padding:12px;
-      display:grid;gap:7px;
+    .mini-list{display:grid;gap:9px}
+    .mini-row{
+      border:1px solid var(--line);
+      border-radius:17px;
+      background:rgba(255,255,255,.042);
+      padding:11px;
+      display:grid;
+      gap:6px;
     }
-    .relation-row strong{font-size:14px}
-    .relation-row span{color:var(--muted);font-size:12px}
-    .timeline{display:grid;gap:10px}
-    .step{
-      border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.04);padding:13px;
-      display:grid;gap:6px;
+    .mini-row strong{font-size:14px}
+    .mini-row span{color:var(--muted);font-size:12px;line-height:1.35}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:18px;background:rgba(3,7,18,.17)}
+    table{width:100%;border-collapse:collapse;min-width:980px}
+    th,td{padding:10px 11px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:middle}
+    th{
+      position:sticky;top:0;z-index:1;
+      background:rgba(9,16,29,.96);
+      color:rgba(255,255,255,.66);
+      text-transform:uppercase;
+      letter-spacing:.07em;
+      font-size:11px;
+      font-weight:950;
     }
-    .step strong{font-size:15px}
-    .step span{color:var(--muted);font-size:13px;line-height:1.4}
+    td{font-size:13px;color:rgba(255,255,255,.86)}
+    tr:last-child td{border-bottom:0}
+    .num{text-align:right;font-variant-numeric:tabular-nums}
+    .row-title{display:grid;gap:2px}
+    .row-title strong{font-size:13px}
+    .row-title span{font-size:11px;color:var(--muted)}
+    .split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:7px}
+    .month-pill{
+      border:1px solid var(--line);
+      border-radius:15px;
+      background:rgba(255,255,255,.042);
+      padding:9px 7px;
+      min-width:0;
+    }
+    .month-pill span{display:block;color:var(--muted-2);font-size:10px;font-weight:950;text-transform:uppercase}
+    .month-pill strong{display:block;margin-top:5px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .empty{border:1px dashed rgba(255,255,255,.18);border-radius:18px;padding:18px;color:var(--muted);text-align:center;background:rgba(255,255,255,.03)}
     .toast{
       position:fixed;right:22px;bottom:22px;z-index:20;display:none;max-width:min(460px,calc(100vw - 44px));
@@ -139,14 +252,19 @@
     .toast.show{display:block}
     .toast.error{border-color:rgba(239,68,68,.38);background:#2a1118;color:#fecaca}
     .loading{opacity:.62;pointer-events:none}
-    @media(max-width:1120px){
-      .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
-      .layout{grid-template-columns:1fr}
+    @media(max-width:1280px){
+      .hero,.dashboard-grid{grid-template-columns:1fr}
+      .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .commercial-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .months{grid-template-columns:repeat(6,minmax(0,1fr))}
     }
-    @media(max-width:760px){
-      .wrap{padding:16px}
-      .hero,.identity,.panel-head{display:flex;flex-direction:column;align-items:flex-start}
-      .stats,.commercial-grid{grid-template-columns:1fr}
+    @media(max-width:780px){
+      .wrap{padding:14px}
+      .identity,.panel-head{flex-direction:column;align-items:flex-start}
+      .top-actions,.toolbar{width:100%;justify-content:flex-start}
+      .hero{padding:16px}
+      .control-grid,.kpis,.commercial-grid,.split{grid-template-columns:1fr}
+      .months{grid-template-columns:repeat(2,minmax(0,1fr))}
       .search{max-width:none}
     }
   </style>
@@ -157,83 +275,230 @@
       <div class="identity-left">
         <span class="avatar" aria-hidden="true">R</span>
         <span class="identity-copy">
-          <small data-session-eyebrow>Connect&eacute; en responsable</small>
+          <small data-session-eyebrow>Connecte en responsable</small>
           <strong data-session-name>Responsable</strong>
-          <span data-session-role>R&ocirc;le responsable actif</span>
+          <span data-session-role>Role responsable actif</span>
         </span>
       </div>
       <div class="top-actions">
-        <span class="btn ghost small" data-session-source>Session s&eacute;curis&eacute;e</span>
+        <span class="btn ghost small" data-session-source>Session securisee</span>
+        <a class="btn small" href="admin-users.html">Equipe</a>
         <a class="btn small" href="documents-commerciaux.html">BDC / Devis</a>
-        <a class="btn small" href="index.html">Portail commercial</a>
-        <a class="btn danger small" href="/deconnexion">D&eacute;connexion</a>
+        <a class="btn small" href="index.html">Portail</a>
+        <a class="btn danger small" href="/deconnexion">Deconnexion</a>
       </div>
     </section>
 
     <section class="hero">
       <div>
         <span class="badge">Espace Responsable</span>
-        <h1>Pilotage &eacute;quipe commerciale</h1>
+        <h1>Pilotage equipe commerciale</h1>
         <p>
-          Consulte les commerciaux visibles, les rattachements et les prochaines briques de pilotage.
-          Cette vue est volontairement en lecture seule : aucun responsable ne peut modifier les ventes.
+          Vision responsable en lecture seule : CA saisi, budgets actifs, reel importe, documents BDC/devis
+          et activite terrain pour les commerciaux rattaches.
         </p>
-        <div class="notice" data-scope-message>
-          Chargement du perimetre responsable...
+        <div class="notice" data-scope-message>Chargement du perimetre responsable...</div>
+      </div>
+      <div class="controls">
+        <div class="control-grid">
+          <label class="field">
+            <span>Annee</span>
+            <select data-year></select>
+          </label>
+          <label class="field">
+            <span>Mois</span>
+            <select data-month></select>
+          </label>
+          <label class="field">
+            <span>Jour suivi</span>
+            <input type="date" data-day>
+          </label>
+          <label class="field">
+            <span>Commercial</span>
+            <select data-commercial-filter>
+              <option value="">Toute l'equipe</option>
+            </select>
+          </label>
+        </div>
+        <div class="quick-actions">
+          <button class="btn primary" type="button" data-refresh>Synchroniser</button>
+          <button class="btn ghost" type="button" data-today>Aujourd'hui</button>
         </div>
       </div>
-      <button class="btn primary" type="button" data-refresh>Rafraichir</button>
     </section>
 
-    <section class="stats" aria-label="Indicateurs responsable">
-      <article class="stat"><span>Commerciaux visibles</span><strong data-stat="commerciaux">-</strong></article>
-      <article class="stat"><span>Principaux</span><strong data-stat="principal">-</strong></article>
-      <article class="stat"><span>Exceptions</span><strong data-stat="exceptionnel">-</strong></article>
-      <article class="stat"><span>Connect&eacute;s 7j</span><strong data-stat="connectedRecently">-</strong></article>
-      <article class="stat"><span>Donn&eacute;es chiffr&eacute;es</span><strong data-stat="dataReady">-</strong></article>
+    <section class="kpis" aria-label="Indicateurs responsable">
+      <article class="kpi"><span>CA jour equipe</span><strong data-stat="caJour">-</strong><small data-kpi-day>Jour selectionne</small></article>
+      <article class="kpi green"><span>CA mois equipe</span><strong data-stat="caMois">-</strong><small data-stat-sub="caMonthSplit">Auto + Industrie</small></article>
+      <article class="kpi"><span>Reel reporting a date</span><strong data-stat="reelReportingADate">-</strong><small>Depuis les imports reels actifs</small></article>
+      <article class="kpi gold"><span>Budget a date</span><strong data-stat="budgetADate">-</strong><small>Budgets actifs Supabase</small></article>
+      <article class="kpi" data-gap-card><span>Ecart a date</span><strong data-stat="ecartADate">-</strong><small data-stat-sub="gapRate">Reel vs budget</small></article>
+      <article class="kpi"><span>Documents en cours</span><strong data-stat="documentsEnCours">-</strong><small data-stat-sub="documentsSplit">BDC + devis</small></article>
     </section>
 
-    <section class="layout">
-      <section class="panel" aria-label="Commerciaux visibles">
-        <div class="panel-head">
-          <div>
-            <h2>Commerciaux visibles</h2>
-            <div class="sub">Liste construite depuis les rattachements admin, avec distinction principal / exceptionnel.</div>
-          </div>
-          <div class="toolbar">
+    <nav class="tabs" aria-label="Navigation responsable">
+      <button class="tab active" type="button" data-tab="synthese">Synthese</button>
+      <button class="tab" type="button" data-tab="ca">CA detaille</button>
+      <button class="tab" type="button" data-tab="budgets">Budgets</button>
+      <button class="tab" type="button" data-tab="ecarts">Ecarts</button>
+      <button class="tab" type="button" data-tab="documents">Documents</button>
+      <button class="tab" type="button" data-tab="activite">Activite terrain</button>
+    </nav>
+
+    <section class="view active" data-view="synthese">
+      <div class="dashboard-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Commerciaux visibles</h2>
+              <div class="sub">Classement par CA du mois selectionne, avec budget et suivi documents.</div>
+            </div>
             <input class="search" type="search" placeholder="Rechercher un commercial..." data-search>
           </div>
-        </div>
-        <div class="commercial-grid" data-commercials>
-          <div class="empty">Chargement des commerciaux...</div>
-        </div>
-      </section>
-
-      <aside class="panel" aria-label="Synthese responsable">
+          <div class="commercial-grid" data-commercials>
+            <div class="empty">Chargement des commerciaux...</div>
+          </div>
+        </section>
+        <aside class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Points a suivre</h2>
+              <div class="sub">Alertes simples pour piloter sans fouiller partout.</div>
+            </div>
+          </div>
+          <div class="mini-list" data-alerts>
+            <div class="empty">Chargement des alertes...</div>
+          </div>
+        </aside>
+      </div>
+      <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>Synth&egrave;se</h2>
-            <div class="sub">Vision des droits aujourd'hui, puis branchement des chiffres dans l'&eacute;tape suivante.</div>
+            <h2>Top clients du mois</h2>
+            <div class="sub">Clients qui construisent le CA du mois sur le perimetre visible.</div>
           </div>
         </div>
-        <div class="relations-list" data-relations>
-          <div class="empty">Chargement des rattachements...</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Commercial</th><th>Client</th><th>Compte</th><th class="num">Lignes</th><th class="num">CA HT</th></tr></thead>
+            <tbody data-top-clients><tr><td colspan="5" class="empty">Chargement...</td></tr></tbody>
+          </table>
         </div>
-        <div class="timeline" style="margin-top:14px">
-          <article class="step">
-            <strong>1. Droits et perim&egrave;tre</strong>
-            <span>Responsables, commerciaux et acc&egrave;s exceptionnels sont op&eacute;rationnels.</span>
-          </article>
-          <article class="step">
-            <strong>2. Attribution des ventes</strong>
-            <span>Prochaine phase sensible : rattacher l'existant &agrave; Guillaume, puis enregistrer automatiquement les futures ventes par utilisateur.</span>
-          </article>
-          <article class="step">
-            <strong>3. Pilotage chiffr&eacute;</strong>
-            <span>CA jour/mois, BDC, devis, rapports et budgets par commercial puis cumul responsable.</span>
-          </article>
+      </section>
+    </section>
+
+    <section class="view" data-view="ca">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>CA detaille du mois</h2>
+            <div class="sub">Toutes les lignes vendues sur le mois selectionne, Auto et Industrie.</div>
+          </div>
+          <div class="toolbar">
+            <select data-sector-filter>
+              <option value="">Auto + Industrie</option>
+              <option value="auto">Automobile</option>
+              <option value="industrie">Industrie</option>
+            </select>
+            <select data-type-filter>
+              <option value="">Terrain + telephone</option>
+              <option value="terrain">Visite terrain</option>
+              <option value="telephone">Commande telephone</option>
+            </select>
+            <input class="search" type="search" placeholder="Client, produit, reference..." data-sales-search>
+          </div>
         </div>
-      </aside>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Commercial</th><th>Secteur</th><th>Client</th><th>Reference</th><th>Produit</th><th>Type</th><th class="num">Qte</th><th class="num">PU HT</th><th class="num">Total HT</th></tr></thead>
+            <tbody data-sales-rows><tr><td colspan="10" class="empty">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="view" data-view="budgets">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Budget cumule equipe</h2>
+            <div class="sub">Budget annuel actif, mois par mois, sur les commerciaux visibles.</div>
+          </div>
+        </div>
+        <div class="months" data-budget-months></div>
+      </section>
+      <div class="split">
+        <section class="panel">
+          <div class="panel-head"><div><h2>Budgets par commercial</h2><div class="sub">Budget annuel et budget a date.</div></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Commercial</th><th class="num">Budget a date</th><th class="num">Budget annuel</th><th class="num">Lignes</th></tr></thead>
+              <tbody data-budget-commercials></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><div><h2>Budgets par entite</h2><div class="sub">Consolidation des entites actives.</div></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Entite</th><th class="num">A date</th><th class="num">Annuel</th><th class="num">Lignes</th></tr></thead>
+              <tbody data-budget-entities></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" data-view="ecarts">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Ecarts reel importe vs budget</h2>
+            <div class="sub">Lecture a date : reel importe actif compare au budget actif Supabase.</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Commercial</th><th class="num">Reel a date</th><th class="num">Budget a date</th><th class="num">Ecart</th><th class="num">Atteinte</th><th class="num">CA saisi mois</th></tr></thead>
+            <tbody data-gap-rows></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="view" data-view="documents">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>BDC / Devis a suivre</h2>
+            <div class="sub">Documents generes sur l'annee selectionnee, visibles en temps reel.</div>
+          </div>
+          <a class="btn small green" href="documents-commerciaux.html">Ouvrir l'archive</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Commercial</th><th>Type</th><th>Statut</th><th>Client</th><th>Compte</th><th>Fichier</th><th class="num">Montant HT</th></tr></thead>
+            <tbody data-document-rows></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="view" data-view="activite">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Activite terrain</h2>
+            <div class="sub">Visites, commandes telephone et clients travailles sur le mois selectionne.</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Commercial</th><th>Rattachement</th><th class="num">Visites mois</th><th class="num">Terrain</th><th class="num">Telephone</th><th class="num">Clients</th><th>Derniere connexion</th></tr></thead>
+            <tbody data-activity-rows></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -242,12 +507,17 @@
   <script>
     (function(){
       const state = {
-        currentUser: null,
-        stats: {},
-        commercials: [],
-        dataScope: null,
-        search: ""
+        payload: null,
+        activeTab: "synthese",
+        search: "",
+        salesSearch: "",
+        commercialFilter: "",
+        sectorFilter: "",
+        typeFilter: ""
       };
+
+      const monthLabels = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"];
+      const sourceLabels = { supabase: "Source Supabase", env: "Source Vercel", legacy: "Acces historique" };
 
       const els = {
         wrap: document.querySelector(".wrap"),
@@ -256,79 +526,178 @@
         role: document.querySelector("[data-session-role]"),
         source: document.querySelector("[data-session-source]"),
         scopeMessage: document.querySelector("[data-scope-message]"),
-        commercials: document.querySelector("[data-commercials]"),
-        relations: document.querySelector("[data-relations]"),
+        year: document.querySelector("[data-year]"),
+        month: document.querySelector("[data-month]"),
+        day: document.querySelector("[data-day]"),
+        commercialFilter: document.querySelector("[data-commercial-filter]"),
         search: document.querySelector("[data-search]"),
+        salesSearch: document.querySelector("[data-sales-search]"),
+        sectorFilter: document.querySelector("[data-sector-filter]"),
+        typeFilter: document.querySelector("[data-type-filter]"),
+        commercials: document.querySelector("[data-commercials]"),
+        alerts: document.querySelector("[data-alerts]"),
+        topClients: document.querySelector("[data-top-clients]"),
+        salesRows: document.querySelector("[data-sales-rows]"),
+        budgetMonths: document.querySelector("[data-budget-months]"),
+        budgetCommercials: document.querySelector("[data-budget-commercials]"),
+        budgetEntities: document.querySelector("[data-budget-entities]"),
+        gapRows: document.querySelector("[data-gap-rows]"),
+        documentRows: document.querySelector("[data-document-rows]"),
+        activityRows: document.querySelector("[data-activity-rows]"),
         toast: document.querySelector("[data-toast]")
-      };
-
-      const sourceLabels = {
-        supabase: "Source Supabase",
-        env: "Source Vercel",
-        legacy: "Acc\u00e8s historique"
       };
 
       init();
 
       function init(){
+        hydratePeriodControls();
         document.querySelector("[data-refresh]").addEventListener("click", loadDashboard);
+        document.querySelector("[data-today]").addEventListener("click", setToday);
+        document.querySelectorAll("[data-tab]").forEach(function(button){
+          button.addEventListener("click", function(){ setTab(button.dataset.tab); });
+        });
+        [els.year, els.month, els.day].forEach(function(node){
+          node.addEventListener("change", loadDashboard);
+        });
+        els.commercialFilter.addEventListener("change", function(){
+          state.commercialFilter = els.commercialFilter.value;
+          renderAll();
+        });
         els.search.addEventListener("input", function(){
           state.search = els.search.value.trim().toLowerCase();
           renderCommercials();
         });
+        els.salesSearch.addEventListener("input", function(){
+          state.salesSearch = els.salesSearch.value.trim().toLowerCase();
+          renderSalesRows();
+        });
+        els.sectorFilter.addEventListener("change", function(){
+          state.sectorFilter = els.sectorFilter.value;
+          renderSalesRows();
+        });
+        els.typeFilter.addEventListener("change", function(){
+          state.typeFilter = els.typeFilter.value;
+          renderSalesRows();
+        });
+        loadDashboard();
+      }
+
+      function hydratePeriodControls(){
+        const now = new Date();
+        const year = now.getFullYear();
+        els.year.innerHTML = "";
+        for (let current = year - 2; current <= year + 3; current += 1) {
+          els.year.appendChild(new Option(String(current), String(current), current === year, current === year));
+        }
+        els.month.innerHTML = monthLabels.map(function(label, index){
+          return `<option value="${index + 1}" ${index === now.getMonth() ? "selected" : ""}>${escapeHtml(label)}</option>`;
+        }).join("");
+        els.day.value = toIsoDate(now);
+      }
+
+      function setToday(){
+        const now = new Date();
+        ensureYearOption(now.getFullYear());
+        els.year.value = String(now.getFullYear());
+        els.month.value = String(now.getMonth() + 1);
+        els.day.value = toIsoDate(now);
         loadDashboard();
       }
 
       async function loadDashboard(){
         setLoading(true);
         try{
-          const payload = await fetchJson("/api/responsable-dashboard");
-          state.currentUser = payload.currentUser || null;
-          state.stats = payload.stats || {};
-          state.commercials = Array.isArray(payload.commercials) ? payload.commercials : [];
-          state.dataScope = payload.dataScope || null;
+          const params = new URLSearchParams({
+            year: els.year.value,
+            month: els.month.value,
+            day: els.day.value
+          });
+          const payload = await fetchJson("/api/responsable-dashboard?" + params.toString());
+          state.payload = payload || {};
           renderSession();
-          renderStats();
           renderScope();
-          renderCommercials();
-          renderRelations();
-          showToast("Vue responsable synchronis\u00e9e.");
+          renderStats();
+          hydrateCommercialOptions();
+          renderAll();
+          showToast("Vue responsable synchronisee.");
         }catch(error){
           showToast(error.message || "Chargement impossible.", true);
-          els.commercials.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Chargement impossible.") + '</div>';
-          els.relations.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Chargement impossible.") + '</div>';
+          showFailure(error.message || "Chargement impossible.");
         }finally{
           setLoading(false);
         }
       }
 
+      function renderAll(){
+        renderCommercials();
+        renderAlerts();
+        renderTopClients();
+        renderSalesRows();
+        renderBudgetMonths();
+        renderBudgetTables();
+        renderGapRows();
+        renderDocumentRows();
+        renderActivityRows();
+      }
+
       function renderSession(){
-        const user = state.currentUser || {};
+        const user = state.payload?.currentUser || {};
         els.eyebrow.textContent = user.role === "admin" ? "Connecte en admin" : "Connecte en responsable";
         els.name.textContent = user.name || "Responsable";
         els.role.textContent = "Role : " + (user.roleLabel || user.role || "responsable");
         els.source.textContent = sourceLabels[user.source] || "Session securisee";
       }
 
-      function renderStats(){
-        Object.keys(state.stats || {}).forEach(function(key){
-          const node = document.querySelector('[data-stat="' + key + '"]');
-          if (!node) return;
-          if (key === "dataReady") {
-            node.textContent = Number(state.stats[key] || 0) ? "OK" : "En attente";
-            return;
-          }
-          node.textContent = String(state.stats[key] ?? 0);
-        });
+      function renderScope(){
+        const scope = state.payload?.dataScope || {};
+        const warnings = state.payload?.warnings || [];
+        const warningText = warnings.length ? " A verifier : " + warnings.map(w => w.label).join(", ") + "." : "";
+        els.scopeMessage.textContent = (scope.title ? scope.title + " : " : "") + (scope.message || "Perimetre charge.") + warningText;
       }
 
-      function renderScope(){
-        const scope = state.dataScope || {};
-        els.scopeMessage.textContent = (scope.title ? scope.title + " : " : "") + (scope.message || "P\u00e9rim\u00e8tre charg\u00e9.");
+      function renderStats(){
+        const stats = state.payload?.stats || {};
+        setText("caJour", money(stats.caJour));
+        setText("caMois", money(stats.caMois));
+        setText("reelReportingADate", money(stats.reelReportingADate));
+        setText("budgetADate", money(stats.budgetADate));
+        setText("ecartADate", money(stats.ecartADate));
+        setText("documentsEnCours", integer(stats.documentsEnCours));
+        document.querySelector("[data-kpi-day]").textContent = "Jour : " + formatDateShort(state.payload?.period?.day);
+        document.querySelector('[data-stat-sub="caMonthSplit"]').textContent = "Auto " + money(stats.caAutoMois) + " - Industrie " + money(stats.caIndustrieMois);
+        document.querySelector('[data-stat-sub="documentsSplit"]').textContent = `${integer(stats.bdcEnCours)} BDC - ${integer(stats.devisEnCours)} devis`;
+        const rate = Number(stats.budgetADate || 0) ? (Number(stats.reelReportingADate || 0) / Number(stats.budgetADate || 0)) * 100 : null;
+        document.querySelector('[data-stat-sub="gapRate"]').textContent = rate === null ? "Budget a date a zero" : `${percent(rate)} d'atteinte`;
+        const gapCard = document.querySelector("[data-gap-card]");
+        gapCard.classList.toggle("green", Number(stats.ecartADate || 0) >= 0);
+        gapCard.classList.toggle("red", Number(stats.ecartADate || 0) < 0);
+      }
+
+      function hydrateCommercialOptions(){
+        const previous = els.commercialFilter.value;
+        const commercials = state.payload?.commercials || [];
+        els.commercialFilter.innerHTML = '<option value="">Toute equipe</option>' + commercials
+          .map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.displayName || item.identifier)}</option>`)
+          .join("");
+        if (previous && commercials.some(item => item.id === previous)) {
+          els.commercialFilter.value = previous;
+        } else {
+          state.commercialFilter = "";
+        }
+      }
+
+      function scopedCommercials(){
+        const list = state.payload?.commercials || [];
+        return state.commercialFilter ? list.filter(item => item.id === state.commercialFilter) : list;
+      }
+
+      function commercialName(id){
+        const item = (state.payload?.commercials || []).find(commercial => commercial.id === id);
+        return item?.displayName || item?.identifier || "-";
       }
 
       function renderCommercials(){
-        let list = state.commercials.slice();
+        let list = scopedCommercials().slice().sort((a,b) => Number(b.metrics?.caMois || 0) - Number(a.metrics?.caMois || 0));
         if (state.search) {
           list = list.filter(function(item){
             return [item.displayName, item.identifier, item.relationLabel, item.scopeLabel]
@@ -337,67 +706,162 @@
               .includes(state.search);
           });
         }
-
         if (!list.length) {
-          els.commercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce p\u00e9rim\u00e8tre.</div>';
+          els.commercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce perimetre.</div>';
           return;
         }
-
         els.commercials.innerHTML = list.map(function(item){
-          const relationClass = item.relationType === "principal"
-            ? "chip-principal"
-            : item.relationType === "exceptionnel"
-              ? "chip-exceptionnel"
-              : "chip-none";
+          const metrics = item.metrics || {};
+          const relationClass = item.relationType === "principal" ? "chip-principal" : item.relationType === "exceptionnel" ? "chip-exceptionnel" : "chip-none";
+          const gapClass = Number(metrics.ecartADate || 0) >= 0 ? "chip-green" : "chip-red";
           return [
             '<article class="commercial-card">',
               '<div class="commercial-top">',
-                '<span class="commercial-name">',
-                  '<strong>' + escapeHtml(item.displayName) + '</strong>',
-                  '<span>' + escapeHtml(item.identifier) + '</span>',
-                '</span>',
+                '<span class="commercial-name"><strong>' + escapeHtml(item.displayName) + '</strong><span>' + escapeHtml(item.identifier) + '</span></span>',
                 '<span class="chip ' + relationClass + '">' + escapeHtml(item.relationLabel) + '</span>',
               '</div>',
               '<div class="metric-grid">',
-                metricHtml("CA jour", "\u00c0 brancher"),
-                metricHtml("CA mois", "\u00c0 brancher"),
-                metricHtml("BDC", "\u00c0 brancher"),
-                metricHtml("Devis", "\u00c0 brancher"),
+                metricHtml("CA mois", money(metrics.caMois)),
+                metricHtml("Budget a date", money(metrics.budgetADate)),
+                metricHtml("Reel a date", money(metrics.reelReportingADate)),
+                metricHtml("Documents", integer(metrics.documentsEnCours) + " en cours"),
               '</div>',
-              item.relationNote ? '<div class="sub">Note : ' + escapeHtml(item.relationNote) + '</div>' : '',
               '<div class="commercial-foot">',
-                '<span>' + escapeHtml(item.scopeLabel || "-") + '</span>',
-                '<span>Derni\u00e8re connexion : ' + escapeHtml(formatDate(item.lastLoginAt)) + '</span>',
+                '<span class="chip ' + gapClass + '">' + money(metrics.ecartADate) + '</span>',
+                '<span>' + escapeHtml(formatDateTime(item.lastLoginAt)) + '</span>',
               '</div>',
             '</article>'
           ].join("");
         }).join("");
       }
 
-      function renderRelations(){
-        const list = state.commercials.filter(function(item){ return item.relationType !== "none"; });
-        if (!list.length) {
-          els.relations.innerHTML = '<div class="empty">Aucun rattachement actif.</div>';
+      function renderAlerts(){
+        const alerts = state.payload?.team?.alerts || [];
+        if (!alerts.length) {
+          els.alerts.innerHTML = '<div class="empty">Aucune alerte prioritaire sur ce perimetre.</div>';
           return;
         }
-
-        els.relations.innerHTML = list.map(function(item){
-          const responsables = (item.responsables || []).map(function(resp){
-            return resp.displayName + " (" + resp.identifier + ")";
-          }).join(", ") || "Responsable non retrouv\u00e9";
-          const relationClass = item.relationType === "principal" ? "chip-principal" : "chip-exceptionnel";
-          return [
-            '<article class="relation-row">',
-              '<strong>' + escapeHtml(item.displayName) + '</strong>',
-              '<span>Responsable : ' + escapeHtml(responsables) + '</span>',
-              '<span class="chip ' + relationClass + '">' + escapeHtml(item.relationLabel) + '</span>',
-            '</article>'
-          ].join("");
+        els.alerts.innerHTML = alerts.map(function(alert){
+          const cls = alert.level === "danger" ? "chip-red" : "chip-principal";
+          return `<article class="mini-row"><strong>${escapeHtml(alert.title)}</strong><span>${escapeHtml(alert.message)}</span><span class="chip ${cls}">${escapeHtml(alert.level === "danger" ? "A traiter" : "Suivi")}</span></article>`;
         }).join("");
+      }
+
+      function renderTopClients(){
+        let rows = state.payload?.sales?.topClientsMonth || [];
+        if (state.commercialFilter) rows = rows.filter(row => row.commercialUserId === state.commercialFilter);
+        if (!rows.length) {
+          els.topClients.innerHTML = '<tr><td colspan="5"><div class="empty">Aucun client avec CA sur ce mois.</div></td></tr>';
+          return;
+        }
+        els.topClients.innerHTML = rows.slice(0, 18).map(function(row){
+          return `<tr><td>${escapeHtml(commercialName(row.commercialUserId))}</td><td><div class="row-title"><strong>${escapeHtml(row.clientNom)}</strong></div></td><td>${escapeHtml(row.numeroCompte || "-")}</td><td class="num">${integer(row.lignes)}</td><td class="num">${money(row.montant)}</td></tr>`;
+        }).join("");
+      }
+
+      function renderSalesRows(){
+        let rows = state.payload?.sales?.monthlyRows || [];
+        rows = filterCommercialRows(rows, "commercialUserId");
+        if (state.sectorFilter) rows = rows.filter(row => row.secteur === state.sectorFilter);
+        if (state.typeFilter === "terrain") rows = rows.filter(row => !row.isPhoneOrder);
+        if (state.typeFilter === "telephone") rows = rows.filter(row => row.isPhoneOrder);
+        if (state.salesSearch) {
+          rows = rows.filter(row => [row.clientNom,row.numeroCompte,row.reference,row.designation,commercialName(row.commercialUserId)].join(" ").toLowerCase().includes(state.salesSearch));
+        }
+        if (!rows.length) {
+          els.salesRows.innerHTML = '<tr><td colspan="10"><div class="empty">Aucune ligne vendue sur ce filtre.</div></td></tr>';
+          return;
+        }
+        els.salesRows.innerHTML = rows.slice(0, 500).map(function(row){
+          return `<tr><td>${escapeHtml(formatDateShort(row.date))}</td><td>${escapeHtml(commercialName(row.commercialUserId))}</td><td>${sectorBadge(row.secteur)}</td><td><div class="row-title"><strong>${escapeHtml(row.clientNom)}</strong><span>${escapeHtml(row.numeroCompte || "-")}</span></div></td><td>${escapeHtml(row.reference || "-")}</td><td>${escapeHtml(row.designation || "-")}</td><td>${escapeHtml(row.typeLabel)}</td><td class="num">${number(row.quantite)}</td><td class="num">${money(row.prixUnitaire)}</td><td class="num">${money(row.montant)}</td></tr>`;
+        }).join("");
+      }
+
+      function renderBudgetMonths(){
+        const monthly = state.payload?.budgets?.totals?.monthly || [];
+        els.budgetMonths.innerHTML = monthLabels.map(function(label, index){
+          return `<div class="month-pill"><span>${escapeHtml(label.slice(0,3))}</span><strong>${money(monthly[index] || 0)}</strong></div>`;
+        }).join("");
+      }
+
+      function renderBudgetTables(){
+        const commercials = scopedCommercials().slice().sort((a,b) => Number(b.metrics?.budgetAnnuel || 0) - Number(a.metrics?.budgetAnnuel || 0));
+        els.budgetCommercials.innerHTML = commercials.length ? commercials.map(function(item){
+          return `<tr><td>${escapeHtml(item.displayName)}</td><td class="num">${money(item.metrics?.budgetADate)}</td><td class="num">${money(item.metrics?.budgetAnnuel)}</td><td class="num">${integer((state.payload?.budgets?.byCommercial || {})[item.id]?.lines || 0)}</td></tr>`;
+        }).join("") : '<tr><td colspan="4"><div class="empty">Aucun budget actif.</div></td></tr>';
+
+        let entities = state.payload?.budgets?.entities || [];
+        if (!entities.length) {
+          els.budgetEntities.innerHTML = '<tr><td colspan="4"><div class="empty">Aucune entite budget active.</div></td></tr>';
+          return;
+        }
+        els.budgetEntities.innerHTML = entities.slice(0, 60).map(function(entity){
+          return `<tr><td>${escapeHtml(entity.libelle)}</td><td class="num">${money(entity.toDate)}</td><td class="num">${money(entity.total)}</td><td class="num">${integer(entity.lignes)}</td></tr>`;
+        }).join("");
+      }
+
+      function renderGapRows(){
+        const rows = scopedCommercials().slice().sort((a,b) => Number(a.metrics?.ecartADate || 0) - Number(b.metrics?.ecartADate || 0));
+        if (!rows.length) {
+          els.gapRows.innerHTML = '<tr><td colspan="6"><div class="empty">Aucun commercial visible.</div></td></tr>';
+          return;
+        }
+        els.gapRows.innerHTML = rows.map(function(item){
+          const metrics = item.metrics || {};
+          const gapClass = Number(metrics.ecartADate || 0) >= 0 ? "chip-green" : "chip-red";
+          return `<tr><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.identifier)}</span></div></td><td class="num">${money(metrics.reelReportingADate)}</td><td class="num">${money(metrics.budgetADate)}</td><td class="num"><span class="chip ${gapClass}">${money(metrics.ecartADate)}</span></td><td class="num">${metrics.tauxAtteinteADate === null ? "-" : percent(metrics.tauxAtteinteADate)}</td><td class="num">${money(metrics.caMois)}</td></tr>`;
+        }).join("");
+      }
+
+      function renderDocumentRows(){
+        let rows = state.payload?.documents?.recent || [];
+        rows = filterCommercialRows(rows, "commercialUserId");
+        if (!rows.length) {
+          els.documentRows.innerHTML = '<tr><td colspan="8"><div class="empty">Aucun document sur cette annee.</div></td></tr>';
+          return;
+        }
+        els.documentRows.innerHTML = rows.slice(0, 80).map(function(row){
+          return `<tr><td>${escapeHtml(formatDateShort(row.dateDocument))}</td><td>${escapeHtml(commercialName(row.commercialUserId))}</td><td>${escapeHtml((row.typeDocument || "").toUpperCase())}</td><td>${statusBadge(row.statut)}</td><td>${escapeHtml(row.clientNom)}</td><td>${escapeHtml(row.numeroCompte || "-")}</td><td>${escapeHtml(row.nomFichier || "-")}</td><td class="num">${money(row.montantHt)}</td></tr>`;
+        }).join("");
+      }
+
+      function renderActivityRows(){
+        const rows = scopedCommercials().slice().sort((a,b) => Number(b.metrics?.visitesMois || 0) - Number(a.metrics?.visitesMois || 0));
+        if (!rows.length) {
+          els.activityRows.innerHTML = '<tr><td colspan="7"><div class="empty">Aucun commercial visible.</div></td></tr>';
+          return;
+        }
+        els.activityRows.innerHTML = rows.map(function(item){
+          const metrics = item.metrics || {};
+          return `<tr><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.identifier)}</span></div></td><td>${escapeHtml(item.relationLabel)}</td><td class="num">${integer(metrics.visitesMois)}</td><td class="num">${integer(metrics.terrainMois)}</td><td class="num">${integer(metrics.commandesTelephoneMois)}</td><td class="num">${integer(metrics.clientsMois)}</td><td>${escapeHtml(formatDateTime(item.lastLoginAt))}</td></tr>`;
+        }).join("");
+      }
+
+      function filterCommercialRows(rows, key){
+        if (!state.commercialFilter) return rows || [];
+        return (rows || []).filter(row => row[key] === state.commercialFilter);
+      }
+
+      function setTab(tab){
+        state.activeTab = tab;
+        document.querySelectorAll("[data-tab]").forEach(node => node.classList.toggle("active", node.dataset.tab === tab));
+        document.querySelectorAll("[data-view]").forEach(node => node.classList.toggle("active", node.dataset.view === tab));
       }
 
       function metricHtml(label, value){
-        return '<div class="metric"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
+        return `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
+      }
+
+      function sectorBadge(value){
+        return value === "industrie"
+          ? '<span class="chip chip-green">Industrie</span>'
+          : '<span class="chip chip-blue">Auto</span>';
+      }
+
+      function statusBadge(status){
+        if (status === "valide") return '<span class="chip chip-green">Valide</span>';
+        if (status === "nonValide") return '<span class="chip chip-red">Non valide</span>';
+        return '<span class="chip chip-principal">En cours</span>';
       }
 
       async function fetchJson(url, options){
@@ -406,23 +870,60 @@
           credentials: "same-origin"
         }, options || {}));
         const payload = await response.json().catch(function(){ return {}; });
-        if (!response.ok) throw new Error(payload.error || "Erreur r\u00e9seau.");
+        if (!response.ok) throw new Error(payload.error || "Erreur reseau.");
         return payload;
       }
 
-      function formatDate(value){
+      function showFailure(message){
+        const html = '<div class="empty">' + escapeHtml(message) + '</div>';
+        [els.commercials, els.alerts].forEach(node => { node.innerHTML = html; });
+      }
+
+      function setText(key, value){
+        const node = document.querySelector('[data-stat="' + key + '"]');
+        if (node) node.textContent = value;
+      }
+
+      function money(value){
+        return Number(value || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+      }
+
+      function number(value){
+        return Number(value || 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+      }
+
+      function integer(value){
+        return Number(value || 0).toLocaleString("fr-FR", { maximumFractionDigits: 0 });
+      }
+
+      function percent(value){
+        return Number(value || 0).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " %";
+      }
+
+      function formatDateShort(value){
         if (!value) return "-";
-        try{
-          return new Intl.DateTimeFormat("fr-FR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-          }).format(new Date(value));
-        }catch{
-          return "-";
-        }
+        const date = new Date(String(value).slice(0, 10) + "T00:00:00");
+        if (Number.isNaN(date.getTime())) return String(value);
+        return date.toLocaleDateString("fr-FR");
+      }
+
+      function formatDateTime(value){
+        if (!value) return "Jamais connecte";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "Jamais connecte";
+        return new Intl.DateTimeFormat("fr-FR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }).format(date);
+      }
+
+      function toIsoDate(date){
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function ensureYearOption(year){
+        if ([...els.year.options].some(option => option.value === String(year))) return;
+        els.year.appendChild(new Option(String(year), String(year)));
       }
 
       function showToast(message, isError){
