@@ -100,8 +100,50 @@
     }
     .stat span{display:block;color:var(--muted-2);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
     .stat strong{display:block;margin-top:8px;font-size:26px;letter-spacing:-.035em}
+    .admin-tabs{
+      margin-top:16px;border:1px solid var(--line);background:rgba(255,255,255,.045);
+      border-radius:20px;padding:7px;display:flex;gap:7px;overflow-x:auto;
+    }
+    .admin-tab{
+      border:0;min-height:38px;border-radius:14px;padding:0 13px;color:rgba(255,255,255,.70);
+      background:transparent;font-weight:950;white-space:nowrap;
+    }
+    .admin-tab.active{background:linear-gradient(135deg, #c4b5fd, #38bdf8);color:#08111f;box-shadow:0 12px 26px rgba(56,189,248,.18)}
+    .admin-view{display:none;margin-top:16px}
+    .admin-view.active{display:block}
+    .overview-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:16px}
+    .role-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .role-card,.health-card,.audit-row{
+      border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.028));
+      padding:14px;min-width:0;
+    }
+    .role-card span,.health-card span,.audit-row span{display:block;color:var(--muted);font-size:12px;line-height:1.35}
+    .role-card strong,.health-card strong{display:block;margin:8px 0 4px;font-size:28px;letter-spacing:-.04em}
+    .role-card h3,.health-card h3{margin:0;font-size:16px}
+    .health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .health-card.good{border-color:rgba(34,197,94,.24);background:rgba(34,197,94,.07)}
+    .health-card.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08)}
+    .health-card.danger{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.08)}
+    .manager-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .manager-card{
+      border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.045);
+      padding:14px;display:grid;gap:11px;min-width:0;
+    }
+    .manager-card h3{margin:0;font-size:17px}
+    .manager-card .sub{display:block;margin-bottom:7px;color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.07em}
+    .manager-card .manager-meta{display:flex;gap:7px;flex-wrap:wrap}
+    .commercial-pills{display:flex;gap:7px;flex-wrap:wrap}
+    .commercial-pill{
+      display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);
+      border-radius:999px;padding:6px 8px;background:rgba(3,7,18,.20);font-size:12px;
+    }
+    .commercial-pill button{min-height:24px;padding:0 7px;border-radius:999px;font-size:11px}
+    .security-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.8fr);gap:16px}
+    .audit-list{display:grid;gap:8px}
+    .audit-row strong{display:block;font-size:13px;margin-bottom:3px}
+    .audit-row small{color:var(--muted-2)}
     .layout{
-      margin-top:16px;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
+      display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
     .panel{
       border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.048);
@@ -189,12 +231,14 @@
     .loading{opacity:.62;pointer-events:none}
     @media(max-width:1180px){
       .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
-      .layout{grid-template-columns:1fr}
+      .layout,.overview-grid,.security-grid{grid-template-columns:1fr}
+      .manager-grid{grid-template-columns:1fr}
     }
     @media(max-width:780px){
       .wrap{padding:16px}
       .hero,.identity,.panel-head{display:flex;flex-direction:column;align-items:flex-start}
       .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .role-grid,.health-grid{grid-template-columns:1fr}
       .form-grid{grid-template-columns:1fr}
       .search{max-width:none}
     }
@@ -248,7 +292,43 @@
       <article class="stat"><span>Rattachements</span><strong data-stat="relations">-</strong></article>
     </section>
 
-    <section class="layout">
+    <nav class="admin-tabs" aria-label="Navigation admin">
+      <button class="admin-tab active" type="button" data-admin-tab="pilotage">Pilotage</button>
+      <button class="admin-tab" type="button" data-admin-tab="utilisateurs">Utilisateurs</button>
+      <button class="admin-tab" type="button" data-admin-tab="rattachements">Rattachements</button>
+      <button class="admin-tab" type="button" data-admin-tab="securite">Securite</button>
+    </nav>
+
+    <section class="admin-view active" data-admin-view="pilotage">
+      <div class="overview-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Vue globale</h2>
+              <div class="sub">Etat de la structure admin, des roles et des rattachements actifs.</div>
+            </div>
+            <button class="btn small primary" type="button" data-open-user-create>Creer un utilisateur</button>
+          </div>
+          <div class="role-grid" data-role-cards>
+            <div class="empty">Chargement des roles...</div>
+          </div>
+        </section>
+        <aside class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Points de controle</h2>
+              <div class="sub">Ce qui merite ton attention avant de confier l'app a une equipe.</div>
+            </div>
+          </div>
+          <div class="health-grid" data-health-cards>
+            <div class="empty">Chargement des controles...</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="admin-view" data-admin-view="utilisateurs">
+      <section class="layout">
       <section class="panel" aria-label="Gestion utilisateurs">
         <div class="panel-head">
           <div>
@@ -358,6 +438,72 @@
           <div class="empty">Chargement des rattachements...</div>
         </div>
       </aside>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="rattachements">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Cartographie responsables</h2>
+            <div class="sub">Vision claire de chaque responsable, de ses commerciaux principaux et de ses acces exceptionnels.</div>
+          </div>
+          <button class="btn small primary" type="button" data-open-relations-config>Configurer un rattachement</button>
+        </div>
+        <div class="manager-grid" data-manager-board>
+          <div class="empty">Chargement de la cartographie...</div>
+        </div>
+      </section>
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head">
+          <div>
+            <h2>Commerciaux sans responsable principal</h2>
+            <div class="sub">Ils peuvent exister, mais ils ne remonteront pas dans une vue responsable tant qu'ils ne sont pas rattaches.</div>
+          </div>
+        </div>
+        <div class="relations-list" data-orphan-list>
+          <div class="empty">Chargement...</div>
+        </div>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="securite">
+      <div class="security-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Comptes masques</h2>
+              <div class="sub">Aucune suppression dure : on restaure si besoin, l'historique reste conserve.</div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Utilisateur</th>
+                  <th>Role</th>
+                  <th>Derniere connexion</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody data-hidden-users>
+                <tr><td colspan="4">Chargement...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <aside class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Journal admin</h2>
+              <div class="sub">Historique local de la session admin actuelle.</div>
+            </div>
+          </div>
+          <div class="audit-list" data-audit-list>
+            <div class="empty">Aucune action admin sur cette session.</div>
+          </div>
+        </aside>
+      </div>
     </section>
   </main>
 
@@ -399,6 +545,8 @@
         stats: {},
         filter: "active",
         search: "",
+        activeView: "pilotage",
+        auditLog: [],
         pendingConfirm: null
       };
 
@@ -411,6 +559,14 @@
         relationForm: document.getElementById("relationForm"),
         usersBody: document.querySelector("[data-users-body]"),
         relationsList: document.querySelector("[data-relations-list]"),
+        tabs: Array.from(document.querySelectorAll("[data-admin-tab]")),
+        views: Array.from(document.querySelectorAll("[data-admin-view]")),
+        roleCards: document.querySelector("[data-role-cards]"),
+        healthCards: document.querySelector("[data-health-cards]"),
+        managerBoard: document.querySelector("[data-manager-board]"),
+        orphanList: document.querySelector("[data-orphan-list]"),
+        hiddenUsers: document.querySelector("[data-hidden-users]"),
+        auditList: document.querySelector("[data-audit-list]"),
         formTitle: document.querySelector("[data-form-title]"),
         search: document.querySelector("[data-search]"),
         toast: document.querySelector("[data-toast]"),
@@ -441,6 +597,20 @@
       function bindEvents(){
         document.querySelector("[data-refresh]").addEventListener("click", loadAdminData);
         document.querySelector("[data-reset-form]").addEventListener("click", resetUserForm);
+        els.tabs.forEach(function(button){
+          button.addEventListener("click", function(){
+            setAdminView(button.dataset.adminTab);
+          });
+        });
+        document.querySelector("[data-open-user-create]").addEventListener("click", function(){
+          resetUserForm();
+          setAdminView("utilisateurs");
+          els.userForm.elements.identifier.focus();
+        });
+        document.querySelector("[data-open-relations-config]").addEventListener("click", function(){
+          setAdminView("utilisateurs");
+          els.relationForm.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
         els.search.addEventListener("input", function(){
           state.search = els.search.value.trim().toLowerCase();
           renderUsers();
@@ -460,6 +630,9 @@
         els.relationForm.addEventListener("submit", submitRelationForm);
         els.usersBody.addEventListener("click", handleUserAction);
         els.relationsList.addEventListener("click", handleRelationAction);
+        els.managerBoard.addEventListener("click", handleRelationAction);
+        els.orphanList.addEventListener("click", handleAdminShortcut);
+        els.hiddenUsers.addEventListener("click", handleUserAction);
         els.passwordForm.addEventListener("submit", submitPasswordForm);
         document.querySelector("[data-close-password]").addEventListener("click", function(){
           els.passwordDialog.close();
@@ -510,6 +683,10 @@
         renderUsers();
         renderRelationOptions();
         renderRelations();
+        renderOverview();
+        renderManagerBoard();
+        renderHiddenUsers();
+        renderAuditLog();
       }
 
       async function submitUserForm(event){
@@ -521,6 +698,20 @@
           return;
         }
 
+        if (isEdit) {
+          const user = state.users.find(function(item){ return item.id === data.id; });
+          openConfirm(
+            "Valider la modification ?",
+            "Tu vas modifier le compte " + (user ? user.displayName : "selectionne") + ". Les donnees metier ne seront pas modifiees.",
+            function(){ return persistUserForm(data, isEdit); }
+          );
+          return;
+        }
+
+        await persistUserForm(data, isEdit);
+      }
+
+      async function persistUserForm(data, isEdit){
         setLoading(true);
         try{
           const payload = await postAdmin({
@@ -543,6 +734,10 @@
           }
 
           resetUserForm();
+          addAudit(
+            isEdit ? "Utilisateur modifie" : "Utilisateur cree",
+            (data.displayName || data.identifier || "Compte") + " - role " + (data.role || "-")
+          );
           showToast(isEdit ? "Utilisateur mis a jour." : "Utilisateur cree.");
         }catch(error){
           showToast(error.message || "Enregistrement impossible.", true);
@@ -554,6 +749,23 @@
       async function submitRelationForm(event){
         event.preventDefault();
         const data = formDataObject(els.relationForm);
+        if (data.relationType === "principal") {
+          const existing = activeRelations().find(function(relation){
+            return relation.commercialUserId === data.commercialUserId && relation.relationType === "principal";
+          });
+          if (existing && existing.responsableUserId !== data.responsableUserId) {
+            openConfirm(
+              "Changer le responsable principal ?",
+              userName(data.commercialUserId) + " passera de " + userName(existing.responsableUserId) + " a " + userName(data.responsableUserId) + ". L'historique reste conserve.",
+              function(){ return persistRelationForm(data); }
+            );
+            return;
+          }
+        }
+        await persistRelationForm(data);
+      }
+
+      async function persistRelationForm(data){
         setLoading(true);
         try{
           applyData(await postAdmin({
@@ -565,6 +777,10 @@
           }));
           els.relationForm.reset();
           renderRelationOptions();
+          addAudit(
+            "Rattachement enregistre",
+            userName(data.responsableUserId) + " -> " + userName(data.commercialUserId) + " (" + data.relationType + ")"
+          );
           showToast("Rattachement enregistre.");
         }catch(error){
           showToast(error.message || "Rattachement impossible.", true);
@@ -585,6 +801,7 @@
           }));
           els.passwordDialog.close();
           els.passwordForm.reset();
+          addAudit("Code modifie", userName(data.id));
           showToast("Code mis a jour.");
         }catch(error){
           showToast(error.message || "Changement impossible.", true);
@@ -600,6 +817,7 @@
         if (!user) return;
 
         if (button.dataset.userAction === "edit") {
+          setAdminView("utilisateurs");
           fillUserForm(user);
           return;
         }
@@ -612,13 +830,17 @@
         }
 
         if (button.dataset.userAction === "hide") {
+          const linkedRelations = activeRelations().filter(function(relation){
+            return relation.responsableUserId === user.id || relation.commercialUserId === user.id;
+          }).length;
           openConfirm(
             "Masquer cet utilisateur ?",
-            "Le compte sera desactive et masque, mais aucune donnee metier ne sera supprimee.",
+            user.displayName + " sera desactive et masque. Aucune donnee metier ne sera supprimee. Rattachements actifs concernes : " + linkedRelations + ".",
             async function(){
               setLoading(true);
               try{
                 applyData(await postAdmin({ action: "hideUser", id: user.id }));
+                addAudit("Utilisateur masque", user.displayName + " - aucune donnee supprimee");
                 showToast("Utilisateur masque.");
               }catch(error){
                 showToast(error.message || "Masquage impossible.", true);
@@ -633,11 +855,12 @@
         if (button.dataset.userAction === "restore") {
           openConfirm(
             "Restaurer cet utilisateur ?",
-            "Le compte redeviendra visible et actif.",
+            user.displayName + " redeviendra visible et actif.",
             async function(){
               setLoading(true);
               try{
                 applyData(await postAdmin({ action: "restoreUser", id: user.id }));
+                addAudit("Utilisateur restaure", user.displayName);
                 showToast("Utilisateur restaure.");
               }catch(error){
                 showToast(error.message || "Restauration impossible.", true);
@@ -657,11 +880,12 @@
 
         openConfirm(
           "Retirer ce rattachement ?",
-          "Le lien sera desactive, pas supprime definitivement.",
+          userName(relation.responsableUserId) + " ne verra plus " + userName(relation.commercialUserId) + " via ce lien. Le rattachement sera desactive, pas supprime definitivement.",
           async function(){
             setLoading(true);
             try{
               applyData(await postAdmin({ action: "removeRelation", id: relation.id }));
+              addAudit("Rattachement retire", userName(relation.responsableUserId) + " -> " + userName(relation.commercialUserId));
               showToast("Rattachement retire.");
             }catch(error){
               showToast(error.message || "Retrait impossible.", true);
@@ -670,6 +894,208 @@
             }
           }
         );
+      }
+
+      function handleAdminShortcut(event){
+        const button = event.target.closest("[data-admin-shortcut]");
+        if (!button) return;
+        if (button.dataset.adminShortcut === "attach") {
+          setAdminView("utilisateurs");
+          els.relationForm.elements.commercialUserId.value = button.dataset.commercialId || "";
+          els.relationForm.elements.relationType.value = "principal";
+          els.relationForm.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
+      function setAdminView(view){
+        state.activeView = view || "pilotage";
+        els.tabs.forEach(function(tab){
+          tab.classList.toggle("active", tab.dataset.adminTab === state.activeView);
+        });
+        els.views.forEach(function(panel){
+          panel.classList.toggle("active", panel.dataset.adminView === state.activeView);
+        });
+      }
+
+      function renderOverview(){
+        const active = activeUsers();
+        const roles = [
+          { key: "admin", label: "Admins", help: "Pilotage total, securite et parametres." },
+          { key: "responsable", label: "Responsables", help: "Lecture equipe, suivi CA, budgets et documents." },
+          { key: "commercial", label: "Commerciaux", help: "Saisie terrain, ventes, BDC, devis et reporting personnel." }
+        ];
+        els.roleCards.innerHTML = roles.map(function(role){
+          const count = active.filter(function(user){ return user.role === role.key; }).length;
+          return [
+            '<article class="role-card">',
+              '<h3>' + escapeHtml(role.label) + '</h3>',
+              '<strong>' + count + '</strong>',
+              '<span>' + escapeHtml(role.help) + '</span>',
+            '</article>'
+          ].join("");
+        }).join("");
+
+        const commerciaux = active.filter(function(user){ return user.role === "commercial"; });
+        const responsables = active.filter(function(user){ return user.role === "responsable"; });
+        const principalRelations = activeRelations().filter(function(relation){ return relation.relationType === "principal"; });
+        const exceptionRelations = activeRelations().filter(function(relation){ return relation.relationType === "exceptionnel"; });
+        const orphanCommercials = commerciaux.filter(function(user){
+          return !principalRelations.some(function(relation){ return relation.commercialUserId === user.id; });
+        });
+        const emptyManagers = responsables.filter(function(user){
+          return !principalRelations.some(function(relation){ return relation.responsableUserId === user.id; });
+        });
+        const hiddenCount = hiddenUsers().length;
+
+        const checks = [
+          {
+            title: "Commerciaux non rattaches",
+            value: orphanCommercials.length,
+            text: orphanCommercials.length ? "A rattacher pour qu'ils remontent dans une vue responsable." : "Tout commercial actif a un responsable principal.",
+            level: orphanCommercials.length ? "warn" : "good"
+          },
+          {
+            title: "Responsables sans equipe",
+            value: emptyManagers.length,
+            text: emptyManagers.length ? "Aucun commercial principal rattache a certains responsables." : "Chaque responsable actif a au moins un rattachement principal.",
+            level: emptyManagers.length ? "warn" : "good"
+          },
+          {
+            title: "Acces exceptionnels",
+            value: exceptionRelations.length,
+            text: exceptionRelations.length ? "Visibilites ponctuelles actives, a revoir regulierement." : "Aucun acces exceptionnel actif.",
+            level: exceptionRelations.length ? "warn" : "good"
+          },
+          {
+            title: "Comptes masques",
+            value: hiddenCount,
+            text: hiddenCount ? "Comptes inactifs conserves pour garder les historiques." : "Aucun compte masque.",
+            level: hiddenCount ? "warn" : "good"
+          }
+        ];
+
+        els.healthCards.innerHTML = checks.map(function(check){
+          return [
+            '<article class="health-card ' + check.level + '">',
+              '<h3>' + escapeHtml(check.title) + '</h3>',
+              '<strong>' + check.value + '</strong>',
+              '<span>' + escapeHtml(check.text) + '</span>',
+            '</article>'
+          ].join("");
+        }).join("");
+      }
+
+      function renderManagerBoard(){
+        const managers = activeUsers().filter(function(user){ return user.role === "responsable"; });
+        const principalRelations = activeRelations().filter(function(relation){ return relation.relationType === "principal"; });
+        if (!managers.length) {
+          els.managerBoard.innerHTML = '<div class="empty">Aucun responsable actif pour le moment.</div>';
+        } else {
+          els.managerBoard.innerHTML = managers.map(function(manager){
+            const principal = principalRelations.filter(function(relation){ return relation.responsableUserId === manager.id; });
+            const exceptional = activeRelations().filter(function(relation){
+              return relation.responsableUserId === manager.id && relation.relationType === "exceptionnel";
+            });
+            return [
+              '<article class="manager-card">',
+                '<div>',
+                  '<h3>' + escapeHtml(manager.displayName) + '</h3>',
+                  '<div class="manager-meta">',
+                    '<span class="role-chip role-responsable">Responsable</span>',
+                    '<span class="state-chip state-ok">' + principal.length + ' principal</span>',
+                    '<span class="relation-chip relation-exceptionnel">' + exceptional.length + ' exception</span>',
+                  '</div>',
+                '</div>',
+                '<div>',
+                  '<span class="sub">Equipe principale</span>',
+                  renderCommercialPills(principal),
+                '</div>',
+                '<div>',
+                  '<span class="sub">Acces exceptionnels</span>',
+                  renderCommercialPills(exceptional),
+                '</div>',
+              '</article>'
+            ].join("");
+          }).join("");
+        }
+
+        const orphans = activeUsers().filter(function(user){
+          return user.role === "commercial" && !principalRelations.some(function(relation){ return relation.commercialUserId === user.id; });
+        });
+        if (!orphans.length) {
+          els.orphanList.innerHTML = '<div class="empty">Aucun commercial sans responsable principal.</div>';
+          return;
+        }
+        els.orphanList.innerHTML = orphans.map(function(user){
+          return [
+            '<article class="relation-row">',
+              '<div>',
+                '<strong>' + escapeHtml(user.displayName) + '</strong>',
+                '<span>' + escapeHtml(user.identifier) + '</span>',
+              '</div>',
+              '<button class="btn primary small" type="button" data-admin-shortcut="attach" data-commercial-id="' + user.id + '">Rattacher</button>',
+            '</article>'
+          ].join("");
+        }).join("");
+      }
+
+      function renderCommercialPills(relations){
+        if (!relations.length) return '<div class="empty">Aucun commercial.</div>';
+        return '<div class="commercial-pills">' + relations.map(function(relation){
+          return [
+            '<span class="commercial-pill">',
+              '<span>' + escapeHtml(userName(relation.commercialUserId)) + '</span>',
+              '<button class="btn danger small" type="button" data-relation-action="remove" data-relation-id="' + relation.id + '">Retirer</button>',
+            '</span>'
+          ].join("");
+        }).join("") + '</div>';
+      }
+
+      function renderHiddenUsers(){
+        const users = hiddenUsers();
+        if (!users.length) {
+          els.hiddenUsers.innerHTML = '<tr><td colspan="4">Aucun compte masque.</td></tr>';
+          return;
+        }
+        els.hiddenUsers.innerHTML = users.map(function(user){
+          return [
+            '<tr>',
+              '<td><span class="user-main"><strong>' + escapeHtml(user.displayName) + '</strong><span>' + escapeHtml(user.identifier) + '</span></span></td>',
+              '<td><span class="role-chip role-' + escapeHtml(user.role) + '">' + escapeHtml(user.roleLabel || user.role) + '</span></td>',
+              '<td>' + escapeHtml(formatDate(user.lastLoginAt)) + '</td>',
+              '<td><span class="row-actions">',
+                '<button class="btn ghost small" type="button" data-user-action="edit" data-user-id="' + user.id + '">Voir</button>',
+                '<button class="btn green small" type="button" data-user-action="restore" data-user-id="' + user.id + '">Restaurer</button>',
+              '</span></td>',
+            '</tr>'
+          ].join("");
+        }).join("");
+      }
+
+      function renderAuditLog(){
+        if (!state.auditLog.length) {
+          els.auditList.innerHTML = '<div class="empty">Aucune action admin sur cette session.</div>';
+          return;
+        }
+        els.auditList.innerHTML = state.auditLog.map(function(item){
+          return [
+            '<article class="audit-row">',
+              '<strong>' + escapeHtml(item.title) + '</strong>',
+              '<span>' + escapeHtml(item.text) + '</span>',
+              '<small>' + escapeHtml(item.time) + '</small>',
+            '</article>'
+          ].join("");
+        }).join("");
+      }
+
+      function addAudit(title, text){
+        state.auditLog.unshift({
+          title: title,
+          text: text || "",
+          time: new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())
+        });
+        state.auditLog = state.auditLog.slice(0, 20);
+        renderAuditLog();
       }
 
       function renderStats(){
@@ -822,6 +1248,18 @@
 
       function formDataObject(form){
         return Object.fromEntries(new FormData(form).entries());
+      }
+
+      function activeUsers(){
+        return state.users.filter(function(user){ return user.active && !user.hidden; });
+      }
+
+      function hiddenUsers(){
+        return state.users.filter(function(user){ return user.hidden || !user.active; });
+      }
+
+      function activeRelations(){
+        return state.relations.filter(function(relation){ return relation.active; });
       }
 
       function userName(id){
