@@ -17,6 +17,13 @@
     { key:"dec", label:"Decembre", number:12 }
   ];
 
+  const DEFAULT_ENTITIES = [
+    { key: "psa", libelle: "PSA", ordre: 10 },
+    { key: "gueudet", libelle: "Gueudet", ordre: 20 },
+    { key: "ford", libelle: "Ford", ordre: 30 },
+    { key: "direct", libelle: "Direct", ordre: 40 }
+  ];
+
   const REAL_COLUMN_CONFIGS = {
     psa: {
       clientCodeCandidates: ["n° client interne", "no client interne", "n client interne", "n° client", "numero client interne", "numero client", "code client", "client code"],
@@ -51,6 +58,9 @@
   };
 
   let cachedClient = null;
+  let cachedScopeUser = null;
+  let scopeLoaded = false;
+  let ownershipReady = null;
 
   function client(){
     if (cachedClient) return cachedClient;
@@ -59,6 +69,71 @@
     }
     cachedClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return cachedClient;
+  }
+
+  async function loadScopeUser(){
+    if (scopeLoaded) return cachedScopeUser;
+    scopeLoaded = true;
+
+    try{
+      if (window.KentCommercialScope && typeof window.KentCommercialScope.load === "function") {
+        cachedScopeUser = await window.KentCommercialScope.load();
+        return cachedScopeUser;
+      }
+
+      const response = await fetch("/api/session", {
+        cache: "no-store",
+        credentials: "same-origin"
+      });
+      if (response.ok) {
+        const payload = await response.json();
+        cachedScopeUser = payload?.user || null;
+      }
+    }catch(error){
+      console.warn("Session reel indisponible:", error?.message || error);
+      cachedScopeUser = null;
+    }
+
+    return cachedScopeUser;
+  }
+
+  function commercialIdFromUser(user){
+    return user?.role === "commercial" && user?.dbUserId ? String(user.dbUserId) : "";
+  }
+
+  async function canUseOwnershipColumns(){
+    if (ownershipReady !== null) return ownershipReady;
+    try{
+      const [entitiesCheck, importsCheck] = await Promise.all([
+        client().from("budget_entites").select("commercial_user_id").limit(1),
+        client().from("reel_imports").select("commercial_user_id").limit(1)
+      ]);
+      ownershipReady = !entitiesCheck.error && !importsCheck.error;
+    }catch{
+      ownershipReady = false;
+    }
+    return ownershipReady;
+  }
+
+  async function ownerContext(){
+    const user = await loadScopeUser();
+    const id = commercialIdFromUser(user);
+    if (!id || !(await canUseOwnershipColumns())) {
+      return { user, id: "", payload: {} };
+    }
+    return {
+      user,
+      id,
+      payload: {
+        commercial_user_id: id,
+        commercial_identifier: String(user.userId || ""),
+        commercial_name: String(user.name || "")
+      }
+    };
+  }
+
+  function applyOwner(query, owner, column = "commercial_user_id"){
+    return owner?.id ? query.eq(column, owner.id) : query;
   }
 
   function normalizeKey(value){
@@ -167,13 +242,46 @@
     return REAL_COLUMN_CONFIGS[key] || REAL_COLUMN_CONFIGS.default;
   }
 
+  async function ensureDefaultEntities(){
+    if (window.BudgetSupabase && typeof window.BudgetSupabase.ensureDefaultEntities === "function") {
+      await window.BudgetSupabase.ensureDefaultEntities();
+      return;
+    }
+
+    const owner = await ownerContext();
+    let existingQuery = client()
+      .from("budget_entites")
+      .select("key");
+    existingQuery = applyOwner(existingQuery, owner);
+    const { data: existing, error: existingError } = await existingQuery;
+    if (existingError) throw existingError;
+
+    const existingKeys = new Set((existing || []).map(entity => String(entity.key || "")));
+    const missing = DEFAULT_ENTITIES.filter(entity => !existingKeys.has(entity.key));
+    if (!missing.length) return;
+
+    const { error } = await client()
+      .from("budget_entites")
+      .insert(missing.map(entity => ({ ...entity, ...owner.payload })));
+    if (error) throw error;
+  }
+
   async function listEntities(){
-    const { data, error } = await client()
+    if (window.BudgetSupabase && typeof window.BudgetSupabase.listEntities === "function") {
+      return window.BudgetSupabase.listEntities();
+    }
+
+    await ensureDefaultEntities();
+    const owner = await ownerContext();
+    let query = client()
       .from("budget_entites")
       .select("*")
-      .eq("actif", true)
+      .eq("actif", true);
+    query = applyOwner(query, owner);
+    query = query
       .order("ordre", { ascending: true })
       .order("libelle", { ascending: true });
+    const { data, error } = await query;
     if (error) throw error;
     return data || [];
   }
@@ -270,13 +378,16 @@
   }
 
   async function deactivateActiveImports(entiteId, year, month){
-    const { data: activeRows, error: activeError } = await client()
+    const owner = await ownerContext();
+    let query = client()
       .from("reel_imports")
       .select("*")
       .eq("entite_id", entiteId)
       .eq("annee", Number(year))
       .eq("mois", Number(month))
       .eq("statut", "active");
+    query = applyOwner(query, owner);
+    const { data: activeRows, error: activeError } = await query;
     if (activeError) throw activeError;
     if (!activeRows?.length) return [];
 
@@ -288,8 +399,8 @@
     return activeRows;
   }
 
-  async function insertLines(importId, lines){
-    const payload = lines.map(line => ({ ...line, import_id: importId }));
+  async function insertLines(importId, lines, owner){
+    const payload = lines.map(line => ({ ...line, import_id: importId, ...(owner?.payload || {}) }));
     if (!payload.length) return;
     const chunkSize = 500;
     for (let index = 0; index < payload.length; index += chunkSize){
@@ -305,6 +416,7 @@
     if (!Number(month) || Number(month) < 1 || Number(month) > 12) throw new Error("Mois obligatoire.");
     if (!parsed || !Array.isArray(parsed.lines) || !parsed.lines.length) throw new Error("Aucune ligne reel a importer.");
 
+    const owner = await ownerContext();
     let replaced = [];
     if (replaceActive) {
       replaced = await deactivateActiveImports(entiteId, year, month);
@@ -326,7 +438,8 @@
         imported_from: "import-reel-mensuel",
         skipped: parsed.skipped || {},
         replaced_import_ids: replaced.map(row => row.id)
-      }
+      },
+      ...owner.payload
     };
 
     let saved = null;
@@ -338,7 +451,7 @@
         .single();
       if (error) throw error;
       saved = data;
-      await insertLines(saved.id, parsed.lines);
+      await insertLines(saved.id, parsed.lines, owner);
       return { importRow: saved, replaced };
     }catch(error){
       if (saved?.id) {
@@ -355,33 +468,41 @@
   }
 
   async function listImports({ year, month = null, entiteId = null, includeInactive = true } = {}){
+    const owner = await ownerContext();
     let query = client()
       .from("reel_imports")
-      .select("*")
-      .order("annee", { ascending: false })
-      .order("mois", { ascending: false })
-      .order("created_at", { ascending: false });
+      .select("*");
     if (year) query = query.eq("annee", Number(year));
     if (month) query = query.eq("mois", Number(month));
     if (entiteId) query = query.eq("entite_id", entiteId);
     if (!includeInactive) query = query.eq("statut", "active");
+    query = applyOwner(query, owner);
+    query = query
+      .order("annee", { ascending: false })
+      .order("mois", { ascending: false })
+      .order("created_at", { ascending: false });
     const { data, error } = await query;
     if (error) throw error;
     return data || [];
   }
 
   async function getImport(id){
-    const { data: importRow, error } = await client()
+    const owner = await ownerContext();
+    let importQuery = client()
       .from("reel_imports")
       .select("*")
-      .eq("id", id)
-      .single();
+      .eq("id", id);
+    importQuery = applyOwner(importQuery, owner);
+    importQuery = importQuery.single();
+    const { data: importRow, error } = await importQuery;
     if (error) throw error;
-    const { data: lines, error: linesError } = await client()
+    let linesQuery = client()
       .from("reel_lignes")
       .select("*")
-      .eq("import_id", id)
-      .order("ordre", { ascending: true });
+      .eq("import_id", id);
+    linesQuery = applyOwner(linesQuery, owner);
+    linesQuery = linesQuery.order("ordre", { ascending: true });
+    const { data: lines, error: linesError } = await linesQuery;
     if (linesError) throw linesError;
     return { importRow, lines: lines || [] };
   }
@@ -398,7 +519,8 @@
   async function activateImport(id){
     const { importRow } = await getImport(id);
     const active = await deactivateActiveImports(importRow.entite_id, importRow.annee, importRow.mois);
-    const { data, error } = await client()
+    const owner = await ownerContext();
+    let query = client()
       .from("reel_imports")
       .update({
         statut: "active",
@@ -408,20 +530,24 @@
           replaced_import_ids: active.map(row => row.id)
         }
       })
-      .eq("id", id)
-      .select("*")
-      .single();
+      .eq("id", id);
+    query = applyOwner(query, owner);
+    query = query.select("*").single();
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   }
 
   async function getAnnualRealByEntity(entityId, year){
-    const { data, error } = await client()
+    const owner = await ownerContext();
+    let query = client()
       .from("v_reel_annuel_clients")
       .select("*")
       .eq("entite_id", entityId)
-      .eq("annee", Number(year))
-      .order("client_nom", { ascending: true });
+      .eq("annee", Number(year));
+    query = applyOwner(query, owner);
+    query = query.order("client_nom", { ascending: true });
+    const { data, error } = await query;
     if (error) throw error;
     return data || [];
   }
@@ -441,14 +567,18 @@
   async function getActiveLinesByEntityYear(entityKey, year){
     if (!entityKey) throw new Error("Entite obligatoire.");
     if (!Number(year)) throw new Error("Annee obligatoire.");
-    return await selectAllPaged(() => client()
-      .from("v_reel_lignes_actives")
-      .select("*")
-      .eq("entite_key", String(entityKey))
-      .eq("annee", Number(year))
-      .order("mois", { ascending: true })
-      .order("ordre", { ascending: true })
-    );
+    const owner = await ownerContext();
+    return await selectAllPaged(() => {
+      let query = client()
+        .from("v_reel_lignes_actives")
+        .select("*")
+        .eq("entite_key", String(entityKey))
+        .eq("annee", Number(year));
+      query = applyOwner(query, owner);
+      return query
+        .order("mois", { ascending: true })
+        .order("ordre", { ascending: true });
+    });
   }
 
   window.ReelSupabase = {

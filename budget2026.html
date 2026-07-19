@@ -494,7 +494,7 @@ Client C"></textarea>
  * State
  ***********************/
 const APP_YEAR = KentDataConfig.getActiveYear();
-const LS_KEY = `budget_projection_${APP_YEAR}_v1`;
+let LS_KEY = budgetStorageKey(APP_YEAR, "global");
 
 const MONTHS = [
   { key:"jan", label:"Janvier" },
@@ -523,6 +523,23 @@ let state = {
 let sortTotalDesc = true;
 let currentProjectionId = "";
 let budgetEntities = [];
+
+function budgetStorageKey(year, scopeSuffix = "global"){
+  const safeYear = Number(year || APP_YEAR);
+  const suffix = String(scopeSuffix || "global").trim();
+  return suffix && suffix !== "global"
+    ? `budget_projection_${safeYear}_${suffix}_v1`
+    : `budget_projection_${safeYear}_v1`;
+}
+
+async function applyBudgetStorageScope(){
+  if (!window.BudgetSupabase || typeof window.BudgetSupabase.getStorageScopeSuffix !== "function") return;
+  try{
+    LS_KEY = budgetStorageKey(APP_YEAR, await window.BudgetSupabase.getStorageScopeSuffix());
+  }catch(error){
+    console.warn("Scope local budget indisponible:", error?.message || error);
+  }
+}
 
 function uid(){
   return "c_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
@@ -1370,8 +1387,6 @@ function iconTrash(){
 /***********************
  * Init / Events
  ***********************/
-load();
-$("globalBudget").value = state.globalBudget ? String(state.globalBudget) : "";
 
 $("applyBudget").addEventListener("click", applyGlobalBudget);
 $("globalBudget").addEventListener("keydown", (e) => { if (e.key === "Enter") applyGlobalBudget(); });
@@ -1425,8 +1440,15 @@ window.toggleTotalSort = function(){
 // ✅ bind actions once (event delegation)
 bindTableActions();
 
-renderAll();
-refreshBudgetSupabaseControls();
+async function initBudgetPage(){
+  await applyBudgetStorageScope();
+  load();
+  $("globalBudget").value = state.globalBudget ? String(state.globalBudget) : "";
+  renderAll();
+  await refreshBudgetSupabaseControls();
+}
+
+initBudgetPage();
 </script>
 </body>
 </html>

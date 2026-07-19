@@ -442,7 +442,7 @@
   const FILE_CANDIDATES = KentDataConfig.getEntityFileCandidates(ENTITY_KEY, "realN1", APP_YEAR);
   const FILE_NAME = FILE_CANDIDATES[0];
   const EXPORT_FILE = KentDataConfig.getEntityFile(ENTITY_KEY, "projection", APP_YEAR);
-  const LS_KEY = `PROJECTION_PSA_${APP_YEAR}_V1`;
+  let LS_KEY = projectionStorageKey(APP_YEAR, "global");
 
   const MONTHS = [
     { key:"jan", label:"Janvier", aliases:["janvier","jan"] },
@@ -512,96 +512,117 @@
   let filterText = "";
   let realEntities = [];
 
+  function projectionStorageKey(year, scopeSuffix = "global"){
+    const safeYear = Number(year || APP_YEAR);
+    const suffix = String(scopeSuffix || "global").trim();
+    return suffix && suffix !== "global"
+      ? `PROJECTION_PSA_${safeYear}_${suffix}_V1`
+      : `PROJECTION_PSA_${safeYear}_V1`;
+  }
+
+  async function applyProjectionStorageScope(){
+    if (!window.BudgetSupabase || typeof window.BudgetSupabase.getStorageScopeSuffix !== "function") return;
+    try{
+      LS_KEY = projectionStorageKey(APP_YEAR, await window.BudgetSupabase.getStorageScopeSuffix());
+    }catch(error){
+      console.warn("Scope local projection indisponible:", error?.message || error);
+    }
+  }
 
   // =========================
   // INIT
   // =========================
-  const saved = loadJSON(LS_KEY, null);
-  if (saved?.days) days = saved.days;
-  // La source Excel doit etre chargee volontairement pour eviter une projection obsolète.
+  initProjectionPage();
 
-  // set UI values
-  el.yearReal.value = String(days.yearReal || PREV_YEAR);
-  el.yearBudget.value = String(days.yearBudget || APP_YEAR);
+  async function initProjectionPage(){
+    await applyProjectionStorageScope();
+    const saved = loadJSON(LS_KEY, null);
+    if (saved?.days) days = saved.days;
+    // La source Excel doit etre chargee volontairement pour eviter une projection obsolete.
 
-  // ensure day defaults computed
-  ensureDaysDefaults();
+    // set UI values
+    el.yearReal.value = String(days.yearReal || PREV_YEAR);
+    el.yearBudget.value = String(days.yearBudget || APP_YEAR);
 
-  // render UI
-  renderDaysGrid();
-  if (basePivot?.clients?.length){
-    setStatus(true, `Base chargée (cache) — ${basePivot.clients.length} clients`);
-    renderAll();
-  } else {
-    setStatus(false, "En attente du fichier…");
-    renderEmpty("Charge ton fichier Excel ou sélectionne un réel N-1 Supabase pour générer la projection.");
+    // ensure day defaults computed
+    ensureDaysDefaults();
+
+    // render UI
+    renderDaysGrid();
+    if (basePivot?.clients?.length){
+      setStatus(true, `Base chargee (cache) - ${basePivot.clients.length} clients`);
+      renderAll();
+    } else {
+      setStatus(false, "En attente du fichier...");
+      renderEmpty("Charge ton fichier Excel ou selectionne un reel N-1 Supabase pour generer la projection.");
+    }
+    void refreshRealSourceSelect();
+
+    // =========================
+    // EVENTS
+    // =========================
+    el.btnReload.addEventListener("click", () => el.fileInput.click());
+    el.btnDownloadTemplate.addEventListener("click", downloadProjectionTemplate);
+    el.fileInput.addEventListener("change", async (e) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      el.fileInput.value = "";
+      const buf = await f.arrayBuffer();
+      parseAndBuildPivot(buf, `manuel (${f.name || FILE_NAME})`);
+    });
+
+    el.btnRecalc.addEventListener("click", () => {
+      ensureDaysDefaults();
+      saveLS();
+      renderAll();
+    });
+
+    el.btnExportXlsx.addEventListener("click", exportBudgetXlsx);
+    el.btnSaveProjection.addEventListener("click", saveProjectionSupabase);
+    el.realSourceSelect.addEventListener("change", loadSelectedSupabaseReal);
+
+    el.btnReset.addEventListener("click", async () => {
+      if (!await kentConfirm("Reset projection PSA (cache + jours ouvres) ?", { title: "Reinitialiser la projection", tone: "danger", confirmText: "Reinitialiser" })) return;
+      localStorage.removeItem(LS_KEY);
+      basePivot = null;
+      projected = null;
+      days = { yearReal: PREV_YEAR, yearBudget: APP_YEAR, real:{}, budget:{} };
+      el.yearReal.value = String(PREV_YEAR);
+      el.yearBudget.value = String(APP_YEAR);
+      el.uplift.value = "0";
+      el.rounding.value = "0";
+      el.search.value = "";
+      filterText = "";
+      ensureDaysDefaults();
+      renderDaysGrid();
+      setStatus(false, "Reset effectue. Recharge un fichier Excel.");
+      renderEmpty("Charge ton fichier Excel ou selectionne un reel N-1 Supabase pour generer la projection.");
+    });
+
+    el.search.addEventListener("input", () => {
+      filterText = (el.search.value || "").trim().toLowerCase();
+      renderTableOnly();
+    });
+
+    el.yearReal.addEventListener("change", () => {
+      days.yearReal = clampYear(el.yearReal.value, PREV_YEAR);
+      ensureDaysDefaults(true);
+      renderDaysGrid();
+      renderRealSourceOptions();
+      saveLS();
+      renderAll();
+    });
+    el.yearBudget.addEventListener("change", () => {
+      days.yearBudget = clampYear(el.yearBudget.value, APP_YEAR);
+      ensureDaysDefaults(true);
+      renderDaysGrid();
+      saveLS();
+      renderAll();
+    });
+
+    el.uplift.addEventListener("input", () => { renderAll(); });
+    el.rounding.addEventListener("change", () => { renderAll(); });
   }
-  void refreshRealSourceSelect();
-
-  // =========================
-  // EVENTS
-  // =========================
-  el.btnReload.addEventListener("click", () => el.fileInput.click());
-  el.btnDownloadTemplate.addEventListener("click", downloadProjectionTemplate);
-  el.fileInput.addEventListener("change", async (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    el.fileInput.value = "";
-    const buf = await f.arrayBuffer();
-    parseAndBuildPivot(buf, `manuel (${f.name || FILE_NAME})`);
-  });
-
-  el.btnRecalc.addEventListener("click", () => {
-    ensureDaysDefaults();
-    saveLS();
-    renderAll();
-  });
-
-  el.btnExportXlsx.addEventListener("click", exportBudgetXlsx);
-  el.btnSaveProjection.addEventListener("click", saveProjectionSupabase);
-  el.realSourceSelect.addEventListener("change", loadSelectedSupabaseReal);
-
-  el.btnReset.addEventListener("click", async () => {
-    if (!await kentConfirm("Reset projection PSA (cache + jours ouvrés) ?", { title: "Réinitialiser la projection", tone: "danger", confirmText: "Réinitialiser" })) return;
-    localStorage.removeItem(LS_KEY);
-    basePivot = null;
-    projected = null;
-    days = { yearReal: PREV_YEAR, yearBudget: APP_YEAR, real:{}, budget:{} };
-    el.yearReal.value = String(PREV_YEAR);
-    el.yearBudget.value = String(APP_YEAR);
-    el.uplift.value = "0";
-    el.rounding.value = "0";
-    el.search.value = "";
-    filterText = "";
-    ensureDaysDefaults();
-    renderDaysGrid();
-    setStatus(false, "Reset effectué. Recharge un fichier Excel.");
-    renderEmpty("Charge ton fichier Excel ou sélectionne un réel N-1 Supabase pour générer la projection.");
-  });
-
-  el.search.addEventListener("input", () => {
-    filterText = (el.search.value || "").trim().toLowerCase();
-    renderTableOnly();
-  });
-
-  el.yearReal.addEventListener("change", () => {
-    days.yearReal = clampYear(el.yearReal.value, PREV_YEAR);
-    ensureDaysDefaults(true);
-    renderDaysGrid();
-    renderRealSourceOptions();
-    saveLS();
-    renderAll();
-  });
-  el.yearBudget.addEventListener("change", () => {
-    days.yearBudget = clampYear(el.yearBudget.value, APP_YEAR);
-    ensureDaysDefaults(true);
-    renderDaysGrid();
-    saveLS();
-    renderAll();
-  });
-
-  el.uplift.addEventListener("input", () => { renderAll(); });
-  el.rounding.addEventListener("change", () => { renderAll(); });
 
   // =========================
   // SUPABASE REAL N-1

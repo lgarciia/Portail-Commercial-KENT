@@ -10,6 +10,9 @@
   ];
 
   let cachedClient = null;
+  let cachedScopeUser = null;
+  let scopeLoaded = false;
+  let ownershipReady = null;
 
   function client(){
     if (cachedClient) return cachedClient;
@@ -18,6 +21,71 @@
     }
     cachedClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return cachedClient;
+  }
+
+  async function loadScopeUser(){
+    if (scopeLoaded) return cachedScopeUser;
+    scopeLoaded = true;
+
+    try{
+      if (window.KentCommercialScope && typeof window.KentCommercialScope.load === "function") {
+        cachedScopeUser = await window.KentCommercialScope.load();
+        return cachedScopeUser;
+      }
+
+      const response = await fetch("/api/session", {
+        cache: "no-store",
+        credentials: "same-origin"
+      });
+      if (response.ok) {
+        const payload = await response.json();
+        cachedScopeUser = payload?.user || null;
+      }
+    }catch(error){
+      console.warn("Session budget indisponible:", error?.message || error);
+      cachedScopeUser = null;
+    }
+
+    return cachedScopeUser;
+  }
+
+  function commercialIdFromUser(user){
+    return user?.role === "commercial" && user?.dbUserId ? String(user.dbUserId) : "";
+  }
+
+  async function canUseOwnershipColumns(){
+    if (ownershipReady !== null) return ownershipReady;
+    try{
+      const { error } = await client()
+        .from("budget_entites")
+        .select("commercial_user_id")
+        .limit(1);
+      ownershipReady = !error;
+    }catch{
+      ownershipReady = false;
+    }
+    return ownershipReady;
+  }
+
+  async function ownerContext(){
+    const user = await loadScopeUser();
+    const id = commercialIdFromUser(user);
+    if (!id || !(await canUseOwnershipColumns())) {
+      return { user, id: "", payload: {} };
+    }
+    return {
+      user,
+      id,
+      payload: {
+        commercial_user_id: id,
+        commercial_identifier: String(user.userId || ""),
+        commercial_name: String(user.name || "")
+      }
+    };
+  }
+
+  function applyOwner(query, owner, column = "commercial_user_id"){
+    return owner?.id ? query.eq(column, owner.id) : query;
   }
 
   function toNumber(value){
@@ -88,9 +156,12 @@
   }
 
   async function ensureDefaultEntities(){
-    const { data: existing, error: existingError } = await client()
+    const owner = await ownerContext();
+    let existingQuery = client()
       .from("budget_entites")
       .select("key");
+    existingQuery = applyOwner(existingQuery, owner);
+    const { data: existing, error: existingError } = await existingQuery;
     if (existingError) throw existingError;
 
     const existingKeys = new Set((existing || []).map(entity => String(entity.key || "")));
@@ -99,18 +170,22 @@
 
     const { error } = await client()
       .from("budget_entites")
-      .insert(missing);
+      .insert(missing.map(entity => ({ ...entity, ...owner.payload })));
     if (error) throw error;
   }
 
   async function listEntities(){
     await ensureDefaultEntities();
-    const { data, error } = await client()
+    const owner = await ownerContext();
+    let query = client()
       .from("budget_entites")
       .select("*")
-      .eq("actif", true)
+      .eq("actif", true);
+    query = applyOwner(query, owner);
+    query = query
       .order("ordre", { ascending: true })
       .order("libelle", { ascending: true });
+    const { data, error } = await query;
     if (error) throw error;
     return data || [];
   }
@@ -118,7 +193,8 @@
   async function createEntity(label){
     const libelle = String(label || "").trim();
     if (!libelle) throw new Error("Nom entite obligatoire.");
-    const payload = { key: makeEntityKey(libelle), libelle, actif: true, ordre: 100 };
+    const owner = await ownerContext();
+    const payload = { key: makeEntityKey(libelle), libelle, actif: true, ordre: 100, ...owner.payload };
     const { data, error } = await client()
       .from("budget_entites")
       .insert(payload)
@@ -141,12 +217,14 @@
     if (!Object.keys(payload).length) throw new Error("Aucune modification entite.");
     payload.updated_at = new Date().toISOString();
 
-    const { data, error } = await client()
+    const owner = await ownerContext();
+    let query = client()
       .from("budget_entites")
       .update(payload)
-      .eq("id", id)
-      .select("*")
-      .single();
+      .eq("id", id);
+    query = applyOwner(query, owner);
+    query = query.select("*").single();
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   }
@@ -160,29 +238,35 @@
   }
 
   async function listBudgetsForEntity(entityId){
-    const { data, error } = await client()
+    const owner = await ownerContext();
+    let query = client()
       .from("budgets")
       .select("*")
-      .eq("entite_id", entityId)
+      .eq("entite_id", entityId);
+    query = applyOwner(query, owner);
+    query = query
       .order("annee", { ascending: false })
       .order("created_at", { ascending: false });
-    if (error) throw error;
-    return data || [];
-  }
-
-  async function listProjections(year){
-    let query = client()
-      .from("budget_projections")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (year) query = query.eq("annee", Number(year));
     const { data, error } = await query;
     if (error) throw error;
     return data || [];
   }
 
-  async function insertProjectionLines(projectionId, lines){
-    const payload = normalizeLines(lines).map(line => ({ ...line, projection_id: projectionId }));
+  async function listProjections(year){
+    const owner = await ownerContext();
+    let query = client()
+      .from("budget_projections")
+      .select("*");
+    if (year) query = query.eq("annee", Number(year));
+    query = applyOwner(query, owner);
+    query = query.order("created_at", { ascending: false });
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+
+  async function insertProjectionLines(projectionId, lines, owner){
+    const payload = normalizeLines(lines).map(line => ({ ...line, projection_id: projectionId, ...(owner?.payload || {}) }));
     if (!payload.length) return;
     const { error } = await client().from("budget_projection_lignes").insert(payload);
     if (error) throw error;
@@ -191,6 +275,7 @@
   async function saveProjection({ nom, annee, sourceLabel = "", sourceEntityKey = "", rows = [], meta = {} }){
     const lines = normalizeLines(rows);
     if (!lines.length) throw new Error("Aucune ligne a enregistrer.");
+    const owner = await ownerContext();
     const payload = {
       nom: String(nom || "").trim() || `Projection ${annee || ""}`.trim(),
       annee: Number(annee),
@@ -198,7 +283,8 @@
       source_entite_key: sourceEntityKey || null,
       total_annuel: totalRows(lines),
       nb_lignes: lines.length,
-      meta: meta || {}
+      meta: meta || {},
+      ...owner.payload
     };
     const { data, error } = await client()
       .from("budget_projections")
@@ -207,7 +293,7 @@
       .single();
     if (error) throw error;
     try{
-      await insertProjectionLines(data.id, lines);
+      await insertProjectionLines(data.id, lines, owner);
     }catch(errorLines){
       await client().from("budget_projections").delete().eq("id", data.id);
       throw errorLines;
@@ -216,35 +302,43 @@
   }
 
   async function getProjection(id){
-    const { data: projection, error } = await client()
+    const owner = await ownerContext();
+    let projectionQuery = client()
       .from("budget_projections")
       .select("*")
-      .eq("id", id)
-      .single();
+      .eq("id", id);
+    projectionQuery = applyOwner(projectionQuery, owner);
+    projectionQuery = projectionQuery.single();
+    const { data: projection, error } = await projectionQuery;
     if (error) throw error;
-    const { data: lines, error: linesError } = await client()
+    let linesQuery = client()
       .from("budget_projection_lignes")
       .select("*")
-      .eq("projection_id", id)
-      .order("ordre", { ascending: true });
+      .eq("projection_id", id);
+    linesQuery = applyOwner(linesQuery, owner);
+    linesQuery = linesQuery.order("ordre", { ascending: true });
+    const { data: lines, error: linesError } = await linesQuery;
     if (linesError) throw linesError;
     return { projection, lines: lines || [] };
   }
 
   async function activeBudgetForEntityYear(entityId, year){
-    const { data, error } = await client()
+    const owner = await ownerContext();
+    let query = client()
       .from("budgets")
       .select("*")
       .eq("entite_id", entityId)
       .eq("annee", Number(year))
-      .eq("statut", "active")
-      .limit(1);
+      .eq("statut", "active");
+    query = applyOwner(query, owner);
+    query = query.limit(1);
+    const { data, error } = await query;
     if (error) throw error;
     return (data || [])[0] || null;
   }
 
-  async function insertBudgetLines(budgetId, lines){
-    const payload = normalizeLines(lines).map(line => ({ ...line, budget_id: budgetId }));
+  async function insertBudgetLines(budgetId, lines, owner){
+    const payload = normalizeLines(lines).map(line => ({ ...line, budget_id: budgetId, ...(owner?.payload || {}) }));
     if (!payload.length) return;
     const { error } = await client().from("budget_lignes").insert(payload);
     if (error) throw error;
@@ -253,6 +347,7 @@
   async function validateBudget({ nom, annee, entityId, projectionId = null, rows = [], meta = {}, replaceActive = false }){
     const lines = normalizeLines(rows);
     if (!lines.length) throw new Error("Aucune ligne budget a valider.");
+    const owner = await ownerContext();
     const active = await activeBudgetForEntityYear(entityId, annee);
     if (active && !replaceActive) {
       const err = new Error(`Un budget actif existe deja pour cette entite et ${annee}. Desactive-le avant d'en valider un autre.`);
@@ -284,7 +379,8 @@
       total_annuel: totalRows(lines),
       nb_lignes: lines.length,
       meta: payloadMeta,
-      validated_at: new Date().toISOString()
+      validated_at: new Date().toISOString(),
+      ...owner.payload
     };
     try{
       const { data, error } = await client()
@@ -294,7 +390,7 @@
         .single();
       if (error) throw error;
       try{
-        await insertBudgetLines(data.id, lines);
+        await insertBudgetLines(data.id, lines, owner);
       }catch(errorLines){
         await client().from("budgets").delete().eq("id", data.id);
         throw errorLines;
@@ -316,28 +412,35 @@
   }
 
   async function listBudgets(year){
+    const owner = await ownerContext();
     let query = client()
       .from("budgets")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("*");
     if (year) query = query.eq("annee", Number(year));
+    query = applyOwner(query, owner);
+    query = query.order("created_at", { ascending: false });
     const { data, error } = await query;
     if (error) throw error;
     return data || [];
   }
 
   async function getBudget(id){
-    const { data: budget, error } = await client()
+    const owner = await ownerContext();
+    let budgetQuery = client()
       .from("budgets")
       .select("*")
-      .eq("id", id)
-      .single();
+      .eq("id", id);
+    budgetQuery = applyOwner(budgetQuery, owner);
+    budgetQuery = budgetQuery.single();
+    const { data: budget, error } = await budgetQuery;
     if (error) throw error;
-    const { data: lines, error: linesError } = await client()
+    let linesQuery = client()
       .from("budget_lignes")
       .select("*")
-      .eq("budget_id", id)
-      .order("ordre", { ascending: true });
+      .eq("budget_id", id);
+    linesQuery = applyOwner(linesQuery, owner);
+    linesQuery = linesQuery.order("ordre", { ascending: true });
+    const { data: lines, error: linesError } = await linesQuery;
     if (linesError) throw linesError;
     return { budget, lines: lines || [] };
   }
@@ -385,11 +488,14 @@
   }
 
   async function getActiveBudgetData(entityKey, year){
-    const { data: entities, error: entityError } = await client()
+    const owner = await ownerContext();
+    let query = client()
       .from("budget_entites")
       .select("*")
-      .eq("key", String(entityKey || "").trim().toLowerCase())
-      .limit(1);
+      .eq("key", String(entityKey || "").trim().toLowerCase());
+    query = applyOwner(query, owner);
+    query = query.limit(1);
+    const { data: entities, error: entityError } = await query;
     if (entityError) throw entityError;
     const entity = (entities || [])[0];
     if (!entity) return null;
@@ -406,6 +512,11 @@
         sheetName: entity.libelle
       }
     };
+  }
+
+  async function getStorageScopeSuffix(){
+    const owner = await ownerContext();
+    return owner.id || "global";
   }
 
   window.BudgetSupabase = {
@@ -427,6 +538,7 @@
     getBudget,
     setBudgetStatus,
     deleteBudget,
-    getActiveBudgetData
+    getActiveBudgetData,
+    getStorageScopeSuffix
   };
 })();

@@ -354,8 +354,12 @@
       }
     }
 
-    function budgetStorageKey(year){
-      return `budget_projection_${Number(year || KentDataConfig.getActiveYear())}_v1`;
+    function budgetStorageKey(year, scopeSuffix = "global"){
+      const safeYear = Number(year || KentDataConfig.getActiveYear());
+      const suffix = String(scopeSuffix || "global").trim();
+      return suffix && suffix !== "global"
+        ? `budget_projection_${safeYear}_${suffix}_v1`
+        : `budget_projection_${safeYear}_v1`;
     }
 
     function lineToBudgetClient(line){
@@ -384,7 +388,7 @@
           globalBudget: Number(budget.total_annuel || 0),
           clients: lines.map(lineToBudgetClient)
         };
-        localStorage.setItem(budgetStorageKey(budget.annee), JSON.stringify(payload));
+        localStorage.setItem(budgetStorageKey(budget.annee, budget.commercial_user_id), JSON.stringify(payload));
         KentDataConfig.setActiveYear(Number(budget.annee));
         window.location.href = `budget2026.html?year=${encodeURIComponent(budget.annee)}`;
       }catch(error){

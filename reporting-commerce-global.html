@@ -1037,7 +1037,7 @@
     };
     const MONTH_LABELS = ["Janv.", "Fevr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Aout", "Sept.", "Oct.", "Nov.", "Dec."];
     const dom = {};
-    const state = { rows: [], weeks: [], selectedWeekIndex: 0, selectedMonthIndex: null, viewMode: "day", budget: null, budgetCache: new Map(), budgetAdjustments: new Map(), budgetAdjustmentError: "" };
+    const state = { rows: [], weeks: [], selectedWeekIndex: 0, selectedMonthIndex: null, viewMode: "day", budget: null, budgetCache: new Map(), budgetAdjustments: new Map(), budgetAdjustmentError: "", budgetAdjustmentScopeReady: null };
 
     function shouldScopeTable(table) {
       return ["clients", "visites", "industrie_clients", "industrie_visites", "documents_commerciaux"].includes(table);
@@ -1047,6 +1047,42 @@
       return shouldScopeTable(table) && window.KentCommercialScope
         ? window.KentCommercialScope.applyToQuery(query)
         : query;
+    }
+
+    async function canUseBudgetAdjustmentScope() {
+      if (state.budgetAdjustmentScopeReady !== null) return state.budgetAdjustmentScopeReady;
+      const userId = window.KentCommercialScope?.getCommercialUserId?.() || "";
+      if (!userId) {
+        state.budgetAdjustmentScopeReady = false;
+        return false;
+      }
+      try {
+        const { error } = await supabaseClient
+          .from(BUDGET_ADJUSTMENT_TABLE)
+          .select("commercial_user_id")
+          .limit(1);
+        state.budgetAdjustmentScopeReady = !error;
+      } catch {
+        state.budgetAdjustmentScopeReady = false;
+      }
+      return state.budgetAdjustmentScopeReady;
+    }
+
+    async function applyBudgetAdjustmentScope(query) {
+      if (!(await canUseBudgetAdjustmentScope())) return query;
+      const userId = window.KentCommercialScope?.getCommercialUserId?.() || "";
+      return userId ? query.eq("commercial_user_id", userId) : query;
+    }
+
+    function budgetAdjustmentOwnerPayload() {
+      const user = window.KentCommercialScope?.getUser?.() || null;
+      const userId = window.KentCommercialScope?.getCommercialUserId?.() || "";
+      if (!userId || !state.budgetAdjustmentScopeReady) return {};
+      return {
+        commercial_user_id: userId,
+        commercial_identifier: String(user.userId || ""),
+        commercial_name: String(user.name || "")
+      };
     }
 
     function cacheDom() {
@@ -1629,13 +1665,15 @@
     async function loadBudgetAdjustments(year) {
       const adjustments = new Map();
       state.budgetAdjustmentError = "";
-      const { data, error } = await supabaseClient
+      let query = supabaseClient
         .from(BUDGET_ADJUSTMENT_TABLE)
         .select("annee, mois, secteur, source, montant")
         .eq("annee", Number(year))
         .eq("secteur", BUDGET_ADJUSTMENT_SECTOR)
-        .eq("source", BUDGET_ADJUSTMENT_SOURCE)
-        .order("mois", { ascending: true });
+        .eq("source", BUDGET_ADJUSTMENT_SOURCE);
+      query = await applyBudgetAdjustmentScope(query);
+      query = query.order("mois", { ascending: true });
+      const { data, error } = await query;
       if (error) {
         state.budgetAdjustmentError = error.message || "Table d'ajustements budget indisponible.";
         console.warn("Ajustements budget indisponibles", error);
@@ -1658,17 +1696,22 @@
       const safeMonth = Math.max(1, Math.min(12, Number(month) || 1));
       const safeAmount = Math.max(0, Number(amount || 0));
       setStatus(`Sauvegarde du CA partenaires ${MONTH_LABELS[safeMonth - 1]} ${year}...`);
+      await canUseBudgetAdjustmentScope();
       const payload = {
         annee: year,
         mois: safeMonth,
         secteur: BUDGET_ADJUSTMENT_SECTOR,
         source: BUDGET_ADJUSTMENT_SOURCE,
         montant: safeAmount,
-        note: "CA vendeurs partenaires hors ventes personnelles"
+        note: "CA vendeurs partenaires hors ventes personnelles",
+        ...budgetAdjustmentOwnerPayload()
       };
+      const onConflict = state.budgetAdjustmentScopeReady
+        ? "commercial_user_id,annee,mois,secteur,source"
+        : "annee,mois,secteur,source";
       const { error } = await supabaseClient
         .from(BUDGET_ADJUSTMENT_TABLE)
-        .upsert(payload, { onConflict: "annee,mois,secteur,source" });
+        .upsert(payload, { onConflict });
       if (error) throw new Error(error.message || "Sauvegarde impossible.");
       state.budgetAdjustments.set(safeMonth, safeAmount);
       applyView();
