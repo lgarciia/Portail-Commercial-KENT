@@ -1011,7 +1011,8 @@
       recommendationClientId: "",
       lastAddedClientNumero: "",
       accountChoiceResolver: null,
-      accountChoiceOptions: []
+      accountChoiceOptions: [],
+      portalSessionUser: null
     };
 
     const dom = {};
@@ -1032,6 +1033,52 @@
       conditionnements: "kent_industrie_cache_conditionnements",
       devisCounterYearPrefix: "kent_industrie_devis_counter_year_"
     };
+
+    async function loadPortalSessionUser() {
+      try {
+        const response = await fetch("/api/session", {
+          cache: "no-store",
+          credentials: "same-origin"
+        });
+        if (!response.ok) {
+          state.portalSessionUser = null;
+          return null;
+        }
+
+        const payload = await response.json();
+        const user = payload?.user || null;
+        state.portalSessionUser = user?.dbUserId ? user : null;
+        return state.portalSessionUser;
+      } catch (error) {
+        console.warn("Session portail indisponible:", error.message || error);
+        state.portalSessionUser = null;
+        return null;
+      }
+    }
+
+    async function ensurePortalSessionUser() {
+      if (!state.portalSessionUser) await loadPortalSessionUser();
+      return state.portalSessionUser;
+    }
+
+    function getCommercialOwnershipPayload() {
+      const user = state.portalSessionUser || {};
+      const dbUserId = String(user.dbUserId || "").trim();
+      if (!dbUserId) return {};
+
+      return {
+        commercial_user_id: dbUserId,
+        commercial_identifier: String(user.id || "").trim() || null,
+        commercial_name: String(user.name || "").trim() || null
+      };
+    }
+
+    function withCommercialOwnership(payload) {
+      return {
+        ...payload,
+        ...getCommercialOwnershipPayload()
+      };
+    }
 
     function cacheDom() {
       dom.clientSearch = document.getElementById("clientSearch");
@@ -2283,12 +2330,14 @@
         return;
       }
 
+      await ensurePortalSessionUser();
       const payload = {
         nom,
         numero_compte: numeroCompte,
         telephone: telephone || null,
         adresse: adresse || null,
-        plaque_id: plaqueId
+        plaque_id: plaqueId,
+        ...getCommercialOwnershipPayload()
       };
 
       try {
@@ -3482,6 +3531,7 @@
 
     async function archiveCommercialDocument({ type, doc, filename, client, dateVisite, montantHt, devisNumber, lineCount, visitType, account = null, visitId = null }) {
       if (!doc || !filename) return false;
+      await ensurePortalSessionUser();
       const pdfBlob = doc.output("blob");
       const storagePath = buildDocumentStoragePath(type, filename, dateVisite);
       const { error: uploadError } = await supabaseClient.storage
@@ -3509,7 +3559,8 @@
         numero_document: devisNumber || null,
         type_visite: visitType || null,
         nb_lignes: Number(lineCount || 0),
-        taille_octets: Number(pdfBlob.size || 0)
+        taille_octets: Number(pdfBlob.size || 0),
+        ...getCommercialOwnershipPayload()
       };
 
       const { data: insertedDocument, error: insertError } = await supabaseClient
@@ -4025,16 +4076,18 @@
     }
 
     async function insertVisitRecordWithPhoneFallback(payload, originalTypeVisite) {
+      await ensurePortalSessionUser();
+      const insertPayload = withCommercialOwnership(payload);
       const { data, error } = await supabaseClient
         .from("industrie_visites")
-        .insert(payload)
+        .insert(insertPayload)
         .select()
         .single();
 
       if (!error) return { data, usedFallback: false };
       if (!shouldRetryPhoneOrderAsSale(error, originalTypeVisite)) throw error;
 
-      const fallbackPayload = buildVisitPayload(payload.client_id, payload.date_visite, originalTypeVisite, payload.note, payload.total_commande, true);
+      const fallbackPayload = withCommercialOwnership(buildVisitPayload(payload.client_id, payload.date_visite, originalTypeVisite, payload.note, payload.total_commande, true));
       const { data: fallbackData, error: fallbackError } = await supabaseClient
         .from("industrie_visites")
         .insert(fallbackPayload)
@@ -4340,6 +4393,7 @@
 
       try {
         setStatus("Connexion à Supabase...", "info");
+        await loadPortalSessionUser();
 
         const [clients, clientComptes, produits, tarifsPlaques, plaques, conditionnements] = await Promise.all([
           fetchClients(),
