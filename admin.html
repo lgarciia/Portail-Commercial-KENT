@@ -234,17 +234,19 @@
       color:rgba(255,255,255,.78);min-height:25px;padding:0 8px;font-size:11px;font-weight:1000;
     }
     .finance-month-button.active{background:rgba(56,189,248,.18);border-color:rgba(56,189,248,.38);color:#e0f2fe}
-    .finance-month-detail{
-      margin-top:12px;border:1px solid rgba(56,189,248,.20);border-radius:20px;
-      background:rgba(14,165,233,.07);padding:13px;display:grid;gap:10px;
+    .finance-month-dialog{width:min(760px,calc(100vw - 28px))}
+    .finance-month-popup{display:grid;gap:10px;margin-top:12px}
+    .finance-month-popup-row{
+      display:grid;grid-template-columns:1.2fr repeat(3,minmax(120px,.8fr));gap:10px;align-items:center;
+      border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(255,255,255,.045);padding:11px 12px;
     }
-    .finance-month-detail h3{margin:0;font-size:18px;letter-spacing:-.03em}
-    .finance-month-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-    .finance-month-detail-card{border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(255,255,255,.04);padding:10px}
-    .finance-month-detail-card.positive{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.07)}
-    .finance-month-detail-card.negative{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.075)}
-    .finance-month-detail-card span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
-    .finance-month-detail-card strong{display:block;margin-top:5px;font-size:18px}
+    .finance-month-popup-row.header{
+      background:rgba(255,255,255,.03);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950;
+    }
+    .finance-month-popup-row strong{font-size:15px}
+    .finance-month-popup-row span{color:var(--muted);font-size:12px;font-weight:850}
+    .finance-month-popup-row .positive{color:#86efac}
+    .finance-month-popup-row .negative{color:#fca5a5}
     .finance-legend{display:flex;gap:9px;flex-wrap:wrap;color:var(--muted);font-size:12px;font-weight:900}
     .finance-legend span{display:inline-flex;align-items:center;gap:6px}
     .finance-dot{width:9px;height:9px;border-radius:999px;display:inline-block}
@@ -381,7 +383,6 @@
       .layout,.overview-grid,.security-grid{grid-template-columns:1fr}
       .manager-grid{grid-template-columns:1fr}
       .finance-summary,.performance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .finance-month-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .finance-row{grid-template-columns:minmax(180px,1.1fr) repeat(4,minmax(100px,.7fr)) 34px}
       .finance-chart{overflow-x:auto}
     }
@@ -392,7 +393,7 @@
       .role-grid,.health-grid{grid-template-columns:1fr}
       .finance-head{flex-direction:column}
       .finance-summary,.performance-grid{grid-template-columns:1fr}
-      .finance-month-detail-grid{grid-template-columns:1fr}
+      .finance-month-popup-row{grid-template-columns:1fr}
       .finance-row,.finance-seller{grid-template-columns:1fr}
       .form-grid{grid-template-columns:1fr}
       .search{max-width:none}
@@ -778,6 +779,16 @@
     </div>
   </dialog>
 
+  <dialog id="annualMonthDialog" class="finance-month-dialog">
+    <div class="modal-body">
+      <h3 data-annual-month-title>Analyse du mois</h3>
+      <div data-annual-month-body></div>
+      <div class="modal-actions">
+        <button class="btn ghost" type="button" data-close-annual-month>Fermer</button>
+      </div>
+    </div>
+  </dialog>
+
   <div class="toast" data-toast></div>
   <div class="sync-overlay" data-sync-overlay aria-live="polite" aria-hidden="true">
     <div class="sync-card">
@@ -854,6 +865,9 @@
         confirmDialog: document.getElementById("confirmDialog"),
         confirmTitle: document.querySelector("[data-confirm-title]"),
         confirmText: document.querySelector("[data-confirm-text]"),
+        annualMonthDialog: document.getElementById("annualMonthDialog"),
+        annualMonthTitle: document.querySelector("[data-annual-month-title]"),
+        annualMonthBody: document.querySelector("[data-annual-month-body]"),
         syncOverlay: document.querySelector("[data-sync-overlay]"),
         syncTitle: document.querySelector("[data-sync-title]"),
         syncText: document.querySelector("[data-sync-text]"),
@@ -920,8 +934,7 @@
           if (monthButton) {
             event.stopPropagation();
             const month = Number(monthButton.dataset.financeAnnualMonth || 0);
-            state.selectedAnnualMonth = state.selectedAnnualMonth === month ? 0 : month;
-            renderFinance();
+            openAnnualMonthDialog(month);
             return;
           }
           const sourceButton = event.target.closest("[data-finance-source-month]");
@@ -979,6 +992,12 @@
           state.pendingConfirm = null;
           els.confirmDialog.close();
           if (typeof action === "function") await action();
+        });
+        document.querySelector("[data-close-annual-month]").addEventListener("click", closeAnnualMonthDialog);
+        els.annualMonthDialog.addEventListener("close", function(){
+          if (!state.selectedAnnualMonth) return;
+          state.selectedAnnualMonth = 0;
+          renderFinance();
         });
       }
 
@@ -1646,7 +1665,6 @@
         ]);
 
         els.financeBody.innerHTML = [
-          financeSourceNote(model),
           '<div class="finance-legend">',
             '<span><i class="finance-dot real"></i> Reel mensuel</span>',
             '<span><i class="finance-dot budget"></i> Budget mensuel</span>',
@@ -1666,7 +1684,6 @@
               ].join("");
             }).join(""),
           '</div>',
-          renderAnnualMonthDetail(model),
           '<div class="finance-table" style="margin-top:14px">',
             renderFinanceHeaderRow("Responsable"),
             model.groups.map(function(group){ return renderFinanceGroupRow(group); }).join(""),
@@ -1675,9 +1692,29 @@
         ].join("");
       }
 
-      function renderAnnualMonthDetail(model){
-        const month = Number(state.selectedAnnualMonth || 0);
-        if (!month) return '';
+      function openAnnualMonthDialog(month){
+        const selectedMonth = Number(month || 0);
+        if (!selectedMonth || !state.financePayload) return;
+        state.selectedAnnualMonth = selectedMonth;
+        renderFinance();
+        renderAnnualMonthDialog(buildFinanceModel(), selectedMonth);
+        if (!els.annualMonthDialog.open) els.annualMonthDialog.showModal();
+      }
+
+      function closeAnnualMonthDialog(){
+        state.selectedAnnualMonth = 0;
+        if (els.annualMonthDialog.open) els.annualMonthDialog.close();
+        renderFinance();
+      }
+
+      function renderAnnualMonthDialog(model, month){
+        const safeMonth = Math.max(1, Math.min(12, Number(month || 1)));
+        const index = safeMonth - 1;
+        els.annualMonthTitle.textContent = "Analyse de " + monthLongLabel(index);
+        els.annualMonthBody.innerHTML = renderAnnualMonthRows(model, safeMonth);
+      }
+
+      function renderAnnualMonthRows(model, month){
         const index = month - 1;
         const actual = Number(model.total.monthlyActual[index] || 0);
         const budget = Number(model.total.monthlyBudget[index] || 0);
@@ -1685,34 +1722,29 @@
         const cumulativeActual = sumFirstMonths(model.total.monthlyActual, month);
         const cumulativeBudget = sumFirstMonths(model.total.monthlyBudget, month);
         const cumulativeGap = roundClientMoney(cumulativeActual - cumulativeBudget);
-        const source = financeSourceForMonth(model.period.year, month) === "real"
-          ? "reel importe"
-          : "ventes saisies";
         return [
-          '<section class="finance-month-detail">',
-            '<h3>Detail ' + escapeHtml(monthLongLabel(index)) + ' - source : ' + escapeHtml(source) + '</h3>',
-            '<div class="finance-month-detail-grid">',
-              renderAnnualDetailCard("CA reel mois", formatEuro(actual)),
-              renderAnnualDetailCard("Budget mois", formatEuro(budget)),
-              renderAnnualDetailCard("Ecart mois", (gap > 0 ? "+" : "") + formatEuro(gap), gap >= 0 ? "positive" : "negative"),
-              renderAnnualDetailCard("Ecart cumule", (cumulativeGap > 0 ? "+" : "") + formatEuro(cumulativeGap), cumulativeGap >= 0 ? "positive" : "negative"),
+          '<div class="finance-month-popup">',
+            '<div class="finance-month-popup-row header">',
+              '<span>Analyse</span>',
+              '<span>CA reel</span>',
+              '<span>Budget</span>',
+              '<span>Ecart</span>',
             '</div>',
-            '<div class="finance-month-detail-grid">',
-              renderAnnualDetailCard("CA cumule", formatEuro(cumulativeActual)),
-              renderAnnualDetailCard("Budget cumule", formatEuro(cumulativeBudget)),
-              renderAnnualDetailCard("Mois analyse", monthLongLabel(index)),
-              renderAnnualDetailCard("Source", source),
-            '</div>',
-          '</section>'
+            renderAnnualMonthRow(monthLongLabel(index), actual, budget, gap),
+            renderAnnualMonthRow("Cumule a date", cumulativeActual, cumulativeBudget, cumulativeGap),
+          '</div>'
         ].join("");
       }
 
-      function renderAnnualDetailCard(label, value, tone){
+      function renderAnnualMonthRow(label, actual, budget, gap){
+        const tone = Number(gap || 0) >= 0 ? "positive" : "negative";
         return [
-          '<article class="finance-month-detail-card ' + escapeHtml(tone || '') + '">',
-            '<span>' + escapeHtml(label) + '</span>',
-            '<strong>' + escapeHtml(value) + '</strong>',
-          '</article>'
+          '<div class="finance-month-popup-row">',
+            '<strong>' + escapeHtml(label) + '</strong>',
+            '<span>' + formatEuro(actual) + '</span>',
+            '<span>' + formatEuro(budget) + '</span>',
+            '<span class="' + tone + '">' + (gap > 0 ? "+" : "") + formatEuro(gap) + '</span>',
+          '</div>'
         ].join("");
       }
 
