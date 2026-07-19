@@ -118,15 +118,16 @@
   async function ownerContext(){
     const user = await loadScopeUser();
     const id = commercialIdFromUser(user);
-    if (!id || !(await canUseOwnershipColumns())) {
+    if (!id) {
       return { user, id: "", payload: {} };
     }
+    canUseOwnershipColumns().catch(() => {});
     return {
       user,
       id,
       payload: {
         commercial_user_id: id,
-        commercial_identifier: String(user.userId || ""),
+        commercial_identifier: String(user.userId || user.id || ""),
         commercial_name: String(user.name || "")
       }
     };

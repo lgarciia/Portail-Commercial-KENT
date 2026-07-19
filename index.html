@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Hub • Apps Commercial</title>
   <script src="./shared-ui.js"></script>
+  <script src="./commercial-scope.js"></script>
   <link rel="stylesheet" href="./shared-theme.css" />
 
   <!-- ✅ THEME PRELOAD (no flash) -->
@@ -586,7 +587,7 @@
       <div class="brand">
         <div class="logo"></div>
         <div class="title">
-          <b>Portail Commercial - Guillaume</b>
+          <b id="portalCommercialTitle">Portail Commercial</b>
           <span>Accès rapide aux outils</span>
         </div>
       </div>
@@ -832,6 +833,7 @@
   // ===== Search filter =====
   const search = document.getElementById("search");
   const yearSelect = document.getElementById("yearSelect");
+  const portalCommercialTitle = document.getElementById("portalCommercialTitle");
   const apps = [...document.querySelectorAll(".app")];
   const cards = [...document.querySelectorAll(".card")];
   const RELEASE_NOTES = [
@@ -862,6 +864,37 @@
   const releaseCount = document.getElementById("releaseCount");
   const releaseList = document.getElementById("releaseList");
   const releaseMeta = document.getElementById("releaseMeta");
+
+  function titleCase(value){
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/(^|[\s.-])([\p{L}])/gu, (_, sep, letter) => sep + letter.toUpperCase());
+  }
+
+  function commercialLabelFromUser(user){
+    const identifier = String(user?.id || user?.userId || "").trim();
+    const identifierFirst = identifier.split(/[.\s_-]+/).filter(Boolean)[0];
+    if (identifierFirst && !/^legacy/i.test(identifierFirst)) return titleCase(identifierFirst);
+
+    const name = String(user?.name || "").trim();
+    const nameFirst = name.split(/\s+/).filter(Boolean)[0];
+    return nameFirst ? titleCase(nameFirst) : "";
+  }
+
+  async function hydrateCommercialTitle(){
+    if (!portalCommercialTitle) return;
+    try{
+      const user = window.KentCommercialScope && typeof window.KentCommercialScope.load === "function"
+        ? await window.KentCommercialScope.load()
+        : null;
+      const label = commercialLabelFromUser(user);
+      portalCommercialTitle.textContent = label ? `Portail Commercial - ${label}` : "Portail Commercial";
+    }catch(error){
+      console.warn("Nom commercial indisponible:", error?.message || error);
+      portalCommercialTitle.textContent = "Portail Commercial";
+    }
+  }
 
   function getReadReleaseIds(){
     try{
@@ -934,6 +967,7 @@
     });
   }
   search.addEventListener("input", applyFilter);
+  hydrateCommercialTitle();
   renderReleaseNotes();
 
   if (releaseBtn && releasePanel) {
