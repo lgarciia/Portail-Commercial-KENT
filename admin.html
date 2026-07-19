@@ -208,6 +208,20 @@
     .finance-bar{width:16px;border-radius:999px 999px 4px 4px;min-height:3px}
     .finance-bar.real{background:linear-gradient(180deg,#38bdf8,#2563eb)}
     .finance-bar.budget{background:linear-gradient(180deg,#facc15,#f59e0b)}
+    .finance-source-toggle{
+      border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.045);
+      color:rgba(255,255,255,.62);min-height:25px;padding:0 7px;font-size:9px;font-weight:1000;
+      white-space:nowrap;
+    }
+    .finance-source-toggle.active{
+      background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.34);color:#bbf7d0;
+    }
+    .finance-source-toggle:disabled{opacity:.45;cursor:not-allowed}
+    .finance-source-note{
+      margin:8px 0 0;border:1px solid rgba(56,189,248,.18);border-radius:16px;
+      background:rgba(14,165,233,.07);color:#dbeafe;padding:10px 12px;font-size:12px;font-weight:850;
+    }
+    .finance-source-note.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08);color:#fde68a}
     .finance-legend{display:flex;gap:9px;flex-wrap:wrap;color:var(--muted);font-size:12px;font-weight:900}
     .finance-legend span{display:inline-flex;align-items:center;gap:6px}
     .finance-dot{width:9px;height:9px;border-radius:999px;display:inline-block}
@@ -764,6 +778,9 @@
         activeView: "pilotage",
         financeView: "day",
         financePayload: null,
+        financeSettings: [],
+        financeSettingsReady: false,
+        financeSettingsWarning: "",
         expandedFinanceManager: "",
         auditLog: [],
         pendingConfirm: null
@@ -860,6 +877,12 @@
           });
         });
         els.financeBody.addEventListener("click", function(event){
+          const sourceButton = event.target.closest("[data-finance-source-month]");
+          if (sourceButton) {
+            event.stopPropagation();
+            saveFinanceMonthSource(Number(sourceButton.dataset.financeSourceMonth || 0));
+            return;
+          }
           const button = event.target.closest("[data-finance-manager]");
           if (!button) return;
           const id = button.dataset.financeManager || "";
@@ -1218,8 +1241,14 @@
         const parts = parseIsoParts(day);
         setLoading(true, "Synchronisation finance", "Chargement des ventes, budgets et rattachements responsables.");
         try{
-          const payload = await fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day));
+          const [payload, settingsPayload] = await Promise.all([
+            fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day)),
+            fetchJson("/api/admin-finance-settings?year=" + parts.year)
+          ]);
           state.financePayload = payload;
+          state.financeSettings = Array.isArray(settingsPayload.settings) ? settingsPayload.settings : [];
+          state.financeSettingsReady = settingsPayload.ready !== false;
+          state.financeSettingsWarning = settingsPayload.warning || "";
           state.expandedFinanceManager = "";
           renderFinance();
           showToast("Finance admin synchronisee.");
@@ -1228,6 +1257,40 @@
           els.financeSummary.innerHTML = '<article class="finance-kpi negative"><span>Erreur</span><strong>Indisponible</strong></article>';
           els.financeBody.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Finance indisponible.") + '</div>';
           showToast(error.message || "Finance indisponible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      async function saveFinanceMonthSource(month){
+        if (!month || month < 1 || month > 12) return;
+        const day = els.financeDay.value || todayInputValue();
+        const parts = parseIsoParts(day);
+        const current = financeSourceForMonth(parts.year, month);
+        const nextSource = current === "real" ? "sales" : "real";
+        setLoading(
+          true,
+          "Enregistrement source finance",
+          "Mois " + monthShortLabel(month - 1) + " : passage en " + (nextSource === "real" ? "reel importe" : "ventes saisies") + "."
+        );
+        try{
+          const payload = await fetchJson("/api/admin-finance-settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              year: parts.year,
+              month,
+              source: nextSource
+            })
+          });
+          if (payload.setting) upsertFinanceSetting(payload.setting);
+          state.financeSettingsReady = payload.ready !== false;
+          state.financeSettingsWarning = "";
+          state.expandedFinanceManager = "";
+          renderFinance();
+          showToast("Source finance enregistree : " + monthShortLabel(month - 1) + " en " + (nextSource === "real" ? "reel importe." : "ventes saisies."));
+        }catch(error){
+          showToast(error.message || "Enregistrement source impossible.", true);
         }finally{
           setLoading(false);
         }
@@ -1315,21 +1378,27 @@
 
       function financeValuesForCommercial(commercial, context){
         const metrics = commercial.metrics || {};
-        const monthlyActual = safeMonthly(metrics.caMensuel);
+        const salesMonthly = safeMonthly(metrics.caMensuel);
+        const realMonthly = safeMonthly(metrics.reelMensuel);
+        const monthlyActual = salesMonthly.map(function(value, index){
+          return financeSourceForMonth(context.year, index + 1) === "real" ? realMonthly[index] : value;
+        });
         const monthlyBudget = safeMonthly(metrics.budgetMensuel);
         const monthIndex = Math.max(0, Math.min(11, Number(context.month || 1) - 1));
         const dayBudget = budgetForDay(monthlyBudget, context.day);
         const weekBudget = budgetForDateRange(monthlyBudget, context.period.weekStart, context.period.weekEnd, context.year);
         const monthBudget = monthlyBudget[monthIndex] || 0;
         const yearBudget = Number(metrics.budgetAnnuel || monthlyBudget.reduce(function(sum, value){ return sum + value; }, 0));
-        const yearActual = Number(metrics.caAnnee || monthlyActual.reduce(function(sum, value){ return sum + value; }, 0));
+        const yearActual = monthlyActual.reduce(function(sum, value){ return sum + value; }, 0);
         const yearBudgetToDate = budgetToDate(monthlyBudget, context.day);
 
         return {
           day: roundClientMoney(metrics.caJour || 0),
           week: roundClientMoney(metrics.caHebdo || 0),
-          month: roundClientMoney(metrics.caMois || 0),
+          month: roundClientMoney(monthlyActual[monthIndex] || 0),
           year: roundClientMoney(yearActual),
+          salesMonthly,
+          realMonthly,
           dayBudget,
           weekBudget,
           monthBudget: roundClientMoney(monthBudget),
@@ -1358,6 +1427,27 @@
         if (state.financeView === "month") return { actual: values.month, budget: values.monthBudget };
         if (state.financeView === "year") return { actual: values.year, budget: values.yearBudget };
         return { actual: values.day, budget: values.dayBudget };
+      }
+
+      function financeSourceForMonth(year, month){
+        const setting = state.financeSettings.find(function(item){
+          return Number(item.year) === Number(year) && Number(item.month) === Number(month);
+        });
+        return setting && setting.source === "real" ? "real" : "sales";
+      }
+
+      function upsertFinanceSetting(setting){
+        const clean = {
+          year: Number(setting.year || setting.annee || 0),
+          month: Number(setting.month || setting.mois || 0),
+          source: setting.source === "real" ? "real" : "sales",
+          updatedBy: setting.updatedBy || setting.updated_by || "",
+          updatedAt: setting.updatedAt || setting.updated_at || ""
+        };
+        state.financeSettings = state.financeSettings.filter(function(item){
+          return !(Number(item.year) === clean.year && Number(item.month) === clean.month);
+        });
+        state.financeSettings.push(clean);
       }
 
       function finalizeFinanceGroup(group){
@@ -1419,8 +1509,9 @@
 
         const rows = model.groups.map(function(group){ return renderFinanceGroupRow(group); }).join("");
         els.financeBody.innerHTML = [
+          state.financeView === "month" ? financeSourceNote(model) : '',
           '<div class="finance-legend">',
-            '<span><i class="finance-dot real"></i> Reel Supabase</span>',
+            '<span><i class="finance-dot real"></i> ' + escapeHtml(config.sourceLabel) + '</span>',
             '<span><i class="finance-dot budget"></i> Budget prorate jours ouvres</span>',
           '</div>',
           '<div class="finance-table" style="margin-top:12px">',
@@ -1478,6 +1569,7 @@
         ]);
 
         els.financeBody.innerHTML = [
+          financeSourceNote(model),
           '<div class="finance-legend">',
             '<span><i class="finance-dot real"></i> Reel mensuel</span>',
             '<span><i class="finance-dot budget"></i> Budget mensuel</span>',
@@ -1492,6 +1584,7 @@
                     '<div class="finance-bar budget" title="' + formatEuro(budget) + '" style="height:' + Math.max(3, (budget / max) * 100) + '%"></div>',
                   '</div>',
                   '<span>' + escapeHtml(monthShortLabel(index)) + '</span>',
+                  renderFinanceSourceButton(model.period.year, index + 1),
                 '</div>'
               ].join("");
             }).join(""),
@@ -1600,6 +1693,34 @@
         ].join("");
       }
 
+      function renderFinanceSourceButton(year, month){
+        const source = financeSourceForMonth(year, month);
+        const isReal = source === "real";
+        const disabled = !state.financeSettingsReady;
+        return [
+          '<button class="finance-source-toggle ' + (isReal ? 'active' : '') + '" type="button" ',
+            'data-finance-source-month="' + month + '" ',
+            disabled ? 'disabled title="Lance le SQL finance_source_settings pour enregistrer ce choix"' : '',
+          '>',
+            isReal ? 'Reel actif' : 'Mettre au reel',
+          '</button>'
+        ].join("");
+      }
+
+      function financeSourceNote(model){
+        if (!state.financeSettingsReady) {
+          return '<div class="finance-source-note warn">' + escapeHtml(state.financeSettingsWarning || "Parametrage source finance non pret : les mois restent en ventes saisies tant que le SQL n'est pas lance.") + '</div>';
+        }
+        if (state.financeView === "month") {
+          const source = financeSourceForMonth(model.period.year, model.period.month);
+          return '<div class="finance-source-note">Source du mois ' + escapeHtml(monthShortLabel(model.period.month - 1)) + ' : ' + (source === "real" ? "reel importe Supabase" : "ventes saisies dans l'app") + '.</div>';
+        }
+        const realMonths = Array.from({ length: 12 }, function(_, index){ return index + 1; })
+          .filter(function(month){ return financeSourceForMonth(model.period.year, month) === "real"; })
+          .map(function(month){ return monthShortLabel(month - 1); });
+        return '<div class="finance-source-note">Source CA annuel hybride : ' + (realMonths.length ? "reel importe pour " + realMonths.join(", ") + ", ventes saisies pour les autres mois." : "ventes saisies pour tous les mois.") + '</div>';
+      }
+
       function financeCell(value, signed){
         const number = roundClientMoney(value || 0);
         const label = signed && number > 0 ? "+" + formatEuro(number) : formatEuro(number);
@@ -1607,9 +1728,9 @@
       }
 
       function financeViewConfig(){
-        if (state.financeView === "week") return { actualLabel: "CA semaine reel", budgetLabel: "Budget semaine" };
-        if (state.financeView === "month") return { actualLabel: "CA mois reel", budgetLabel: "Budget mois" };
-        return { actualLabel: "CA jour reel", budgetLabel: "Budget jour" };
+        if (state.financeView === "week") return { actualLabel: "CA semaine ventes saisies", budgetLabel: "Budget semaine", sourceLabel: "Ventes saisies" };
+        if (state.financeView === "month") return { actualLabel: "CA mois selon source", budgetLabel: "Budget mois", sourceLabel: "Source mois selectionnee" };
+        return { actualLabel: "CA jour ventes saisies", budgetLabel: "Budget jour", sourceLabel: "Ventes saisies" };
       }
 
       function budgetForDay(monthlyBudget, isoDate){
