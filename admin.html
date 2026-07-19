@@ -161,6 +161,7 @@
     .finance-head h2{margin:8px 0 6px;font-size:clamp(30px,3vw,44px);letter-spacing:-.055em;line-height:1}
     .finance-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap;justify-content:flex-end}
     .finance-controls .field{min-width:180px}
+    .finance-controls .field.compact{min-width:150px}
     .finance-nav{
       display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;margin-bottom:8px;
     }
@@ -228,6 +229,22 @@
       background:rgba(14,165,233,.07);color:#dbeafe;padding:10px 12px;font-size:12px;font-weight:850;
     }
     .finance-source-note.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08);color:#fde68a}
+    .finance-month-button{
+      border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.045);
+      color:rgba(255,255,255,.78);min-height:25px;padding:0 8px;font-size:11px;font-weight:1000;
+    }
+    .finance-month-button.active{background:rgba(56,189,248,.18);border-color:rgba(56,189,248,.38);color:#e0f2fe}
+    .finance-month-detail{
+      margin-top:12px;border:1px solid rgba(56,189,248,.20);border-radius:20px;
+      background:rgba(14,165,233,.07);padding:13px;display:grid;gap:10px;
+    }
+    .finance-month-detail h3{margin:0;font-size:18px;letter-spacing:-.03em}
+    .finance-month-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+    .finance-month-detail-card{border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(255,255,255,.04);padding:10px}
+    .finance-month-detail-card.positive{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.07)}
+    .finance-month-detail-card.negative{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.075)}
+    .finance-month-detail-card span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .finance-month-detail-card strong{display:block;margin-top:5px;font-size:18px}
     .finance-legend{display:flex;gap:9px;flex-wrap:wrap;color:var(--muted);font-size:12px;font-weight:900}
     .finance-legend span{display:inline-flex;align-items:center;gap:6px}
     .finance-dot{width:9px;height:9px;border-radius:999px;display:inline-block}
@@ -364,6 +381,7 @@
       .layout,.overview-grid,.security-grid{grid-template-columns:1fr}
       .manager-grid{grid-template-columns:1fr}
       .finance-summary,.performance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .finance-month-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .finance-row{grid-template-columns:minmax(180px,1.1fr) repeat(4,minmax(100px,.7fr)) 34px}
       .finance-chart{overflow-x:auto}
     }
@@ -374,6 +392,7 @@
       .role-grid,.health-grid{grid-template-columns:1fr}
       .finance-head{flex-direction:column}
       .finance-summary,.performance-grid{grid-template-columns:1fr}
+      .finance-month-detail-grid{grid-template-columns:1fr}
       .finance-row,.finance-seller{grid-template-columns:1fr}
       .form-grid{grid-template-columns:1fr}
       .search{max-width:none}
@@ -477,6 +496,10 @@
             <div class="field">
               <label>Date d'analyse</label>
               <input type="date" data-finance-day>
+            </div>
+            <div class="field compact">
+              <label>Mois analyse</label>
+              <select data-finance-month></select>
             </div>
             <button class="btn green" type="button" data-finance-refresh>Synchroniser</button>
           </div>
@@ -787,6 +810,7 @@
         financeSettingsReady: false,
         financeSettingsWarning: "",
         expandedFinanceManager: "",
+        selectedAnnualMonth: 0,
         auditLog: [],
         pendingConfirm: null
       };
@@ -809,6 +833,7 @@
         hiddenUsers: document.querySelector("[data-hidden-users]"),
         auditList: document.querySelector("[data-audit-list]"),
         financeDay: document.querySelector("[data-finance-day]"),
+        financeMonth: document.querySelector("[data-finance-month]"),
         financeRefresh: document.querySelector("[data-finance-refresh]"),
         financePills: Array.from(document.querySelectorAll("[data-finance-view]")),
         financeSummary: document.querySelector("[data-finance-summary]"),
@@ -847,6 +872,8 @@
 
       function init(){
         if (els.financeDay) els.financeDay.value = todayInputValue();
+        populateFinanceMonths();
+        syncFinanceMonthFromDate();
         bindEvents();
         loadSession();
         loadAdminData();
@@ -870,7 +897,14 @@
           els.relationForm.scrollIntoView({ behavior: "smooth", block: "start" });
         });
         els.financeRefresh.addEventListener("click", loadFinanceData);
-        els.financeDay.addEventListener("change", loadFinanceData);
+        els.financeDay.addEventListener("change", function(){
+          syncFinanceMonthFromDate();
+          loadFinanceData();
+        });
+        els.financeMonth.addEventListener("change", function(){
+          applyFinanceMonthToDate(Number(els.financeMonth.value || 1));
+          loadFinanceData();
+        });
         els.financePills.forEach(function(button){
           button.addEventListener("click", function(){
             state.financeView = button.dataset.financeView || "day";
@@ -882,6 +916,14 @@
           });
         });
         els.financeBody.addEventListener("click", function(event){
+          const monthButton = event.target.closest("[data-finance-annual-month]");
+          if (monthButton) {
+            event.stopPropagation();
+            const month = Number(monthButton.dataset.financeAnnualMonth || 0);
+            state.selectedAnnualMonth = state.selectedAnnualMonth === month ? 0 : month;
+            renderFinance();
+            return;
+          }
           const sourceButton = event.target.closest("[data-finance-source-month]");
           if (sourceButton) {
             event.stopPropagation();
@@ -1244,6 +1286,7 @@
       async function loadFinanceData(){
         const day = els.financeDay.value || todayInputValue();
         const parts = parseIsoParts(day);
+        syncFinanceMonthFromDate();
         setLoading(true, "Synchronisation finance", "Chargement des ventes, budgets et rattachements responsables.");
         try{
           const [payload, settingsPayload] = await Promise.all([
@@ -1265,6 +1308,28 @@
         }finally{
           setLoading(false);
         }
+      }
+
+      function populateFinanceMonths(){
+        if (!els.financeMonth) return;
+        els.financeMonth.innerHTML = Array.from({ length: 12 }, function(_, index){
+          const month = index + 1;
+          return '<option value="' + month + '">' + escapeHtml(monthLongLabel(index)) + '</option>';
+        }).join("");
+      }
+
+      function syncFinanceMonthFromDate(){
+        if (!els.financeMonth) return;
+        const parts = parseIsoParts(els.financeDay.value || todayInputValue());
+        els.financeMonth.value = String(parts.month);
+      }
+
+      function applyFinanceMonthToDate(month){
+        const current = parseIsoParts(els.financeDay.value || todayInputValue());
+        const safeMonth = Math.min(12, Math.max(1, Number(month || current.month)));
+        const lastDay = new Date(Date.UTC(current.year, safeMonth, 0)).getUTCDate();
+        const safeDay = Math.min(current.day, lastDay);
+        els.financeDay.value = current.year + '-' + String(safeMonth).padStart(2, '0') + '-' + String(safeDay).padStart(2, '0');
       }
 
       async function saveFinanceMonthSource(month){
@@ -1366,6 +1431,7 @@
           acc.budget += group.budget;
           acc.yearActual += group.yearActual;
           acc.yearBudget += group.yearBudget;
+          acc.yearActualToDate += group.yearActualToDate;
           acc.yearBudgetToDate += group.yearBudgetToDate;
           group.monthlyActual.forEach(function(value, index){ acc.monthlyActual[index] += value; });
           group.monthlyBudget.forEach(function(value, index){ acc.monthlyBudget[index] += value; });
@@ -1395,7 +1461,9 @@
         const monthBudget = monthlyBudget[monthIndex] || 0;
         const yearBudget = Number(metrics.budgetAnnuel || monthlyBudget.reduce(function(sum, value){ return sum + value; }, 0));
         const yearActual = monthlyActual.reduce(function(sum, value){ return sum + value; }, 0);
-        const yearBudgetToDate = budgetToDate(monthlyBudget, context.day);
+        const closedMonthLimit = Math.max(0, Math.min(12, Number(context.month || 1) - 1));
+        const yearActualToDate = sumFirstMonths(monthlyActual, closedMonthLimit);
+        const yearBudgetToDate = sumFirstMonths(monthlyBudget, closedMonthLimit);
 
         return {
           day: roundClientMoney(metrics.caJour || 0),
@@ -1408,6 +1476,7 @@
           weekBudget,
           monthBudget: roundClientMoney(monthBudget),
           yearBudget: roundClientMoney(yearBudget),
+          yearActualToDate,
           yearBudgetToDate,
           monthlyActual,
           monthlyBudget,
@@ -1422,6 +1491,7 @@
         group.budget += current.budget;
         group.yearActual += values.year;
         group.yearBudget += values.yearBudget;
+        group.yearActualToDate += values.yearActualToDate;
         group.yearBudgetToDate += values.yearBudgetToDate;
         values.monthlyActual.forEach(function(value, index){ group.monthlyActual[index] += value; });
         values.monthlyBudget.forEach(function(value, index){ group.monthlyBudget[index] += value; });
@@ -1462,8 +1532,9 @@
         group.taux = group.budget ? roundClientMoney((group.actual / group.budget) * 100) : null;
         group.yearActual = roundClientMoney(group.yearActual);
         group.yearBudget = roundClientMoney(group.yearBudget);
+        group.yearActualToDate = roundClientMoney(group.yearActualToDate);
         group.yearBudgetToDate = roundClientMoney(group.yearBudgetToDate);
-        group.yearEcartToDate = roundClientMoney(group.yearActual - group.yearBudgetToDate);
+        group.yearEcartToDate = roundClientMoney(group.yearActualToDate - group.yearBudgetToDate);
         group.monthlyActual = group.monthlyActual.map(roundClientMoney);
         group.monthlyBudget = group.monthlyBudget.map(roundClientMoney);
         group.commercials = group.commercials
@@ -1495,6 +1566,7 @@
           taux: null,
           yearActual: 0,
           yearBudget: 0,
+          yearActualToDate: 0,
           yearBudgetToDate: 0,
           yearEcartToDate: 0,
           monthlyActual: Array.from({ length: 12 }, function(){ return 0; }),
@@ -1567,10 +1639,10 @@
           ...model.total.monthlyBudget
         );
         renderFinanceSummaryCards([
-          { label: "CA annuel reel", value: formatEuro(model.total.yearActual) },
-          { label: "Budget annuel", value: formatEuro(model.total.yearBudget) },
-          { label: "Budget a date", value: formatEuro(model.total.yearBudgetToDate) },
-          { label: "Ecart a date", value: formatEuro(model.total.yearEcartToDate), tone: model.total.yearEcartToDate >= 0 ? "positive" : "negative" }
+          { label: "CA M-1", value: formatEuro(model.total.yearActualToDate) },
+          { label: "Budget M-1", value: formatEuro(model.total.yearBudgetToDate) },
+          { label: "Ecart M-1", value: formatEuro(model.total.yearEcartToDate), tone: model.total.yearEcartToDate >= 0 ? "positive" : "negative" },
+          { label: "Budget annuel", value: formatEuro(model.total.yearBudget) }
         ]);
 
         els.financeBody.innerHTML = [
@@ -1588,17 +1660,59 @@
                     '<div class="finance-bar real" title="' + formatEuro(actual) + '" style="height:' + Math.max(3, (actual / max) * 100) + '%"></div>',
                     '<div class="finance-bar budget" title="' + formatEuro(budget) + '" style="height:' + Math.max(3, (budget / max) * 100) + '%"></div>',
                   '</div>',
-                  '<span>' + escapeHtml(monthShortLabel(index)) + '</span>',
+                  '<button class="finance-month-button ' + (state.selectedAnnualMonth === index + 1 ? 'active' : '') + '" type="button" data-finance-annual-month="' + (index + 1) + '">' + escapeHtml(monthShortLabel(index)) + '</button>',
                   renderFinanceSourceButton(model.period.year, index + 1),
                 '</div>'
               ].join("");
             }).join(""),
           '</div>',
+          renderAnnualMonthDetail(model),
           '<div class="finance-table" style="margin-top:14px">',
             renderFinanceHeaderRow("Responsable"),
             model.groups.map(function(group){ return renderFinanceGroupRow(group); }).join(""),
             renderFinanceTotalRow({ actual: model.total.yearActual, budget: model.total.yearBudget, ecart: model.total.yearActual - model.total.yearBudget, taux: model.total.yearBudget ? (model.total.yearActual / model.total.yearBudget) * 100 : null }),
           '</div>'
+        ].join("");
+      }
+
+      function renderAnnualMonthDetail(model){
+        const month = Number(state.selectedAnnualMonth || 0);
+        if (!month) return '';
+        const index = month - 1;
+        const actual = Number(model.total.monthlyActual[index] || 0);
+        const budget = Number(model.total.monthlyBudget[index] || 0);
+        const gap = roundClientMoney(actual - budget);
+        const cumulativeActual = sumFirstMonths(model.total.monthlyActual, month);
+        const cumulativeBudget = sumFirstMonths(model.total.monthlyBudget, month);
+        const cumulativeGap = roundClientMoney(cumulativeActual - cumulativeBudget);
+        const source = financeSourceForMonth(model.period.year, month) === "real"
+          ? "reel importe"
+          : "ventes saisies";
+        return [
+          '<section class="finance-month-detail">',
+            '<h3>Detail ' + escapeHtml(monthLongLabel(index)) + ' - source : ' + escapeHtml(source) + '</h3>',
+            '<div class="finance-month-detail-grid">',
+              renderAnnualDetailCard("CA reel mois", formatEuro(actual)),
+              renderAnnualDetailCard("Budget mois", formatEuro(budget)),
+              renderAnnualDetailCard("Ecart mois", (gap > 0 ? "+" : "") + formatEuro(gap), gap >= 0 ? "positive" : "negative"),
+              renderAnnualDetailCard("Ecart cumule", (cumulativeGap > 0 ? "+" : "") + formatEuro(cumulativeGap), cumulativeGap >= 0 ? "positive" : "negative"),
+            '</div>',
+            '<div class="finance-month-detail-grid">',
+              renderAnnualDetailCard("CA cumule", formatEuro(cumulativeActual)),
+              renderAnnualDetailCard("Budget cumule", formatEuro(cumulativeBudget)),
+              renderAnnualDetailCard("Mois analyse", monthLongLabel(index)),
+              renderAnnualDetailCard("Source", source),
+            '</div>',
+          '</section>'
+        ].join("");
+      }
+
+      function renderAnnualDetailCard(label, value, tone){
+        return [
+          '<article class="finance-month-detail-card ' + escapeHtml(tone || '') + '">',
+            '<span>' + escapeHtml(label) + '</span>',
+            '<strong>' + escapeHtml(value) + '</strong>',
+          '</article>'
         ].join("");
       }
 
@@ -1888,6 +2002,17 @@
 
       function monthShortLabel(index){
         return ["Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Juil", "Aout", "Sep", "Oct", "Nov", "Dec"][index] || "-";
+      }
+
+      function monthLongLabel(index){
+        return ["Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"][index] || "-";
+      }
+
+      function sumFirstMonths(values, count){
+        const limit = Math.max(0, Math.min(12, Number(count || 0)));
+        return roundClientMoney((values || []).slice(0, limit).reduce(function(sum, value){
+          return sum + Number(value || 0);
+        }, 0));
       }
 
       function roundClientMoney(value){
