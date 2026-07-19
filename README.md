@@ -40,6 +40,7 @@ Portail statique en HTML/CSS/JS avec fichiers de donnees Excel servis directemen
 - Par defaut l'authentification est hybride : Supabase si les comptes existent, puis fallback `PORTAL_USERS`.
 - Plus tard, quand la migration sera totalement validee, `PORTAL_AUTH_SOURCE=supabase` permettra de forcer uniquement Supabase.
 - La console admin utilise `/api/admin-users` et necessite `SUPABASE_SERVICE_ROLE_KEY` dans Vercel. Cette cle doit rester serveur, jamais dans le navigateur.
+- La vue responsable utilise `/api/responsable-dashboard` pour afficher les commerciaux visibles depuis `portal_user_relations`. Les ventes historiques ne sont pas encore rattachees aux utilisateurs.
 
 ## Verification rapide avant push
 

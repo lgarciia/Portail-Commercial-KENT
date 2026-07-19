@@ -10,21 +10,23 @@
   <style>
     :root{
       --bg:#07111f;
-      --panel:rgba(255,255,255,.065);
+      --panel:rgba(255,255,255,.066);
       --panel-soft:rgba(255,255,255,.04);
       --line:rgba(255,255,255,.13);
+      --line-strong:rgba(255,255,255,.22);
       --text:rgba(255,255,255,.94);
       --muted:rgba(255,255,255,.64);
+      --muted-2:rgba(255,255,255,.48);
       --blue:#38bdf8;
       --green:#22c55e;
       --gold:#f59e0b;
+      --purple:#8b5cf6;
+      --red:#ef4444;
       --shadow:0 22px 60px rgba(0,0,0,.42);
     }
     *{box-sizing:border-box}
     body{
-      margin:0;
-      min-height:100vh;
-      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      margin:0;min-height:100vh;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
       color:var(--text);
       background:
         radial-gradient(1100px 720px at 14% -8%, rgba(56,189,248,.18), transparent 58%),
@@ -32,126 +34,120 @@
         radial-gradient(900px 700px at 58% 108%, rgba(245,158,11,.10), transparent 58%),
         var(--bg);
     }
-    .wrap{max-width:1280px;margin:0 auto;padding:28px}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .wrap{max-width:1440px;margin:0 auto;padding:26px}
     .identity{
-      margin-bottom:16px;
-      border:1px solid rgba(255,255,255,.14);
-      background:linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.035));
-      border-radius:22px;
-      padding:13px 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
+      margin-bottom:14px;border:1px solid var(--line);background:linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.035));
+      border-radius:22px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;
       box-shadow:0 14px 34px rgba(0,0,0,.22);
     }
     .identity-left{display:flex;align-items:center;gap:12px;min-width:0}
     .avatar{
-      width:42px;
-      height:42px;
-      border-radius:15px;
-      display:grid;
-      place-items:center;
-      flex:0 0 auto;
+      width:42px;height:42px;border-radius:15px;display:grid;place-items:center;flex:0 0 auto;
       background:linear-gradient(135deg, rgba(56,189,248,.90), rgba(34,197,94,.76));
-      font-weight:1000;
-      box-shadow:0 14px 26px rgba(56,189,248,.20);
+      font-weight:1000;box-shadow:0 14px 26px rgba(56,189,248,.20);
     }
     .identity-copy{display:grid;gap:3px;min-width:0}
-    .identity-copy small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+    .identity-copy small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:11px}
     .identity-copy strong{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .identity-copy span{color:rgba(255,255,255,.72);font-size:13px}
-    .source-chip{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-height:34px;
-      padding:0 12px;
-      border-radius:999px;
-      border:1px solid rgba(34,197,94,.30);
-      background:rgba(34,197,94,.11);
-      color:#bbf7d0;
-      font-size:12px;
-      font-weight:950;
-      white-space:nowrap;
-    }
-    .hero{
-      border:1px solid var(--line);
-      background:linear-gradient(135deg, rgba(15,23,42,.84), rgba(6,78,59,.28));
-      border-radius:28px;
-      padding:28px;
-      box-shadow:var(--shadow);
-      display:flex;
-      justify-content:space-between;
-      gap:20px;
-      align-items:flex-start;
-    }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      height:34px;
-      padding:0 14px;
-      border-radius:999px;
-      border:1px solid rgba(56,189,248,.32);
-      background:rgba(56,189,248,.10);
-      color:#bae6fd;
-      font-weight:950;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      font-size:12px;
-    }
-    h1{font-size:clamp(34px,5vw,60px);line-height:.98;margin:20px 0 12px;letter-spacing:-.055em}
-    p{color:var(--muted);font-size:18px;line-height:1.55;max-width:830px;margin:0}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
     .btn{
-      min-height:44px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:0 18px;
-      border-radius:16px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.075);
-      color:var(--text);
-      text-decoration:none;
-      font-weight:950;
-      white-space:nowrap;
-      transition:.15s;
+      min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 15px;
+      border-radius:15px;border:1px solid var(--line);background:rgba(255,255,255,.075);
+      color:var(--text);text-decoration:none;font-weight:950;white-space:nowrap;transition:.15s;
     }
     .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.12)}
-    .btn.primary{background:linear-gradient(135deg, rgba(56,189,248,.80), rgba(34,197,94,.72));border-color:rgba(255,255,255,.18)}
-    .grid{
-      margin-top:18px;
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:14px;
+    .btn.primary{background:linear-gradient(135deg, rgba(56,189,248,.82), rgba(34,197,94,.70));border-color:rgba(255,255,255,.18)}
+    .btn.green{background:linear-gradient(135deg, rgba(34,197,94,.82), rgba(16,185,129,.62));border-color:rgba(34,197,94,.30)}
+    .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.30);color:#fecaca}
+    .btn.ghost{background:rgba(255,255,255,.04)}
+    .btn.small{min-height:32px;border-radius:12px;padding:0 10px;font-size:12px}
+    .hero{
+      border:1px solid var(--line);background:linear-gradient(135deg, rgba(15,23,42,.84), rgba(6,78,59,.28));
+      border-radius:28px;padding:24px;box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;
     }
-    .card{
-      min-height:148px;
-      border:1px solid var(--line);
-      border-radius:22px;
-      background:var(--panel);
-      box-shadow:0 18px 46px rgba(0,0,0,.20);
-      padding:17px;
+    .badge{
+      display:inline-flex;align-items:center;height:32px;padding:0 13px;border-radius:999px;border:1px solid rgba(56,189,248,.32);
+      background:rgba(56,189,248,.10);color:#bae6fd;font-weight:950;letter-spacing:.08em;text-transform:uppercase;font-size:12px;
     }
-    .card strong{display:block;font-size:18px;margin-bottom:7px}
-    .card span{display:block;color:var(--muted);line-height:1.42;font-size:14px}
-    .pill{
-      margin-top:14px;
-      display:inline-flex;
-      padding:6px 9px;
-      border-radius:999px;
-      background:var(--panel-soft);
-      border:1px solid var(--line);
-      color:rgba(255,255,255,.72);
-      font-size:11px;
-      font-weight:900;
+    h1{font-size:clamp(32px,4.2vw,56px);line-height:.98;margin:18px 0 10px;letter-spacing:-.055em}
+    p{color:var(--muted);font-size:16px;line-height:1.52;max-width:900px;margin:0}
+    .notice{
+      margin-top:14px;border:1px solid rgba(245,158,11,.24);background:rgba(245,158,11,.095);
+      border-radius:18px;padding:12px 14px;color:#fde68a;font-weight:850;line-height:1.45;
     }
-    .ready{border-color:rgba(34,197,94,.24);background:linear-gradient(135deg, rgba(34,197,94,.105), rgba(255,255,255,.04))}
-    @media(max-width:980px){
-      .hero,.identity{flex-direction:column;align-items:flex-start}
-      .actions{justify-content:flex-start}
-      .grid{grid-template-columns:1fr}
+    .stats{margin-top:16px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+    .stat{border:1px solid var(--line);background:var(--panel-soft);border-radius:18px;padding:13px;min-height:84px}
+    .stat span{display:block;color:var(--muted-2);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .stat strong{display:block;margin-top:8px;font-size:26px;letter-spacing:-.035em}
+    .layout{margin-top:16px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,.85fr);gap:16px}
+    .panel{border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.048);box-shadow:0 18px 46px rgba(0,0,0,.22);padding:18px;min-width:0}
+    .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+    .panel h2{margin:0;font-size:22px;letter-spacing:-.03em}
+    .sub{margin-top:5px;color:var(--muted);font-size:13px;line-height:1.4}
+    .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .search{
+      width:100%;max-width:290px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.055);
+      color:var(--text);outline:none;padding:11px 13px;min-height:40px;
+    }
+    .search:focus{border-color:rgba(56,189,248,.62);box-shadow:0 0 0 4px rgba(56,189,248,.14)}
+    .commercial-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .commercial-card{
+      border:1px solid var(--line);border-radius:22px;background:linear-gradient(135deg, rgba(255,255,255,.062), rgba(255,255,255,.032));
+      padding:15px;display:grid;gap:12px;min-width:0;
+    }
+    .commercial-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .commercial-name{display:grid;gap:3px;min-width:0}
+    .commercial-name strong{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .commercial-name span{color:var(--muted);font-size:12px}
+    .chip{
+      display:inline-flex;align-items:center;height:28px;padding:0 9px;border-radius:999px;border:1px solid var(--line);
+      font-size:11px;font-weight:950;white-space:nowrap;
+    }
+    .chip-principal{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.28);color:#fde68a}
+    .chip-exceptionnel{background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.30);color:#ddd6fe}
+    .chip-none{background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.22);color:#cbd5e1}
+    .metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .metric{
+      border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(3,7,18,.18);padding:10px;
+    }
+    .metric span{display:block;color:var(--muted-2);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .metric strong{display:block;margin-top:5px;font-size:15px;color:#e5e7eb}
+    .commercial-foot{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:12px}
+    .relations-list{display:grid;gap:10px}
+    .relation-row{
+      border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.045);padding:12px;
+      display:grid;gap:7px;
+    }
+    .relation-row strong{font-size:14px}
+    .relation-row span{color:var(--muted);font-size:12px}
+    .timeline{display:grid;gap:10px}
+    .step{
+      border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.04);padding:13px;
+      display:grid;gap:6px;
+    }
+    .step strong{font-size:15px}
+    .step span{color:var(--muted);font-size:13px;line-height:1.4}
+    .empty{border:1px dashed rgba(255,255,255,.18);border-radius:18px;padding:18px;color:var(--muted);text-align:center;background:rgba(255,255,255,.03)}
+    .toast{
+      position:fixed;right:22px;bottom:22px;z-index:20;display:none;max-width:min(460px,calc(100vw - 44px));
+      border:1px solid var(--line);border-radius:18px;padding:13px 15px;background:#0f172a;
+      box-shadow:0 20px 60px rgba(0,0,0,.36);font-weight:850;color:#fff;
+    }
+    .toast.show{display:block}
+    .toast.error{border-color:rgba(239,68,68,.38);background:#2a1118;color:#fecaca}
+    .loading{opacity:.62;pointer-events:none}
+    @media(max-width:1120px){
+      .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .layout{grid-template-columns:1fr}
+    }
+    @media(max-width:760px){
+      .wrap{padding:16px}
+      .hero,.identity,.panel-head{display:flex;flex-direction:column;align-items:flex-start}
+      .stats,.commercial-grid{grid-template-columns:1fr}
+      .search{max-width:none}
     }
   </style>
 </head>
@@ -161,12 +157,17 @@
       <div class="identity-left">
         <span class="avatar" aria-hidden="true">R</span>
         <span class="identity-copy">
-          <small>Connect&eacute; en responsable</small>
+          <small data-session-eyebrow>Connect&eacute; en responsable</small>
           <strong data-session-name>Responsable</strong>
           <span data-session-role>R&ocirc;le responsable actif</span>
         </span>
       </div>
-      <span class="source-chip" data-session-source>Session s&eacute;curis&eacute;e</span>
+      <div class="top-actions">
+        <span class="btn ghost small" data-session-source>Session s&eacute;curis&eacute;e</span>
+        <a class="btn small" href="documents-commerciaux.html">BDC / Devis</a>
+        <a class="btn small" href="index.html">Portail commercial</a>
+        <a class="btn danger small" href="/deconnexion">D&eacute;connexion</a>
+      </div>
     </section>
 
     <section class="hero">
@@ -174,56 +175,276 @@
         <span class="badge">Espace Responsable</span>
         <h1>Pilotage &eacute;quipe commerciale</h1>
         <p>
-          Cette page est la future console de suivi des commerciaux visibles par le responsable.
-          Pour l'instant elle pr&eacute;pare les droits et reste en lecture sans impacter les donn&eacute;es terrain.
+          Consulte les commerciaux visibles, les rattachements et les prochaines briques de pilotage.
+          Cette vue est volontairement en lecture seule : aucun responsable ne peut modifier les ventes.
         </p>
+        <div class="notice" data-scope-message>
+          Chargement du perimetre responsable...
+        </div>
       </div>
-      <nav class="actions" aria-label="Navigation responsable">
-        <a class="btn primary" href="index.html">Portail commercial</a>
-        <a class="btn" href="documents-commerciaux.html">BDC / Devis</a>
-        <a class="btn" href="/deconnexion">D&eacute;connexion</a>
-      </nav>
+      <button class="btn primary" type="button" data-refresh>Rafraichir</button>
     </section>
 
-    <section class="grid" aria-label="Modules responsable">
-      <article class="card ready">
-        <strong>Session responsable</strong>
-        <span>Le r&ocirc;le est identifi&eacute; clairement avant de charger les futures donn&eacute;es &eacute;quipe.</span>
-        <div class="pill">Pr&ecirc;t</div>
-      </article>
-      <article class="card">
-        <strong>Commerciaux visibles</strong>
-        <span>Liste des commerciaux rattach&eacute;s au responsable, plus les exceptions autoris&eacute;es.</span>
-        <div class="pill">Prochaine brique</div>
-      </article>
-      <article class="card">
-        <strong>Lecture temps r&eacute;el</strong>
-        <span>Ventes, BDC, devis et objectifs seront consultables sans droit de modification.</span>
-        <div class="pill">Lecture seule</div>
-      </article>
+    <section class="stats" aria-label="Indicateurs responsable">
+      <article class="stat"><span>Commerciaux visibles</span><strong data-stat="commerciaux">-</strong></article>
+      <article class="stat"><span>Principaux</span><strong data-stat="principal">-</strong></article>
+      <article class="stat"><span>Exceptions</span><strong data-stat="exceptionnel">-</strong></article>
+      <article class="stat"><span>Connect&eacute;s 7j</span><strong data-stat="connectedRecently">-</strong></article>
+      <article class="stat"><span>Donn&eacute;es chiffr&eacute;es</span><strong data-stat="dataReady">-</strong></article>
+    </section>
+
+    <section class="layout">
+      <section class="panel" aria-label="Commerciaux visibles">
+        <div class="panel-head">
+          <div>
+            <h2>Commerciaux visibles</h2>
+            <div class="sub">Liste construite depuis les rattachements admin, avec distinction principal / exceptionnel.</div>
+          </div>
+          <div class="toolbar">
+            <input class="search" type="search" placeholder="Rechercher un commercial..." data-search>
+          </div>
+        </div>
+        <div class="commercial-grid" data-commercials>
+          <div class="empty">Chargement des commerciaux...</div>
+        </div>
+      </section>
+
+      <aside class="panel" aria-label="Synthese responsable">
+        <div class="panel-head">
+          <div>
+            <h2>Synth&egrave;se</h2>
+            <div class="sub">Vision des droits aujourd'hui, puis branchement des chiffres dans l'&eacute;tape suivante.</div>
+          </div>
+        </div>
+        <div class="relations-list" data-relations>
+          <div class="empty">Chargement des rattachements...</div>
+        </div>
+        <div class="timeline" style="margin-top:14px">
+          <article class="step">
+            <strong>1. Droits et perim&egrave;tre</strong>
+            <span>Responsables, commerciaux et acc&egrave;s exceptionnels sont op&eacute;rationnels.</span>
+          </article>
+          <article class="step">
+            <strong>2. Attribution des ventes</strong>
+            <span>Prochaine phase sensible : rattacher l'existant &agrave; Guillaume, puis enregistrer automatiquement les futures ventes par utilisateur.</span>
+          </article>
+          <article class="step">
+            <strong>3. Pilotage chiffr&eacute;</strong>
+            <span>CA jour/mois, BDC, devis, rapports et budgets par commercial puis cumul responsable.</span>
+          </article>
+        </div>
+      </aside>
     </section>
   </main>
 
+  <div class="toast" data-toast></div>
+
   <script>
     (function(){
-      const nameNode = document.querySelector("[data-session-name]");
-      const roleNode = document.querySelector("[data-session-role]");
-      const sourceNode = document.querySelector("[data-session-source]");
+      const state = {
+        currentUser: null,
+        stats: {},
+        commercials: [],
+        dataScope: null,
+        search: ""
+      };
+
+      const els = {
+        wrap: document.querySelector(".wrap"),
+        eyebrow: document.querySelector("[data-session-eyebrow]"),
+        name: document.querySelector("[data-session-name]"),
+        role: document.querySelector("[data-session-role]"),
+        source: document.querySelector("[data-session-source]"),
+        scopeMessage: document.querySelector("[data-scope-message]"),
+        commercials: document.querySelector("[data-commercials]"),
+        relations: document.querySelector("[data-relations]"),
+        search: document.querySelector("[data-search]"),
+        toast: document.querySelector("[data-toast]")
+      };
+
       const sourceLabels = {
         supabase: "Source Supabase",
         env: "Source Vercel",
-        legacy: "Acces historique"
+        legacy: "Acc\u00e8s historique"
       };
 
-      fetch("/api/session", { cache: "no-store" })
-        .then(response => response.ok ? response.json() : null)
-        .then(payload => {
-          if (!payload || !payload.user) return;
-          nameNode.textContent = payload.user.name || "Responsable";
-          roleNode.textContent = "Role : " + (payload.user.roleLabel || payload.user.role || "responsable");
-          sourceNode.textContent = sourceLabels[payload.user.source] || "Session securisee";
-        })
-        .catch(() => {});
+      init();
+
+      function init(){
+        document.querySelector("[data-refresh]").addEventListener("click", loadDashboard);
+        els.search.addEventListener("input", function(){
+          state.search = els.search.value.trim().toLowerCase();
+          renderCommercials();
+        });
+        loadDashboard();
+      }
+
+      async function loadDashboard(){
+        setLoading(true);
+        try{
+          const payload = await fetchJson("/api/responsable-dashboard");
+          state.currentUser = payload.currentUser || null;
+          state.stats = payload.stats || {};
+          state.commercials = Array.isArray(payload.commercials) ? payload.commercials : [];
+          state.dataScope = payload.dataScope || null;
+          renderSession();
+          renderStats();
+          renderScope();
+          renderCommercials();
+          renderRelations();
+          showToast("Vue responsable synchronis\u00e9e.");
+        }catch(error){
+          showToast(error.message || "Chargement impossible.", true);
+          els.commercials.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Chargement impossible.") + '</div>';
+          els.relations.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Chargement impossible.") + '</div>';
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      function renderSession(){
+        const user = state.currentUser || {};
+        els.eyebrow.textContent = user.role === "admin" ? "Connecte en admin" : "Connecte en responsable";
+        els.name.textContent = user.name || "Responsable";
+        els.role.textContent = "Role : " + (user.roleLabel || user.role || "responsable");
+        els.source.textContent = sourceLabels[user.source] || "Session securisee";
+      }
+
+      function renderStats(){
+        Object.keys(state.stats || {}).forEach(function(key){
+          const node = document.querySelector('[data-stat="' + key + '"]');
+          if (!node) return;
+          if (key === "dataReady") {
+            node.textContent = Number(state.stats[key] || 0) ? "OK" : "En attente";
+            return;
+          }
+          node.textContent = String(state.stats[key] ?? 0);
+        });
+      }
+
+      function renderScope(){
+        const scope = state.dataScope || {};
+        els.scopeMessage.textContent = (scope.title ? scope.title + " : " : "") + (scope.message || "P\u00e9rim\u00e8tre charg\u00e9.");
+      }
+
+      function renderCommercials(){
+        let list = state.commercials.slice();
+        if (state.search) {
+          list = list.filter(function(item){
+            return [item.displayName, item.identifier, item.relationLabel, item.scopeLabel]
+              .join(" ")
+              .toLowerCase()
+              .includes(state.search);
+          });
+        }
+
+        if (!list.length) {
+          els.commercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce p\u00e9rim\u00e8tre.</div>';
+          return;
+        }
+
+        els.commercials.innerHTML = list.map(function(item){
+          const relationClass = item.relationType === "principal"
+            ? "chip-principal"
+            : item.relationType === "exceptionnel"
+              ? "chip-exceptionnel"
+              : "chip-none";
+          return [
+            '<article class="commercial-card">',
+              '<div class="commercial-top">',
+                '<span class="commercial-name">',
+                  '<strong>' + escapeHtml(item.displayName) + '</strong>',
+                  '<span>' + escapeHtml(item.identifier) + '</span>',
+                '</span>',
+                '<span class="chip ' + relationClass + '">' + escapeHtml(item.relationLabel) + '</span>',
+              '</div>',
+              '<div class="metric-grid">',
+                metricHtml("CA jour", "\u00c0 brancher"),
+                metricHtml("CA mois", "\u00c0 brancher"),
+                metricHtml("BDC", "\u00c0 brancher"),
+                metricHtml("Devis", "\u00c0 brancher"),
+              '</div>',
+              item.relationNote ? '<div class="sub">Note : ' + escapeHtml(item.relationNote) + '</div>' : '',
+              '<div class="commercial-foot">',
+                '<span>' + escapeHtml(item.scopeLabel || "-") + '</span>',
+                '<span>Derni\u00e8re connexion : ' + escapeHtml(formatDate(item.lastLoginAt)) + '</span>',
+              '</div>',
+            '</article>'
+          ].join("");
+        }).join("");
+      }
+
+      function renderRelations(){
+        const list = state.commercials.filter(function(item){ return item.relationType !== "none"; });
+        if (!list.length) {
+          els.relations.innerHTML = '<div class="empty">Aucun rattachement actif.</div>';
+          return;
+        }
+
+        els.relations.innerHTML = list.map(function(item){
+          const responsables = (item.responsables || []).map(function(resp){
+            return resp.displayName + " (" + resp.identifier + ")";
+          }).join(", ") || "Responsable non retrouv\u00e9";
+          const relationClass = item.relationType === "principal" ? "chip-principal" : "chip-exceptionnel";
+          return [
+            '<article class="relation-row">',
+              '<strong>' + escapeHtml(item.displayName) + '</strong>',
+              '<span>Responsable : ' + escapeHtml(responsables) + '</span>',
+              '<span class="chip ' + relationClass + '">' + escapeHtml(item.relationLabel) + '</span>',
+            '</article>'
+          ].join("");
+        }).join("");
+      }
+
+      function metricHtml(label, value){
+        return '<div class="metric"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
+      }
+
+      async function fetchJson(url, options){
+        const response = await fetch(url, Object.assign({
+          cache: "no-store",
+          credentials: "same-origin"
+        }, options || {}));
+        const payload = await response.json().catch(function(){ return {}; });
+        if (!response.ok) throw new Error(payload.error || "Erreur r\u00e9seau.");
+        return payload;
+      }
+
+      function formatDate(value){
+        if (!value) return "-";
+        try{
+          return new Intl.DateTimeFormat("fr-FR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          }).format(new Date(value));
+        }catch{
+          return "-";
+        }
+      }
+
+      function showToast(message, isError){
+        els.toast.textContent = message;
+        els.toast.classList.toggle("error", Boolean(isError));
+        els.toast.classList.add("show");
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(function(){ els.toast.classList.remove("show"); }, 2800);
+      }
+
+      function setLoading(value){
+        els.wrap.classList.toggle("loading", Boolean(value));
+      }
+
+      function escapeHtml(value){
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
     })();
   </script>
 </body>
