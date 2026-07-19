@@ -8,9 +8,9 @@
   <script src="./shared-ui.js"></script>
   <script src="./app-data-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./commercial-scope.js?v=20260719-reel-n1-view"></script>
-  <script src="./budget-supabase.js?v=20260719-reel-n1-view"></script>
-  <script src="./reel-supabase.js?v=20260719-reel-n1-view"></script>
+  <script src="./commercial-scope.js?v=20260719-reel-n1-table"></script>
+  <script src="./budget-supabase.js?v=20260719-reel-n1-table"></script>
+  <script src="./reel-supabase.js?v=20260719-reel-n1-table"></script>
   <link rel="stylesheet" href="./shared-theme.css">
   <style>
     :root{
@@ -21,12 +21,10 @@
       --text:#eef4ff;
       --muted:rgba(226,232,240,.66);
       --blue:#38bdf8;
-      --green:#22c55e;
-      --gold:#f59e0b;
       --shadow:0 28px 80px rgba(0,0,0,.38);
     }
     *{box-sizing:border-box}
-    html,body{min-height:100%}
+    html,body{height:100%}
     body{
       margin:0;
       font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -34,59 +32,51 @@
       background:
         radial-gradient(1000px 720px at 12% -8%, rgba(56,189,248,.18), transparent 58%),
         radial-gradient(900px 680px at 92% 2%, rgba(34,197,94,.13), transparent 55%),
-        radial-gradient(900px 760px at 48% 112%, rgba(245,158,11,.08), transparent 58%),
         var(--bg);
       overflow:hidden;
     }
-    .page{height:100vh;display:grid;grid-template-rows:auto 1fr;gap:14px;padding:20px;}
+    .page{height:100vh;display:grid;grid-template-rows:auto 1fr;gap:12px;padding:18px;}
     .hero{
-      border:1px solid var(--line);border-radius:26px;padding:18px 20px;
-      background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(15,23,42,.72));
+      border:1px solid var(--line);
+      border-radius:24px;
+      background:linear-gradient(135deg,rgba(15,23,42,.95),rgba(15,23,42,.75));
       box-shadow:var(--shadow);
+      padding:16px 18px 14px;
     }
-    .topLine{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;}
-    .kicker{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(56,189,248,.28);background:rgba(56,189,248,.11);color:#d8f3ff;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:950;letter-spacing:.12em;text-transform:uppercase;}
-    .kicker::before{content:"";width:8px;height:8px;border-radius:999px;background:var(--blue);box-shadow:0 0 18px rgba(56,189,248,.65);}
-    h1{margin:10px 0 6px;font-size:clamp(30px,3.5vw,52px);line-height:.95;letter-spacing:-.06em;}
-    .subtitle{margin:0;color:var(--muted);font-size:15px;line-height:1.45;font-weight:700;max-width:860px;}
+    .topLine{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+    .kicker{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(56,189,248,.28);background:rgba(56,189,248,.11);color:#d8f3ff;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:950;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;}
+    h1{margin:8px 0 0;font-size:clamp(28px,3vw,44px);line-height:.95;letter-spacing:-.06em;}
     .actions{display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:nowrap;}
-    .btn,.select{height:42px;border:1px solid rgba(148,163,184,.20);border-radius:15px;background:rgba(255,255,255,.07);color:var(--text);font-weight:950;font-size:14px;padding:0 14px;box-shadow:0 14px 34px rgba(0,0,0,.20);}
+    .btn,.select{height:40px;border:1px solid rgba(148,163,184,.20);border-radius:14px;background:rgba(255,255,255,.07);color:var(--text);font-weight:950;font-size:14px;padding:0 13px;box-shadow:0 14px 34px rgba(0,0,0,.20);}
     .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;white-space:nowrap;}
     .btn.primary{color:#fff;border-color:rgba(56,189,248,.38);background:linear-gradient(135deg,#38bdf8,#2563eb);}
-    .select{min-width:160px;outline:none;cursor:pointer;}
+    .select{min-width:150px;outline:none;cursor:pointer;}
     .entityRail{display:flex;gap:8px;overflow-x:auto;padding:12px 2px 0;scrollbar-width:thin;}
-    .entityChip{border:1px solid rgba(148,163,184,.16);border-radius:999px;background:rgba(255,255,255,.055);color:var(--text);padding:8px 12px;font-weight:950;cursor:pointer;white-space:nowrap;}
+    .entityChip{border:1px solid rgba(148,163,184,.16);border-radius:999px;background:rgba(255,255,255,.055);color:var(--text);padding:8px 13px;font-weight:950;cursor:pointer;white-space:nowrap;}
     .entityChip.active{border-color:rgba(56,189,248,.58);background:rgba(56,189,248,.15);}
-    .content{min-height:0;display:grid;grid-template-columns:1fr 360px;gap:14px;}
-    .panel{min-height:0;border:1px solid var(--line);border-radius:24px;background:rgba(2,6,23,.42);box-shadow:var(--shadow);overflow:hidden;}
-    .panelHead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line);}
-    .panelTitle{font-size:20px;font-weight:950;letter-spacing:-.04em;}
-    .panelSub{color:var(--muted);font-size:13px;font-weight:800;margin-top:3px;}
-    .chart{height:210px;display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end;padding:18px;border-bottom:1px solid var(--line);}
-    .monthCol{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:8px;min-width:0;}
-    .barWrap{height:150px;width:100%;display:flex;align-items:flex-end;justify-content:center;}
-    .bar{width:min(34px,68%);border-radius:999px 999px 8px 8px;background:linear-gradient(180deg,#7dd3fc,#2563eb);box-shadow:0 12px 34px rgba(37,99,235,.20);min-height:0;transition:height .18s ease;}
-    .monthLabel{color:rgba(226,232,240,.68);font-size:11px;font-weight:950;text-transform:uppercase;white-space:nowrap;}
-    .tableWrap{height:calc(100% - 275px);min-height:230px;overflow:auto;padding:0 14px 14px;}
-    table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:13px;}
-    th{position:sticky;top:0;z-index:1;background:#07111f;color:rgba(226,232,240,.68);text-align:left;padding:10px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;}
-    td{padding:10px 8px;background:rgba(255,255,255,.055);border-top:1px solid rgba(148,163,184,.12);border-bottom:1px solid rgba(148,163,184,.12);font-weight:800;}
-    td:first-child{border-left:1px solid rgba(148,163,184,.12);border-radius:14px 0 0 14px;min-width:220px;}
-    td:last-child{border-right:1px solid rgba(148,163,184,.12);border-radius:0 14px 14px 0;font-weight:950;}
-    .num{text-align:right;white-space:nowrap;}
-    .empty{margin:18px;border:1px dashed rgba(148,163,184,.26);border-radius:18px;padding:22px;color:var(--muted);font-weight:850;text-align:center;}
-    .side{display:grid;grid-template-rows:auto auto 1fr;gap:12px;}
-    .kpi{border:1px solid var(--line);border-radius:22px;background:rgba(15,23,42,.62);padding:16px;}
-    .kpi span{display:block;color:rgba(226,232,240,.62);font-size:12px;font-weight:950;text-transform:uppercase;letter-spacing:.08em;}
-    .kpi strong{display:block;margin-top:8px;font-size:28px;letter-spacing:-.05em;}
-    .status{border:1px solid rgba(56,189,248,.18);background:rgba(56,189,248,.08);color:#d8f3ff;border-radius:18px;padding:13px 15px;font-weight:850;line-height:1.4;}
-    .notes{color:var(--muted);font-size:13px;font-weight:750;line-height:1.55;padding:4px 2px;}
+    .tablePanel{min-height:0;border:1px solid var(--line);border-radius:24px;background:rgba(2,6,23,.48);box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-rows:auto 1fr;}
+    .tableHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);}
+    .tableTitle{font-size:18px;font-weight:950;letter-spacing:-.04em;white-space:nowrap;}
+    .tableInfo{color:var(--muted);font-size:13px;font-weight:850;white-space:nowrap;}
+    .tableWrap{min-height:0;overflow:auto;padding:10px 12px 14px;}
+    table{width:100%;min-width:1180px;border-collapse:separate;border-spacing:0 6px;font-size:12.5px;}
+    th{position:sticky;top:0;z-index:2;background:#07111f;color:rgba(226,232,240,.70);text-align:left;padding:9px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(148,163,184,.16);}
+    th:first-child{left:0;z-index:3;min-width:260px;}
+    th:nth-child(2){min-width:125px;}
+    td{padding:8px;background:rgba(255,255,255,.055);border-top:1px solid rgba(148,163,184,.12);border-bottom:1px solid rgba(148,163,184,.12);font-weight:800;white-space:nowrap;}
+    td:first-child{position:sticky;left:0;z-index:1;background:#101b2d;border-left:1px solid rgba(148,163,184,.12);border-radius:12px 0 0 12px;min-width:260px;max-width:360px;white-space:normal;}
+    td:last-child{border-right:1px solid rgba(148,163,184,.12);border-radius:0 12px 12px 0;font-weight:950;color:#e0f2fe;}
+    .num{text-align:right;}
+    .totalRow td{background:rgba(56,189,248,.12);font-weight:950;color:#e0f2fe;}
+    .clientName{font-weight:950;line-height:1.25;}
+    .muted{color:rgba(226,232,240,.55);font-size:11px;font-weight:800;}
+    .empty{margin:18px;border:1px dashed rgba(148,163,184,.26);border-radius:18px;padding:24px;color:var(--muted);font-weight:850;text-align:center;}
     html[data-theme="light"] body{background:#f6f7fb;color:#0f172a;}
-    html[data-theme="light"] .hero,html[data-theme="light"] .panel,html[data-theme="light"] .kpi{background:rgba(255,255,255,.86);color:#0f172a;border-color:rgba(15,23,42,.10);box-shadow:0 24px 60px rgba(15,23,42,.12);}
-    html[data-theme="light"] .subtitle,html[data-theme="light"] .panelSub,html[data-theme="light"] .notes{color:rgba(15,23,42,.60)}
+    html[data-theme="light"] .hero,html[data-theme="light"] .tablePanel{background:rgba(255,255,255,.88);color:#0f172a;border-color:rgba(15,23,42,.10);box-shadow:0 24px 60px rgba(15,23,42,.12);}
     html[data-theme="light"] th{background:#f6f7fb;color:rgba(15,23,42,.58)}
-    html[data-theme="light"] td{background:rgba(255,255,255,.80);border-color:rgba(15,23,42,.10)}
-    @media (max-width:1100px){body{overflow:auto}.page{height:auto;min-height:100vh}.topLine{align-items:flex-start;flex-direction:column}.content{grid-template-columns:1fr}.tableWrap{height:auto}.actions{flex-wrap:wrap;justify-content:flex-start}}
+    html[data-theme="light"] td{background:rgba(255,255,255,.82);border-color:rgba(15,23,42,.10)}
+    html[data-theme="light"] td:first-child{background:#fff;}
+    @media (max-width:1100px){body{overflow:auto}.page{height:auto;min-height:100vh}.topLine{align-items:flex-start;flex-direction:column}.actions{flex-wrap:wrap;justify-content:flex-start}.tablePanel{min-height:70vh}}
   </style>
 </head>
 <body>
@@ -95,46 +85,27 @@
       <div class="topLine">
         <div>
           <span class="kicker">R&eacute;el N-1</span>
-          <h1>Activit&eacute; r&eacute;elle N-1</h1>
-          <p class="subtitle">Visualise le chiffre d'affaires r&eacute;el de l'ann&eacute;e pr&eacute;c&eacute;dente par entit&eacute;. En 2026, la page lit 2025 ; en 2027, elle lira 2026.</p>
+          <h1>Activit&eacute; r&eacute;elle</h1>
         </div>
         <div class="actions">
           <select class="select" id="yearSelect" aria-label="Ann&eacute;e active"></select>
-          <select class="select" id="entitySelect" aria-label="Entit&eacute;"></select>
-          <a class="btn" href="accbudget.html" data-year-link>Budget</a>
-          <button class="btn primary" id="refreshBtn" type="button">Actualiser</button>
         </div>
       </div>
       <div class="entityRail" id="entityRail"></div>
     </section>
 
-    <section class="content">
-      <section class="panel">
-        <div class="panelHead">
-          <div>
-            <div class="panelTitle" id="mainTitle">Activit&eacute; N-1</div>
-            <div class="panelSub" id="mainSub">Chargement...</div>
-          </div>
-          <div class="panelSub" id="rowCount">-</div>
-        </div>
-        <div class="chart" id="chart"></div>
-        <div class="tableWrap" id="tableWrap">
-          <table id="table" hidden>
-            <thead id="thead"></thead>
-            <tbody id="tbody"></tbody>
-          </table>
-          <div class="empty" id="empty">Chargement des donn&eacute;es...</div>
-        </div>
-      </section>
-
-      <aside class="side">
-        <div class="kpi"><span>Total HT N-1</span><strong id="kpiTotal">0 &euro;</strong></div>
-        <div class="kpi"><span>Clients actifs</span><strong id="kpiClients">0</strong></div>
-        <div>
-          <div class="status" id="status">Lecture Supabase en cours...</div>
-          <div class="notes">Cette page ne lit pas les anciens fichiers Excel. Elle consulte uniquement les imports r&eacute;els actifs Supabase de l'ann&eacute;e N-1 pour le commercial connect&eacute;.</div>
-        </div>
-      </aside>
+    <section class="tablePanel">
+      <div class="tableHead">
+        <div class="tableTitle" id="tableTitle">Chargement...</div>
+        <div class="tableInfo" id="tableInfo">-</div>
+      </div>
+      <div class="tableWrap">
+        <table id="table" hidden>
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="empty" id="empty">Chargement des donn&eacute;es...</div>
+      </div>
     </section>
   </main>
 
@@ -146,34 +117,26 @@
       { key:"ford", label:"Ford" },
       { key:"direct", label:"Direct" }
     ];
-    const MONTHS = ["Janv.","Fevr.","Mars","Avr.","Mai","Juin","Juil.","Aout","Sept.","Oct.","Nov.","Dec."];
+    const MONTH_LABELS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
     const params = new URLSearchParams(location.search);
     const dom = {
       yearSelect:document.getElementById("yearSelect"),
-      entitySelect:document.getElementById("entitySelect"),
       entityRail:document.getElementById("entityRail"),
-      refreshBtn:document.getElementById("refreshBtn"),
-      mainTitle:document.getElementById("mainTitle"),
-      mainSub:document.getElementById("mainSub"),
-      rowCount:document.getElementById("rowCount"),
-      chart:document.getElementById("chart"),
+      tableTitle:document.getElementById("tableTitle"),
+      tableInfo:document.getElementById("tableInfo"),
       table:document.getElementById("table"),
       thead:document.getElementById("thead"),
       tbody:document.getElementById("tbody"),
-      empty:document.getElementById("empty"),
-      kpiTotal:document.getElementById("kpiTotal"),
-      kpiClients:document.getElementById("kpiClients"),
-      status:document.getElementById("status")
+      empty:document.getElementById("empty")
     };
     let entities = DEFAULT_ENTITIES.slice();
     let selectedKey = String(params.get("entity") || "psa").toLowerCase();
 
-    function esc(value){
-      return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
-    }
-    function money(value){
-      return Number(value || 0).toLocaleString("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
-    }
+    function esc(value){return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
+    function money(value){return Number(value || 0).toLocaleString("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });}
+    function activeYear(){return Number(dom.yearSelect.value || KentDataConfig.getActiveYear());}
+    function previousYear(){return activeYear() - 1;}
+    function selectedEntity(){return entities.find(entity => entity.key === selectedKey) || entities[0] || DEFAULT_ENTITIES[0];}
     function dedupeEntities(rows){
       const byKey = new Map();
       for (const row of rows || []) {
@@ -183,9 +146,6 @@
       }
       return Array.from(byKey.values());
     }
-    function activeYear(){ return Number(dom.yearSelect.value || KentDataConfig.getActiveYear()); }
-    function previousYear(){ return activeYear() - 1; }
-    function selectedEntity(){ return entities.find(entity => entity.key === selectedKey) || entities[0] || DEFAULT_ENTITIES[0]; }
 
     async function loadEntities(){
       try{
@@ -194,31 +154,18 @@
           const mapped = (rows || []).map(row => ({ key:String(row.key || "").trim().toLowerCase(), label:row.libelle || row.key || "Entite" })).filter(row => row.key);
           if (mapped.length) entities = dedupeEntities(mapped);
         }
-      }catch(error){
-        console.warn("Entites N-1 indisponibles:", error?.message || error);
-      }
+      }catch(error){console.warn("Entités N-1 indisponibles:", error?.message || error);}
       entities = dedupeEntities(entities);
       if (!entities.some(entity => entity.key === selectedKey)) selectedKey = entities[0]?.key || "psa";
     }
 
     function renderSelectors(){
-      dom.entitySelect.innerHTML = entities.map(entity => `<option value="${esc(entity.key)}">${esc(entity.label)}</option>`).join("");
-      dom.entitySelect.value = selectedKey;
       dom.entityRail.innerHTML = entities.map(entity => `<button class="entityChip ${entity.key === selectedKey ? "active" : ""}" type="button" data-entity="${esc(entity.key)}">${esc(entity.label)}</button>`).join("");
     }
 
-    function renderChart(totals){
-      const max = Math.max(1, ...totals.map(Number));
-      dom.chart.innerHTML = MONTHS.map((label, index) => {
-        const value = Number(totals[index] || 0);
-        const height = value > 0 ? Math.max(4, Math.round((value / max) * 100)) : 0;
-        return `<div class="monthCol" title="${esc(label)} - ${esc(money(value))}"><div class="barWrap"><div class="bar" style="height:${height}%"></div></div><div class="monthLabel">${esc(label)}</div></div>`;
-      }).join("");
-    }
-
     function aggregateRows(rows){
-      const monthly = Array.from({length:12}, () => 0);
       const clients = new Map();
+      const totals = Array.from({length:12}, () => 0);
       for (const row of rows || []) {
         const monthIndex = Number(row?.mois || 0) - 1;
         if (monthIndex < 0 || monthIndex > 11) continue;
@@ -226,22 +173,25 @@
         const code = String(row?.client_code || "").trim();
         const name = String(row?.client_nom || "Client inconnu").trim() || "Client inconnu";
         const key = `${code}__${name}`.toLowerCase();
-        monthly[monthIndex] += amount;
-        if (!clients.has(key)) clients.set(key, { code, name, months:Array.from({length:12}, () => 0), total:0, lines:0 });
-        const item = clients.get(key);
-        item.months[monthIndex] += amount;
-        item.total += amount;
-        item.lines += 1;
+        if (!clients.has(key)) clients.set(key, { code, name, months:Array.from({length:12}, () => 0), total:0 });
+        const client = clients.get(key);
+        client.months[monthIndex] += amount;
+        client.total += amount;
+        totals[monthIndex] += amount;
       }
-      return { monthly, clients:Array.from(clients.values()).sort((a,b) => b.total - a.total) };
+      const total = totals.reduce((sum, value) => sum + Number(value || 0), 0);
+      return { clients:Array.from(clients.values()).sort((a,b) => b.total - a.total), totals, total };
     }
 
-    function renderTable(clients){
-      dom.thead.innerHTML = `<tr><th>Client</th>${MONTHS.map(month => `<th class="num">${esc(month)}</th>`).join("")}<th class="num">Total</th></tr>`;
-      dom.tbody.innerHTML = clients.map(client => `<tr><td><strong>${esc(client.name)}</strong><br><span style="color:rgba(226,232,240,.55);font-size:11px;">${esc(client.code || "-")} - ${client.lines} ligne(s)</span></td>${client.months.map(value => `<td class="num">${value ? esc(money(value)) : "-"}</td>`).join("")}<td class="num">${esc(money(client.total))}</td></tr>`).join("");
+    function renderTable(data){
+      const { clients, totals, total } = data;
+      dom.thead.innerHTML = `<tr><th>Client</th><th>N compte</th>${MONTH_LABELS.map(month => `<th class="num">${esc(month)}</th>`).join("")}<th class="num">Total</th></tr>`;
+      const totalRow = `<tr class="totalRow"><td>Total</td><td>-</td>${totals.map(value => `<td class="num">${value ? esc(money(value)) : "-"}</td>`).join("")}<td class="num">${esc(money(total))}</td></tr>`;
+      const clientRows = clients.map(client => `<tr><td><div class="clientName">${esc(client.name)}</div></td><td>${esc(client.code || "-")}</td>${client.months.map(value => `<td class="num">${value ? esc(money(value)) : "-"}</td>`).join("")}<td class="num">${esc(money(client.total))}</td></tr>`).join("");
+      dom.tbody.innerHTML = totalRow + clientRows;
       dom.table.hidden = !clients.length;
       dom.empty.style.display = clients.length ? "none" : "block";
-      if (!clients.length) dom.empty.textContent = `Aucune activite reelle importee sur ${previousYear()} pour cette entite.`;
+      dom.empty.textContent = "Aucune donnée.";
     }
 
     async function loadView(){
@@ -249,35 +199,24 @@
       const year = activeYear();
       const prev = previousYear();
       KentDataConfig.setActiveYear(year);
-      KentDataConfig.applyYearToLinks(document, year);
       renderSelectors();
-      dom.mainTitle.textContent = `Activite reelle ${prev} - ${entity.label}`;
-      dom.mainSub.textContent = `Annee active ${year}. Donnees consultees : ${prev}.`;
-      dom.status.textContent = `Chargement Supabase ${entity.label} ${prev}...`;
-      dom.rowCount.textContent = "-";
-      renderChart(Array.from({length:12}, () => 0));
+      dom.tableTitle.textContent = entity.label;
+      dom.tableInfo.textContent = "Chargement...";
       dom.table.hidden = true;
       dom.empty.style.display = "block";
-      dom.empty.textContent = "Chargement des donnees...";
-
+      dom.empty.textContent = "Chargement des données...";
       try{
         if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") throw new Error("Module Reel Supabase indisponible.");
         const rows = await window.ReelSupabase.getActiveLinesByEntityYear(entity.key, prev);
-        const { monthly, clients } = aggregateRows(rows || []);
-        const total = monthly.reduce((sum, value) => sum + Number(value || 0), 0);
-        renderChart(monthly);
-        renderTable(clients);
-        dom.kpiTotal.textContent = money(total);
-        dom.kpiClients.textContent = String(clients.length);
-        dom.rowCount.textContent = `${(rows || []).length.toLocaleString("fr-FR")} ligne(s)`;
-        dom.status.textContent = total ? `Activite ${prev} chargee depuis Supabase.` : `Aucune donnee Supabase active sur ${prev} pour ${entity.label}.`;
+        const data = aggregateRows(rows || []);
+        renderTable(data);
+        dom.tableInfo.textContent = `${data.clients.length.toLocaleString("fr-FR")} client(s) - ${money(data.total)}`;
       }catch(error){
         console.error(error);
-        renderTable([]);
-        dom.kpiTotal.textContent = money(0);
-        dom.kpiClients.textContent = "0";
-        dom.rowCount.textContent = "Erreur";
-        dom.status.textContent = `Impossible de charger le reel N-1 : ${error?.message || error}`;
+        dom.table.hidden = true;
+        dom.empty.style.display = "block";
+        dom.empty.textContent = `Impossible de charger le réel N-1 : ${error?.message || error}`;
+        dom.tableInfo.textContent = "Erreur";
       }
     }
 
@@ -289,16 +228,13 @@
       await loadView();
     }
 
-    dom.entitySelect.addEventListener("change", () => { selectedKey = dom.entitySelect.value; loadView(); });
     dom.entityRail.addEventListener("click", event => {
       const btn = event.target.closest("[data-entity]");
       if (!btn) return;
       selectedKey = btn.dataset.entity;
-      dom.entitySelect.value = selectedKey;
       loadView();
     });
     dom.yearSelect.addEventListener("change", () => { dom.yearSelect.value = String(KentDataConfig.setActiveYear(Number(dom.yearSelect.value))); loadView(); });
-    dom.refreshBtn.addEventListener("click", loadView);
     init();
   })();
   </script>
