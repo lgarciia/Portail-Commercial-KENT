@@ -459,6 +459,7 @@
       gap: 8px;
     }
 
+    input[type="text"],
     input[type="password"] {
       width: 100%;
       border: 1px solid var(--line);
@@ -472,10 +473,12 @@
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
     }
 
+    html[data-theme="light"] input[type="text"],
     html[data-theme="light"] input[type="password"] {
       background: rgba(246, 248, 252, 0.9);
     }
 
+    input[type="text"]:focus,
     input[type="password"]:focus {
       border-color: rgba(15, 139, 255, 0.72);
       box-shadow: 0 0 0 4px rgba(15, 139, 255, 0.14);
@@ -716,7 +719,7 @@
         <p class="eyebrow">Connexion</p>
         <h2>Ouvrir votre espace</h2>
         <p>
-          Entrez votre code d'accès pour ouvrir directement votre environnement de travail.
+          Entrez votre identifiant et votre code d'accès pour ouvrir votre environnement de travail.
         </p>
 
         <div id="message" class="message" role="status" aria-live="polite"></div>
@@ -725,15 +728,29 @@
           <input id="next-field" type="hidden" name="next" value="/">
 
           <div class="field">
+            <label for="identifier">Identifiant utilisateur</label>
+            <input
+              id="identifier"
+              name="identifier"
+              type="text"
+              inputmode="text"
+              autocomplete="username"
+              placeholder="Ex : Guillaume.Garcia"
+              autofocus
+            >
+            <div class="field-help">L'identifiant permet d'ouvrir le bon espace selon le rôle.</div>
+          </div>
+
+          <div class="field">
             <label for="code">Code d'accès</label>
             <input
               id="code"
               name="code"
               type="password"
               inputmode="text"
+              autocomplete="current-password"
               placeholder="Entrer le code"
               required
-              autofocus
             >
             <div class="field-help">La session reste active sur la journee en cours.</div>
           </div>
@@ -776,11 +793,11 @@
       const states = {
         invalid: {
           tone: "error",
-          text: "Le code est incorrect. Verifiez la saisie puis recommencez."
+          text: "L'identifiant ou le code est incorrect. Verifiez la saisie puis recommencez."
         },
         config: {
           tone: "warn",
-          text: "Le code d'acces n'est pas encore configure sur Vercel. Ajoutez ACCESS_DAILY_CODE avant utilisation."
+          text: "Les acces ne sont pas encore configures sur Vercel. Ajoutez PORTAL_USERS ou ACCESS_DAILY_CODE avant utilisation."
         }
       };
 

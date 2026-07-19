@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Espace Admin</title>
+  <script src="./shared-ui.js"></script>
+  <link rel="stylesheet" href="./shared-theme.css">
+  <style>
+    :root{
+      --bg:#090b14;
+      --panel:rgba(255,255,255,.065);
+      --line:rgba(255,255,255,.13);
+      --text:rgba(255,255,255,.94);
+      --muted:rgba(255,255,255,.62);
+      --purple:#8b5cf6;
+      --blue:#0ea5e9;
+      --green:#22c55e;
+      --shadow:0 22px 60px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 700px at 15% -10%, rgba(139,92,246,.25), transparent 58%),
+        radial-gradient(900px 620px at 95% 2%, rgba(14,165,233,.16), transparent 56%),
+        radial-gradient(850px 620px at 60% 110%, rgba(34,197,94,.10), transparent 58%),
+        var(--bg);
+    }
+    .wrap{max-width:1260px;margin:0 auto;padding:28px}
+    .hero{
+      border:1px solid var(--line);
+      background:linear-gradient(135deg, rgba(30,27,75,.78), rgba(2,6,23,.76));
+      border-radius:28px;
+      padding:28px;
+      box-shadow:var(--shadow);
+      display:flex;
+      justify-content:space-between;
+      gap:20px;
+      align-items:flex-start;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      height:34px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid rgba(139,92,246,.38);
+      background:rgba(139,92,246,.14);
+      color:#ddd6fe;
+      font-weight:950;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-size:12px;
+    }
+    h1{font-size:clamp(34px,5vw,64px);line-height:.96;margin:22px 0 12px;letter-spacing:-.055em}
+    p{color:var(--muted);font-size:18px;line-height:1.55;max-width:850px;margin:0}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{
+      min-height:44px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0 18px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.075);
+      color:var(--text);
+      text-decoration:none;
+      font-weight:950;
+      white-space:nowrap;
+      transition:.15s;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.12)}
+    .btn.primary{background:linear-gradient(135deg, rgba(139,92,246,.84), rgba(14,165,233,.72));border-color:rgba(255,255,255,.18)}
+    .grid{
+      margin-top:22px;
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:16px;
+    }
+    .card{
+      min-height:170px;
+      border:1px solid var(--line);
+      border-radius:24px;
+      background:var(--panel);
+      box-shadow:0 18px 46px rgba(0,0,0,.24);
+      padding:20px;
+    }
+    .card strong{display:block;font-size:20px;margin-bottom:8px}
+    .card span{display:block;color:var(--muted);line-height:1.45}
+    .pill{
+      margin-top:18px;
+      display:inline-flex;
+      padding:7px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.045);
+      border:1px solid var(--line);
+      color:rgba(255,255,255,.72);
+      font-size:12px;
+      font-weight:900;
+    }
+    @media(max-width:900px){
+      .hero{flex-direction:column}
+      .actions{justify-content:flex-start}
+      .grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <span class="badge">Espace Admin</span>
+        <h1>Gestion des accès et rôles</h1>
+        <p>
+          Première brique de la phase 1 : l'admin possède une page séparée.
+          La création des responsables et commerciaux sera branchée ensuite,
+          sans toucher aux données métier existantes.
+        </p>
+      </div>
+      <nav class="actions" aria-label="Navigation admin">
+        <a class="btn primary" href="responsable.html">Vue responsable</a>
+        <a class="btn" href="index.html">Portail commercial</a>
+        <a class="btn" href="/deconnexion">Déconnexion</a>
+      </nav>
+    </section>
+
+    <section class="grid" aria-label="Modules admin prévus">
+      <article class="card">
+        <strong>Utilisateurs</strong>
+        <span>Créer, désactiver et masquer les responsables et commerciaux.</span>
+        <div class="pill">Phase 2</div>
+      </article>
+      <article class="card">
+        <strong>Rattachements</strong>
+        <span>Définir le responsable principal et les accès exceptionnels.</span>
+        <div class="pill">Phase 2</div>
+      </article>
+      <article class="card">
+        <strong>Entités et budgets</strong>
+        <span>Administrer les entités, budgets actifs et objectifs commerciaux.</span>
+        <div class="pill">Phase 5</div>
+      </article>
+      <article class="card">
+        <strong>Transferts</strong>
+        <span>Préparer le transfert de portefeuille client sans perdre l'historique.</span>
+        <div class="pill">Phase 4</div>
+      </article>
+      <article class="card">
+        <strong>Contrôle</strong>
+        <span>Logs, exports de sécurité et supervision des accès.</span>
+        <div class="pill">Phase 3</div>
+      </article>
+      <article class="card">
+        <strong>Import réel</strong>
+        <span>Centraliser les imports sensibles côté admin.</span>
+        <div class="pill">Plus tard</div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

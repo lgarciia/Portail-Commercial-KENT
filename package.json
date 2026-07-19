@@ -1,5 +1,8 @@
 {
   "name": "portail-commercial-kent",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "supabase": "^2.109.1"
+  }
 }

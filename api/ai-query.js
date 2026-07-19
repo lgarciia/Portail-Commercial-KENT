@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 
 const COOKIE_NAME = "kent_portal_day";
 const PARIS_TIMEZONE = "Europe/Paris";
+const USER_CONFIG_ENV_NAMES = ["PORTAL_USERS", "ACCESS_USERS"];
 const MAX_RESPONSE_ROWS = 1000;
 const DEFAULT_LIMIT = 10;
 const PAGE_SIZE = 1000;
@@ -169,13 +170,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const accessCode = String(process.env.ACCESS_DAILY_CODE || "").trim();
-    if (!accessCode) {
-      return jsonError(res, 500, "Configuration access code manquante.");
+    const authConfig = getAuthConfig();
+    if (!authConfig.enabled) {
+      return jsonError(res, 500, "Configuration des accès manquante.");
     }
 
     const sessionValue = getCookie(String(req.headers?.cookie || ""), COOKIE_NAME);
-    const isValid = await isValidSession(sessionValue, accessCode, getParisDayKey());
+    const isValid = isValidSession(sessionValue, authConfig, getParisDayKey());
     if (!isValid) {
       return jsonError(res, 401, "Session invalide. Reconnecte-toi.");
     }
@@ -1941,6 +1942,26 @@ function isoWeek(date) {
   return { year: target.getUTCFullYear(), week };
 }
 
+function getAuthConfig() {
+  const legacyCode = String(process.env.ACCESS_DAILY_CODE || "").trim();
+  const usersRaw = USER_CONFIG_ENV_NAMES
+    .map(name => String(process.env[name] || "").trim())
+    .find(Boolean) || "";
+  const secret = String(
+    process.env.ACCESS_SESSION_SECRET ||
+    process.env.PORTAL_SESSION_SECRET ||
+    legacyCode ||
+    usersRaw ||
+    ""
+  ).trim();
+
+  return {
+    enabled: Boolean(legacyCode || usersRaw),
+    legacyCode,
+    secret: secret || "kent-portal-session"
+  };
+}
+
 function getCookie(cookieHeader, name) {
   if (!cookieHeader) return "";
   const parts = cookieHeader.split(";").map(item => item.trim());
@@ -1953,8 +1974,14 @@ function getCookie(cookieHeader, name) {
   return "";
 }
 
-async function isValidSession(value, accessCode, expectedDayKey) {
-  if (!value || !accessCode || !expectedDayKey) return false;
+function isValidSession(value, authConfig, expectedDayKey) {
+  if (!value || !expectedDayKey || !authConfig?.enabled) return false;
+
+  if (value.startsWith("v2.")) {
+    return isValidV2Session(value, authConfig.secret, expectedDayKey);
+  }
+
+  if (!authConfig.legacyCode) return false;
 
   const lastDot = value.lastIndexOf(".");
   if (lastDot <= 0) return false;
@@ -1963,12 +1990,34 @@ async function isValidSession(value, accessCode, expectedDayKey) {
   const signature = value.slice(lastDot + 1);
   if (!dayKey || !signature || dayKey !== expectedDayKey) return false;
 
-  const expected = signValue(dayKey, accessCode);
+  const expected = signValue(dayKey, authConfig.legacyCode);
   return safeEqual(signature, expected);
+}
+
+function isValidV2Session(value, secret, expectedDayKey) {
+  const parts = value.split(".");
+  if (parts.length !== 3) return false;
+
+  const [, encoded, signature] = parts;
+  const expected = signValue(encoded, secret);
+  if (!safeEqual(signature, expected)) return false;
+
+  try {
+    const payload = JSON.parse(base64UrlDecode(encoded));
+    return payload?.v === 2 && payload?.dayKey === expectedDayKey;
+  } catch {
+    return false;
+  }
 }
 
 function signValue(value, secret) {
   return crypto.createHmac("sha256", secret).update(value).digest("hex");
+}
+
+function base64UrlDecode(value) {
+  const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+  return Buffer.from(padded, "base64").toString("utf8");
 }
 
 function safeEqual(a, b) {
