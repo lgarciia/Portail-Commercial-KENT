@@ -252,17 +252,41 @@
     .detail-kpi{border:1px solid var(--line);border-radius:16px;background:rgba(3,7,18,.18);padding:10px}
     .detail-kpi span{display:block;color:var(--muted-2);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
     .detail-kpi strong{display:block;margin-top:5px;font-size:16px}
-    .daily-hero{display:grid;grid-template-columns:minmax(0,.72fr) minmax(360px,.28fr);gap:12px;align-items:start}
-    .daily-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .daily-hero{display:grid;gap:14px;align-items:start}
+    .daily-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
     .daily-card{
-      border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.028));
-      padding:12px;cursor:pointer;transition:.14s;display:grid;gap:7px;
+      border:1px solid var(--line);border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.026));
+      padding:9px 10px;cursor:pointer;transition:.14s;display:grid;gap:4px;min-height:88px;
     }
     .daily-card:hover{border-color:rgba(56,189,248,.32);background:rgba(56,189,248,.06)}
     .daily-card.active{border-color:rgba(245,158,11,.42);background:rgba(245,158,11,.10)}
-    .daily-card span{color:var(--muted);font-size:12px}
-    .daily-card strong{font-size:20px;letter-spacing:-.04em}
-    .daily-drill{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:12px;margin-top:12px}
+    .daily-card span{color:var(--muted);font-size:11px;line-height:1.25}
+    .daily-card strong{font-size:18px;letter-spacing:-.04em}
+    .daily-drill{display:block;margin-top:2px}
+    .daily-client-zone{width:min(1080px,100%);margin:0 auto;display:grid;gap:9px}
+    .daily-client-card{
+      border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.042);
+      overflow:hidden;transition:.14s;
+    }
+    .daily-client-card.active{border-color:rgba(56,189,248,.34);background:rgba(56,189,248,.052)}
+    .daily-client-head{
+      width:100%;border:0;background:transparent;color:var(--text);padding:12px 14px;
+      display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;text-align:left;
+    }
+    .daily-client-title{display:grid;gap:2px;min-width:0}
+    .daily-client-title strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .daily-client-title span{color:var(--muted);font-size:11px}
+    .daily-client-amount{font-size:17px;font-weight:1000;white-space:nowrap}
+    .daily-client-toggle{color:var(--muted);font-size:18px}
+    .daily-client-lines{display:grid;gap:7px;padding:0 12px 12px}
+    .daily-line{
+      display:grid;grid-template-columns:76px 96px minmax(120px,.62fr) minmax(180px,1fr) 96px 54px 86px 92px;
+      gap:8px;align-items:center;border:1px solid rgba(255,255,255,.08);border-radius:13px;
+      background:rgba(3,7,18,.20);padding:8px 10px;font-size:12px;min-width:0;
+    }
+    .daily-line span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.82)}
+    .daily-line .muted{color:var(--muted)}
+    .daily-line .num{text-align:right;font-variant-numeric:tabular-nums}
     .compact-list{display:grid;gap:8px}
     .compact-row{
       border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.04);padding:10px;
@@ -303,8 +327,8 @@
       .hero,.dashboard-grid{grid-template-columns:1fr}
       .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
       .commercial-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .daily-hero,.daily-drill{grid-template-columns:1fr}
       .months{grid-template-columns:repeat(6,minmax(0,1fr))}
+      .daily-line{grid-template-columns:70px 90px minmax(90px,.65fr) minmax(120px,1fr) 80px 44px 72px 78px;font-size:11px}
     }
     @media(max-width:780px){
       .wrap{padding:14px}
@@ -313,6 +337,10 @@
       .hero{padding:16px}
       .control-grid,.kpis,.commercial-grid,.split{grid-template-columns:1fr}
       .daily-cards{grid-template-columns:1fr}
+      .daily-client-head{grid-template-columns:1fr auto;gap:8px}
+      .daily-client-amount{grid-column:1 / -1}
+      .daily-line{grid-template-columns:1fr 1fr;font-size:11px}
+      .daily-line span{white-space:normal}
       .months{grid-template-columns:repeat(2,minmax(0,1fr))}
       .search{max-width:none}
     }
@@ -569,34 +597,17 @@
           <button class="btn small green" type="button" data-build-daily-report>Generer rapport journee</button>
         </div>
         <div class="daily-hero">
-          <div>
-            <div class="daily-cards" data-day-commercials>
-              <div class="empty">Chargement du CA jour...</div>
-            </div>
-            <div class="daily-drill">
-              <div>
-                <div class="sub">Clients du commercial selectionne</div>
-                <div class="compact-list" data-day-clients>
-                  <div class="empty">Selectionne un commercial.</div>
-                </div>
-              </div>
-              <div>
-                <div class="sub">Lignes vendues du client selectionne</div>
-                <div class="table-wrap">
-                  <table>
-                    <thead><tr><th>Date</th><th>Secteur</th><th>Reference</th><th>Produit</th><th>Type</th><th class="num">Qte</th><th class="num">PU HT</th><th class="num">Total HT</th></tr></thead>
-                    <tbody data-day-lines><tr><td colspan="8"><div class="empty">Selectionne un client.</div></td></tr></tbody>
-                  </table>
-                </div>
+          <div class="daily-cards" data-day-commercials>
+            <div class="empty">Chargement du CA jour...</div>
+          </div>
+          <div class="daily-drill">
+            <div class="daily-client-zone">
+              <div class="sub" data-day-client-title>Clients du commercial selectionne</div>
+              <div class="compact-list" data-day-clients>
+                <div class="empty">Selectionne un commercial.</div>
               </div>
             </div>
           </div>
-          <aside class="panel" style="box-shadow:none;padding:13px;border-radius:18px">
-            <h2 style="font-size:18px">Synthese jour</h2>
-            <div class="mini-list" data-day-summary>
-              <div class="empty">Chargement...</div>
-            </div>
-          </aside>
         </div>
       </section>
       <section class="panel report-panel" data-report-panel hidden>
@@ -691,8 +702,7 @@
         activityRows: document.querySelector("[data-activity-rows]"),
         dayCommercials: document.querySelector("[data-day-commercials]"),
         dayClients: document.querySelector("[data-day-clients]"),
-        dayLines: document.querySelector("[data-day-lines]"),
-        daySummary: document.querySelector("[data-day-summary]"),
+        dayClientTitle: document.querySelector("[data-day-client-title]"),
         buildDailyReport: document.querySelector("[data-build-daily-report]"),
         reportPanel: document.querySelector("[data-report-panel]"),
         reportSubtitle: document.querySelector("[data-report-subtitle]"),
@@ -1131,8 +1141,7 @@
         if (!groups.length) {
           els.dayCommercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce perimetre.</div>';
           els.dayClients.innerHTML = '<div class="empty">Aucun commercial selectionne.</div>';
-          els.dayLines.innerHTML = '<tr><td colspan="8"><div class="empty">Aucune ligne vendue sur ce jour.</div></td></tr>';
-          els.daySummary.innerHTML = '<div class="empty">Aucun CA jour.</div>';
+          els.dayClientTitle.textContent = "Clients du commercial selectionne";
           return;
         }
 
@@ -1143,6 +1152,7 @@
         }
 
         const selectedCommercial = groups.find(group => group.id === state.selectedDayCommercialId) || groups[0];
+        els.dayClientTitle.textContent = "Clients de " + selectedCommercial.name + " - " + formatDateShort(state.payload?.period?.day);
         els.dayCommercials.innerHTML = groups.map(function(group){
           return [
             '<article class="daily-card ' + (group.id === state.selectedDayCommercialId ? "active" : "") + '" data-day-commercial="' + escapeHtml(group.id) + '">',
@@ -1164,39 +1174,32 @@
         const clientGroups = groupDailyClients(selectedCommercial.rows || []);
         if (!clientGroups.length) {
           els.dayClients.innerHTML = '<div class="empty">Aucun client vendu pour ce commercial ce jour.</div>';
-          els.dayLines.innerHTML = '<tr><td colspan="8"><div class="empty">Aucune ligne vendue pour ce commercial ce jour.</div></td></tr>';
+          state.selectedDayClientKey = "";
         } else {
           if (!state.selectedDayClientKey || !clientGroups.some(group => group.key === state.selectedDayClientKey)) {
-            state.selectedDayClientKey = clientGroups[0].key;
+            state.selectedDayClientKey = "";
           }
           els.dayClients.innerHTML = clientGroups.map(function(group){
+            const isOpen = group.key === state.selectedDayClientKey;
             return [
-              '<article class="compact-row ' + (group.key === state.selectedDayClientKey ? "active" : "") + '" data-day-client="' + escapeHtml(group.key) + '">',
-                '<div><strong>' + escapeHtml(group.name) + '</strong><span>' + escapeHtml(group.account || "-") + ' - ' + integer(group.lineCount) + ' ligne(s)</span></div>',
-                '<strong>' + money(group.amount) + '</strong>',
+              '<article class="daily-client-card ' + (isOpen ? "active" : "") + '">',
+                '<button class="daily-client-head" type="button" data-day-client="' + escapeHtml(group.key) + '">',
+                  '<span class="daily-client-title"><strong>' + escapeHtml(group.name) + '</strong><span>' + escapeHtml(group.account || "-") + ' - ' + integer(group.lineCount) + ' ligne(s)</span></span>',
+                  '<strong class="daily-client-amount">' + money(group.amount) + '</strong>',
+                  '<span class="daily-client-toggle" aria-hidden="true">' + (isOpen ? "−" : "+") + '</span>',
+                '</button>',
+                isOpen ? '<div class="daily-client-lines">' + group.rows.map(dailyLineHtml).join("") + '</div>' : '',
               '</article>'
             ].join("");
           }).join("");
           els.dayClients.querySelectorAll("[data-day-client]").forEach(function(row){
             row.addEventListener("click", function(){
-              state.selectedDayClientKey = row.dataset.dayClient || "";
+              const key = row.dataset.dayClient || "";
+              state.selectedDayClientKey = state.selectedDayClientKey === key ? "" : key;
               renderDailyActivity();
             });
           });
-
-          const selectedClient = clientGroups.find(group => group.key === state.selectedDayClientKey) || clientGroups[0];
-          els.dayLines.innerHTML = (selectedClient.rows || []).map(function(row){
-            return `<tr><td>${escapeHtml(formatDateShort(row.date))}</td><td>${sectorBadge(row.secteur)}</td><td>${escapeHtml(row.reference || "-")}</td><td>${escapeHtml(row.designation || "-")}</td><td>${escapeHtml(row.typeLabel || "-")}</td><td class="num">${number(row.quantite)}</td><td class="num">${money(row.prixUnitaire)}</td><td class="num">${money(row.montant)}</td></tr>`;
-          }).join("");
         }
-
-        const totalDay = groups.reduce((sum, group) => sum + Number(group.amount || 0), 0);
-        const activeGroups = groups.filter(group => group.amount > 0);
-        els.daySummary.innerHTML = [
-          miniSummary("CA jour", money(totalDay), integer(activeGroups.length) + " commercial(aux) avec vente"),
-          miniSummary("Clients travailles", integer(new Set(getDailyRows().map(row => dailyClientKey(row))).size), "Sur le jour selectionne"),
-          miniSummary("Mode de vente", integer(groups.reduce((sum, group) => sum + group.terrainCount, 0)) + " terrain / " + integer(groups.reduce((sum, group) => sum + group.phoneCount, 0)) + " telephone", "D'apres les ventes saisies")
-        ].join("");
       }
 
       function renderDailyReport(){
@@ -1316,6 +1319,21 @@
 
       function dailyClientKey(row){
         return [row.commercialUserId || "", row.secteur || "", row.clientId || row.clientNom || "", row.numeroCompte || ""].join("::");
+      }
+
+      function dailyLineHtml(row){
+        return [
+          '<div class="daily-line">',
+            '<span class="muted">' + escapeHtml(formatDateShort(row.date)) + '</span>',
+            '<span>' + escapeHtml(row.secteur === "industrie" ? "Industrie" : "Auto") + '</span>',
+            '<span>' + escapeHtml(row.reference || "-") + '</span>',
+            '<span>' + escapeHtml(row.designation || "-") + '</span>',
+            '<span>' + escapeHtml(row.typeLabel || "-") + '</span>',
+            '<span class="num">' + number(row.quantite) + '</span>',
+            '<span class="num">' + money(row.prixUnitaire) + '</span>',
+            '<span class="num">' + money(row.montant) + '</span>',
+          '</div>'
+        ].join("");
       }
 
       function miniSummary(title, value, subtitle){
