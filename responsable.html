@@ -232,7 +232,7 @@
     .row-title{display:grid;gap:2px}
     .row-title strong{font-size:13px}
     .row-title span{font-size:11px;color:var(--muted)}
-    .split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
     .months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:7px}
     .month-pill{
       border:1px solid var(--line);
@@ -243,6 +243,14 @@
     }
     .month-pill span{display:block;color:var(--muted-2);font-size:10px;font-weight:950;text-transform:uppercase}
     .month-pill strong{display:block;margin-top:5px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .clickable-row{cursor:pointer;transition:.14s}
+    .clickable-row:hover{background:rgba(56,189,248,.075)}
+    .clickable-row.active{background:rgba(245,158,11,.10)}
+    .detail-panel{margin-top:14px;border-color:rgba(56,189,248,.22);background:linear-gradient(135deg, rgba(56,189,248,.06), rgba(255,255,255,.035))}
+    .detail-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:12px}
+    .detail-kpi{border:1px solid var(--line);border-radius:16px;background:rgba(3,7,18,.18);padding:10px}
+    .detail-kpi span{display:block;color:var(--muted-2);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .detail-kpi strong{display:block;margin-top:5px;font-size:16px}
     .empty{border:1px dashed rgba(255,255,255,.18);border-radius:18px;padding:18px;color:var(--muted);text-align:center;background:rgba(255,255,255,.03)}
     .toast{
       position:fixed;right:22px;bottom:22px;z-index:20;display:none;max-width:min(460px,calc(100vw - 44px));
@@ -251,7 +259,22 @@
     }
     .toast.show{display:block}
     .toast.error{border-color:rgba(239,68,68,.38);background:#2a1118;color:#fecaca}
-    .loading{opacity:.62;pointer-events:none}
+    .loading{pointer-events:none}
+    .loading-overlay{
+      position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+      background:rgba(3,7,18,.48);backdrop-filter:blur(7px);
+    }
+    .loading-overlay.show{display:flex}
+    .loading-box{
+      width:min(460px,calc(100vw - 38px));border:1px solid rgba(255,255,255,.16);border-radius:24px;
+      background:linear-gradient(135deg, rgba(15,23,42,.96), rgba(6,78,59,.82));box-shadow:0 24px 80px rgba(0,0,0,.42);
+      padding:20px;display:grid;gap:12px;
+    }
+    .loading-box strong{font-size:19px}
+    .loading-box span{color:var(--muted);font-size:13px}
+    .loading-bar{height:8px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.10)}
+    .loading-bar i{display:block;height:100%;width:42%;border-radius:999px;background:linear-gradient(90deg,#38bdf8,#22c55e,#f59e0b);animation:loadSlide 1.05s ease-in-out infinite}
+    @keyframes loadSlide{0%{transform:translateX(-115%)}100%{transform:translateX(245%)}}
     @media(max-width:1280px){
       .hero,.dashboard-grid{grid-template-columns:1fr}
       .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -282,9 +305,8 @@
       </div>
       <div class="top-actions">
         <span class="btn ghost small" data-session-source>Session securisee</span>
-        <a class="btn small" href="admin-users.html">Equipe</a>
-        <a class="btn small" href="documents-commerciaux.html">BDC / Devis</a>
-        <a class="btn small" href="index.html">Portail</a>
+        <button class="btn small" type="button" data-open-team>Equipe</button>
+        <button class="btn small" type="button" data-refresh-top>Synchroniser</button>
         <a class="btn danger small" href="/deconnexion">Deconnexion</a>
       </div>
     </section>
@@ -338,6 +360,7 @@
 
     <nav class="tabs" aria-label="Navigation responsable">
       <button class="tab active" type="button" data-tab="synthese">Synthese</button>
+      <button class="tab" type="button" data-tab="equipe">Equipe</button>
       <button class="tab" type="button" data-tab="ca">CA detaille</button>
       <button class="tab" type="button" data-tab="budgets">Budgets</button>
       <button class="tab" type="button" data-tab="ecarts">Ecarts</button>
@@ -382,6 +405,23 @@
           <table>
             <thead><tr><th>Commercial</th><th>Client</th><th>Compte</th><th class="num">Lignes</th><th class="num">CA HT</th></tr></thead>
             <tbody data-top-clients><tr><td colspan="5" class="empty">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="view" data-view="equipe">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Equipe rattachee</h2>
+            <div class="sub">Tous les commerciaux visibles par ce responsable. Lecture seule, aucune modification depuis cet ecran.</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Commercial</th><th>Identifiant</th><th>Rattachement</th><th>Perimetre</th><th class="num">CA mois</th><th class="num">Budget a date</th><th class="num">Documents en cours</th><th>Derniere connexion</th></tr></thead>
+            <tbody data-team-rows></tbody>
           </table>
         </div>
       </section>
@@ -432,7 +472,7 @@
           <div class="panel-head"><div><h2>Budgets par commercial</h2><div class="sub">Budget annuel et budget a date.</div></div></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Commercial</th><th class="num">Budget a date</th><th class="num">Budget annuel</th><th class="num">Lignes</th></tr></thead>
+              <thead><tr><th>Commercial</th><th class="num">Reel a date</th><th class="num">Budget a date</th><th class="num">Ecart</th><th class="num">Budget annuel</th></tr></thead>
               <tbody data-budget-commercials></tbody>
             </table>
           </div>
@@ -447,6 +487,12 @@
           </div>
         </section>
       </div>
+      <section class="panel detail-panel" data-budget-commercial-detail>
+        <div class="empty">Clique sur un commercial, ou sur le cumul equipe, pour voir le detail mensuel budget vs reel.</div>
+      </section>
+      <section class="panel detail-panel" data-budget-entity-detail>
+        <div class="empty">Clique sur une entite pour voir quels commerciaux construisent son budget.</div>
+      </section>
     </section>
 
     <section class="view" data-view="ecarts">
@@ -464,6 +510,9 @@
           </table>
         </div>
       </section>
+      <section class="panel detail-panel" data-gap-detail>
+        <div class="empty">Clique sur une ligne pour ouvrir le detail mensuel reel vs budget.</div>
+      </section>
     </section>
 
     <section class="view" data-view="documents">
@@ -473,7 +522,7 @@
             <h2>BDC / Devis a suivre</h2>
             <div class="sub">Documents generes sur l'annee selectionnee, visibles en temps reel.</div>
           </div>
-          <a class="btn small green" href="documents-commerciaux.html">Ouvrir l'archive</a>
+          <span class="chip chip-blue">Lecture seule</span>
         </div>
         <div class="table-wrap">
           <table>
@@ -502,6 +551,14 @@
     </section>
   </main>
 
+  <div class="loading-overlay" data-loading-overlay aria-live="polite" aria-hidden="true">
+    <div class="loading-box">
+      <strong>Chargement en cours</strong>
+      <span>Synchronisation des ventes, budgets, reels importes et documents de l'equipe...</span>
+      <div class="loading-bar" aria-hidden="true"><i></i></div>
+    </div>
+  </div>
+
   <div class="toast" data-toast></div>
 
   <script>
@@ -513,7 +570,10 @@
         salesSearch: "",
         commercialFilter: "",
         sectorFilter: "",
-        typeFilter: ""
+        typeFilter: "",
+        selectedBudgetCommercialId: "",
+        selectedBudgetEntityId: "",
+        selectedGapCommercialId: ""
       };
 
       const monthLabels = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"];
@@ -537,13 +597,18 @@
         commercials: document.querySelector("[data-commercials]"),
         alerts: document.querySelector("[data-alerts]"),
         topClients: document.querySelector("[data-top-clients]"),
+        teamRows: document.querySelector("[data-team-rows]"),
         salesRows: document.querySelector("[data-sales-rows]"),
         budgetMonths: document.querySelector("[data-budget-months]"),
         budgetCommercials: document.querySelector("[data-budget-commercials]"),
         budgetEntities: document.querySelector("[data-budget-entities]"),
+        budgetCommercialDetail: document.querySelector("[data-budget-commercial-detail]"),
+        budgetEntityDetail: document.querySelector("[data-budget-entity-detail]"),
         gapRows: document.querySelector("[data-gap-rows]"),
+        gapDetail: document.querySelector("[data-gap-detail]"),
         documentRows: document.querySelector("[data-document-rows]"),
         activityRows: document.querySelector("[data-activity-rows]"),
+        loadingOverlay: document.querySelector("[data-loading-overlay]"),
         toast: document.querySelector("[data-toast]")
       };
 
@@ -552,6 +617,8 @@
       function init(){
         hydratePeriodControls();
         document.querySelector("[data-refresh]").addEventListener("click", loadDashboard);
+        document.querySelector("[data-refresh-top]").addEventListener("click", loadDashboard);
+        document.querySelector("[data-open-team]").addEventListener("click", function(){ setTab("equipe"); });
         document.querySelector("[data-today]").addEventListener("click", setToday);
         document.querySelectorAll("[data-tab]").forEach(function(button){
           button.addEventListener("click", function(){ setTab(button.dataset.tab); });
@@ -561,6 +628,8 @@
         });
         els.commercialFilter.addEventListener("change", function(){
           state.commercialFilter = els.commercialFilter.value;
+          state.selectedBudgetCommercialId = state.commercialFilter || "";
+          state.selectedGapCommercialId = "";
           renderAll();
         });
         els.search.addEventListener("input", function(){
@@ -618,6 +687,7 @@
           renderScope();
           renderStats();
           hydrateCommercialOptions();
+          normalizeSelections();
           renderAll();
           showToast("Vue responsable synchronisee.");
         }catch(error){
@@ -632,6 +702,7 @@
         renderCommercials();
         renderAlerts();
         renderTopClients();
+        renderTeamRows();
         renderSalesRows();
         renderBudgetMonths();
         renderBudgetTables();
@@ -684,6 +755,14 @@
         } else {
           state.commercialFilter = "";
         }
+      }
+
+      function normalizeSelections(){
+        const ids = new Set((state.payload?.commercials || []).map(item => item.id));
+        if (state.selectedBudgetCommercialId && !ids.has(state.selectedBudgetCommercialId)) state.selectedBudgetCommercialId = "";
+        if (state.selectedGapCommercialId && !ids.has(state.selectedGapCommercialId)) state.selectedGapCommercialId = "";
+        const entityIds = new Set((state.payload?.budgets?.entities || []).map(item => item.id));
+        if (state.selectedBudgetEntityId && !entityIds.has(state.selectedBudgetEntityId)) state.selectedBudgetEntityId = "";
       }
 
       function scopedCommercials(){
@@ -759,6 +838,18 @@
         }).join("");
       }
 
+      function renderTeamRows(){
+        const rows = scopedCommercials().slice().sort((a,b) => String(a.displayName || "").localeCompare(String(b.displayName || ""), "fr"));
+        if (!rows.length) {
+          els.teamRows.innerHTML = '<tr><td colspan="8"><div class="empty">Aucun commercial visible dans cette equipe.</div></td></tr>';
+          return;
+        }
+        els.teamRows.innerHTML = rows.map(function(item){
+          const metrics = item.metrics || {};
+          return `<tr><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.roleLabel || "Commercial")}</span></div></td><td>${escapeHtml(item.identifier)}</td><td>${relationBadge(item.relationType, item.relationLabel)}</td><td>${escapeHtml(item.scopeLabel || "-")}</td><td class="num">${money(metrics.caMois)}</td><td class="num">${money(metrics.budgetADate)}</td><td class="num">${integer(metrics.documentsEnCours)}</td><td>${escapeHtml(formatDateTime(item.lastLoginAt))}</td></tr>`;
+        }).join("");
+      }
+
       function renderSalesRows(){
         let rows = state.payload?.sales?.monthlyRows || [];
         rows = filterCommercialRows(rows, "commercialUserId");
@@ -778,7 +869,7 @@
       }
 
       function renderBudgetMonths(){
-        const monthly = state.payload?.budgets?.totals?.monthly || [];
+        const monthly = state.commercialFilter ? getBudgetMonthlyForCommercial(state.commercialFilter) : (state.payload?.budgets?.totals?.monthly || []);
         els.budgetMonths.innerHTML = monthLabels.map(function(label, index){
           return `<div class="month-pill"><span>${escapeHtml(label.slice(0,3))}</span><strong>${money(monthly[index] || 0)}</strong></div>`;
         }).join("");
@@ -786,31 +877,122 @@
 
       function renderBudgetTables(){
         const commercials = scopedCommercials().slice().sort((a,b) => Number(b.metrics?.budgetAnnuel || 0) - Number(a.metrics?.budgetAnnuel || 0));
-        els.budgetCommercials.innerHTML = commercials.length ? commercials.map(function(item){
-          return `<tr><td>${escapeHtml(item.displayName)}</td><td class="num">${money(item.metrics?.budgetADate)}</td><td class="num">${money(item.metrics?.budgetAnnuel)}</td><td class="num">${integer((state.payload?.budgets?.byCommercial || {})[item.id]?.lines || 0)}</td></tr>`;
-        }).join("") : '<tr><td colspan="4"><div class="empty">Aucun budget actif.</div></td></tr>';
+        const stats = state.payload?.stats || {};
+        const teamRow = state.commercialFilter ? "" : `<tr class="clickable-row ${state.selectedBudgetCommercialId === "" ? "active" : ""}" data-budget-commercial="">
+          <td><div class="row-title"><strong>Cumul equipe</strong><span>Tous les commerciaux visibles</span></div></td>
+          <td class="num">${money(stats.reelReportingADate)}</td>
+          <td class="num">${money(stats.budgetADate)}</td>
+          <td class="num">${gapChip(stats.ecartADate)}</td>
+          <td class="num">${money(stats.budgetAnnuel)}</td>
+        </tr>`;
+        els.budgetCommercials.innerHTML = (teamRow || commercials.length) ? teamRow + commercials.map(function(item){
+          const metrics = item.metrics || {};
+          return `<tr class="clickable-row ${state.selectedBudgetCommercialId === item.id ? "active" : ""}" data-budget-commercial="${escapeHtml(item.id)}"><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.identifier)}</span></div></td><td class="num">${money(metrics.reelReportingADate)}</td><td class="num">${money(metrics.budgetADate)}</td><td class="num">${gapChip(metrics.ecartADate)}</td><td class="num">${money(metrics.budgetAnnuel)}</td></tr>`;
+        }).join("") : '<tr><td colspan="5"><div class="empty">Aucun budget actif.</div></td></tr>';
+        els.budgetCommercials.querySelectorAll("[data-budget-commercial]").forEach(function(row){
+          row.addEventListener("click", function(){
+            state.selectedBudgetCommercialId = row.dataset.budgetCommercial || "";
+            renderBudgetTables();
+          });
+        });
 
         let entities = state.payload?.budgets?.entities || [];
         if (!entities.length) {
           els.budgetEntities.innerHTML = '<tr><td colspan="4"><div class="empty">Aucune entite budget active.</div></td></tr>';
+          renderBudgetCommercialDetail();
+          renderBudgetEntityDetail();
           return;
         }
         els.budgetEntities.innerHTML = entities.slice(0, 60).map(function(entity){
-          return `<tr><td>${escapeHtml(entity.libelle)}</td><td class="num">${money(entity.toDate)}</td><td class="num">${money(entity.total)}</td><td class="num">${integer(entity.lignes)}</td></tr>`;
+          return `<tr class="clickable-row ${state.selectedBudgetEntityId === entity.id ? "active" : ""}" data-budget-entity="${escapeHtml(entity.id)}"><td>${escapeHtml(entity.libelle)}</td><td class="num">${money(entity.toDate)}</td><td class="num">${money(entity.total)}</td><td class="num">${integer(entity.lignes)}</td></tr>`;
         }).join("");
+        els.budgetEntities.querySelectorAll("[data-budget-entity]").forEach(function(row){
+          row.addEventListener("click", function(){
+            state.selectedBudgetEntityId = row.dataset.budgetEntity || "";
+            renderBudgetEntityDetail();
+            renderBudgetTables();
+          });
+        });
+        renderBudgetCommercialDetail();
+        renderBudgetEntityDetail();
+      }
+
+      function renderBudgetCommercialDetail(){
+        const id = state.selectedBudgetCommercialId || "";
+        const label = id ? commercialName(id) : "Cumul equipe";
+        const budgetMonthly = getBudgetMonthlyForCommercial(id);
+        const realMonthly = getRealMonthlyForCommercial(id);
+        els.budgetCommercialDetail.innerHTML = buildMonthlyComparisonHtml({
+          title: "Analyse budget - " + label,
+          subtitle: "Lecture mensuelle : reel importe actif vs budget actif Supabase.",
+          budgetMonthly,
+          realMonthly
+        });
+      }
+
+      function renderBudgetEntityDetail(){
+        const entityId = state.selectedBudgetEntityId;
+        if (!entityId) {
+          els.budgetEntityDetail.innerHTML = '<div class="empty">Clique sur une entite pour voir quels commerciaux construisent son budget.</div>';
+          return;
+        }
+        const entity = (state.payload?.budgets?.entities || []).find(item => item.id === entityId);
+        const rows = aggregateBudgetEntityByCommercial(entityId);
+        if (!entity || !rows.length) {
+          els.budgetEntityDetail.innerHTML = '<div class="empty">Aucun detail disponible pour cette entite.</div>';
+          return;
+        }
+        const body = rows.map(function(row){
+          const share = entity.total ? (row.total / entity.total) * 100 : 0;
+          return `<tr><td>${escapeHtml(commercialName(row.commercialUserId))}</td><td class="num">${money(row.toDate)}</td><td class="num">${money(row.total)}</td><td class="num">${percent(share)}</td><td class="num">${integer(row.lignes)}</td></tr>`;
+        }).join("");
+        els.budgetEntityDetail.innerHTML = [
+          '<div class="panel-head"><div><h2>Detail entite - ' + escapeHtml(entity.libelle) + '</h2><div class="sub">Repartition du budget par commercial pour cette entite.</div></div></div>',
+          '<div class="detail-kpis">',
+            detailKpi("Budget a date", money(entity.toDate)),
+            detailKpi("Budget annuel", money(entity.total)),
+            detailKpi("Commerciaux", integer(rows.length)),
+            detailKpi("Lignes", integer(entity.lignes)),
+          '</div>',
+          '<div class="table-wrap"><table><thead><tr><th>Commercial</th><th class="num">A date</th><th class="num">Annuel</th><th class="num">Part</th><th class="num">Lignes</th></tr></thead><tbody>',
+          body,
+          '</tbody></table></div>'
+        ].join("");
       }
 
       function renderGapRows(){
         const rows = scopedCommercials().slice().sort((a,b) => Number(a.metrics?.ecartADate || 0) - Number(b.metrics?.ecartADate || 0));
         if (!rows.length) {
           els.gapRows.innerHTML = '<tr><td colspan="6"><div class="empty">Aucun commercial visible.</div></td></tr>';
+          renderGapDetail();
           return;
         }
         els.gapRows.innerHTML = rows.map(function(item){
           const metrics = item.metrics || {};
-          const gapClass = Number(metrics.ecartADate || 0) >= 0 ? "chip-green" : "chip-red";
-          return `<tr><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.identifier)}</span></div></td><td class="num">${money(metrics.reelReportingADate)}</td><td class="num">${money(metrics.budgetADate)}</td><td class="num"><span class="chip ${gapClass}">${money(metrics.ecartADate)}</span></td><td class="num">${metrics.tauxAtteinteADate === null ? "-" : percent(metrics.tauxAtteinteADate)}</td><td class="num">${money(metrics.caMois)}</td></tr>`;
+          return `<tr class="clickable-row ${state.selectedGapCommercialId === item.id ? "active" : ""}" data-gap-commercial="${escapeHtml(item.id)}"><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.identifier)}</span></div></td><td class="num">${money(metrics.reelReportingADate)}</td><td class="num">${money(metrics.budgetADate)}</td><td class="num">${gapChip(metrics.ecartADate)}</td><td class="num">${metrics.tauxAtteinteADate === null ? "-" : percent(metrics.tauxAtteinteADate)}</td><td class="num">${money(metrics.caMois)}</td></tr>`;
         }).join("");
+        els.gapRows.querySelectorAll("[data-gap-commercial]").forEach(function(row){
+          row.addEventListener("click", function(){
+            const id = row.dataset.gapCommercial || "";
+            state.selectedGapCommercialId = state.selectedGapCommercialId === id ? "" : id;
+            renderGapRows();
+          });
+        });
+        renderGapDetail();
+      }
+
+      function renderGapDetail(){
+        const id = state.selectedGapCommercialId;
+        if (!id) {
+          els.gapDetail.innerHTML = '<div class="empty">Clique sur une ligne pour ouvrir le detail mensuel reel vs budget.</div>';
+          return;
+        }
+        els.gapDetail.innerHTML = buildMonthlyComparisonHtml({
+          title: "Detail ecart - " + commercialName(id),
+          subtitle: "Ce detail permet de voir quel mois cree l'avance ou le retard.",
+          budgetMonthly: getBudgetMonthlyForCommercial(id),
+          realMonthly: getRealMonthlyForCommercial(id)
+        });
       }
 
       function renderDocumentRows(){
@@ -846,6 +1028,83 @@
         state.activeTab = tab;
         document.querySelectorAll("[data-tab]").forEach(node => node.classList.toggle("active", node.dataset.tab === tab));
         document.querySelectorAll("[data-view]").forEach(node => node.classList.toggle("active", node.dataset.view === tab));
+      }
+
+      function getBudgetMonthlyForCommercial(commercialId){
+        if (!commercialId) return normalizeMonthly(state.payload?.budgets?.totals?.monthly);
+        const monthly = emptyMonthly();
+        (state.payload?.budgets?.rows || []).forEach(function(row){
+          if (row.commercialUserId !== commercialId) return;
+          normalizeMonthly(row.monthly).forEach((value, index) => { monthly[index] += value; });
+        });
+        return monthly.map(round2);
+      }
+
+      function getRealMonthlyForCommercial(commercialId){
+        if (!commercialId) return normalizeMonthly(state.payload?.real?.totals?.monthly);
+        return normalizeMonthly((state.payload?.real?.byCommercial || {})[commercialId]?.monthly);
+      }
+
+      function aggregateBudgetEntityByCommercial(entityId){
+        const map = new Map();
+        (state.payload?.budgets?.rows || []).forEach(function(row){
+          if (row.entiteId !== entityId) return;
+          const key = row.commercialUserId || "";
+          const current = map.get(key) || { commercialUserId:key, total:0, toDate:0, lignes:0 };
+          current.total += Number(row.total || 0);
+          current.toDate += Number(row.toDate || 0);
+          current.lignes += 1;
+          map.set(key, current);
+        });
+        return Array.from(map.values()).map(row => ({
+          ...row,
+          total: round2(row.total),
+          toDate: round2(row.toDate)
+        })).sort((a,b) => b.total - a.total);
+      }
+
+      function buildMonthlyComparisonHtml(options){
+        const budgetMonthly = normalizeMonthly(options.budgetMonthly);
+        const realMonthly = normalizeMonthly(options.realMonthly);
+        const toDateMonth = getToDateMonth();
+        const totalBudget = sumArray(budgetMonthly);
+        const totalReal = sumArray(realMonthly);
+        const toDateBudget = sumArray(budgetMonthly.slice(0, toDateMonth));
+        const toDateReal = sumArray(realMonthly.slice(0, toDateMonth));
+        const body = monthLabels.map(function(label, index){
+          const real = realMonthly[index] || 0;
+          const budget = budgetMonthly[index] || 0;
+          const gap = real - budget;
+          return `<tr><td>${escapeHtml(label)}</td><td class="num">${money(real)}</td><td class="num">${money(budget)}</td><td class="num">${gapChip(gap)}</td><td class="num">${budget ? percent((real / budget) * 100) : "-"}</td></tr>`;
+        }).join("");
+        return [
+          '<div class="panel-head"><div><h2>' + escapeHtml(options.title) + '</h2><div class="sub">' + escapeHtml(options.subtitle) + '</div></div></div>',
+          '<div class="detail-kpis">',
+            detailKpi("Reel a date", money(toDateReal)),
+            detailKpi("Budget a date", money(toDateBudget)),
+            detailKpi("Ecart a date", money(toDateReal - toDateBudget)),
+            detailKpi("Budget annuel", money(totalBudget)),
+          '</div>',
+          '<div class="table-wrap"><table><thead><tr><th>Mois</th><th class="num">Reel</th><th class="num">Budget</th><th class="num">Ecart</th><th class="num">Atteinte</th></tr></thead><tbody>',
+          body,
+          '<tr><td><strong>Total annuel</strong></td><td class="num"><strong>' + money(totalReal) + '</strong></td><td class="num"><strong>' + money(totalBudget) + '</strong></td><td class="num">' + gapChip(totalReal - totalBudget) + '</td><td class="num">' + (totalBudget ? percent((totalReal / totalBudget) * 100) : "-") + '</td></tr>',
+          '</tbody></table></div>'
+        ].join("");
+      }
+
+      function detailKpi(label, value){
+        return `<div class="detail-kpi"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
+      }
+
+      function gapChip(value){
+        const amount = Number(value || 0);
+        const cls = amount >= 0 ? "chip-green" : "chip-red";
+        return `<span class="chip ${cls}">${money(amount)}</span>`;
+      }
+
+      function relationBadge(type, label){
+        const cls = type === "principal" ? "chip-principal" : type === "exceptionnel" ? "chip-exceptionnel" : "chip-none";
+        return `<span class="chip ${cls}">${escapeHtml(label || "Non rattache")}</span>`;
       }
 
       function metricHtml(label, value){
@@ -900,6 +1159,27 @@
         return Number(value || 0).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " %";
       }
 
+      function emptyMonthly(){
+        return Array.from({ length: 12 }, () => 0);
+      }
+
+      function normalizeMonthly(values){
+        const source = Array.isArray(values) ? values : [];
+        return emptyMonthly().map((_, index) => Number(source[index] || 0));
+      }
+
+      function sumArray(values){
+        return round2((values || []).reduce((sum, value) => sum + Number(value || 0), 0));
+      }
+
+      function round2(value){
+        return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+      }
+
+      function getToDateMonth(){
+        return Math.max(1, Math.min(12, Number(state.payload?.period?.toDateMonth || els.month.value || 12)));
+      }
+
       function formatDateShort(value){
         if (!value) return "-";
         const date = new Date(String(value).slice(0, 10) + "T00:00:00");
@@ -936,6 +1216,8 @@
 
       function setLoading(value){
         els.wrap.classList.toggle("loading", Boolean(value));
+        els.loadingOverlay.classList.toggle("show", Boolean(value));
+        els.loadingOverlay.setAttribute("aria-hidden", value ? "false" : "true");
       }
 
       function escapeHtml(value){
