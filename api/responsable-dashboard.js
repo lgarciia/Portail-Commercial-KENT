@@ -412,7 +412,7 @@ function summarizeSalesRows(rows, visits, period) {
   return {
     totals,
     byCommercial: byCommercialObject,
-    dailyRows: sortRows(dayRows).slice(0, 400),
+    dailyRows: sortRows(dayRows).slice(0, 2500),
     monthlyRows: sortRows(monthRows).slice(0, 1200),
     yearlyRows: sortRows(yearRows).slice(0, 1500),
     topClientsMonth: Array.from(topClientsMonth.values())

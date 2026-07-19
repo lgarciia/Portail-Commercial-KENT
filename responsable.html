@@ -77,30 +77,30 @@
       border:1px solid var(--line);
       background:linear-gradient(135deg, rgba(15,23,42,.85), rgba(6,78,59,.25));
       border-radius:28px;
-      padding:20px;
+      padding:15px 18px;
       box-shadow:var(--shadow);
       display:grid;
       grid-template-columns:minmax(0,1fr) minmax(460px,.55fr);
-      gap:18px;
+      gap:14px;
       align-items:stretch;
     }
     .badge{
       display:inline-flex;align-items:center;height:30px;padding:0 13px;border-radius:999px;border:1px solid rgba(56,189,248,.32);
       background:rgba(56,189,248,.10);color:#bae6fd;font-weight:950;letter-spacing:.08em;text-transform:uppercase;font-size:12px;
     }
-    h1{font-size:clamp(30px,4vw,52px);line-height:.98;margin:14px 0 9px;letter-spacing:-.055em}
-    p{color:var(--muted);font-size:15px;line-height:1.48;max-width:900px;margin:0}
+    h1{font-size:clamp(28px,3.6vw,46px);line-height:.98;margin:10px 0 7px;letter-spacing:-.055em}
+    p{color:var(--muted);font-size:14px;line-height:1.42;max-width:900px;margin:0}
     .notice{
-      margin-top:13px;border:1px solid rgba(245,158,11,.24);background:rgba(245,158,11,.095);
-      border-radius:17px;padding:11px 13px;color:#fde68a;font-weight:850;line-height:1.42;font-size:13px;
+      margin-top:10px;border:1px solid rgba(245,158,11,.24);background:rgba(245,158,11,.095);
+      border-radius:16px;padding:9px 12px;color:#fde68a;font-weight:850;line-height:1.36;font-size:12px;
     }
     .controls{
       border:1px solid var(--line);
       border-radius:22px;
       background:rgba(255,255,255,.045);
-      padding:14px;
+      padding:12px;
       display:grid;
-      gap:12px;
+      gap:10px;
       align-content:start;
     }
     .control-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
@@ -173,7 +173,8 @@
     .sub{margin-top:5px;color:var(--muted);font-size:13px;line-height:1.4}
     .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .search{width:100%;max-width:290px}
-    .dashboard-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr);gap:14px}
+    .dashboard-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr);gap:14px;align-items:start}
+    .dashboard-grid + .panel{margin-top:14px}
     .commercial-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
     .commercial-card{
       border:1px solid var(--line);
@@ -251,6 +252,29 @@
     .detail-kpi{border:1px solid var(--line);border-radius:16px;background:rgba(3,7,18,.18);padding:10px}
     .detail-kpi span{display:block;color:var(--muted-2);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
     .detail-kpi strong{display:block;margin-top:5px;font-size:16px}
+    .daily-hero{display:grid;grid-template-columns:minmax(0,.72fr) minmax(360px,.28fr);gap:12px;align-items:start}
+    .daily-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .daily-card{
+      border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.028));
+      padding:12px;cursor:pointer;transition:.14s;display:grid;gap:7px;
+    }
+    .daily-card:hover{border-color:rgba(56,189,248,.32);background:rgba(56,189,248,.06)}
+    .daily-card.active{border-color:rgba(245,158,11,.42);background:rgba(245,158,11,.10)}
+    .daily-card span{color:var(--muted);font-size:12px}
+    .daily-card strong{font-size:20px;letter-spacing:-.04em}
+    .daily-drill{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:12px;margin-top:12px}
+    .compact-list{display:grid;gap:8px}
+    .compact-row{
+      border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.04);padding:10px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;transition:.14s;
+    }
+    .compact-row:hover,.compact-row.active{border-color:rgba(56,189,248,.30);background:rgba(56,189,248,.06)}
+    .compact-row strong{font-size:13px}
+    .compact-row span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+    .report-panel[hidden]{display:none}
+    .report-body{display:grid;gap:12px}
+    .report-section{border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.038);padding:12px}
+    .report-section h3{margin:0 0 8px;font-size:16px}
     .empty{border:1px dashed rgba(255,255,255,.18);border-radius:18px;padding:18px;color:var(--muted);text-align:center;background:rgba(255,255,255,.03)}
     .toast{
       position:fixed;right:22px;bottom:22px;z-index:20;display:none;max-width:min(460px,calc(100vw - 44px));
@@ -279,6 +303,7 @@
       .hero,.dashboard-grid{grid-template-columns:1fr}
       .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
       .commercial-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .daily-hero,.daily-drill{grid-template-columns:1fr}
       .months{grid-template-columns:repeat(6,minmax(0,1fr))}
     }
     @media(max-width:780px){
@@ -287,6 +312,7 @@
       .top-actions,.toolbar{width:100%;justify-content:flex-start}
       .hero{padding:16px}
       .control-grid,.kpis,.commercial-grid,.split{grid-template-columns:1fr}
+      .daily-cards{grid-template-columns:1fr}
       .months{grid-template-columns:repeat(2,minmax(0,1fr))}
       .search{max-width:none}
     }
@@ -537,7 +563,59 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>Activite terrain</h2>
+            <h2>CA du jour equipe</h2>
+            <div class="sub">Clique sur un commercial, puis sur un client, pour voir les lignes vendues du jour selectionne.</div>
+          </div>
+          <button class="btn small green" type="button" data-build-daily-report>Generer rapport journee</button>
+        </div>
+        <div class="daily-hero">
+          <div>
+            <div class="daily-cards" data-day-commercials>
+              <div class="empty">Chargement du CA jour...</div>
+            </div>
+            <div class="daily-drill">
+              <div>
+                <div class="sub">Clients du commercial selectionne</div>
+                <div class="compact-list" data-day-clients>
+                  <div class="empty">Selectionne un commercial.</div>
+                </div>
+              </div>
+              <div>
+                <div class="sub">Lignes vendues du client selectionne</div>
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>Date</th><th>Secteur</th><th>Reference</th><th>Produit</th><th>Type</th><th class="num">Qte</th><th class="num">PU HT</th><th class="num">Total HT</th></tr></thead>
+                    <tbody data-day-lines><tr><td colspan="8"><div class="empty">Selectionne un client.</div></td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <aside class="panel" style="box-shadow:none;padding:13px;border-radius:18px">
+            <h2 style="font-size:18px">Synthese jour</h2>
+            <div class="mini-list" data-day-summary>
+              <div class="empty">Chargement...</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+      <section class="panel report-panel" data-report-panel hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Rapport journalier equipe</h2>
+            <div class="sub" data-report-subtitle></div>
+          </div>
+          <div class="toolbar">
+            <button class="btn small" type="button" data-print-report>Imprimer</button>
+            <button class="btn small" type="button" data-close-report>Fermer</button>
+          </div>
+        </div>
+        <div class="report-body" data-report-body></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Activite mensuelle</h2>
             <div class="sub">Visites, commandes telephone et clients travailles sur le mois selectionne.</div>
           </div>
         </div>
@@ -573,7 +651,10 @@
         typeFilter: "",
         selectedBudgetCommercialId: "",
         selectedBudgetEntityId: "",
-        selectedGapCommercialId: ""
+        selectedGapCommercialId: "",
+        selectedDayCommercialId: "",
+        selectedDayClientKey: "",
+        showDailyReport: false
       };
 
       const monthLabels = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"];
@@ -608,6 +689,16 @@
         gapDetail: document.querySelector("[data-gap-detail]"),
         documentRows: document.querySelector("[data-document-rows]"),
         activityRows: document.querySelector("[data-activity-rows]"),
+        dayCommercials: document.querySelector("[data-day-commercials]"),
+        dayClients: document.querySelector("[data-day-clients]"),
+        dayLines: document.querySelector("[data-day-lines]"),
+        daySummary: document.querySelector("[data-day-summary]"),
+        buildDailyReport: document.querySelector("[data-build-daily-report]"),
+        reportPanel: document.querySelector("[data-report-panel]"),
+        reportSubtitle: document.querySelector("[data-report-subtitle]"),
+        reportBody: document.querySelector("[data-report-body]"),
+        printReport: document.querySelector("[data-print-report]"),
+        closeReport: document.querySelector("[data-close-report]"),
         loadingOverlay: document.querySelector("[data-loading-overlay]"),
         toast: document.querySelector("[data-toast]")
       };
@@ -620,6 +711,15 @@
         document.querySelector("[data-refresh-top]").addEventListener("click", loadDashboard);
         document.querySelector("[data-open-team]").addEventListener("click", function(){ setTab("equipe"); });
         document.querySelector("[data-today]").addEventListener("click", setToday);
+        els.buildDailyReport.addEventListener("click", function(){
+          state.showDailyReport = true;
+          renderDailyReport();
+        });
+        els.closeReport.addEventListener("click", function(){
+          state.showDailyReport = false;
+          renderDailyReport();
+        });
+        els.printReport.addEventListener("click", printDailyReport);
         document.querySelectorAll("[data-tab]").forEach(function(button){
           button.addEventListener("click", function(){ setTab(button.dataset.tab); });
         });
@@ -630,6 +730,9 @@
           state.commercialFilter = els.commercialFilter.value;
           state.selectedBudgetCommercialId = state.commercialFilter || "";
           state.selectedGapCommercialId = "";
+          state.selectedDayCommercialId = state.commercialFilter || "";
+          state.selectedDayClientKey = "";
+          state.showDailyReport = false;
           renderAll();
         });
         els.search.addEventListener("input", function(){
@@ -709,6 +812,8 @@
         renderGapRows();
         renderDocumentRows();
         renderActivityRows();
+        renderDailyActivity();
+        renderDailyReport();
       }
 
       function renderSession(){
@@ -761,6 +866,7 @@
         const ids = new Set((state.payload?.commercials || []).map(item => item.id));
         if (state.selectedBudgetCommercialId && !ids.has(state.selectedBudgetCommercialId)) state.selectedBudgetCommercialId = "";
         if (state.selectedGapCommercialId && !ids.has(state.selectedGapCommercialId)) state.selectedGapCommercialId = "";
+        if (state.selectedDayCommercialId && !ids.has(state.selectedDayCommercialId)) state.selectedDayCommercialId = "";
         const entityIds = new Set((state.payload?.budgets?.entities || []).map(item => item.id));
         if (state.selectedBudgetEntityId && !entityIds.has(state.selectedBudgetEntityId)) state.selectedBudgetEntityId = "";
       }
@@ -791,6 +897,7 @@
         }
         els.commercials.innerHTML = list.map(function(item){
           const metrics = item.metrics || {};
+          const budgetMonth = getBudgetMonthlyForCommercial(item.id)[getSelectedMonthIndex()] || 0;
           const relationClass = item.relationType === "principal" ? "chip-principal" : item.relationType === "exceptionnel" ? "chip-exceptionnel" : "chip-none";
           const gapClass = Number(metrics.ecartADate || 0) >= 0 ? "chip-green" : "chip-red";
           return [
@@ -801,9 +908,9 @@
               '</div>',
               '<div class="metric-grid">',
                 metricHtml("CA mois", money(metrics.caMois)),
-                metricHtml("Budget a date", money(metrics.budgetADate)),
+                metricHtml("Budget mois", money(budgetMonth)),
                 metricHtml("Reel a date", money(metrics.reelReportingADate)),
-                metricHtml("Documents", integer(metrics.documentsEnCours) + " en cours"),
+                metricHtml("Budget a date", money(metrics.budgetADate)),
               '</div>',
               '<div class="commercial-foot">',
                 '<span class="chip ' + gapClass + '">' + money(metrics.ecartADate) + '</span>',
@@ -1019,6 +1126,222 @@
         }).join("");
       }
 
+      function renderDailyActivity(){
+        const groups = groupDailyByCommercial();
+        if (!groups.length) {
+          els.dayCommercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce perimetre.</div>';
+          els.dayClients.innerHTML = '<div class="empty">Aucun commercial selectionne.</div>';
+          els.dayLines.innerHTML = '<tr><td colspan="8"><div class="empty">Aucune ligne vendue sur ce jour.</div></td></tr>';
+          els.daySummary.innerHTML = '<div class="empty">Aucun CA jour.</div>';
+          return;
+        }
+
+        if (!state.selectedDayCommercialId || !groups.some(group => group.id === state.selectedDayCommercialId)) {
+          const firstWithSales = groups.find(group => group.amount > 0);
+          state.selectedDayCommercialId = (firstWithSales || groups[0]).id;
+          state.selectedDayClientKey = "";
+        }
+
+        const selectedCommercial = groups.find(group => group.id === state.selectedDayCommercialId) || groups[0];
+        els.dayCommercials.innerHTML = groups.map(function(group){
+          return [
+            '<article class="daily-card ' + (group.id === state.selectedDayCommercialId ? "active" : "") + '" data-day-commercial="' + escapeHtml(group.id) + '">',
+              '<span>' + escapeHtml(group.name) + '</span>',
+              '<strong>' + money(group.amount) + '</strong>',
+              '<span>' + integer(group.lineCount) + ' ligne(s) - ' + integer(group.clientCount) + ' client(s)</span>',
+              '<span>' + integer(group.terrainCount) + ' terrain - ' + integer(group.phoneCount) + ' telephone</span>',
+            '</article>'
+          ].join("");
+        }).join("");
+        els.dayCommercials.querySelectorAll("[data-day-commercial]").forEach(function(card){
+          card.addEventListener("click", function(){
+            state.selectedDayCommercialId = card.dataset.dayCommercial || "";
+            state.selectedDayClientKey = "";
+            renderDailyActivity();
+          });
+        });
+
+        const clientGroups = groupDailyClients(selectedCommercial.rows || []);
+        if (!clientGroups.length) {
+          els.dayClients.innerHTML = '<div class="empty">Aucun client vendu pour ce commercial ce jour.</div>';
+          els.dayLines.innerHTML = '<tr><td colspan="8"><div class="empty">Aucune ligne vendue pour ce commercial ce jour.</div></td></tr>';
+        } else {
+          if (!state.selectedDayClientKey || !clientGroups.some(group => group.key === state.selectedDayClientKey)) {
+            state.selectedDayClientKey = clientGroups[0].key;
+          }
+          els.dayClients.innerHTML = clientGroups.map(function(group){
+            return [
+              '<article class="compact-row ' + (group.key === state.selectedDayClientKey ? "active" : "") + '" data-day-client="' + escapeHtml(group.key) + '">',
+                '<div><strong>' + escapeHtml(group.name) + '</strong><span>' + escapeHtml(group.account || "-") + ' - ' + integer(group.lineCount) + ' ligne(s)</span></div>',
+                '<strong>' + money(group.amount) + '</strong>',
+              '</article>'
+            ].join("");
+          }).join("");
+          els.dayClients.querySelectorAll("[data-day-client]").forEach(function(row){
+            row.addEventListener("click", function(){
+              state.selectedDayClientKey = row.dataset.dayClient || "";
+              renderDailyActivity();
+            });
+          });
+
+          const selectedClient = clientGroups.find(group => group.key === state.selectedDayClientKey) || clientGroups[0];
+          els.dayLines.innerHTML = (selectedClient.rows || []).map(function(row){
+            return `<tr><td>${escapeHtml(formatDateShort(row.date))}</td><td>${sectorBadge(row.secteur)}</td><td>${escapeHtml(row.reference || "-")}</td><td>${escapeHtml(row.designation || "-")}</td><td>${escapeHtml(row.typeLabel || "-")}</td><td class="num">${number(row.quantite)}</td><td class="num">${money(row.prixUnitaire)}</td><td class="num">${money(row.montant)}</td></tr>`;
+          }).join("");
+        }
+
+        const totalDay = groups.reduce((sum, group) => sum + Number(group.amount || 0), 0);
+        const activeGroups = groups.filter(group => group.amount > 0);
+        els.daySummary.innerHTML = [
+          miniSummary("CA jour", money(totalDay), integer(activeGroups.length) + " commercial(aux) avec vente"),
+          miniSummary("Clients travailles", integer(new Set(getDailyRows().map(row => dailyClientKey(row))).size), "Sur le jour selectionne"),
+          miniSummary("Mode de vente", integer(groups.reduce((sum, group) => sum + group.terrainCount, 0)) + " terrain / " + integer(groups.reduce((sum, group) => sum + group.phoneCount, 0)) + " telephone", "D'apres les ventes saisies")
+        ].join("");
+      }
+
+      function renderDailyReport(){
+        if (!state.showDailyReport) {
+          els.reportPanel.hidden = true;
+          return;
+        }
+        const rows = getDailyRows();
+        const groups = groupDailyByCommercial().filter(group => group.amount > 0);
+        els.reportPanel.hidden = false;
+        els.reportSubtitle.textContent = "Jour " + formatDateShort(state.payload?.period?.day) + " - " + integer(rows.length) + " ligne(s) vendue(s).";
+        if (!rows.length) {
+          els.reportBody.innerHTML = '<div class="empty">Aucune vente saisie sur cette journee.</div>';
+          return;
+        }
+        const total = rows.reduce((sum, row) => sum + Number(row.montant || 0), 0);
+        const summaryRows = groups.map(function(group){
+          return `<tr><td>${escapeHtml(group.name)}</td><td class="num">${integer(group.lineCount)}</td><td class="num">${integer(group.clientCount)}</td><td class="num">${money(group.amount)}</td></tr>`;
+        }).join("");
+        const detailSections = groups.map(function(group){
+          const clients = groupDailyClients(group.rows || []);
+          const clientRows = clients.map(function(client){
+            return `<tr><td>${escapeHtml(client.name)}</td><td>${escapeHtml(client.account || "-")}</td><td class="num">${integer(client.lineCount)}</td><td class="num">${money(client.amount)}</td></tr>`;
+          }).join("");
+          const lineRows = (group.rows || []).map(function(row){
+            return `<tr><td>${escapeHtml(formatDateShort(row.date))}</td><td>${sectorBadge(row.secteur)}</td><td>${escapeHtml(row.clientNom || "-")}</td><td>${escapeHtml(row.numeroCompte || "-")}</td><td>${escapeHtml(row.reference || "-")}</td><td>${escapeHtml(row.designation || "-")}</td><td>${escapeHtml(row.typeLabel || "-")}</td><td class="num">${number(row.quantite)}</td><td class="num">${money(row.montant)}</td></tr>`;
+          }).join("");
+          return [
+            '<section class="report-section">',
+              '<h3>' + escapeHtml(group.name) + ' - ' + money(group.amount) + '</h3>',
+              '<div class="table-wrap"><table><thead><tr><th>Client</th><th>Compte</th><th class="num">Lignes</th><th class="num">CA HT</th></tr></thead><tbody>' + clientRows + '</tbody></table></div>',
+              '<div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>Date</th><th>Secteur</th><th>Client</th><th>Compte</th><th>Reference</th><th>Produit</th><th>Type</th><th class="num">Qte</th><th class="num">Total HT</th></tr></thead><tbody>' + lineRows + '</tbody></table></div>',
+            '</section>'
+          ].join("");
+        }).join("");
+        els.reportBody.innerHTML = [
+          '<div class="detail-kpis">',
+            detailKpi("CA jour equipe", money(total)),
+            detailKpi("Commerciaux vendeurs", integer(groups.length)),
+            detailKpi("Clients", integer(new Set(rows.map(row => dailyClientKey(row))).size)),
+            detailKpi("Lignes", integer(rows.length)),
+          '</div>',
+          '<section class="report-section"><h3>Synthese par commercial</h3><div class="table-wrap"><table><thead><tr><th>Commercial</th><th class="num">Lignes</th><th class="num">Clients</th><th class="num">CA HT</th></tr></thead><tbody>',
+          summaryRows,
+          '</tbody></table></div></section>',
+          detailSections
+        ].join("");
+        els.reportPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function getDailyRows(){
+        return filterCommercialRows(state.payload?.sales?.dailyRows || [], "commercialUserId");
+      }
+
+      function groupDailyByCommercial(){
+        const map = new Map(scopedCommercials().map(function(commercial){
+          return [commercial.id, {
+            id: commercial.id,
+            name: commercial.displayName || commercial.identifier || "Commercial",
+            amount: 0,
+            lineCount: 0,
+            clientSet: new Set(),
+            clientCount: 0,
+            phoneCount: 0,
+            terrainCount: 0,
+            rows: []
+          }];
+        }));
+        getDailyRows().forEach(function(row){
+          if (!map.has(row.commercialUserId)) return;
+          const group = map.get(row.commercialUserId);
+          group.amount += Number(row.montant || 0);
+          group.lineCount += 1;
+          group.clientSet.add(dailyClientKey(row));
+          group.phoneCount += row.isPhoneOrder ? 1 : 0;
+          group.terrainCount += row.isPhoneOrder ? 0 : 1;
+          group.rows.push(row);
+        });
+        return Array.from(map.values()).map(function(group){
+          return {
+            ...group,
+            amount: round2(group.amount),
+            clientCount: group.clientSet.size,
+            rows: group.rows.slice().sort((a,b) => String(a.clientNom || "").localeCompare(String(b.clientNom || ""), "fr"))
+          };
+        }).sort(function(a,b){
+          if (Number(b.amount || 0) !== Number(a.amount || 0)) return Number(b.amount || 0) - Number(a.amount || 0);
+          return String(a.name || "").localeCompare(String(b.name || ""), "fr");
+        });
+      }
+
+      function groupDailyClients(rows){
+        const map = new Map();
+        (rows || []).forEach(function(row){
+          const key = dailyClientKey(row);
+          const current = map.get(key) || {
+            key,
+            name: row.clientNom || "Client sans nom",
+            account: row.numeroCompte || "",
+            amount: 0,
+            lineCount: 0,
+            rows: []
+          };
+          current.amount += Number(row.montant || 0);
+          current.lineCount += 1;
+          current.rows.push(row);
+          map.set(key, current);
+        });
+        return Array.from(map.values()).map(function(group){
+          return {
+            ...group,
+            amount: round2(group.amount),
+            rows: group.rows.slice().sort((a,b) => Number(b.montant || 0) - Number(a.montant || 0))
+          };
+        }).sort((a,b) => Number(b.amount || 0) - Number(a.amount || 0));
+      }
+
+      function dailyClientKey(row){
+        return [row.commercialUserId || "", row.secteur || "", row.clientId || row.clientNom || "", row.numeroCompte || ""].join("::");
+      }
+
+      function miniSummary(title, value, subtitle){
+        return `<article class="mini-row"><strong>${escapeHtml(title)} : ${escapeHtml(value)}</strong><span>${escapeHtml(subtitle)}</span></article>`;
+      }
+
+      function printDailyReport(){
+        if (!state.showDailyReport) {
+          state.showDailyReport = true;
+          renderDailyReport();
+        }
+        const popup = window.open("", "_blank");
+        if (!popup) {
+          showToast("Ouverture du rapport bloquee par le navigateur.", true);
+          return;
+        }
+        popup.document.write([
+          '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rapport journalier equipe</title>',
+          '<style>body{font-family:Arial,sans-serif;margin:24px;color:#111827}h1{margin:0 0 6px}h2,h3{margin:18px 0 8px}.muted{color:#6b7280}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #d1d5db;padding:7px;text-align:left;font-size:12px}th{background:#f3f4f6}.num{text-align:right}.chip{display:inline-block;border-radius:999px;border:1px solid #cbd5e1;padding:2px 7px}.detail-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.detail-kpi{border:1px solid #d1d5db;border-radius:10px;padding:10px}.detail-kpi span{display:block;color:#6b7280;font-size:10px;text-transform:uppercase}.detail-kpi strong{display:block;margin-top:4px;font-size:16px}.report-section{break-inside:avoid;margin-top:14px}</style>',
+          '</head><body><h1>Rapport journalier equipe</h1><div class="muted">' + escapeHtml(els.reportSubtitle.textContent || "") + '</div>',
+          els.reportBody.innerHTML,
+          '<script>window.onload=function(){window.print();};<\/script></body></html>'
+        ].join(""));
+        popup.document.close();
+      }
+
       function filterCommercialRows(rows, key){
         if (!state.commercialFilter) return rows || [];
         return (rows || []).filter(row => row[key] === state.commercialFilter);
@@ -1178,6 +1501,10 @@
 
       function getToDateMonth(){
         return Math.max(1, Math.min(12, Number(state.payload?.period?.toDateMonth || els.month.value || 12)));
+      }
+
+      function getSelectedMonthIndex(){
+        return Math.max(0, Math.min(11, Number(state.payload?.period?.month || els.month.value || 1) - 1));
       }
 
       function formatDateShort(value){

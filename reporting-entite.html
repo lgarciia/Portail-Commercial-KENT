@@ -357,21 +357,21 @@
     try{
       if (window.ReelSupabase && typeof window.ReelSupabase.listEntities === "function"){
         const rows = await window.ReelSupabase.listEntities();
-        return (rows || []).map(row => ({
+        return dedupeEntities((rows || []).map(row => ({
           key: normalizeEntityKey(row.key),
           label: row.libelle || row.key,
           id: row.id
-        })).filter(row => row.key);
+        })).filter(row => row.key));
       }
     }catch(error){
       console.warn("Entites Supabase indisponibles:", error.message || error);
     }
-    return [
+    return dedupeEntities([
       { key:"psa", label:"PSA" },
       { key:"gueudet", label:"Gueudet" },
       { key:"ford", label:"Ford" },
       { key:"direct", label:"Direct" }
-    ];
+    ]);
   }
 
   async function loadEntityData(key, label, selectedYear){
@@ -500,9 +500,20 @@
   }
 
   function renderEntitySelect(){
+    entities = dedupeEntities(entities);
     el.entitySelect.innerHTML = entities.map(entity => `<option value="${escAttr(entity.key)}">${esc(entity.label)}</option>`).join("");
     if (!entities.some(entity => entity.key === entityKey)) entityKey = entities[0]?.key || entityKey || "psa";
     el.entitySelect.value = entityKey;
+  }
+
+  function dedupeEntities(rows){
+    const byKey = new Map();
+    for (const row of rows || []){
+      const key = normalizeEntityKey(row && row.key);
+      if (!key || byKey.has(key)) continue;
+      byKey.set(key, { ...row, key });
+    }
+    return Array.from(byKey.values());
   }
 
   function renderStats(){

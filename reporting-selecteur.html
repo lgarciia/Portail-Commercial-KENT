@@ -393,12 +393,12 @@
               description: "Entite active Supabase",
               state: "ready"
             })).filter(row => row.key);
-            if (mapped.length) return mapped;
+            if (mapped.length) return dedupeOptions(mapped);
           }
         }catch(error){
           console.warn("Entites Supabase indisponibles, fallback local:", error.message || error);
         }
-        return DEFAULT_ENTITIES.map(entity => ({ ...entity, description: "Entite standard", state: "ready" }));
+        return dedupeOptions(DEFAULT_ENTITIES.map(entity => ({ ...entity, description: "Entite standard", state: "ready" })));
       }
 
       function activeView(){
@@ -410,7 +410,7 @@
       }
 
       function optionsForCurrentView(){
-        const base = entities.map(entity => ({
+        const base = dedupeOptions(entities).map(entity => ({
           ...entity,
           page: "reporting-entite.html",
           description: activeView().description,
@@ -425,6 +425,16 @@
       function selectedOption(){
         const options = optionsForCurrentView();
         return options.find(option => option.key === currentOptionKey) || options[0];
+      }
+
+      function dedupeOptions(rows){
+        const byKey = new Map();
+        for (const row of rows || []){
+          const key = normalizeEntityKey(row && row.key);
+          if (!key || byKey.has(key)) continue;
+          byKey.set(key, { ...row, key });
+        }
+        return Array.from(byKey.values());
       }
 
       function buildPageUrl(option, year){
