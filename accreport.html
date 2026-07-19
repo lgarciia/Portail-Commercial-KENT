@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Espace reporting</title>
   <script src="./shared-ui.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./commercial-scope.js?v=20260719-scope-reporting"></script>
   <script src="./app-data-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./budget-supabase.js"></script>
-  <script src="./reel-supabase.js"></script>
-  <script src="./reporting-data-utils.js"></script>
+  <script src="./budget-supabase.js?v=20260719-scope-reporting"></script>
+  <script src="./reel-supabase.js?v=20260719-scope-reporting"></script>
+  <script src="./reporting-data-utils.js?v=20260719-scope-reporting"></script>
 
   <style>
     :root{
@@ -504,15 +504,6 @@
       codeCandidates: ["n client", "n client interne", "n° client", "no client", "numero client", "num client", "nclient", "code livré", "code livre", "code"]
     };
 
-    const realConfig = {
-      clientCodeCandidates: ["n° client interne", "no client interne", "n client interne", "numero client interne", "n° client", "code livré", "code livre", "code"],
-      clientNameCandidates: ["nom du client", "nom client", "client"],
-      amountCandidates: ["montant prix achat kent", "montant", "ca total", "ca", "chiffre d'affaires", "chiffre d'affaire", "chiffre affaire", "chiffre daffaires"],
-      monthCandidates: ["mois2", "mois", "month"],
-      dateCandidates: ["date", "date facture", "date livraison", "jour"],
-      yearCandidates: ["annee", "année", "year"]
-    };
-
     function fmtCurrency(value){
       return Number(value || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
     }
@@ -526,8 +517,8 @@
       const maxValue = Math.max(1, ...totals.map(item => Math.max(item.real, item.budget)));
       chart.innerHTML = months.map((month, index) => {
         const item = totals[index] || { real: 0, budget: 0 };
-        const realHeight = Math.max(3, Math.round((item.real / maxValue) * 100));
-        const budgetHeight = Math.max(3, Math.round((item.budget / maxValue) * 100));
+        const realHeight = Number(item.real || 0) > 0 ? Math.max(3, Math.round((item.real / maxValue) * 100)) : 0;
+        const budgetHeight = Number(item.budget || 0) > 0 ? Math.max(3, Math.round((item.budget / maxValue) * 100)) : 0;
         return `<div class="monthCol" title="${month.label} - Réalisé ${fmtCurrency(item.real)} / Budget ${fmtCurrency(item.budget)}">
           <div class="bars">
             <div class="bar" style="height:${realHeight}%"></div>
@@ -578,9 +569,37 @@
       return DEFAULT_ENTITIES.slice();
     }
 
+    function emptyMonthlyTotals(){
+      return Array.from({ length: 12 }, () => 0);
+    }
+
+    async function filterRowsForCurrentCommercial(rows){
+      if (!window.KentCommercialScope || typeof window.KentCommercialScope.load !== "function") return rows || [];
+      await window.KentCommercialScope.load();
+      if (typeof window.KentCommercialScope.isCommercialScoped === "function" && window.KentCommercialScope.isCommercialScoped()) {
+        return window.KentCommercialScope.filterRows(rows || [], "commercial_user_id");
+      }
+      return rows || [];
+    }
+
+    async function loadSupabaseRealTotals(entity, year){
+      const totals = emptyMonthlyTotals();
+      if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") {
+        return totals;
+      }
+      const rows = await filterRowsForCurrentCommercial(
+        await window.ReelSupabase.getActiveLinesByEntityYear(entity.key, year)
+      );
+      for (const row of rows) {
+        const monthIndex = Number(row?.mois || 0) - 1;
+        if (monthIndex < 0 || monthIndex > 11) continue;
+        totals[monthIndex] += Number(row?.montant || 0);
+      }
+      return totals;
+    }
+
     async function loadEntity(entity, year, utils){
       const budgetFiles = KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
-      const realFiles = KentDataConfig.getEntityFileCandidates(entity.key, "real", year);
       const { budgetData, meta } = await utils.loadBudgetData({
         entityKey: entity.key,
         year,
@@ -588,16 +607,8 @@
         budgetConfig,
         allowExcelFallback: false
       });
-      const { realData } = await utils.loadRealDataAgainstBudget({
-        entityKey: entity.key,
-        fileCandidates: realFiles,
-        budgetData,
-        realConfig,
-        year,
-        allowExcelFallback: false
-      });
       const budgetTotals = utils.computeBudgetMonthlyTotals(budgetData);
-      const realTotals = utils.computeRealMonthlyTotals(budgetData, realData);
+      const realTotals = await loadSupabaseRealTotals(entity, year);
       return {
         key: entity.key,
         label: entity.label,
