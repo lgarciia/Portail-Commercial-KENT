@@ -974,6 +974,16 @@ function sortRows(rows) {
   return rows.slice().sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")) || String(a.clientNom || "").localeCompare(String(b.clientNom || ""), "fr"));
 }
 
+function mergeRowsById(rows) {
+  const map = new Map();
+  (rows || []).forEach((row) => {
+    const key = normalizeText(row?.id);
+    if (!key || map.has(key)) return;
+    map.set(key, row);
+  });
+  return Array.from(map.values());
+}
+
 function unique(values) {
   return Array.from(new Set((values || []).map((value) => String(value || "")).filter(Boolean)));
 }
