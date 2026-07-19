@@ -177,10 +177,13 @@ function parsePeriod(request) {
   const month = clampNumber(url.searchParams.get("month"), 1, 12, today.month);
   const rawDay = url.searchParams.get("day") || `${year}-${String(month).padStart(2, "0")}-${String(today.day).padStart(2, "0")}`;
   const day = /^\d{4}-\d{2}-\d{2}$/.test(rawDay) ? rawDay : today.isoDate;
+  const week = getWeekBounds(day);
   return {
     year,
     month,
     day,
+    weekStart: week.start,
+    weekEnd: week.end,
     monthKey: MONTH_KEYS[month - 1],
     monthLabel: MONTH_LABELS[month - 1],
     toDateMonth: month,
@@ -204,6 +207,28 @@ function getParisParts(date) {
     day: Number(parts.day),
     isoDate: `${parts.year}-${parts.month}-${parts.day}`
   };
+}
+
+function getWeekBounds(isoDate) {
+  const date = parseIsoDateUtc(isoDate);
+  const day = date.getUTCDay() || 7;
+  const monday = new Date(date);
+  monday.setUTCDate(date.getUTCDate() - day + 1);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  return {
+    start: toIsoDateUtc(monday),
+    end: toIsoDateUtc(sunday)
+  };
+}
+
+function parseIsoDateUtc(isoDate) {
+  const [year, month, day] = String(isoDate || "").split("-").map(Number);
+  return new Date(Date.UTC(year || 1970, (month || 1) - 1, day || 1));
+}
+
+function toIsoDateUtc(date) {
+  return date.toISOString().slice(0, 10);
 }
 
 function clampNumber(value, min, max, fallback) {
@@ -341,8 +366,10 @@ function summarizeSalesRows(rows, visits, period) {
   const topClientsMonth = new Map();
   let totals = {
     day: 0,
+    week: 0,
     month: 0,
     year: 0,
+    monthly: emptyMonthlyArray(),
     monthAuto: 0,
     monthIndustrie: 0,
     visitsMonth: 0,
@@ -351,14 +378,26 @@ function summarizeSalesRows(rows, visits, period) {
   };
 
   const dayRows = [];
+  const weekRows = [];
   const monthRows = [];
   const yearRows = [];
 
   for (const row of rows) {
+    const monthIndex = getIsoMonthIndex(row.date);
     const commercial = ensureSalesCommercial(byCommercial, row.commercialUserId);
     commercial.year += row.montant;
     totals.year += row.montant;
     yearRows.push(row);
+    if (monthIndex >= 0) {
+      commercial.monthly[monthIndex] += row.montant;
+      totals.monthly[monthIndex] += row.montant;
+    }
+
+    if (row.date >= period.weekStart && row.date <= period.weekEnd) {
+      commercial.week += row.montant;
+      totals.week += row.montant;
+      weekRows.push(row);
+    }
 
     if (sameMonth(row.date, period.year, period.month)) {
       commercial.month += row.montant;
@@ -421,8 +460,10 @@ function summarizeSalesRows(rows, visits, period) {
   const byCommercialObject = Object.fromEntries(
     Array.from(byCommercial.entries()).map(([id, value]) => [id, {
       day: roundMoney(value.day),
+      week: roundMoney(value.week),
       month: roundMoney(value.month),
       year: roundMoney(value.year),
+      monthly: value.monthly.map(roundMoney),
       monthAuto: roundMoney(value.monthAuto),
       monthIndustrie: roundMoney(value.monthIndustrie),
       visitsMonth: value.visitsMonth,
@@ -436,6 +477,7 @@ function summarizeSalesRows(rows, visits, period) {
     totals,
     byCommercial: byCommercialObject,
     dailyRows: sortRows(dayRows).slice(0, 2500),
+    weeklyRows: sortRows(weekRows).slice(0, 2500),
     monthlyRows: sortRows(monthRows).slice(0, 1200),
     yearlyRows: sortRows(yearRows).slice(0, 1500),
     topClientsMonth: Array.from(topClientsMonth.values())
@@ -450,8 +492,10 @@ function ensureSalesCommercial(map, commercialUserId) {
   if (!map.has(key)) {
     map.set(key, {
       day: 0,
+      week: 0,
       month: 0,
       year: 0,
+      monthly: emptyMonthlyArray(),
       monthAuto: 0,
       monthIndustrie: 0,
       visitsMonth: 0,
@@ -461,6 +505,13 @@ function ensureSalesCommercial(map, commercialUserId) {
     });
   }
   return map.get(key);
+}
+
+function getIsoMonthIndex(value) {
+  const match = String(value || "").match(/^\d{4}-(\d{2})-\d{2}$/);
+  if (!match) return -1;
+  const index = Number(match[1]) - 1;
+  return index >= 0 && index < 12 ? index : -1;
 }
 
 async function buildBudgetBlock(commercialIds, period) {
@@ -512,6 +563,9 @@ async function buildBudgetBlock(commercialIds, period) {
     byCommercial[row.commercialUserId].year += row.total;
     byCommercial[row.commercialUserId].toDate += row.toDate;
     byCommercial[row.commercialUserId].lines += 1;
+    row.monthly.forEach((value, index) => {
+      byCommercial[row.commercialUserId].monthly[index] += value;
+    });
     if (!byEntity[row.entiteId]) {
       byEntity[row.entiteId] = {
         id: row.entiteId,
@@ -684,8 +738,10 @@ function enrichCommercial(commercial, blocks) {
     ...commercial,
     metrics: {
       caJour: roundMoney(sales.day),
+      caHebdo: roundMoney(sales.week),
       caMois: roundMoney(sales.month),
       caAnnee: roundMoney(sales.year),
+      caMensuel: Array.isArray(sales.monthly) ? sales.monthly.map(roundMoney) : emptyMonthlyArray(),
       caAutoMois: roundMoney(sales.monthAuto),
       caIndustrieMois: roundMoney(sales.monthIndustrie),
       visitesMois: sales.visitsMonth || 0,
@@ -694,6 +750,7 @@ function enrichCommercial(commercial, blocks) {
       clientsMois: sales.clientsMonth || 0,
       budgetAnnuel: roundMoney(budget.year),
       budgetADate: roundMoney(budget.toDate),
+      budgetMensuel: Array.isArray(budget.monthly) ? budget.monthly.map(roundMoney) : emptyMonthlyArray(),
       reelReportingAnnee: roundMoney(real.year),
       reelReportingADate: roundMoney(real.toDate),
       ecartADate: roundMoney(real.toDate - budget.toDate),
@@ -804,6 +861,7 @@ function commercialSummary({ commercial, relation, responsables, scopeLabel }) {
     hidden: Boolean(commercial.hidden),
     lastLoginAt: commercial.last_login_at,
     relationId: relation?.id || "",
+    responsableId: relation?.responsable_user_id || "",
     relationType: relation?.relation_type || "none",
     relationLabel:
       relation?.relation_type === "principal"
@@ -1030,8 +1088,10 @@ function emptyMonthlyArray() {
 function emptyMetrics() {
   return {
     caJour: 0,
+    caHebdo: 0,
     caMois: 0,
     caAnnee: 0,
+    caMensuel: emptyMonthlyArray(),
     caAutoMois: 0,
     caIndustrieMois: 0,
     visitesMois: 0,
@@ -1040,6 +1100,7 @@ function emptyMetrics() {
     clientsMois: 0,
     budgetAnnuel: 0,
     budgetADate: 0,
+    budgetMensuel: emptyMonthlyArray(),
     reelReportingAnnee: 0,
     reelReportingADate: 0,
     ecartADate: 0,
@@ -1055,8 +1116,10 @@ function emptyMetrics() {
 function emptySalesCommercialObject() {
   return {
     day: 0,
+    week: 0,
     month: 0,
     year: 0,
+    monthly: emptyMonthlyArray(),
     monthAuto: 0,
     monthIndustrie: 0,
     visitsMonth: 0,
@@ -1067,11 +1130,11 @@ function emptySalesCommercialObject() {
 }
 
 function emptyBudgetCommercial() {
-  return { year: 0, toDate: 0, lines: 0 };
+  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray() };
 }
 
 function emptyBudgetCommercialObject() {
-  return { year: 0, toDate: 0, lines: 0 };
+  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray() };
 }
 
 function emptyRealCommercial() {
@@ -1090,14 +1153,16 @@ function normalizeBudgetCommercials(byCommercial) {
   Object.keys(byCommercial).forEach((id) => {
     byCommercial[id].year = roundMoney(byCommercial[id].year);
     byCommercial[id].toDate = roundMoney(byCommercial[id].toDate);
+    byCommercial[id].monthly = byCommercial[id].monthly.map(roundMoney);
   });
 }
 
 function emptySalesBlock() {
   return {
-    totals: { day: 0, month: 0, year: 0, monthAuto: 0, monthIndustrie: 0, visitsMonth: 0, phoneMonth: 0, clientsMonth: 0 },
+    totals: { day: 0, week: 0, month: 0, year: 0, monthly: emptyMonthlyArray(), monthAuto: 0, monthIndustrie: 0, visitsMonth: 0, phoneMonth: 0, clientsMonth: 0 },
     byCommercial: {},
     dailyRows: [],
+    weeklyRows: [],
     monthlyRows: [],
     yearlyRows: [],
     topClientsMonth: []

@@ -142,6 +142,84 @@
     .audit-list{display:grid;gap:8px}
     .audit-row strong{display:block;font-size:13px;margin-bottom:3px}
     .audit-row small{color:var(--muted-2)}
+    .finance-mode .stats{display:none}
+    .finance-shell{
+      border:1px solid var(--line);border-radius:28px;padding:20px;
+      background:linear-gradient(135deg, rgba(8,47,73,.34), rgba(2,6,23,.76));
+      box-shadow:var(--shadow);
+    }
+    .finance-head{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+      border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:16px;margin-bottom:14px;
+    }
+    .finance-head h2{margin:8px 0 6px;font-size:clamp(30px,3vw,44px);letter-spacing:-.055em;line-height:1}
+    .finance-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap;justify-content:flex-end}
+    .finance-controls .field{min-width:180px}
+    .finance-nav{
+      display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;margin-bottom:8px;
+    }
+    .finance-pill{
+      border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.055);
+      color:rgba(255,255,255,.70);font-weight:1000;min-height:38px;padding:0 13px;white-space:nowrap;
+    }
+    .finance-pill.active{background:linear-gradient(135deg,#38bdf8,#22c55e);color:#06111f;border-color:transparent}
+    .finance-summary{
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 14px;
+    }
+    .finance-kpi{
+      border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.045);padding:14px;
+    }
+    .finance-kpi span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .finance-kpi strong{display:block;margin-top:7px;font-size:25px;letter-spacing:-.04em}
+    .finance-kpi.positive{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.07)}
+    .finance-kpi.negative{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.075)}
+    .finance-panel{
+      border:1px solid var(--line);border-radius:24px;background:rgba(3,7,18,.24);padding:14px;
+    }
+    .finance-table{display:grid;gap:8px}
+    .finance-row{
+      border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.045);
+      display:grid;grid-template-columns:minmax(210px,1.35fr) repeat(4,minmax(120px,.72fr)) 38px;
+      gap:8px;align-items:center;padding:10px 12px;
+    }
+    .finance-row.header{
+      background:rgba(255,255,255,.03);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950;
+    }
+    .finance-row.total{background:rgba(56,189,248,.10);border-color:rgba(56,189,248,.24);font-weight:1000}
+    .finance-row button{
+      width:32px;height:32px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.075);color:#fff;font-weight:1000;
+    }
+    .finance-name strong{display:block;font-size:14px}
+    .finance-name span{display:block;margin-top:3px;color:var(--muted);font-size:12px}
+    .finance-value strong{display:block;font-size:14px}
+    .finance-value span{display:block;margin-top:2px;color:var(--muted);font-size:11px}
+    .finance-detail{
+      margin:0 0 4px 18px;border-left:2px solid rgba(56,189,248,.28);padding-left:12px;display:grid;gap:6px;
+    }
+    .finance-seller{
+      border:1px solid rgba(255,255,255,.10);border-radius:15px;background:rgba(255,255,255,.032);
+      display:grid;grid-template-columns:minmax(190px,1.5fr) repeat(4,minmax(110px,.75fr));gap:8px;align-items:center;padding:9px 10px;
+    }
+    .finance-chart{
+      display:grid;grid-template-columns:repeat(12,minmax(54px,1fr));gap:9px;align-items:end;min-height:260px;margin-top:14px;
+    }
+    .finance-month{display:grid;gap:7px;align-items:end;text-align:center;color:var(--muted);font-size:11px;font-weight:950}
+    .finance-bars{height:190px;display:flex;align-items:end;justify-content:center;gap:5px}
+    .finance-bar{width:16px;border-radius:999px 999px 4px 4px;min-height:3px}
+    .finance-bar.real{background:linear-gradient(180deg,#38bdf8,#2563eb)}
+    .finance-bar.budget{background:linear-gradient(180deg,#facc15,#f59e0b)}
+    .finance-legend{display:flex;gap:9px;flex-wrap:wrap;color:var(--muted);font-size:12px;font-weight:900}
+    .finance-legend span{display:inline-flex;align-items:center;gap:6px}
+    .finance-dot{width:9px;height:9px;border-radius:999px;display:inline-block}
+    .finance-dot.real{background:#38bdf8}
+    .finance-dot.budget{background:#f59e0b}
+    .performance-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .performance-card{
+      border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.045);padding:14px;
+    }
+    .performance-card span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .performance-card strong{display:block;margin-top:8px;font-size:18px}
+    .performance-card b{display:block;margin-top:6px;font-size:24px;letter-spacing:-.04em}
     .layout{
       display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
@@ -265,12 +343,18 @@
       .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
       .layout,.overview-grid,.security-grid{grid-template-columns:1fr}
       .manager-grid{grid-template-columns:1fr}
+      .finance-summary,.performance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .finance-row{grid-template-columns:minmax(180px,1.1fr) repeat(4,minmax(100px,.7fr)) 34px}
+      .finance-chart{overflow-x:auto}
     }
     @media(max-width:780px){
       .wrap{padding:16px}
       .hero,.identity,.panel-head{display:flex;flex-direction:column;align-items:flex-start}
       .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
       .role-grid,.health-grid{grid-template-columns:1fr}
+      .finance-head{flex-direction:column}
+      .finance-summary,.performance-grid{grid-template-columns:1fr}
+      .finance-row,.finance-seller{grid-template-columns:1fr}
       .form-grid{grid-template-columns:1fr}
       .search{max-width:none}
     }
@@ -326,6 +410,7 @@
 
     <nav class="admin-tabs" aria-label="Navigation admin">
       <button class="admin-tab active" type="button" data-admin-tab="pilotage">Pilotage</button>
+      <button class="admin-tab" type="button" data-admin-tab="finance">Finance</button>
       <button class="admin-tab" type="button" data-admin-tab="utilisateurs">Utilisateurs</button>
       <button class="admin-tab" type="button" data-admin-tab="rattachements">Rattachements</button>
       <button class="admin-tab" type="button" data-admin-tab="securite">Securite</button>
@@ -357,6 +442,43 @@
           </div>
         </aside>
       </div>
+    </section>
+
+    <section class="admin-view" data-admin-view="finance">
+      <section class="finance-shell">
+        <div class="finance-head">
+          <div>
+            <span class="badge">Finance admin</span>
+            <h2>Pilotage financier groupe</h2>
+            <p>
+              CA reel par responsable, consolidation des vendeurs, budget actif Supabase et ecarts de performance.
+            </p>
+          </div>
+          <div class="finance-controls">
+            <div class="field">
+              <label>Date d'analyse</label>
+              <input type="date" data-finance-day>
+            </div>
+            <button class="btn green" type="button" data-finance-refresh>Synchroniser</button>
+          </div>
+        </div>
+
+        <div class="finance-nav" aria-label="Vues finance">
+          <button class="finance-pill active" type="button" data-finance-view="day">CA a jour</button>
+          <button class="finance-pill" type="button" data-finance-view="week">CA hebdo</button>
+          <button class="finance-pill" type="button" data-finance-view="month">CA mensuel</button>
+          <button class="finance-pill" type="button" data-finance-view="year">CA annuel</button>
+          <button class="finance-pill" type="button" data-finance-view="performance">Indicateurs performance</button>
+        </div>
+
+        <div class="finance-summary" data-finance-summary>
+          <article class="finance-kpi"><span>Chargement</span><strong>-</strong></article>
+        </div>
+
+        <div class="finance-panel" data-finance-body>
+          <div class="empty">Ouvre la vue Finance pour charger les chiffres.</div>
+        </div>
+      </section>
     </section>
 
     <section class="admin-view" data-admin-view="utilisateurs">
@@ -640,6 +762,9 @@
         filter: "active",
         search: "",
         activeView: "pilotage",
+        financeView: "day",
+        financePayload: null,
+        expandedFinanceManager: "",
         auditLog: [],
         pendingConfirm: null
       };
@@ -661,6 +786,11 @@
         orphanList: document.querySelector("[data-orphan-list]"),
         hiddenUsers: document.querySelector("[data-hidden-users]"),
         auditList: document.querySelector("[data-audit-list]"),
+        financeDay: document.querySelector("[data-finance-day]"),
+        financeRefresh: document.querySelector("[data-finance-refresh]"),
+        financePills: Array.from(document.querySelectorAll("[data-finance-view]")),
+        financeSummary: document.querySelector("[data-finance-summary]"),
+        financeBody: document.querySelector("[data-finance-body]"),
         formTitle: document.querySelector("[data-form-title]"),
         search: document.querySelector("[data-search]"),
         toast: document.querySelector("[data-toast]"),
@@ -694,6 +824,7 @@
       init();
 
       function init(){
+        if (els.financeDay) els.financeDay.value = todayInputValue();
         bindEvents();
         loadSession();
         loadAdminData();
@@ -715,6 +846,25 @@
         document.querySelector("[data-open-relations-config]").addEventListener("click", function(){
           setAdminView("utilisateurs");
           els.relationForm.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        els.financeRefresh.addEventListener("click", loadFinanceData);
+        els.financeDay.addEventListener("change", loadFinanceData);
+        els.financePills.forEach(function(button){
+          button.addEventListener("click", function(){
+            state.financeView = button.dataset.financeView || "day";
+            state.expandedFinanceManager = "";
+            els.financePills.forEach(function(item){
+              item.classList.toggle("active", item === button);
+            });
+            renderFinance();
+          });
+        });
+        els.financeBody.addEventListener("click", function(event){
+          const button = event.target.closest("[data-finance-manager]");
+          if (!button) return;
+          const id = button.dataset.financeManager || "";
+          state.expandedFinanceManager = state.expandedFinanceManager === id ? "" : id;
+          renderFinance();
         });
         els.search.addEventListener("input", function(){
           state.search = els.search.value.trim().toLowerCase();
@@ -800,6 +950,7 @@
         renderManagerBoard();
         renderHiddenUsers();
         renderAuditLog();
+        if (state.financePayload) renderFinance();
       }
 
       async function submitUserForm(event){
@@ -1050,12 +1201,586 @@
 
       function setAdminView(view){
         state.activeView = view || "pilotage";
+        els.wrap.classList.toggle("finance-mode", state.activeView === "finance");
         els.tabs.forEach(function(tab){
           tab.classList.toggle("active", tab.dataset.adminTab === state.activeView);
         });
         els.views.forEach(function(panel){
           panel.classList.toggle("active", panel.dataset.adminView === state.activeView);
         });
+        if (state.activeView === "finance" && !state.financePayload) {
+          loadFinanceData();
+        }
+      }
+
+      async function loadFinanceData(){
+        const day = els.financeDay.value || todayInputValue();
+        const parts = parseIsoParts(day);
+        setLoading(true, "Synchronisation finance", "Chargement des ventes, budgets et rattachements responsables.");
+        try{
+          const payload = await fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day));
+          state.financePayload = payload;
+          state.expandedFinanceManager = "";
+          renderFinance();
+          showToast("Finance admin synchronisee.");
+        }catch(error){
+          state.financePayload = null;
+          els.financeSummary.innerHTML = '<article class="finance-kpi negative"><span>Erreur</span><strong>Indisponible</strong></article>';
+          els.financeBody.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Finance indisponible.") + '</div>';
+          showToast(error.message || "Finance indisponible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      function renderFinance(){
+        if (!state.financePayload) {
+          els.financeSummary.innerHTML = '<article class="finance-kpi"><span>Finance</span><strong>-</strong></article>';
+          els.financeBody.innerHTML = '<div class="empty">Aucune donnee finance chargee.</div>';
+          return;
+        }
+
+        const model = buildFinanceModel();
+        if (state.financeView === "performance") {
+          renderFinancePerformance(model);
+          return;
+        }
+        if (state.financeView === "year") {
+          renderFinanceAnnual(model);
+          return;
+        }
+        renderFinancePeriod(model);
+      }
+
+      function buildFinanceModel(){
+        const payload = state.financePayload || {};
+        const period = payload.period || {};
+        const day = period.day || els.financeDay.value || todayInputValue();
+        const parts = parseIsoParts(day);
+        const month = Number(period.month || parts.month || 1);
+        const year = Number(period.year || parts.year || new Date().getFullYear());
+        const managers = activeUsers().filter(function(user){ return user.role === "responsable"; });
+        const managerMap = new Map();
+        managers.forEach(function(manager){
+          managerMap.set(manager.id, emptyFinanceGroup(manager.id, manager.displayName, manager.identifier));
+        });
+        const unassignedId = "__sans_responsable__";
+        managerMap.set(unassignedId, emptyFinanceGroup(unassignedId, "Sans responsable principal", "A rattacher"));
+
+        (payload.commercials || []).forEach(function(commercial){
+          const managerId = commercial.relationType === "principal" && commercial.responsableId
+            ? commercial.responsableId
+            : unassignedId;
+          if (!managerMap.has(managerId)) {
+            const manager = findStateUser(managerId);
+            managerMap.set(managerId, emptyFinanceGroup(
+              managerId,
+              manager ? manager.displayName : "Responsable masque",
+              manager ? manager.identifier : ""
+            ));
+          }
+          const values = financeValuesForCommercial(commercial, { year, month, day, period });
+          const group = managerMap.get(managerId);
+          group.commercials.push({ ...commercial, finance: values });
+          addFinanceValues(group, values);
+        });
+
+        const groups = Array.from(managerMap.values())
+          .filter(function(group){ return group.commercials.length || group.id !== unassignedId; })
+          .map(finalizeFinanceGroup)
+          .sort(function(a, b){
+            if (a.id === unassignedId) return 1;
+            if (b.id === unassignedId) return -1;
+            return b.actual - a.actual;
+          });
+        const total = finalizeFinanceGroup(groups.reduce(function(acc, group){
+          acc.actual += group.actual;
+          acc.budget += group.budget;
+          acc.yearActual += group.yearActual;
+          acc.yearBudget += group.yearBudget;
+          acc.yearBudgetToDate += group.yearBudgetToDate;
+          group.monthlyActual.forEach(function(value, index){ acc.monthlyActual[index] += value; });
+          group.monthlyBudget.forEach(function(value, index){ acc.monthlyBudget[index] += value; });
+          acc.commercials.push(...group.commercials);
+          return acc;
+        }, emptyFinanceGroup("__total__", "Total groupe", "")));
+
+        return {
+          payload,
+          period: { ...period, year, month, day },
+          groups,
+          total
+        };
+      }
+
+      function financeValuesForCommercial(commercial, context){
+        const metrics = commercial.metrics || {};
+        const monthlyActual = safeMonthly(metrics.caMensuel);
+        const monthlyBudget = safeMonthly(metrics.budgetMensuel);
+        const monthIndex = Math.max(0, Math.min(11, Number(context.month || 1) - 1));
+        const dayBudget = budgetForDay(monthlyBudget, context.day);
+        const weekBudget = budgetForDateRange(monthlyBudget, context.period.weekStart, context.period.weekEnd, context.year);
+        const monthBudget = monthlyBudget[monthIndex] || 0;
+        const yearBudget = Number(metrics.budgetAnnuel || monthlyBudget.reduce(function(sum, value){ return sum + value; }, 0));
+        const yearActual = Number(metrics.caAnnee || monthlyActual.reduce(function(sum, value){ return sum + value; }, 0));
+        const yearBudgetToDate = budgetToDate(monthlyBudget, context.day);
+
+        return {
+          day: roundClientMoney(metrics.caJour || 0),
+          week: roundClientMoney(metrics.caHebdo || 0),
+          month: roundClientMoney(metrics.caMois || 0),
+          year: roundClientMoney(yearActual),
+          dayBudget,
+          weekBudget,
+          monthBudget: roundClientMoney(monthBudget),
+          yearBudget: roundClientMoney(yearBudget),
+          yearBudgetToDate,
+          monthlyActual,
+          monthlyBudget,
+          currentActual: 0,
+          currentBudget: 0
+        };
+      }
+
+      function addFinanceValues(group, values){
+        const current = valuesForCurrentFinanceView(values);
+        group.actual += current.actual;
+        group.budget += current.budget;
+        group.yearActual += values.year;
+        group.yearBudget += values.yearBudget;
+        group.yearBudgetToDate += values.yearBudgetToDate;
+        values.monthlyActual.forEach(function(value, index){ group.monthlyActual[index] += value; });
+        values.monthlyBudget.forEach(function(value, index){ group.monthlyBudget[index] += value; });
+      }
+
+      function valuesForCurrentFinanceView(values){
+        if (state.financeView === "week") return { actual: values.week, budget: values.weekBudget };
+        if (state.financeView === "month") return { actual: values.month, budget: values.monthBudget };
+        if (state.financeView === "year") return { actual: values.year, budget: values.yearBudget };
+        return { actual: values.day, budget: values.dayBudget };
+      }
+
+      function finalizeFinanceGroup(group){
+        group.actual = roundClientMoney(group.actual);
+        group.budget = roundClientMoney(group.budget);
+        group.ecart = roundClientMoney(group.actual - group.budget);
+        group.taux = group.budget ? roundClientMoney((group.actual / group.budget) * 100) : null;
+        group.yearActual = roundClientMoney(group.yearActual);
+        group.yearBudget = roundClientMoney(group.yearBudget);
+        group.yearBudgetToDate = roundClientMoney(group.yearBudgetToDate);
+        group.yearEcartToDate = roundClientMoney(group.yearActual - group.yearBudgetToDate);
+        group.monthlyActual = group.monthlyActual.map(roundClientMoney);
+        group.monthlyBudget = group.monthlyBudget.map(roundClientMoney);
+        group.commercials = group.commercials
+          .map(function(commercial){
+            const current = valuesForCurrentFinanceView(commercial.finance || {});
+            return {
+              ...commercial,
+              finance: {
+                ...(commercial.finance || {}),
+                currentActual: roundClientMoney(current.actual),
+                currentBudget: roundClientMoney(current.budget),
+                currentEcart: roundClientMoney(current.actual - current.budget),
+                currentTaux: current.budget ? roundClientMoney((current.actual / current.budget) * 100) : null
+              }
+            };
+          })
+          .sort(function(a, b){ return Number(b.finance.currentActual || 0) - Number(a.finance.currentActual || 0); });
+        return group;
+      }
+
+      function emptyFinanceGroup(id, name, identifier){
+        return {
+          id,
+          name,
+          identifier,
+          actual: 0,
+          budget: 0,
+          ecart: 0,
+          taux: null,
+          yearActual: 0,
+          yearBudget: 0,
+          yearBudgetToDate: 0,
+          yearEcartToDate: 0,
+          monthlyActual: Array.from({ length: 12 }, function(){ return 0; }),
+          monthlyBudget: Array.from({ length: 12 }, function(){ return 0; }),
+          commercials: []
+        };
+      }
+
+      function renderFinancePeriod(model){
+        const config = financeViewConfig();
+        renderFinanceSummaryCards([
+          { label: config.actualLabel, value: formatEuro(model.total.actual) },
+          { label: config.budgetLabel, value: formatEuro(model.total.budget) },
+          { label: "Ecart", value: formatEuro(model.total.ecart), tone: model.total.ecart >= 0 ? "positive" : "negative" },
+          { label: "Atteinte", value: model.total.taux === null ? "-" : formatPercent(model.total.taux), tone: model.total.ecart >= 0 ? "positive" : "negative" }
+        ]);
+
+        const rows = model.groups.map(function(group){ return renderFinanceGroupRow(group); }).join("");
+        els.financeBody.innerHTML = [
+          '<div class="finance-legend">',
+            '<span><i class="finance-dot real"></i> Reel Supabase</span>',
+            '<span><i class="finance-dot budget"></i> Budget prorate jours ouvres</span>',
+          '</div>',
+          '<div class="finance-table" style="margin-top:12px">',
+            renderFinanceHeaderRow("Responsable"),
+            rows || '<div class="empty">Aucun responsable a afficher.</div>',
+            renderFinanceTotalRow(model.total),
+          '</div>',
+        ].join("");
+      }
+
+      function renderFinanceGroupRow(group){
+        const opened = state.expandedFinanceManager === group.id;
+        return [
+          '<div class="finance-row">',
+            '<div class="finance-name"><strong>' + escapeHtml(group.name) + '</strong><span>' + group.commercials.length + ' vendeur(s)</span></div>',
+            financeCell(group.actual),
+            financeCell(group.budget),
+            financeCell(group.ecart, true),
+            '<div class="finance-value"><strong>' + (group.taux === null ? '-' : formatPercent(group.taux)) + '</strong><span>atteinte</span></div>',
+            '<button type="button" data-finance-manager="' + escapeHtml(group.id) + '">' + (opened ? '-' : '+') + '</button>',
+          '</div>',
+          opened ? renderFinanceSellerDetails(group) : ''
+        ].join("");
+      }
+
+      function renderFinanceSellerDetails(group){
+        if (!group.commercials.length) {
+          return '<div class="finance-detail"><div class="empty">Aucun vendeur rattache.</div></div>';
+        }
+        return '<div class="finance-detail">' + group.commercials.map(function(commercial){
+          const finance = commercial.finance || {};
+          return [
+            '<div class="finance-seller">',
+              '<div class="finance-name"><strong>' + escapeHtml(commercial.displayName || '-') + '</strong><span>' + escapeHtml(commercial.identifier || '-') + '</span></div>',
+              financeCell(finance.currentActual),
+              financeCell(finance.currentBudget),
+              financeCell(finance.currentEcart, true),
+              '<div class="finance-value"><strong>' + (finance.currentTaux === null ? '-' : formatPercent(finance.currentTaux)) + '</strong><span>atteinte</span></div>',
+            '</div>'
+          ].join("");
+        }).join("") + '</div>';
+      }
+
+      function renderFinanceAnnual(model){
+        const max = Math.max(
+          1,
+          ...model.total.monthlyActual,
+          ...model.total.monthlyBudget
+        );
+        renderFinanceSummaryCards([
+          { label: "CA annuel reel", value: formatEuro(model.total.yearActual) },
+          { label: "Budget annuel", value: formatEuro(model.total.yearBudget) },
+          { label: "Budget a date", value: formatEuro(model.total.yearBudgetToDate) },
+          { label: "Ecart a date", value: formatEuro(model.total.yearEcartToDate), tone: model.total.yearEcartToDate >= 0 ? "positive" : "negative" }
+        ]);
+
+        els.financeBody.innerHTML = [
+          '<div class="finance-legend">',
+            '<span><i class="finance-dot real"></i> Reel mensuel</span>',
+            '<span><i class="finance-dot budget"></i> Budget mensuel</span>',
+          '</div>',
+          '<div class="finance-chart">',
+            model.total.monthlyActual.map(function(actual, index){
+              const budget = model.total.monthlyBudget[index] || 0;
+              return [
+                '<div class="finance-month">',
+                  '<div class="finance-bars">',
+                    '<div class="finance-bar real" title="' + formatEuro(actual) + '" style="height:' + Math.max(3, (actual / max) * 100) + '%"></div>',
+                    '<div class="finance-bar budget" title="' + formatEuro(budget) + '" style="height:' + Math.max(3, (budget / max) * 100) + '%"></div>',
+                  '</div>',
+                  '<span>' + escapeHtml(monthShortLabel(index)) + '</span>',
+                '</div>'
+              ].join("");
+            }).join(""),
+          '</div>',
+          '<div class="finance-table" style="margin-top:14px">',
+            renderFinanceHeaderRow("Responsable"),
+            model.groups.map(function(group){ return renderFinanceGroupRow(group); }).join(""),
+            renderFinanceTotalRow({ actual: model.total.yearActual, budget: model.total.yearBudget, ecart: model.total.yearActual - model.total.yearBudget, taux: model.total.yearBudget ? (model.total.yearActual / model.total.yearBudget) * 100 : null }),
+          '</div>'
+        ].join("");
+      }
+
+      function renderFinancePerformance(model){
+        const sellers = model.total.commercials.slice();
+        const topConfigs = [
+          { key: "day", label: "Top CA jour", budget: "dayBudget" },
+          { key: "week", label: "Top CA hebdo", budget: "weekBudget" },
+          { key: "month", label: "Top CA mensuel", budget: "monthBudget" },
+          { key: "year", label: "Top CA annuel", budget: "yearBudget" }
+        ];
+        renderFinanceSummaryCards([
+          { label: "Vendeurs suivis", value: String(sellers.length) },
+          { label: "Responsables", value: String(model.groups.filter(function(group){ return group.id !== "__sans_responsable__"; }).length) },
+          { label: "CA mois groupe", value: formatEuro(sumSellers(sellers, "month")) },
+          { label: "CA annee groupe", value: formatEuro(sumSellers(sellers, "year")) }
+        ]);
+        const cards = topConfigs.map(function(config){
+          const top = sellers.slice().sort(function(a, b){
+            return Number(b.finance[config.key] || 0) - Number(a.finance[config.key] || 0);
+          })[0];
+          return [
+            '<article class="performance-card">',
+              '<span>' + escapeHtml(config.label) + '</span>',
+              '<strong>' + escapeHtml(top ? top.displayName : '-') + '</strong>',
+              '<b>' + formatEuro(top ? top.finance[config.key] : 0) + '</b>',
+              '<span>Budget repere : ' + formatEuro(top ? top.finance[config.budget] : 0) + '</span>',
+            '</article>'
+          ].join("");
+        }).join("");
+        const ranking = sellers
+          .slice()
+          .sort(function(a, b){ return Number(b.finance.year || 0) - Number(a.finance.year || 0); })
+          .map(function(seller, index){
+            return [
+              '<div class="finance-seller">',
+                '<div class="finance-name"><strong>#' + (index + 1) + ' ' + escapeHtml(seller.displayName || '-') + '</strong><span>' + escapeHtml(managerNameForSeller(seller, model.groups)) + '</span></div>',
+                financeCell(seller.finance.day),
+                financeCell(seller.finance.week),
+                financeCell(seller.finance.month),
+                financeCell(seller.finance.year),
+              '</div>'
+            ].join("");
+          }).join("");
+        els.financeBody.innerHTML = [
+          '<div class="performance-grid">',
+            cards || '<div class="empty">Aucun vendeur a classer.</div>',
+          '</div>',
+          '<div class="finance-table" style="margin-top:14px">',
+            '<div class="finance-row header" style="grid-template-columns:minmax(190px,1.5fr) repeat(4,minmax(110px,.75fr))">',
+              '<div>Vendeur</div><div>Jour</div><div>Semaine</div><div>Mois</div><div>Annee</div>',
+            '</div>',
+            '<div class="finance-detail" style="margin-left:0;border-left:0;padding-left:0">',
+              ranking || '<div class="empty">Aucun classement disponible.</div>',
+            '</div>',
+          '</div>'
+        ].join("");
+      }
+
+      function renderFinanceSummaryCards(cards){
+        els.financeSummary.innerHTML = cards.map(function(card){
+          return [
+            '<article class="finance-kpi ' + escapeHtml(card.tone || '') + '">',
+              '<span>' + escapeHtml(card.label) + '</span>',
+              '<strong>' + escapeHtml(card.value) + '</strong>',
+            '</article>'
+          ].join("");
+        }).join("");
+      }
+
+      function renderFinanceHeaderRow(firstLabel){
+        return [
+          '<div class="finance-row header">',
+            '<div>' + escapeHtml(firstLabel) + '</div>',
+            '<div>Reel</div>',
+            '<div>Budget</div>',
+            '<div>Ecart</div>',
+            '<div>Atteinte</div>',
+            '<div></div>',
+          '</div>'
+        ].join("");
+      }
+
+      function renderFinanceTotalRow(total){
+        const taux = total.taux === null || total.taux === undefined
+          ? (total.budget ? (total.actual / total.budget) * 100 : null)
+          : total.taux;
+        return [
+          '<div class="finance-row total">',
+            '<div class="finance-name"><strong>Total consolide</strong><span>Responsables + vendeurs</span></div>',
+            financeCell(total.actual),
+            financeCell(total.budget),
+            financeCell(total.ecart, true),
+            '<div class="finance-value"><strong>' + (taux === null ? '-' : formatPercent(taux)) + '</strong><span>atteinte</span></div>',
+            '<div></div>',
+          '</div>'
+        ].join("");
+      }
+
+      function financeCell(value, signed){
+        const number = roundClientMoney(value || 0);
+        const label = signed && number > 0 ? "+" + formatEuro(number) : formatEuro(number);
+        return '<div class="finance-value"><strong>' + escapeHtml(label) + '</strong><span>' + (signed ? "ecart" : "HT") + '</span></div>';
+      }
+
+      function financeViewConfig(){
+        if (state.financeView === "week") return { actualLabel: "CA semaine reel", budgetLabel: "Budget semaine" };
+        if (state.financeView === "month") return { actualLabel: "CA mois reel", budgetLabel: "Budget mois" };
+        return { actualLabel: "CA jour reel", budgetLabel: "Budget jour" };
+      }
+
+      function budgetForDay(monthlyBudget, isoDate){
+        const parts = parseIsoParts(isoDate);
+        if (!isWorkingDay(isoDate)) return 0;
+        const monthBudget = Number(monthlyBudget[parts.month - 1] || 0);
+        const days = workdaysInMonth(parts.year, parts.month);
+        return roundClientMoney(days ? monthBudget / days : 0);
+      }
+
+      function budgetForDateRange(monthlyBudget, startIso, endIso, selectedYear){
+        if (!startIso || !endIso) return 0;
+        let cursor = parseDateUtc(startIso);
+        const end = parseDateUtc(endIso);
+        let total = 0;
+        while (cursor <= end) {
+          const iso = dateToIso(cursor);
+          const parts = parseIsoParts(iso);
+          if (parts.year === selectedYear && isWorkingDay(iso)) {
+            const monthBudget = Number(monthlyBudget[parts.month - 1] || 0);
+            const days = workdaysInMonth(parts.year, parts.month);
+            total += days ? monthBudget / days : 0;
+          }
+          cursor.setUTCDate(cursor.getUTCDate() + 1);
+        }
+        return roundClientMoney(total);
+      }
+
+      function budgetToDate(monthlyBudget, isoDate){
+        const parts = parseIsoParts(isoDate);
+        let total = 0;
+        for (let month = 1; month < parts.month; month += 1) {
+          total += Number(monthlyBudget[month - 1] || 0);
+        }
+        for (let day = 1; day <= parts.day; day += 1) {
+          const iso = parts.year + '-' + String(parts.month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+          if (isWorkingDay(iso)) {
+            const days = workdaysInMonth(parts.year, parts.month);
+            total += days ? Number(monthlyBudget[parts.month - 1] || 0) / days : 0;
+          }
+        }
+        return roundClientMoney(total);
+      }
+
+      function workdaysInMonth(year, month){
+        let count = 0;
+        const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+        for (let day = 1; day <= last; day += 1) {
+          const iso = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+          if (isWorkingDay(iso)) count += 1;
+        }
+        return count;
+      }
+
+      function isWorkingDay(isoDate){
+        const date = parseDateUtc(isoDate);
+        const day = date.getUTCDay();
+        if (day === 0 || day === 6) return false;
+        return !franceHolidaySet(date.getUTCFullYear()).has(isoDate);
+      }
+
+      function franceHolidaySet(year){
+        if (!franceHolidaySet.cache) franceHolidaySet.cache = {};
+        if (franceHolidaySet.cache[year]) return franceHolidaySet.cache[year];
+        const easter = easterDate(year);
+        const dates = [
+          `${year}-01-01`,
+          `${year}-05-01`,
+          `${year}-05-08`,
+          `${year}-07-14`,
+          `${year}-08-15`,
+          `${year}-11-01`,
+          `${year}-11-11`,
+          `${year}-12-25`,
+          addDaysIso(easter, 1),
+          addDaysIso(easter, 39),
+          addDaysIso(easter, 50)
+        ];
+        franceHolidaySet.cache[year] = new Set(dates);
+        return franceHolidaySet.cache[year];
+      }
+
+      function easterDate(year){
+        const a = year % 19;
+        const b = Math.floor(year / 100);
+        const c = year % 100;
+        const d = Math.floor(b / 4);
+        const e = b % 4;
+        const f = Math.floor((b + 8) / 25);
+        const g = Math.floor((b - f + 1) / 3);
+        const h = (19 * a + b - d - g + 15) % 30;
+        const i = Math.floor(c / 4);
+        const k = c % 4;
+        const l = (32 + 2 * e + 2 * i - h - k) % 7;
+        const m = Math.floor((a + 11 * h + 22 * l) / 451);
+        const month = Math.floor((h + l - 7 * m + 114) / 31);
+        const day = ((h + l - 7 * m + 114) % 31) + 1;
+        return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      }
+
+      function addDaysIso(isoDate, days){
+        const date = parseDateUtc(isoDate);
+        date.setUTCDate(date.getUTCDate() + days);
+        return dateToIso(date);
+      }
+
+      function parseDateUtc(isoDate){
+        const parts = parseIsoParts(isoDate);
+        return new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+      }
+
+      function parseIsoParts(isoDate){
+        const match = String(isoDate || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) {
+          const now = new Date();
+          return { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+        }
+        return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+      }
+
+      function dateToIso(date){
+        return date.toISOString().slice(0, 10);
+      }
+
+      function todayInputValue(){
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        return now.toISOString().slice(0, 10);
+      }
+
+      function safeMonthly(value){
+        const source = Array.isArray(value) ? value : [];
+        return Array.from({ length: 12 }, function(_, index){ return roundClientMoney(source[index] || 0); });
+      }
+
+      function findStateUser(id){
+        return state.users.find(function(user){ return user.id === id; }) || null;
+      }
+
+      function sumSellers(sellers, key){
+        return roundClientMoney(sellers.reduce(function(sum, seller){ return sum + Number(seller.finance?.[key] || 0); }, 0));
+      }
+
+      function managerNameForSeller(seller, groups){
+        const group = groups.find(function(item){
+          return item.commercials.some(function(commercial){ return commercial.id === seller.id; });
+        });
+        return group ? group.name : "Sans responsable";
+      }
+
+      function monthShortLabel(index){
+        return ["Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Juil", "Aout", "Sep", "Oct", "Nov", "Dec"][index] || "-";
+      }
+
+      function roundClientMoney(value){
+        const number = Number(value || 0);
+        return Math.round((Number.isFinite(number) ? number : 0) * 100) / 100;
+      }
+
+      function formatEuro(value){
+        return new Intl.NumberFormat("fr-FR", {
+          maximumFractionDigits: 0,
+          minimumFractionDigits: 0
+        }).format(Math.round(Number(value || 0))) + " EUR";
+      }
+
+      function formatPercent(value){
+        return new Intl.NumberFormat("fr-FR", {
+          maximumFractionDigits: 1,
+          minimumFractionDigits: 0
+        }).format(Number(value || 0)) + " %";
       }
 
       function renderOverview(){
