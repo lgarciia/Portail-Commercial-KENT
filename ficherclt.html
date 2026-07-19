@@ -1061,6 +1061,19 @@
       return state.portalSessionUser;
     }
 
+    async function touchPortalActivity() {
+      try {
+        if (!state.portalSessionUser?.dbUserId) return;
+        await fetch("/api/session-activity", {
+          method: "POST",
+          cache: "no-store",
+          credentials: "same-origin"
+        });
+      } catch (error) {
+        console.warn("Activite portail non mise a jour:", error.message || error);
+      }
+    }
+
     function getCommercialOwnershipPayload() {
       const user = state.portalSessionUser || {};
       const dbUserId = String(user.dbUserId || "").trim();
@@ -4195,6 +4208,7 @@
           );
         }
 
+        await touchPortalActivity();
         dom.clientSearch.value = "";
         renderClientOptions(clientId);
         dom.clientSelect.value = String(clientId);
@@ -4404,6 +4418,7 @@
       try {
         setStatus("Connexion à Supabase...", "info");
         await loadPortalSessionUser();
+        touchPortalActivity();
 
         const [clients, clientComptes, produits, tarifsPlaques, plaques, conditionnements] = await Promise.all([
           fetchClients(),

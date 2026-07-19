@@ -244,34 +244,52 @@ async function buildSalesBlock(commercialIds, period) {
 }
 
 async function loadSalesSource(source, commercialIds, period) {
-  const visits = await fetchByCommercialChunks(source.visites, "id,client_id,date_visite,note,type_visite,total_commande,commercial_user_id", commercialIds, {
+  const allowedCommercialIds = new Set((commercialIds || []).map((id) => String(id || "").trim()).filter(Boolean));
+  const visitSelect = "id,client_id,date_visite,note,type_visite,total_commande,commercial_user_id";
+  const clientSelect = "id,nom,numero_compte,plaque_id,commercial_user_id";
+  const visitYearParams = {
     date_visite: `gte.${period.year}-01-01`,
     date_visite_lte: `lte.${period.year}-12-31`,
     order: "date_visite.desc,id.asc"
-  }, { date_visite_lte: "date_visite" });
+  };
+
+  const ownedClients = await fetchByCommercialChunks(source.clients, clientSelect, commercialIds, {
+    order: "nom.asc"
+  });
+  const ownedClientIds = unique(ownedClients.map((client) => client.id).filter(Boolean));
+  const [visitsByCommercial, visitsByClient] = await Promise.all([
+    fetchByCommercialChunks(source.visites, visitSelect, commercialIds, visitYearParams, { date_visite_lte: "date_visite" }),
+    ownedClientIds.length
+      ? fetchByChunks(source.visites, visitSelect, "client_id", ownedClientIds, visitYearParams, { date_visite_lte: "date_visite" })
+      : Promise.resolve([])
+  ]);
+  const visits = mergeRowsById([...visitsByCommercial, ...visitsByClient]);
 
   if (!visits.length) return { rows: [], visits: [] };
 
   const visitIds = visits.map((visit) => visit.id).filter(Boolean);
-  const clientIds = unique(visits.map((visit) => visit.client_id).filter(Boolean));
+  const clientIds = unique([
+    ...ownedClientIds,
+    ...visits.map((visit) => visit.client_id).filter(Boolean)
+  ]);
   const [lines, clients] = await Promise.all([
     fetchByChunks(source.lignes, "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire", "visite_id", visitIds, { order: "visite_id.asc,id.asc" }),
-    fetchByChunks(source.clients, "id,nom,numero_compte,plaque_id,commercial_user_id", "id", clientIds)
+    fetchByChunks(source.clients, clientSelect, "id", clientIds)
   ]);
 
   const productIds = unique(lines.map((line) => line.produit_id).filter(Boolean));
   const products = await fetchByChunks(source.produits, "id,nom,reference_produit,prix_vente", "id", productIds);
-  const clientById = new Map(clients.map((client) => [String(client.id), client]));
+  const clientById = new Map([...ownedClients, ...clients].map((client) => [String(client.id), client]));
   const productById = new Map(products.map((product) => [String(product.id), product]));
-  const visitById = new Map(visits.map((visit) => [String(visit.id), visit]));
 
   const enrichedVisits = visits.map((visit) => {
     const client = clientById.get(String(visit.client_id));
+    const ownerId = resolveSaleOwnerId(visit, client);
     return {
       id: visit.id,
       secteur: source.secteur,
       secteurLabel: source.label,
-      commercialUserId: visit.commercial_user_id || "",
+      commercialUserId: ownerId,
       clientId: visit.client_id || "",
       clientNom: client?.nom || "Client sans nom",
       numeroCompte: client?.numero_compte || "",
@@ -280,11 +298,12 @@ async function loadSalesSource(source, commercialIds, period) {
       isPhoneOrder: isPhoneOrderVisit(visit),
       totalCommande: toNumber(visit.total_commande)
     };
-  });
+  }).filter((visit) => allowedCommercialIds.has(visit.commercialUserId));
+  const visitById = new Map(enrichedVisits.map((visit) => [String(visit.id), visit]));
 
   const rows = lines.map((line) => {
     const visit = visitById.get(String(line.visite_id));
-    const client = clientById.get(String(visit?.client_id));
+    if (!visit) return null;
     const product = productById.get(String(line.produit_id));
     const quantity = toNumber(line.quantite);
     const unitPrice = toNumber(line.prix_unitaire);
@@ -294,23 +313,27 @@ async function loadSalesSource(source, commercialIds, period) {
       source: source.secteur,
       secteur: source.secteur,
       secteurLabel: source.label,
-      commercialUserId: visit?.commercial_user_id || "",
-      clientId: visit?.client_id || "",
-      clientNom: client?.nom || "Client sans nom",
-      numeroCompte: client?.numero_compte || "",
-      date: normalizeText(visit?.date_visite),
-      typeVisite: normalizeVisitType(visit),
-      typeLabel: isPhoneOrderVisit(visit) ? "Commande telephone" : "Visite terrain",
-      isPhoneOrder: isPhoneOrderVisit(visit),
+      commercialUserId: visit.commercialUserId || "",
+      clientId: visit.clientId || "",
+      clientNom: visit.clientNom || "Client sans nom",
+      numeroCompte: visit.numeroCompte || "",
+      date: normalizeText(visit.date),
+      typeVisite: visit.typeVisite,
+      typeLabel: visit.isPhoneOrder ? "Commande telephone" : "Visite terrain",
+      isPhoneOrder: visit.isPhoneOrder,
       reference: product?.reference_produit || "",
       designation: product?.nom || "Produit sans designation",
       quantite: quantity,
       prixUnitaire: unitPrice,
       montant: roundMoney(quantity * unitPrice)
     };
-  }).filter((row) => row.commercialUserId);
+  }).filter((row) => row?.commercialUserId);
 
   return { rows, visits: enrichedVisits };
+}
+
+function resolveSaleOwnerId(visit, client) {
+  return normalizeText(visit?.commercial_user_id) || normalizeText(client?.commercial_user_id);
 }
 
 function summarizeSalesRows(rows, visits, period) {
