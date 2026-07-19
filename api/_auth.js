@@ -35,7 +35,11 @@ export function requireRole(request, allowedRoles) {
     return {
       ok: false,
       status: 403,
-      body: { error: "Droits insuffisants." }
+      body: {
+        error:
+          "Session non admin. Reconnecte-toi avec un compte administrateur pour continuer.",
+        role: session.role
+      }
     };
   }
 
