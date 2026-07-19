@@ -11,10 +11,10 @@
     :root{
       --bg:#07111f;
       --panel:rgba(255,255,255,.065);
-      --panel2:rgba(255,255,255,.04);
+      --panel-soft:rgba(255,255,255,.04);
       --line:rgba(255,255,255,.13);
       --text:rgba(255,255,255,.94);
-      --muted:rgba(255,255,255,.62);
+      --muted:rgba(255,255,255,.64);
       --blue:#38bdf8;
       --green:#22c55e;
       --gold:#f59e0b;
@@ -33,6 +33,48 @@
         var(--bg);
     }
     .wrap{max-width:1280px;margin:0 auto;padding:28px}
+    .identity{
+      margin-bottom:16px;
+      border:1px solid rgba(255,255,255,.14);
+      background:linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.035));
+      border-radius:22px;
+      padding:13px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      box-shadow:0 14px 34px rgba(0,0,0,.22);
+    }
+    .identity-left{display:flex;align-items:center;gap:12px;min-width:0}
+    .avatar{
+      width:42px;
+      height:42px;
+      border-radius:15px;
+      display:grid;
+      place-items:center;
+      flex:0 0 auto;
+      background:linear-gradient(135deg, rgba(56,189,248,.90), rgba(34,197,94,.76));
+      font-weight:1000;
+      box-shadow:0 14px 26px rgba(56,189,248,.20);
+    }
+    .identity-copy{display:grid;gap:3px;min-width:0}
+    .identity-copy small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+    .identity-copy strong{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .identity-copy span{color:rgba(255,255,255,.72);font-size:13px}
+    .source-chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:34px;
+      padding:0 12px;
+      border-radius:999px;
+      border:1px solid rgba(34,197,94,.30);
+      background:rgba(34,197,94,.11);
+      color:#bbf7d0;
+      font-size:12px;
+      font-weight:950;
+      white-space:nowrap;
+    }
     .hero{
       border:1px solid var(--line);
       background:linear-gradient(135deg, rgba(15,23,42,.84), rgba(6,78,59,.28));
@@ -58,8 +100,8 @@
       text-transform:uppercase;
       font-size:12px;
     }
-    h1{font-size:clamp(34px,5vw,64px);line-height:.96;margin:22px 0 12px;letter-spacing:-.055em}
-    p{color:var(--muted);font-size:18px;line-height:1.55;max-width:850px;margin:0}
+    h1{font-size:clamp(34px,5vw,60px);line-height:.98;margin:20px 0 12px;letter-spacing:-.055em}
+    p{color:var(--muted);font-size:18px;line-height:1.55;max-width:830px;margin:0}
     .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
     .btn{
       min-height:44px;
@@ -79,34 +121,35 @@
     .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.12)}
     .btn.primary{background:linear-gradient(135deg, rgba(56,189,248,.80), rgba(34,197,94,.72));border-color:rgba(255,255,255,.18)}
     .grid{
-      margin-top:22px;
+      margin-top:18px;
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:16px;
+      gap:14px;
     }
     .card{
-      min-height:180px;
+      min-height:148px;
       border:1px solid var(--line);
-      border-radius:24px;
+      border-radius:22px;
       background:var(--panel);
-      box-shadow:0 18px 46px rgba(0,0,0,.24);
-      padding:20px;
+      box-shadow:0 18px 46px rgba(0,0,0,.20);
+      padding:17px;
     }
-    .card strong{display:block;font-size:20px;margin-bottom:8px}
-    .card span{display:block;color:var(--muted);line-height:1.45}
+    .card strong{display:block;font-size:18px;margin-bottom:7px}
+    .card span{display:block;color:var(--muted);line-height:1.42;font-size:14px}
     .pill{
-      margin-top:18px;
+      margin-top:14px;
       display:inline-flex;
-      padding:7px 10px;
+      padding:6px 9px;
       border-radius:999px;
-      background:var(--panel2);
+      background:var(--panel-soft);
       border:1px solid var(--line);
       color:rgba(255,255,255,.72);
-      font-size:12px;
+      font-size:11px;
       font-weight:900;
     }
-    @media(max-width:900px){
-      .hero{flex-direction:column}
+    .ready{border-color:rgba(34,197,94,.24);background:linear-gradient(135deg, rgba(34,197,94,.105), rgba(255,255,255,.04))}
+    @media(max-width:980px){
+      .hero,.identity{flex-direction:column;align-items:flex-start}
       .actions{justify-content:flex-start}
       .grid{grid-template-columns:1fr}
     }
@@ -114,55 +157,74 @@
 </head>
 <body>
   <main class="wrap">
+    <section class="identity" aria-label="Session responsable">
+      <div class="identity-left">
+        <span class="avatar" aria-hidden="true">R</span>
+        <span class="identity-copy">
+          <small>Connect&eacute; en responsable</small>
+          <strong data-session-name>Responsable</strong>
+          <span data-session-role>R&ocirc;le responsable actif</span>
+        </span>
+      </div>
+      <span class="source-chip" data-session-source>Session s&eacute;curis&eacute;e</span>
+    </section>
+
     <section class="hero">
       <div>
         <span class="badge">Espace Responsable</span>
-        <h1>Pilotage équipe commerciale</h1>
+        <h1>Pilotage &eacute;quipe commerciale</h1>
         <p>
-          Première brique de la phase 1 : cette page confirme la redirection par rôle.
-          Les données commerciales ne sont pas encore filtrées ici ; la vue responsable
-          sera branchée en lecture seule dans les prochaines phases.
+          Cette page est la future console de suivi des commerciaux visibles par le responsable.
+          Pour l'instant elle pr&eacute;pare les droits et reste en lecture sans impacter les donn&eacute;es terrain.
         </p>
       </div>
       <nav class="actions" aria-label="Navigation responsable">
         <a class="btn primary" href="index.html">Portail commercial</a>
         <a class="btn" href="documents-commerciaux.html">BDC / Devis</a>
-        <a class="btn" href="/deconnexion">Déconnexion</a>
+        <a class="btn" href="/deconnexion">D&eacute;connexion</a>
       </nav>
     </section>
 
-    <section class="grid" aria-label="Modules prévus">
-      <article class="card">
-        <strong>Dashboard équipe</strong>
-        <span>CA jour, CA mois, progression, visites, commandes téléphone et activité par commercial.</span>
-        <div class="pill">Phase 2</div>
+    <section class="grid" aria-label="Modules responsable">
+      <article class="card ready">
+        <strong>Session responsable</strong>
+        <span>Le r&ocirc;le est identifi&eacute; clairement avant de charger les futures donn&eacute;es &eacute;quipe.</span>
+        <div class="pill">Pr&ecirc;t</div>
       </article>
       <article class="card">
         <strong>Commerciaux visibles</strong>
-        <span>Liste des commerciaux rattachés au responsable, avec option d'accès exceptionnel.</span>
-        <div class="pill">Phase 2</div>
+        <span>Liste des commerciaux rattach&eacute;s au responsable, plus les exceptions autoris&eacute;es.</span>
+        <div class="pill">Prochaine brique</div>
       </article>
       <article class="card">
-        <strong>Suivi BDC / Devis</strong>
-        <span>Documents en cours, validés, non validés, par commercial et par client.</span>
-        <div class="pill">Phase 2</div>
-      </article>
-      <article class="card">
-        <strong>Rapports journaliers</strong>
-        <span>Lecture consolidée des rapports de terrain des commerciaux de l'équipe.</span>
-        <div class="pill">Phase 3</div>
-      </article>
-      <article class="card">
-        <strong>Transfert de secteur</strong>
-        <span>Préparer le transfert d'un portefeuille client sans perdre l'historique.</span>
-        <div class="pill">Phase 4</div>
-      </article>
-      <article class="card">
-        <strong>Objectifs commerciaux</strong>
-        <span>Objectifs par commercial, cumul responsable et vision groupe.</span>
-        <div class="pill">Phase 5</div>
+        <strong>Lecture temps r&eacute;el</strong>
+        <span>Ventes, BDC, devis et objectifs seront consultables sans droit de modification.</span>
+        <div class="pill">Lecture seule</div>
       </article>
     </section>
   </main>
+
+  <script>
+    (function(){
+      const nameNode = document.querySelector("[data-session-name]");
+      const roleNode = document.querySelector("[data-session-role]");
+      const sourceNode = document.querySelector("[data-session-source]");
+      const sourceLabels = {
+        supabase: "Source Supabase",
+        env: "Source Vercel",
+        legacy: "Acces historique"
+      };
+
+      fetch("/api/session", { cache: "no-store" })
+        .then(response => response.ok ? response.json() : null)
+        .then(payload => {
+          if (!payload || !payload.user) return;
+          nameNode.textContent = payload.user.name || "Responsable";
+          roleNode.textContent = "Role : " + (payload.user.roleLabel || payload.user.role || "responsable");
+          sourceNode.textContent = sourceLabels[payload.user.source] || "Session securisee";
+        })
+        .catch(() => {});
+    })();
+  </script>
 </body>
 </html>

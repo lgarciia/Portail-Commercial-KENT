@@ -4,6 +4,10 @@ const COOKIE_NAME = "kent_portal_day";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 36;
 const PARIS_TIMEZONE = "Europe/Paris";
 const USER_CONFIG_ENV_NAMES = ["PORTAL_USERS", "ACCESS_USERS"];
+const DEFAULT_SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+const DEFAULT_SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+const SUPABASE_AUTH_TIMEOUT_MS = 3500;
 const ROLE_HOME = {
   commercial: "/",
   responsable: "/responsable.html",
@@ -121,6 +125,10 @@ function getAuthConfig() {
     .map((name) => String(process.env[name] || "").trim())
     .find(Boolean) || "";
   const users = parsePortalUsers(usersRaw);
+  const authSource = String(process.env.PORTAL_AUTH_SOURCE || "hybrid").trim().toLowerCase();
+  const supabaseUrl = String(process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL).trim();
+  const supabaseAnonKey = String(process.env.SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY).trim();
+  const supabaseEnabled = authSource !== "env" && Boolean(supabaseUrl && supabaseAnonKey);
   const secret = String(
     process.env.ACCESS_SESSION_SECRET ||
     process.env.PORTAL_SESSION_SECRET ||
@@ -130,9 +138,13 @@ function getAuthConfig() {
   ).trim();
 
   return {
-    enabled: Boolean(legacyCode || users.length),
+    enabled: Boolean(legacyCode || users.length || supabaseEnabled),
     legacyCode,
     secret: secret || "kent-portal-session",
+    authSource,
+    supabaseUrl,
+    supabaseAnonKey,
+    supabaseEnabled,
     users
   };
 }
@@ -196,7 +208,13 @@ async function authenticateSubmittedUser(identifier, submittedCode, authConfig) 
   if (!submittedCode) return null;
 
   const lookup = normalizeIdentifier(identifier);
-  if (lookup && authConfig.users.length) {
+  if (lookup && authConfig.supabaseEnabled) {
+    const supabaseUser = await authenticateSupabaseUser(identifier, submittedCode, authConfig);
+    if (supabaseUser) return supabaseUser;
+    if (authConfig.authSource === "supabase") return null;
+  }
+
+  if (lookup && authConfig.authSource !== "supabase" && authConfig.users.length) {
     const user = authConfig.users.find((item) => item.lookup === lookup);
     if (user && (await isValidPassword(submittedCode, user))) {
       return user;
@@ -215,6 +233,57 @@ async function authenticateSubmittedUser(identifier, submittedCode, authConfig) 
   }
 
   return null;
+}
+
+async function authenticateSupabaseUser(identifier, submittedCode, authConfig) {
+  let timeout = null;
+  try {
+    const controller = new AbortController();
+    timeout = setTimeout(() => controller.abort(), SUPABASE_AUTH_TIMEOUT_MS);
+    const response = await fetch(
+      `${authConfig.supabaseUrl.replace(/\/+$/, "")}/rest/v1/rpc/portal_authenticate_user`,
+      {
+        method: "POST",
+        headers: {
+          apikey: authConfig.supabaseAnonKey,
+          Authorization: `Bearer ${authConfig.supabaseAnonKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          p_identifier: identifier,
+          p_password: submittedCode
+        }),
+        signal: controller.signal
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return null;
+
+    return normalizeSupabaseUser(row);
+  } catch {
+    return null;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+function normalizeSupabaseUser(row) {
+  const role = normalizeRole(row?.role);
+  const identifier = String(row?.identifier || row?.login || row?.user_id || row?.id || "").trim();
+  if (!identifier) return null;
+
+  return {
+    id: identifier,
+    dbUserId: String(row?.user_id || row?.id || "").trim(),
+    name: String(row?.display_name || row?.name || identifier).trim(),
+    role,
+    redirect: sanitizeNext(row?.home_path || ROLE_HOME[role] || "/"),
+    source: "supabase"
+  };
 }
 
 async function isValidPassword(submittedCode, user) {
@@ -269,9 +338,11 @@ async function createSession(dayKey, user, secret) {
     v: 2,
     dayKey,
     userId: user.id,
+    dbUserId: user.dbUserId || "",
     name: user.name,
     role: user.role,
-    legacy: Boolean(user.legacy)
+    legacy: Boolean(user.legacy),
+    source: user.source || (user.legacy ? "legacy" : "env")
   };
   const encoded = base64UrlEncode(JSON.stringify(payload));
   const signature = await signValue(encoded, secret);
@@ -314,9 +385,11 @@ async function parseV2Session(value, secret, expectedDayKey) {
 
     return {
       userId: String(payload.userId || ""),
+      dbUserId: String(payload.dbUserId || ""),
       name: String(payload.name || "Utilisateur"),
       role: normalizeRole(payload.role),
-      legacy: Boolean(payload.legacy)
+      legacy: Boolean(payload.legacy),
+      source: String(payload.source || "")
     };
   } catch {
     return null;
