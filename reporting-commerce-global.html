@@ -1628,7 +1628,8 @@
         allowExcelFallback: false
       });
       const totals = utils.computeBudgetMonthlyTotals(budgetData);
-      return { key: entity.key, label: entity.label, totals, source: meta?.source || "supabase_empty" };
+      const source = meta?.source || "supabase_empty";
+      return { key: entity.key, label: entity.label, totals, source, available: source === "supabase" };
     }
     async function loadBudgetSnapshot(year) {
       const cacheKey = String(year);
@@ -1655,7 +1656,7 @@
       const results = await Promise.allSettled(budgetEntities.map(entity => loadAutoEntityBudget(entity, year, utils)));
       results.forEach((result, index) => {
         const entity = budgetEntities[index];
-        if (result.status === "fulfilled") {
+        if (result.status === "fulfilled" && result.value.available) {
           snapshot.autoAvailable = true;
           const sourceLabel = result.value.source === "supabase" ? "Supabase" : "0";
           snapshot.autoLoaded.push(`${result.value.label} (${sourceLabel})`);
@@ -1664,7 +1665,7 @@
           });
         } else {
           snapshot.autoFailed.push(entity.label);
-          console.warn("Budget auto indisponible", entity, result.reason);
+          if (result.status === "rejected") console.warn("Budget auto indisponible", entity, result.reason);
         }
       });
 

@@ -500,18 +500,38 @@
 
   async function getActiveBudgetData(entityKey, year){
     const owner = await ownerContext();
+    const key = String(entityKey || "").trim().toLowerCase();
+    if (!key || !year) return null;
+
     let query = client()
       .from("budget_entites")
       .select("*")
-      .eq("key", String(entityKey || "").trim().toLowerCase());
+      .eq("key", key);
     query = applyOwner(query, owner);
-    query = query.limit(1);
+    query = query
+      .order("ordre", { ascending: true })
+      .order("created_at", { ascending: false });
     const { data: entities, error: entityError } = await query;
     if (entityError) throw entityError;
-    const entity = (entities || [])[0];
-    if (!entity) return null;
-    const active = await activeBudgetForEntityYear(entity.id, year);
+    const entityRows = entities || [];
+    if (!entityRows.length) return null;
+
+    let budgetQuery = client()
+      .from("budgets")
+      .select("*")
+      .in("entite_id", entityRows.map(entity => entity.id))
+      .eq("annee", Number(year))
+      .eq("statut", "active");
+    budgetQuery = applyOwner(budgetQuery, owner);
+    budgetQuery = budgetQuery
+      .order("validated_at", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const { data: activeRows, error: budgetError } = await budgetQuery;
+    if (budgetError) throw budgetError;
+    const active = (activeRows || [])[0] || null;
     if (!active) return null;
+    const entity = entityRows.find(row => String(row.id) === String(active.entite_id)) || entityRows[0];
     const { lines } = await getBudget(active.id);
     return {
       budgetData: toBudgetData(lines),
