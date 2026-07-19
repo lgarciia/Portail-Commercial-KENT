@@ -77,9 +77,9 @@ create or replace function public.portal_hash_password(p_password text)
 returns text
 language sql
 security definer
-set search_path = public, pg_temp
+set search_path = public, extensions, pg_temp
 as $$
-  select crypt(coalesce(p_password, ''), gen_salt('bf', 10));
+  select extensions.crypt(coalesce(p_password, ''), extensions.gen_salt('bf'::text, 10));
 $$;
 
 create or replace function public.portal_authenticate_user(
@@ -116,7 +116,7 @@ begin
   where u.identifier_lookup = lower(btrim(coalesce(p_identifier, '')))
     and u.active = true
     and u.hidden = false
-    and u.password_hash = crypt(coalesce(p_password, ''), u.password_hash)
+    and u.password_hash = extensions.crypt(coalesce(p_password, ''), u.password_hash)
   limit 1;
 
   update public.portal_users u
@@ -124,7 +124,7 @@ begin
   where u.identifier_lookup = lower(btrim(coalesce(p_identifier, '')))
     and u.active = true
     and u.hidden = false
-    and u.password_hash = crypt(coalesce(p_password, ''), u.password_hash);
+    and u.password_hash = extensions.crypt(coalesce(p_password, ''), u.password_hash);
 end;
 $$;
 
