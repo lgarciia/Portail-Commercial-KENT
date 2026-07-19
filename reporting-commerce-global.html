@@ -1215,7 +1215,10 @@
       return all;
     }
     async function fetchInChunks(table, select, column, values, options = {}) {
-      const cleanValues = [...new Set((values || []).map(value => String(value)).filter(Boolean))];
+      const cleanValues = [...new Set((values || [])
+        .filter(value => value !== null && value !== undefined)
+        .map(value => String(value).trim())
+        .filter(value => value && value.toLowerCase() !== "null" && value.toLowerCase() !== "undefined"))];
       if (!cleanValues.length) return [];
       const all = [];
       const chunkSize = options.chunkSize || 100;
@@ -2043,15 +2046,31 @@
         state.selectedMonthIndex = null;
         closeWeekModal();
         setStatus(isDayMode ? "Chargement du jour Auto + Industrie..." : isBudgetMode ? "Chargement du reel et du budget Auto..." : isYearMode ? "Chargement de l'annee Auto + Industrie..." : "Chargement des ventes Auto + Industrie...");
-        const salesPromise = Promise.all(SOURCES.map(source => loadSourceRows(source, periodBounds)));
-        const budgetPromise = isBudgetMode ? loadBudgetSnapshot(periodBounds.year) : Promise.resolve(state.budget);
-        const adjustmentsPromise = isBudgetMode ? loadBudgetAdjustments(periodBounds.year) : Promise.resolve(state.budgetAdjustments);
+        const salesPromise = Promise.allSettled(SOURCES.map(source => loadSourceRows(source, periodBounds)));
+        const budgetPromise = isBudgetMode
+          ? loadBudgetSnapshot(periodBounds.year).catch(error => {
+              console.warn("Budget global indisponible", error);
+              return emptyBudgetSnapshot(periodBounds.year, `Budget indisponible : ${error.message || "erreur Supabase"}.`);
+            })
+          : Promise.resolve(state.budget);
+        const adjustmentsPromise = isBudgetMode
+          ? loadBudgetAdjustments(periodBounds.year).catch(error => {
+              state.budgetAdjustmentError = error.message || "CA partenaires indisponible.";
+              console.warn("CA partenaires indisponible", error);
+              return new Map();
+            })
+          : Promise.resolve(state.budgetAdjustments);
         const [sourceRows, budgetSnapshot, budgetAdjustments] = await Promise.all([salesPromise, budgetPromise, adjustmentsPromise]);
         if (isBudgetMode) {
           state.budget = budgetSnapshot;
           state.budgetAdjustments = budgetAdjustments;
         }
-        state.rows = sourceRows.flat().sort((a, b) => String(a.date_visite).localeCompare(String(b.date_visite)));
+        const loadedRows = sourceRows.flatMap((result, index) => {
+          if (result.status === "fulfilled") return result.value || [];
+          console.warn("Source ventes indisponible", SOURCES[index]?.label || index, result.reason);
+          return [];
+        });
+        state.rows = loadedRows.sort((a, b) => String(a.date_visite).localeCompare(String(b.date_visite)));
         applyView();
       } catch (error) {
         console.error(error);
