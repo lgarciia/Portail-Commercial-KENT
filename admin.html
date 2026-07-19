@@ -38,7 +38,7 @@
     }
     button,input,select,textarea{font:inherit}
     button{cursor:pointer}
-    .wrap{max-width:1460px;margin:0 auto;padding:26px}
+    .wrap{max-width:1460px;margin:0 auto;padding:22px}
     .identity{
       margin-bottom:14px;
       border:1px solid var(--line);
@@ -77,19 +77,19 @@
     .hero{
       border:1px solid var(--line);
       background:linear-gradient(135deg, rgba(30,27,75,.78), rgba(2,6,23,.76));
-      border-radius:28px;padding:24px;box-shadow:var(--shadow);
-      display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;
+      border-radius:24px;padding:16px 18px;box-shadow:var(--shadow);
+      display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:end;
     }
     .badge{
       display:inline-flex;align-items:center;height:32px;padding:0 13px;border-radius:999px;
       border:1px solid rgba(139,92,246,.38);background:rgba(139,92,246,.14);
       color:#ddd6fe;font-weight:950;letter-spacing:.08em;text-transform:uppercase;font-size:12px;
     }
-    h1{font-size:clamp(32px,4.2vw,56px);line-height:.98;margin:18px 0 10px;letter-spacing:-.055em}
-    p{color:var(--muted);font-size:16px;line-height:1.52;max-width:900px;margin:0}
+    h1{font-size:clamp(28px,3.2vw,42px);line-height:.98;margin:12px 0 8px;letter-spacing:-.055em}
+    p{color:var(--muted);font-size:15px;line-height:1.45;max-width:900px;margin:0}
     .status-line{
-      margin-top:14px;border:1px solid rgba(56,189,248,.18);background:rgba(14,165,233,.08);
-      border-radius:18px;padding:12px 14px;color:#dbeafe;font-weight:850;line-height:1.45;
+      margin-top:10px;border:1px solid rgba(56,189,248,.18);background:rgba(14,165,233,.08);
+      border-radius:16px;padding:9px 12px;color:#dbeafe;font-weight:850;line-height:1.38;font-size:13px;
     }
     .stats{
       margin-top:16px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;
@@ -142,15 +142,21 @@
     .audit-list{display:grid;gap:8px}
     .audit-row strong{display:block;font-size:13px;margin-bottom:3px}
     .audit-row small{color:var(--muted-2)}
-    .finance-mode .stats{display:none}
+    .wrap.finance-mode{max-width:none;padding:18px 24px}
+    .finance-mode .identity,.finance-mode .hero,.finance-mode .stats{display:none}
+    .finance-mode .admin-tabs{
+      margin:0 0 12px auto;max-width:max-content;background:rgba(255,255,255,.035);
+      border-radius:18px;padding:6px;
+    }
+    .finance-mode .admin-view{margin-top:0}
     .finance-shell{
-      border:1px solid var(--line);border-radius:28px;padding:20px;
+      border:1px solid var(--line);border-radius:28px;padding:18px;
       background:linear-gradient(135deg, rgba(8,47,73,.34), rgba(2,6,23,.76));
       box-shadow:var(--shadow);
     }
     .finance-head{
       display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
-      border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:16px;margin-bottom:14px;
+      border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:13px;margin-bottom:12px;
     }
     .finance-head h2{margin:8px 0 6px;font-size:clamp(30px,3vw,44px);letter-spacing:-.055em;line-height:1}
     .finance-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap;justify-content:flex-end}
@@ -424,10 +430,10 @@
 
     <nav class="admin-tabs" aria-label="Navigation admin">
       <button class="admin-tab active" type="button" data-admin-tab="pilotage">Pilotage</button>
-      <button class="admin-tab" type="button" data-admin-tab="finance">Finance</button>
       <button class="admin-tab" type="button" data-admin-tab="utilisateurs">Utilisateurs</button>
       <button class="admin-tab" type="button" data-admin-tab="rattachements">Rattachements</button>
       <button class="admin-tab" type="button" data-admin-tab="securite">Securite</button>
+      <button class="admin-tab" type="button" data-admin-tab="finance">Finance</button>
     </nav>
 
     <section class="admin-view active" data-admin-view="pilotage">
@@ -462,10 +468,9 @@
       <section class="finance-shell">
         <div class="finance-head">
           <div>
-            <span class="badge">Finance admin</span>
-            <h2>Pilotage financier groupe</h2>
+            <h2>Pilotage groupe</h2>
             <p>
-              CA reel par responsable, consolidation des vendeurs, budget actif Supabase et ecarts de performance.
+              Responsables, vendeurs, reel vs budget.
             </p>
           </div>
           <div class="finance-controls">
