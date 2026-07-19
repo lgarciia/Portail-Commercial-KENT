@@ -37,6 +37,12 @@
     if (node) node.textContent = message;
   }
 
+  function applyCommercialScope(query) {
+    return window.KentCommercialScope
+      ? window.KentCommercialScope.applyToQuery(query)
+      : query;
+  }
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replaceAll("&", "&amp;")
@@ -261,13 +267,15 @@
   }
 
   async function fetchRapportVisitesByDate(reportDate) {
-    var result = await supabaseClient
+    await window.KentCommercialScope.load();
+    var query = supabaseClient
       .from("visites")
       .select(
         "id, client_id, date_visite, note, type_visite, total_commande, clients ( id, nom, numero_compte, adresse, telephone ), visite_commandes ( id, produit_id, quantite, stock_client, couleur, prix_unitaire, produits ( id, nom, reference_produit, prix_vente ) )"
       )
-      .eq("date_visite", reportDate)
-      .order("date_visite", { ascending: true });
+      .eq("date_visite", reportDate);
+    query = applyCommercialScope(query);
+    var result = await query.order("date_visite", { ascending: true });
 
     if (result.error) {
       console.error("Erreur fetchRapportVisitesByDate:", result.error);

@@ -1009,6 +1009,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./reporting-data-utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./commercial-scope.js"></script>
   <script src="./budget-supabase.js"></script>
   <script>
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
@@ -1037,6 +1038,16 @@
     const MONTH_LABELS = ["Janv.", "Fevr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Aout", "Sept.", "Oct.", "Nov.", "Dec."];
     const dom = {};
     const state = { rows: [], weeks: [], selectedWeekIndex: 0, selectedMonthIndex: null, viewMode: "day", budget: null, budgetCache: new Map(), budgetAdjustments: new Map(), budgetAdjustmentError: "" };
+
+    function shouldScopeTable(table) {
+      return ["clients", "visites", "industrie_clients", "industrie_visites", "documents_commerciaux"].includes(table);
+    }
+
+    function applyCommercialScope(table, query) {
+      return shouldScopeTable(table) && window.KentCommercialScope
+        ? window.KentCommercialScope.applyToQuery(query)
+        : query;
+    }
 
     function cacheDom() {
       ["dayModeBtn","monthModeBtn","yearModeBtn","budgetModeBtn","dayField","monthField","yearField","sectorField","daySelect","monthSelect","yearSelect","sectorFilter","statusBar","dayView","dayClientsSection","dayClientsSubtitle","dayClientsList","dayKpiTotal","dayKpiTotalSub","dayKpiAuto","dayKpiAutoSub","dayKpiIndus","dayKpiIndusSub","dayMainMeter","weekGrid","summaryBody","weekModal","modalTitle","modalSubtitle","modalDetailGrid","modalTopClientsList","modalCloseBtn","analysisText","kpiTotal","kpiTotalSub","kpiAuto","kpiAutoSub","kpiIndus","kpiIndusSub","kpiClients","kpiOrders","kpiPhone","mainMeter","yearView","annualChart","yearSummaryBody","yearAnalysisText","yearKpiTotal","yearKpiTotalSub","yearKpiAuto","yearKpiAutoSub","yearKpiIndus","yearKpiIndusSub","yearKpiClients","yearKpiOrders","yearKpiBestMonth","yearKpiBestMonthSub","yearMainMeter","budgetView","budgetChart","budgetStatus","budgetSummaryBody","budgetAnalysisText","budgetKpiRealGlobal","budgetKpiRealGlobalSub","budgetKpiAutoBudget","budgetKpiAutoSub","budgetKpiAutoGap","budgetKpiAutoRate","budgetKpiIndusBudget","budgetKpiGlobalBudget","budgetKpiGlobalSub","budgetKpiLines","budgetKpiClients"].forEach(id => dom[id] = document.getElementById(id));
@@ -1150,6 +1161,7 @@
       const all = [];
       while (true) {
         let query = supabaseClient.from(table).select(select).range(from, from + PAGE_SIZE - 1);
+        query = applyCommercialScope(table, query);
         if (options.gte) query = query.gte(options.gte.column, options.gte.value);
         if (options.lte) query = query.lte(options.lte.column, options.lte.value);
         if (options.in) query = query.in(options.in.column, options.in.values);
@@ -1900,6 +1912,7 @@
     }
     async function refreshData() {
       try {
+        await window.KentCommercialScope.load();
         const isDayMode = state.viewMode === "day";
         const isYearMode = state.viewMode === "year";
         const isBudgetMode = state.viewMode === "budget";

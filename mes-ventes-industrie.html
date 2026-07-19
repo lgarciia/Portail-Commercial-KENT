@@ -407,6 +407,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./commercial-scope.js"></script>
   <script>
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
@@ -446,6 +447,16 @@
 
     function setStatus(message) {
       dom.statusBar.textContent = message;
+    }
+
+    function shouldScopeTable(table) {
+      return ["industrie_clients", "industrie_visites", "documents_commerciaux"].includes(table);
+    }
+
+    function applyCommercialScope(table, query) {
+      return shouldScopeTable(table) && window.KentCommercialScope
+        ? window.KentCommercialScope.applyToQuery(query)
+        : query;
     }
 
     function escapeHtml(value) {
@@ -568,6 +579,7 @@
       while (true) {
         const to = from + pageSize - 1;
         let query = supabaseClient.from(table).select(select).range(from, to);
+        query = applyCommercialScope(table, query);
         const orders = Array.isArray(options.order) ? options.order : (options.order ? [options.order] : []);
         orders.forEach(order => {
           query = query.order(order.column, { ascending: order.ascending ?? true });
@@ -584,6 +596,7 @@
     }
 
     async function fetchAllData() {
+      await window.KentCommercialScope.load();
       const [clientsRes, produitsRes, visitesRes, lignesRes, plaquesRes] = await Promise.all([
         fetchPaged("industrie_clients", "id, nom, numero_compte, adresse, telephone, plaque_id", { order: { column: "nom", ascending: true } }),
         fetchPaged("industrie_produits", "id, nom, actif, reference_produit, prix_vente", { order: { column: "nom", ascending: true } }),

@@ -1080,6 +1080,16 @@
       };
     }
 
+    function isCommercialScopedSession() {
+      return Boolean(state.portalSessionUser?.dbUserId && state.portalSessionUser?.role === "commercial");
+    }
+
+    function applyCommercialScopeToQuery(query) {
+      return isCommercialScopedSession()
+        ? query.eq("commercial_user_id", state.portalSessionUser.dbUserId)
+        : query;
+    }
+
     function cacheDom() {
       dom.clientSearch = document.getElementById("clientSearch");
       dom.clientSelect = document.getElementById("clientSelect");
@@ -1882,7 +1892,7 @@
     }
 
     async function fetchClients() {
-      const { data, error } = await supabaseClient
+      let query = supabaseClient
         .from("industrie_clients")
         .select(`
           id,
@@ -1893,6 +1903,8 @@
           plaque_id
         `)
         .order("nom", { ascending: true });
+      query = applyCommercialScopeToQuery(query);
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];
@@ -2002,7 +2014,7 @@
     }
 
     async function fetchVisitesByClient(clientId) {
-      const { data, error } = await supabaseClient
+      let query = supabaseClient
         .from("industrie_visites")
         .select(`
           id,
@@ -2014,6 +2026,8 @@
         `)
         .eq("client_id", clientId)
         .order("date_visite", { ascending: false });
+      query = applyCommercialScopeToQuery(query);
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -2066,11 +2080,13 @@
       const chunkSize = 100;
       for (let i = 0; i < ids.length; i += chunkSize) {
         const chunk = ids.slice(i, i + chunkSize);
-        const { data, error } = await supabaseClient
+        let query = supabaseClient
           .from(DOCUMENTS_TABLE)
           .select("id, visite_id, type_document, statut_validation, valide, created_at, date_document")
           .eq("secteur", DOCUMENTS_SECTOR)
           .in("visite_id", chunk);
+        query = applyCommercialScopeToQuery(query);
+        const { data, error } = await query;
 
         if (error) {
           console.warn("Statuts BDC/devis indisponibles:", error.message || error);

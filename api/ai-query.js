@@ -176,8 +176,8 @@ export default async function handler(req, res) {
     }
 
     const sessionValue = getCookie(String(req.headers?.cookie || ""), COOKIE_NAME);
-    const isValid = isValidSession(sessionValue, authConfig, getParisDayKey());
-    if (!isValid) {
+    const session = parseSession(sessionValue, authConfig, getParisDayKey());
+    if (!session) {
       return jsonError(res, 401, "Session invalide. Reconnecte-toi.");
     }
 
@@ -231,7 +231,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const analytics = await runReadOnlyAnalytics(normalizedPlan);
+    const analytics = await runReadOnlyAnalytics(normalizedPlan, session);
     const analysisPack = buildAdvancedAnalysis({ plan: normalizedPlan, analytics });
 
     return res.status(200).json({
@@ -249,7 +249,7 @@ export default async function handler(req, res) {
         limitApplied: normalizedPlan.limit,
         rowCount: analytics.rows.length,
         period: analytics.periodLabel || null,
-        scope: "global_read_only",
+        scope: getAnalyticsScopeLabel(session),
         safeguards: ["session_guard", "read_only_flow", "intent_whitelist", "rate_limit", "filter_sanitization"]
       }
     });
@@ -594,14 +594,15 @@ function sanitizeScalar(value) {
   return str;
 }
 
-async function runReadOnlyAnalytics(plan) {
+async function runReadOnlyAnalytics(plan, session = null) {
   const needsProducts = plan.intent === "top_products" || plan.intent === "product_performance" || plan.intent === "client_summary";
   const needsCommandes = needsProducts;
+  const commercialFilter = getCommercialDataFilter(session);
 
   const [clients, plaques, visites, produits, commandes] = await Promise.all([
-    fetchAllRows("clients", "id,nom,numero_compte,plaque_id", "nom.asc"),
+    fetchAllRows("clients", "id,nom,numero_compte,plaque_id,commercial_user_id", "nom.asc", commercialFilter),
     fetchAllRows("plaques", "id,nom", "nom.asc"),
-    fetchAllRows("visites", "id,client_id,date_visite,note,type_visite,total_commande", "date_visite.desc"),
+    fetchAllRows("visites", "id,client_id,date_visite,note,type_visite,total_commande,commercial_user_id", "date_visite.desc", commercialFilter),
     needsProducts ? fetchAllRows("produits", "id,nom,reference_produit,prix_vente,actif", "nom.asc") : Promise.resolve([]),
     needsCommandes ? fetchAllRows("visite_commandes", "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire") : Promise.resolve([])
   ]);
@@ -1426,7 +1427,18 @@ function summarizeVisits(visits) {
   return { ca, nb_visites, panier_moyen };
 }
 
-async function fetchAllRows(table, select, order = "") {
+function getCommercialDataFilter(session) {
+  if (session?.role !== "commercial") return {};
+  const userId = String(session?.dbUserId || "").trim();
+  return userId ? { commercial_user_id: `eq.${userId}` } : {};
+}
+
+function getAnalyticsScopeLabel(session) {
+  const filter = getCommercialDataFilter(session);
+  return filter.commercial_user_id ? "commercial_read_only" : "global_read_only";
+}
+
+async function fetchAllRows(table, select, order = "", filters = {}) {
   const rows = [];
   let offset = 0;
 
@@ -1438,6 +1450,7 @@ async function fetchAllRows(table, select, order = "") {
       table,
       select,
       order,
+      filters,
       limit: chunkSize,
       offset
     });
@@ -1451,12 +1464,15 @@ async function fetchAllRows(table, select, order = "") {
   return rows;
 }
 
-async function fetchSupabaseRows({ table, select, order = "", limit = PAGE_SIZE, offset = 0 }) {
+async function fetchSupabaseRows({ table, select, order = "", filters = {}, limit = PAGE_SIZE, offset = 0 }) {
   const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
   url.searchParams.set("select", select);
   url.searchParams.set("limit", String(limit));
   url.searchParams.set("offset", String(offset));
   if (order) url.searchParams.set("order", order);
+  Object.entries(filters || {}).forEach(([column, value]) => {
+    if (column && value) url.searchParams.set(column, String(value));
+  });
 
   const response = await fetch(url.toString(), {
     method: "GET",
@@ -1956,7 +1972,7 @@ function getAuthConfig() {
   ).trim();
 
   return {
-    enabled: Boolean(legacyCode || usersRaw),
+    enabled: Boolean(legacyCode || usersRaw || secret),
     legacyCode,
     secret: secret || "kent-portal-session"
   };
@@ -1975,39 +1991,70 @@ function getCookie(cookieHeader, name) {
 }
 
 function isValidSession(value, authConfig, expectedDayKey) {
-  if (!value || !expectedDayKey || !authConfig?.enabled) return false;
+  return Boolean(parseSession(value, authConfig, expectedDayKey));
+}
+
+function parseSession(value, authConfig, expectedDayKey) {
+  if (!value || !expectedDayKey || !authConfig?.enabled) return null;
 
   if (value.startsWith("v2.")) {
-    return isValidV2Session(value, authConfig.secret, expectedDayKey);
+    return parseV2Session(value, authConfig.secret, expectedDayKey);
   }
 
-  if (!authConfig.legacyCode) return false;
+  if (!authConfig.legacyCode) return null;
 
   const lastDot = value.lastIndexOf(".");
-  if (lastDot <= 0) return false;
+  if (lastDot <= 0) return null;
 
   const dayKey = value.slice(0, lastDot);
   const signature = value.slice(lastDot + 1);
-  if (!dayKey || !signature || dayKey !== expectedDayKey) return false;
+  if (!dayKey || !signature || dayKey !== expectedDayKey) return null;
 
   const expected = signValue(dayKey, authConfig.legacyCode);
-  return safeEqual(signature, expected);
+  if (!safeEqual(signature, expected)) return null;
+
+  return {
+    userId: "legacy-commercial",
+    dbUserId: "",
+    name: "Commercial",
+    role: "commercial",
+    legacy: true
+  };
 }
 
 function isValidV2Session(value, secret, expectedDayKey) {
+  return Boolean(parseV2Session(value, secret, expectedDayKey));
+}
+
+function parseV2Session(value, secret, expectedDayKey) {
   const parts = value.split(".");
-  if (parts.length !== 3) return false;
+  if (parts.length !== 3) return null;
 
   const [, encoded, signature] = parts;
   const expected = signValue(encoded, secret);
-  if (!safeEqual(signature, expected)) return false;
+  if (!safeEqual(signature, expected)) return null;
 
   try {
     const payload = JSON.parse(base64UrlDecode(encoded));
-    return payload?.v === 2 && payload?.dayKey === expectedDayKey;
+    if (payload?.v !== 2 || payload?.dayKey !== expectedDayKey) return null;
+    return {
+      userId: String(payload.userId || ""),
+      dbUserId: String(payload.dbUserId || ""),
+      name: String(payload.name || "Utilisateur"),
+      role: normalizeRole(payload.role),
+      legacy: Boolean(payload.legacy),
+      source: String(payload.source || "")
+    };
   } catch {
-    return false;
+    return null;
   }
+}
+
+function normalizeRole(value) {
+  const role = String(value || "commercial").trim().toLowerCase();
+  if (role === "admin") return "admin";
+  if (role === "responsable" || role === "manager") return "responsable";
+  return "commercial";
 }
 
 function signValue(value, secret) {

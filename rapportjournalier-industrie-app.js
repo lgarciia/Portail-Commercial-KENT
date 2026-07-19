@@ -37,6 +37,16 @@
     if (node) node.textContent = message;
   }
 
+  function shouldScopeTable(tableName) {
+    return ["industrie_clients", "industrie_visites"].includes(tableName);
+  }
+
+  function applyCommercialScope(tableName, query) {
+    return shouldScopeTable(tableName) && window.KentCommercialScope
+      ? window.KentCommercialScope.applyToQuery(query)
+      : query;
+  }
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replaceAll("&", "&amp;")
@@ -271,6 +281,7 @@
         .from(tableName)
         .select(columns)
         .range(from, from + pageSize - 1);
+      query = applyCommercialScope(tableName, query);
 
       if (options.eq) query = query.eq(options.eq.column, options.eq.value);
       if (options.in && options.in.values.length) query = query.in(options.in.column, options.in.values);
@@ -305,6 +316,7 @@
   }
 
   async function fetchRapportVisitesByDate(reportDate) {
+    await window.KentCommercialScope.load();
     var visites = await fetchAllRapportRows(
       "industrie_visites",
       "id, client_id, date_visite, note, type_visite, total_commande",

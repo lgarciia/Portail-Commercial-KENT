@@ -258,6 +258,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./commercial-scope.js"></script>
 <script>
 const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
@@ -299,6 +300,14 @@ function setStatus(type, text){
   if (type === "warn") dot.classList.add("warn");
   if (type === "bad") dot.classList.add("bad");
   $("status").textContent = text;
+}
+function shouldScopeTable(table){
+  return ["clients", "visites", "industrie_clients", "industrie_visites"].includes(table);
+}
+function applyCommercialScope(table, query){
+  return shouldScopeTable(table) && window.KentCommercialScope
+    ? window.KentCommercialScope.applyToQuery(query)
+    : query;
 }
 function escapeHtml(value){
   return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
@@ -342,6 +351,7 @@ async function fetchPaged(table, select, options = {}){
   const all = [];
   while (true){
     let query = supabaseClient.from(table).select(select).range(from, from + PAGE_SIZE - 1);
+    query = applyCommercialScope(table, query);
     const orders = Array.isArray(options.order) ? options.order : (options.order ? [options.order] : []);
     orders.forEach(order => {
       query = query.order(order.column, { ascending: order.ascending ?? true });
@@ -684,6 +694,7 @@ async function loadData(){
   $("exportBtn").disabled = true;
   $("genBtn").disabled = true;
   try{
+    await window.KentCommercialScope.load();
     const sourceRows = await Promise.all(SOURCES.map(loadSourceRows));
     rows = sourceRows.flat().sort((a,b) => String(b[COLS.DATE]).localeCompare(String(a[COLS.DATE])));
     populateFilters();

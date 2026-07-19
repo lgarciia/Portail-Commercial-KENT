@@ -442,6 +442,7 @@
   <div id="toastWrap" class="toast-wrap"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./commercial-scope.js"></script>
   <script>
     const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
@@ -455,6 +456,23 @@
     };
 
     const dom = {};
+
+    function applyCommercialScope(query) {
+      return window.KentCommercialScope
+        ? window.KentCommercialScope.applyToQuery(query)
+        : query;
+    }
+
+    function getCommercialOwnershipPayload() {
+      const user = window.KentCommercialScope?.getUser?.() || {};
+      const dbUserId = String(user.dbUserId || "").trim();
+      if (!dbUserId || user.role !== "commercial") return {};
+      return {
+        commercial_user_id: dbUserId,
+        commercial_identifier: String(user.id || "").trim() || null,
+        commercial_name: String(user.name || "").trim() || null
+      };
+    }
 
     function cacheDom() {
       dom.statusBar = document.getElementById("statusBar");
@@ -524,11 +542,13 @@
     }
 
     async function fetchLastAddedClientNumeroCompte() {
-      const { data, error } = await supabaseClient
+      let query = supabaseClient
         .from("clients")
         .select("numero_compte, created_at")
         .order("created_at", { ascending: false })
         .limit(25);
+      query = applyCommercialScope(query);
+      const { data, error } = await query;
 
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
@@ -565,7 +585,7 @@
     }
 
     async function fetchClients() {
-      const { data, error } = await supabaseClient
+      let query = supabaseClient
         .from("clients")
         .select(`
           id,
@@ -577,6 +597,8 @@
           plaques ( id, nom )
         `)
         .order("nom", { ascending: true });
+      query = applyCommercialScope(query);
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];
@@ -724,10 +746,12 @@
       try {
         dom.confirmDeleteBtn.disabled = true;
         setStatus("Suppression du client...", "info");
-        const { error } = await supabaseClient
+        let query = supabaseClient
           .from("clients")
           .delete()
           .eq("id", clientId);
+        query = applyCommercialScope(query);
+        const { error } = await query;
         if (error) throw error;
 
         await refreshData();
@@ -799,15 +823,17 @@
         setStatus(editingId ? "Mise a jour du client..." : "Creation du client...", "info");
 
         if (editingId) {
-          const { error } = await supabaseClient
+          let query = supabaseClient
             .from("clients")
             .update(payload)
             .eq("id", editingId);
+          query = applyCommercialScope(query);
+          const { error } = await query;
           if (error) throw error;
         } else {
           const { error } = await supabaseClient
             .from("clients")
-            .insert(payload);
+            .insert({ ...payload, ...getCommercialOwnershipPayload() });
           if (error) throw error;
         }
 
@@ -869,10 +895,11 @@
     async function initApp() {
       cacheDom();
       attachEvents();
-      resetClientForm();
 
       try {
         setStatus("Connexion a Supabase...", "info");
+        await window.KentCommercialScope.load();
+        resetClientForm();
         await refreshData();
         setStatus(`${state.clients.length} client(s) charges.`, "success");
         showToast("Gestion clients prete.", "success");
@@ -887,5 +914,3 @@
   </script>
 </body>
 </html>
-
-

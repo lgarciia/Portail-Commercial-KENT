@@ -7,6 +7,7 @@
   <title>Mes rappels clients</title>
   <script src="./shared-ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./commercial-scope.js"></script>
 
   <style>
     * {
@@ -420,6 +421,16 @@
     }
   }
 
+  function shouldScopeTable(tableName) {
+    return ["clients", "visites"].includes(tableName);
+  }
+
+  function applyCommercialScope(tableName, query) {
+    return shouldScopeTable(tableName) && window.KentCommercialScope
+      ? window.KentCommercialScope.applyToQuery(query)
+      : query;
+  }
+
   function renderRows(rows, colorValue = "red") {
     updateCount(rows.length, colorValue);
 
@@ -508,6 +519,7 @@
         .from(tableName)
         .select(columns)
         .range(from, from + pageSize - 1);
+      query = applyCommercialScope(tableName, query);
 
       if (options.orderBy) {
         query = query.order(options.orderBy, {
@@ -564,6 +576,7 @@
   async function loadRappels() {
     try {
       setStatus("Chargement...");
+      await window.KentCommercialScope.load();
 
       tableBody.innerHTML = `
         <tr>
@@ -589,6 +602,7 @@
 
       allRows = commandes.map(cmd => {
         const visite = visitesById.get(String(cmd.visite_id)) || null;
+        if (!visite) return null;
         const client = visite ? (clientsById.get(String(visite.client_id)) || null) : null;
         const produit = produitsById.get(String(cmd.produit_id)) || null;
         const couleurNorm = normalizeColor(cmd.couleur);
@@ -603,7 +617,7 @@
           couleur_norm: couleurNorm
         };
       })
-      .filter(row => TRACKED_COLORS.has(row.couleur_norm))
+      .filter(row => row && TRACKED_COLORS.has(row.couleur_norm))
       .sort((a, b) => {
         const da = a.date_visite ? new Date(a.date_visite).getTime() : 0;
         const db = b.date_visite ? new Date(b.date_visite).getTime() : 0;
