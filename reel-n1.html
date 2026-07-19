@@ -174,6 +174,15 @@
     function money(value){
       return Number(value || 0).toLocaleString("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
     }
+    function dedupeEntities(rows){
+      const byKey = new Map();
+      for (const row of rows || []) {
+        const key = String(row.key || "").trim().toLowerCase();
+        if (!key || byKey.has(key)) continue;
+        byKey.set(key, { ...row, key });
+      }
+      return Array.from(byKey.values());
+    }
     function activeYear(){ return Number(dom.yearSelect.value || KentDataConfig.getActiveYear()); }
     function previousYear(){ return activeYear() - 1; }
     function selectedEntity(){ return entities.find(entity => entity.key === selectedKey) || entities[0] || DEFAULT_ENTITIES[0]; }
@@ -183,11 +192,12 @@
         if (window.ReelSupabase && typeof window.ReelSupabase.listEntities === "function") {
           const rows = await window.ReelSupabase.listEntities();
           const mapped = (rows || []).map(row => ({ key:String(row.key || "").trim().toLowerCase(), label:row.libelle || row.key || "Entite" })).filter(row => row.key);
-          if (mapped.length) entities = mapped;
+          if (mapped.length) entities = dedupeEntities(mapped);
         }
       }catch(error){
         console.warn("Entites N-1 indisponibles:", error?.message || error);
       }
+      entities = dedupeEntities(entities);
       if (!entities.some(entity => entity.key === selectedKey)) selectedKey = entities[0]?.key || "psa";
     }
 

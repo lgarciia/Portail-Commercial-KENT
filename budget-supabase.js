@@ -111,6 +111,16 @@
     return slugify(label) || `entite-${Date.now()}`;
   }
 
+  function dedupeEntities(rows){
+    const byKey = new Map();
+    for (const row of rows || []){
+      const key = String(row?.key || "").trim().toLowerCase();
+      if (!key || byKey.has(key)) continue;
+      byKey.set(key, row);
+    }
+    return Array.from(byKey.values());
+  }
+
   function sumLine(line){
     return MONTH_KEYS.reduce((sum, key) => sum + toNumber(line[key]), 0);
   }
@@ -188,7 +198,7 @@
       .order("libelle", { ascending: true });
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return dedupeEntities(data || []);
   }
 
   async function createEntity(label){

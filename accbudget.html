@@ -906,6 +906,16 @@ document.addEventListener("keydown",(e)=>{
     entityList.innerHTML = rows.map(row => `<div class="entityRow"><span>${row.label}</span><strong>${fmtCurrency(row.total)}</strong></div>`).join("")
   }
 
+  function dedupePreviewEntities(rows){
+    const byKey = new Map()
+    for(const row of rows || []){
+      const key = String(row.key || "").trim().toLowerCase()
+      if(!key || byKey.has(key)) continue
+      byKey.set(key, { ...row, key })
+    }
+    return Array.from(byKey.values())
+  }
+
   async function loadPreviewEntities(){
     try{
       if(window.BudgetSupabase && typeof window.BudgetSupabase.listEntities === "function"){
@@ -914,12 +924,12 @@ document.addEventListener("keydown",(e)=>{
           key:String(row.key || "").trim().toLowerCase(),
           label:row.libelle || row.key || "Entite"
         })).filter(row => row.key)
-        if(mapped.length) return mapped
+        if(mapped.length) return dedupePreviewEntities(mapped)
       }
     }catch(error){
       console.warn("Entites budget Supabase indisponibles:", error?.message || error)
     }
-    return DEFAULT_ENTITIES.slice()
+    return dedupePreviewEntities(DEFAULT_ENTITIES)
   }
 
   async function loadEntityBudget(entity, year, utils){
