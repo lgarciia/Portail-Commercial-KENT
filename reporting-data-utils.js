@@ -246,7 +246,7 @@
 
   async function loadBudgetData(options){
     options = options || {};
-    const allowExcelFallback = options.allowExcelFallback !== false;
+    const allowExcelFallback = options.allowExcelFallback === true;
     const supabaseBudget = await loadActiveBudgetDataFromSupabase(options || {});
     if (supabaseBudget) return supabaseBudget;
 
@@ -282,7 +282,7 @@
     if (!options || options.preferSupabase === false) return null;
     if (!options.entityKey || !options.year) return null;
     if (!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") return null;
-    const allowExcelFallback = options.allowExcelFallback !== false;
+    const allowExcelFallback = options.allowExcelFallback === true;
 
     try{
       return await window.BudgetSupabase.getActiveBudgetData(options.entityKey, options.year);
@@ -314,7 +314,7 @@
     const realConfig = options.realConfig || {};
     if (!entityKey || !year) return null;
     if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return null;
-    const allowExcelFallback = options.allowExcelFallback !== false;
+    const allowExcelFallback = options.allowExcelFallback === true;
 
     try{
       const rows = await window.ReelSupabase.getActiveLinesByEntityYear(entityKey, year);
@@ -521,6 +521,7 @@
 
   async function loadRealDataAgainstBudget(options){
     options = options || {};
+    const allowExcelFallback = options.allowExcelFallback === true;
     const fileName = options.fileName || options.fileCandidates;
     const budgetData = options.budgetData;
     const realConfig = options.realConfig || {};
@@ -533,7 +534,7 @@
     const supabaseReal = await loadRealDataFromSupabase(options);
     if (supabaseReal) return supabaseReal;
 
-    if (options.allowExcelFallback === false) {
+    if (!allowExcelFallback) {
       return {
         realData: {},
         realRows: [],

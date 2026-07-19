@@ -1025,7 +1025,7 @@
       { key: "auto", label: "Auto", tables: { clients: "clients", produits: "produits", visites: "visites", lignes: "visite_commandes" } },
       { key: "industrie", label: "Industrie", tables: { clients: "industrie_clients", produits: "industrie_produits", visites: "industrie_visites", lignes: "industrie_visite_commandes" } }
     ];
-    const AUTO_BUDGET_ENTITIES = [
+    const DEFAULT_AUTO_BUDGET_ENTITIES = [
       { key: "psa", label: "PSA" },
       { key: "gueudet", label: "Gueudet" },
       { key: "ford", label: "Ford" },
@@ -1597,11 +1597,26 @@
         autoMonthly: Array.from({ length: 12 }, () => 0),
         autoAvailable: false,
         autoLoaded: [],
-        autoFailed: AUTO_BUDGET_ENTITIES.map(entity => entity.label),
+        autoFailed: DEFAULT_AUTO_BUDGET_ENTITIES.map(entity => entity.label),
         industryMonthly: Array.from({ length: 12 }, () => 0),
         industryAvailable: true,
         status: status || "Budget non disponible."
       };
+    }
+    async function loadAutoBudgetEntities() {
+      try {
+        if (window.BudgetSupabase && typeof window.BudgetSupabase.listEntities === "function") {
+          const rows = await window.BudgetSupabase.listEntities();
+          const mapped = (rows || []).map(row => ({
+            key: String(row.key || "").trim().toLowerCase(),
+            label: row.libelle || row.key || "Entite"
+          })).filter(row => row.key);
+          if (mapped.length) return mapped;
+        }
+      } catch (error) {
+        console.warn("Entites budget global indisponibles:", error?.message || error);
+      }
+      return DEFAULT_AUTO_BUDGET_ENTITIES.slice();
     }
     async function loadAutoEntityBudget(entity, year, utils) {
       const files = window.KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
@@ -1609,15 +1624,16 @@
         entityKey: entity.key,
         year,
         fileCandidates: files,
-        budgetConfig: BUDGET_CONFIG
+        budgetConfig: BUDGET_CONFIG,
+        allowExcelFallback: false
       });
       const totals = utils.computeBudgetMonthlyTotals(budgetData);
-      return { key: entity.key, label: entity.label, totals, source: meta?.source || "excel" };
+      return { key: entity.key, label: entity.label, totals, source: meta?.source || "supabase_empty" };
     }
     async function loadBudgetSnapshot(year) {
       const cacheKey = String(year);
       if (state.budgetCache.has(cacheKey)) return state.budgetCache.get(cacheKey);
-      if (!window.KentDataConfig || !window.ReportingDataUtils || !window.XLSX) {
+      if (!window.KentDataConfig || !window.ReportingDataUtils) {
         const unavailable = emptyBudgetSnapshot(year, "Budget non disponible : bibliotheques budget non chargees.");
         state.budgetCache.set(cacheKey, unavailable);
         return unavailable;
@@ -1635,12 +1651,13 @@
         status: ""
       };
 
-      const results = await Promise.allSettled(AUTO_BUDGET_ENTITIES.map(entity => loadAutoEntityBudget(entity, year, utils)));
+      const budgetEntities = await loadAutoBudgetEntities();
+      const results = await Promise.allSettled(budgetEntities.map(entity => loadAutoEntityBudget(entity, year, utils)));
       results.forEach((result, index) => {
-        const entity = AUTO_BUDGET_ENTITIES[index];
+        const entity = budgetEntities[index];
         if (result.status === "fulfilled") {
           snapshot.autoAvailable = true;
-          const sourceLabel = result.value.source === "supabase" ? "Supabase" : "Excel";
+          const sourceLabel = result.value.source === "supabase" ? "Supabase" : "0";
           snapshot.autoLoaded.push(`${result.value.label} (${sourceLabel})`);
           result.value.totals.forEach((value, monthIndex) => {
             snapshot.autoMonthly[monthIndex] += Number(value || 0);

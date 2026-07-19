@@ -864,7 +864,7 @@ document.addEventListener("keydown",(e)=>{
   const kpiBestMonthSub = document.getElementById("kpiBestMonthSub")
   if(!chart || !status) return
 
-  const entities = [
+  const DEFAULT_ENTITIES = [
     { key:"psa", label:"PSA" },
     { key:"gueudet", label:"Gueudet" },
     { key:"ford", label:"Ford" },
@@ -906,27 +906,45 @@ document.addEventListener("keydown",(e)=>{
     entityList.innerHTML = rows.map(row => `<div class="entityRow"><span>${row.label}</span><strong>${fmtCurrency(row.total)}</strong></div>`).join("")
   }
 
+  async function loadPreviewEntities(){
+    try{
+      if(window.BudgetSupabase && typeof window.BudgetSupabase.listEntities === "function"){
+        const rows = await window.BudgetSupabase.listEntities()
+        const mapped = (rows || []).map(row => ({
+          key:String(row.key || "").trim().toLowerCase(),
+          label:row.libelle || row.key || "Entite"
+        })).filter(row => row.key)
+        if(mapped.length) return mapped
+      }
+    }catch(error){
+      console.warn("Entites budget Supabase indisponibles:", error?.message || error)
+    }
+    return DEFAULT_ENTITIES.slice()
+  }
+
   async function loadEntityBudget(entity, year, utils){
     const budgetFiles = window.KentDataConfig.getEntityFileCandidates(entity.key, "budget", year)
     const { budgetData, meta } = await utils.loadBudgetData({
       entityKey: entity.key,
       year,
       fileCandidates: budgetFiles,
-      budgetConfig
+      budgetConfig,
+      allowExcelFallback:false
     })
     const totals = utils.computeBudgetMonthlyTotals(budgetData)
+    const source = meta?.source === "supabase" ? "Supabase" : meta?.source === "supabase_empty" ? "Zero Supabase" : "Excel"
     return {
       key:entity.key,
       label:entity.label,
       totals,
       total:totals.reduce((sum, value) => sum + Number(value || 0), 0),
-      source: meta?.source === "supabase" ? "Supabase" : "Excel"
+      source
     }
   }
 
   async function initBudgetPreview(yearOverride){
     const utils = window.ReportingDataUtils
-    if(!window.KentDataConfig || !utils || !window.XLSX){
+    if(!window.KentDataConfig || !utils){
       status.textContent = "Aperçu indisponible : bibliothèques budget non chargées."
       return
     }
@@ -937,7 +955,8 @@ document.addEventListener("keydown",(e)=>{
     status.textContent = "Chargement des budgets actifs..."
 
     const monthlyTotals = utils.MONTHS.map(() => 0)
-    const results = await Promise.allSettled(entities.map(entity => loadEntityBudget(entity, year, utils)))
+    const previewEntities = await loadPreviewEntities()
+    const results = await Promise.allSettled(previewEntities.map(entity => loadEntityBudget(entity, year, utils)))
     const loaded = []
     const failed = []
 
@@ -948,8 +967,8 @@ document.addEventListener("keydown",(e)=>{
           monthlyTotals[monthIndex] += Number(value || 0)
         })
       } else {
-        failed.push(entities[index].label)
-        console.warn("Budget preview error", entities[index], result.reason)
+        failed.push(previewEntities[index].label)
+        console.warn("Budget preview error", previewEntities[index], result.reason)
       }
     })
 
@@ -978,7 +997,7 @@ document.addEventListener("keydown",(e)=>{
   }
 
   function waitAndRefreshBudgetPreview(year, attempt = 0){
-    const ready = window.KentDataConfig && window.ReportingDataUtils && window.XLSX
+    const ready = window.KentDataConfig && window.ReportingDataUtils
     if(!ready){
       if(attempt < 40){
         window.setTimeout(() => waitAndRefreshBudgetPreview(year, attempt + 1), 100)

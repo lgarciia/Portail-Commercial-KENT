@@ -910,8 +910,10 @@
   /* ======================================================
      CONFIG — ICI tu changes pour Gueudet/Ford/Direct
   ====================================================== */
-  const ENTITY_KEY = "psa";
-  const ENTITY_LABEL = "PSA";
+  const pageParams = new URLSearchParams(location.search);
+  const ENTITY_LABELS = { psa:"PSA", gueudet:"Gueudet", ford:"Ford", direct:"Direct" };
+  const ENTITY_KEY = String(pageParams.get("entity") || "psa").trim().toLowerCase();
+  const ENTITY_LABEL = String(pageParams.get("label") || ENTITY_LABELS[ENTITY_KEY] || ENTITY_KEY || "Entite").trim();
   const APP_YEAR = KentDataConfig.getActiveYear();
   const PREV_YEAR = KentDataConfig.getPreviousYear(APP_YEAR);
   const FILE_REAL = `Supabase ${ENTITY_LABEL} ${APP_YEAR}`;

@@ -237,8 +237,8 @@
           <span class="kicker">R&eacute;el N-1</span>
           <h1>Activit&eacute; r&eacute;elle N-1</h1>
           <p class="subtitle">
-            Choisis l'entit&eacute;, l'outil charge la vue correspondante. Pour l'instant la source reste Excel,
-            mais cette page pr&eacute;pare d&eacute;j&agrave; le futur branchement centralis&eacute;.
+            Choisis l'entit&eacute;, l'outil charge la vue correspondante depuis Supabase.
+            Si aucune donn&eacute;e N-1 n'est import&eacute;e, la vue reste vide au lieu de reprendre un ancien fichier.
           </p>
         </div>
         <div class="actions">
@@ -264,29 +264,29 @@
           key: "psa",
           label: "PSA",
           description: "Historique PSA N-1",
-          page: "activite-reelle-n-1.html",
-          params: {}
+          page: "reel-n1-psa.html",
+          params: { entity: "psa", label: "PSA" }
         },
         {
           key: "gueudet",
           label: "Gueudet",
           description: "Historique Gueudet N-1",
-          page: "activitereelgueudet.html",
-          params: { scope: "n1" }
+          page: "reel-n1-psa.html",
+          params: { entity: "gueudet", label: "Gueudet" }
         },
         {
           key: "ford",
           label: "Ford",
           description: "Historique Ford N-1",
-          page: "activitereelford.html",
-          params: { scope: "n1" }
+          page: "reel-n1-psa.html",
+          params: { entity: "ford", label: "Ford" }
         },
         {
           key: "direct",
           label: "Direct",
           description: "Historique Direct N-1",
-          page: "activitereeldirect.html",
-          params: { scope: "n1" }
+          page: "reel-n1-psa.html",
+          params: { entity: "direct", label: "Direct" }
         }
       ];
 
@@ -307,8 +307,7 @@
       }
 
       function entityFile(entity, year){
-        const candidates = KentDataConfig.getEntityFileCandidates(entity.key, "realN1", year);
-        return candidates[0] || "source Excel";
+        return `Supabase ${entity.label} ${Number(year) - 1}`;
       }
 
       function buildEntityUrl(entity, year){

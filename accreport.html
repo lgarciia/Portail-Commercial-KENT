@@ -492,7 +492,7 @@
     const kpiGap = document.getElementById("kpiGap");
     if (!chart || !status) return;
 
-    const entities = [
+    const DEFAULT_ENTITIES = [
       { key: "psa", label: "PSA" },
       { key: "gueudet", label: "Gueudet" },
       { key: "ford", label: "Ford" },
@@ -562,6 +562,22 @@
       entityList.innerHTML = rows.map(row => `<div class="entityRow"><span>${row.label}</span><strong>${fmtCurrency(row.real)}</strong></div>`).join("");
     }
 
+    async function loadPreviewEntities(){
+      try{
+        if (window.BudgetSupabase && typeof window.BudgetSupabase.listEntities === "function") {
+          const rows = await window.BudgetSupabase.listEntities();
+          const mapped = (rows || []).map(row => ({
+            key: String(row.key || "").trim().toLowerCase(),
+            label: row.libelle || row.key || "Entite"
+          })).filter(row => row.key);
+          if (mapped.length) return mapped;
+        }
+      }catch(error){
+        console.warn("Entites reporting Supabase indisponibles:", error?.message || error);
+      }
+      return DEFAULT_ENTITIES.slice();
+    }
+
     async function loadEntity(entity, year, utils){
       const budgetFiles = KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
       const realFiles = KentDataConfig.getEntityFileCandidates(entity.key, "real", year);
@@ -569,14 +585,16 @@
         entityKey: entity.key,
         year,
         fileCandidates: budgetFiles,
-        budgetConfig
+        budgetConfig,
+        allowExcelFallback: false
       });
       const { realData } = await utils.loadRealDataAgainstBudget({
         entityKey: entity.key,
         fileCandidates: realFiles,
         budgetData,
         realConfig,
-        year
+        year,
+        allowExcelFallback: false
       });
       const budgetTotals = utils.computeBudgetMonthlyTotals(budgetData);
       const realTotals = utils.computeRealMonthlyTotals(budgetData, realData);
@@ -587,13 +605,13 @@
         realTotals,
         budget: budgetTotals.reduce((sum, value) => sum + Number(value || 0), 0),
         real: realTotals.reduce((sum, value) => sum + Number(value || 0), 0),
-        budgetSource: meta?.source === "supabase" ? "Supabase" : "Excel"
+        budgetSource: meta?.source === "supabase" ? "Supabase" : meta?.source === "supabase_empty" ? "Zero Supabase" : "Excel"
       };
     }
 
     async function initReportingPreview(){
       const utils = window.ReportingDataUtils;
-      if (!window.KentDataConfig || !utils || !window.XLSX) {
+      if (!window.KentDataConfig || !utils) {
         status.textContent = "Aperçu indisponible : bibliothèques de reporting non chargées.";
         return;
       }
@@ -605,7 +623,8 @@
       const monthlyTotals = utils.MONTHS.map(() => ({ real: 0, budget: 0 }));
       status.textContent = "Chargement des budgets actifs et activité réelle...";
 
-      const results = await Promise.allSettled(entities.map(entity => loadEntity(entity, year, utils)));
+      const previewEntities = await loadPreviewEntities();
+      const results = await Promise.allSettled(previewEntities.map(entity => loadEntity(entity, year, utils)));
       const loaded = [];
       const failed = [];
 
@@ -614,8 +633,8 @@
           loaded.push(result.value);
           addMonthlyTotals(monthlyTotals, result.value.realTotals, result.value.budgetTotals);
         } else {
-          failed.push(entities[index].label);
-          console.warn("Reporting preview error", entities[index], result.reason);
+          failed.push(previewEntities[index].label);
+          console.warn("Reporting preview error", previewEntities[index], result.reason);
         }
       });
 
