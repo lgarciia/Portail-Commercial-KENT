@@ -163,6 +163,9 @@ async function updateUser(body, session) {
   if (!current) throw badRequest("Utilisateur introuvable.");
 
   const payload = normalizeUserPayload(body, { requirePassword: false });
+  const existing = await findUserByIdentifier(payload.identifier);
+  if (existing && existing.id !== id) throw badRequest("Cet identifiant est deja utilise par un autre compte.");
+
   const isSelf = isCurrentSessionUser(current, session);
   const nextRole = payload.role;
   const nextActive = body.active === undefined ? Boolean(current.active) : Boolean(body.active);

@@ -216,6 +216,11 @@
     .modal-body h3{margin:0 0 8px;font-size:22px}
     .modal-body p{font-size:14px}
     .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+    .modal-error{
+      display:none;margin-top:12px;border:1px solid rgba(239,68,68,.30);border-radius:14px;
+      background:rgba(239,68,68,.11);color:#fecaca;padding:10px 12px;font-size:13px;font-weight:850;
+    }
+    .modal-error.show{display:block}
     .toast{
       position:fixed;right:22px;bottom:22px;z-index:20;display:none;max-width:min(460px,calc(100vw - 44px));
       border:1px solid var(--line);border-radius:18px;padding:13px 15px;background:#0f172a;
@@ -230,6 +235,32 @@
     }
     .session-alert.show{display:flex}
     .loading{opacity:.62;pointer-events:none}
+    .sync-overlay{
+      position:fixed;inset:0;z-index:40;display:none;place-items:center;
+      background:rgba(2,6,23,.48);backdrop-filter:blur(7px);
+    }
+    .sync-overlay.show{display:grid}
+    .sync-card{
+      width:min(360px,calc(100vw - 34px));border:1px solid rgba(56,189,248,.22);
+      border-radius:22px;background:linear-gradient(135deg, rgba(15,23,42,.96), rgba(20,29,47,.94));
+      box-shadow:0 30px 90px rgba(0,0,0,.45);padding:18px;display:grid;gap:12px;
+    }
+    .sync-title{font-weight:1000;font-size:16px}
+    .sync-text{color:var(--muted);font-size:13px;line-height:1.45}
+    .sync-bar{height:7px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+    .sync-bar::before{
+      content:"";display:block;height:100%;width:42%;border-radius:inherit;
+      background:linear-gradient(90deg,#38bdf8,#22c55e,#f59e0b);
+      animation:syncSlide 1.05s ease-in-out infinite;
+    }
+    @keyframes syncSlide{
+      0%{transform:translateX(-115%)}
+      100%{transform:translateX(255%)}
+    }
+    .sync-dialog{
+      border:0;background:transparent;box-shadow:none;padding:0;width:min(360px,calc(100vw - 34px));
+    }
+    .sync-dialog::backdrop{background:rgba(2,6,23,.52);backdrop-filter:blur(7px)}
     @media(max-width:1180px){
       .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
       .layout,.overview-grid,.security-grid{grid-template-columns:1fr}
@@ -513,7 +544,7 @@
   </main>
 
   <dialog id="passwordDialog">
-    <form method="dialog" class="modal-body" id="passwordForm">
+    <form class="modal-body" id="passwordForm" autocomplete="off">
       <h3>Changer le code</h3>
       <p data-password-target>Utilisateur selectionn&eacute;.</p>
       <input type="hidden" name="id">
@@ -529,6 +560,7 @@
         <label>Confirmer le nouveau code</label>
         <input name="passwordConfirm" type="password" required minlength="4" placeholder="Retape le nouveau code">
       </div>
+      <div class="modal-error" data-password-error></div>
       <div class="modal-actions">
         <button class="btn ghost" value="cancel" type="button" data-close-password>Annuler</button>
         <button class="btn green" value="confirm" type="submit">Valider</button>
@@ -537,7 +569,7 @@
   </dialog>
 
   <dialog id="editUserDialog">
-    <form method="dialog" class="modal-body" id="editUserForm">
+    <form class="modal-body" id="editUserForm" autocomplete="off">
       <h3>Modifier l'utilisateur</h3>
       <p data-edit-user-target>Compte selectionn&eacute;.</p>
       <input type="hidden" name="id">
@@ -563,6 +595,7 @@
           <input name="homePath" placeholder="/, /admin.html, /responsable.html">
         </div>
       </div>
+      <div class="modal-error" data-edit-user-error></div>
       <div class="modal-actions">
         <button class="btn ghost" value="cancel" type="button" data-close-edit-user>Annuler</button>
         <button class="btn green" value="confirm" type="submit">Enregistrer</button>
@@ -582,6 +615,20 @@
   </dialog>
 
   <div class="toast" data-toast></div>
+  <div class="sync-overlay" data-sync-overlay aria-live="polite" aria-hidden="true">
+    <div class="sync-card">
+      <div class="sync-title" data-sync-title>Synchronisation des donnees</div>
+      <div class="sync-text" data-sync-text>Enregistrement en cours, on securise la mise a jour.</div>
+      <div class="sync-bar" aria-hidden="true"></div>
+    </div>
+  </div>
+  <dialog class="sync-dialog" id="syncDialog" aria-live="polite">
+    <div class="sync-card">
+      <div class="sync-title" data-sync-dialog-title>Synchronisation des donnees</div>
+      <div class="sync-text" data-sync-dialog-text>Enregistrement en cours, on securise la mise a jour.</div>
+      <div class="sync-bar" aria-hidden="true"></div>
+    </div>
+  </dialog>
 
   <script>
     (function(){
@@ -622,12 +669,20 @@
         passwordDialog: document.getElementById("passwordDialog"),
         passwordForm: document.getElementById("passwordForm"),
         passwordTarget: document.querySelector("[data-password-target]"),
+        passwordError: document.querySelector("[data-password-error]"),
         editUserDialog: document.getElementById("editUserDialog"),
         editUserForm: document.getElementById("editUserForm"),
         editUserTarget: document.querySelector("[data-edit-user-target]"),
+        editUserError: document.querySelector("[data-edit-user-error]"),
         confirmDialog: document.getElementById("confirmDialog"),
         confirmTitle: document.querySelector("[data-confirm-title]"),
-        confirmText: document.querySelector("[data-confirm-text]")
+        confirmText: document.querySelector("[data-confirm-text]"),
+        syncOverlay: document.querySelector("[data-sync-overlay]"),
+        syncTitle: document.querySelector("[data-sync-title]"),
+        syncText: document.querySelector("[data-sync-text]"),
+        syncDialog: document.getElementById("syncDialog"),
+        syncDialogTitle: document.querySelector("[data-sync-dialog-title]"),
+        syncDialogText: document.querySelector("[data-sync-dialog-text]")
       };
 
       const sourceLabels = {
@@ -686,11 +741,13 @@
         els.passwordForm.addEventListener("submit", submitPasswordForm);
         document.querySelector("[data-close-password]").addEventListener("click", function(){
           els.passwordForm.reset();
+          setModalError(els.passwordError, "");
           els.passwordDialog.close();
         });
         els.editUserForm.addEventListener("submit", submitEditUserForm);
         document.querySelector("[data-close-edit-user]").addEventListener("click", function(){
           els.editUserForm.reset();
+          setModalError(els.editUserError, "");
           els.editUserDialog.close();
         });
         document.querySelector("[data-confirm-cancel]").addEventListener("click", function(){
@@ -761,7 +818,7 @@
       }
 
       async function persistUserForm(data){
-        setLoading(true);
+        setLoading(true, "Creation utilisateur", "Creation du compte et synchronisation Supabase.");
         try{
           const payload = await postAdmin({
             action: "createUser",
@@ -788,28 +845,32 @@
 
       async function submitEditUserForm(event){
         event.preventDefault();
+        event.stopPropagation();
+        setModalError(els.editUserError, "");
         const data = formDataObject(els.editUserForm);
         const user = state.users.find(function(item){ return item.id === data.id; });
         if (!user) {
-          showToast("Utilisateur introuvable.", true);
+          setModalError(els.editUserError, "Utilisateur introuvable.");
           return;
         }
 
-        setLoading(true);
+        setLoading(true, "Synchronisation des donnees", "Modification de " + user.displayName + " en cours.");
         try{
-          applyData(await postAdmin({
+          const payload = await postAdmin({
             action: "updateUser",
             id: data.id,
             identifier: data.identifier,
             displayName: data.displayName,
             role: data.role,
             homePath: data.homePath
-          }));
-          els.editUserDialog.close();
+          });
+          applyData(payload);
+          if (els.editUserDialog.open) els.editUserDialog.close();
           els.editUserForm.reset();
           addAudit("Utilisateur modifie", (data.displayName || data.identifier || "Compte") + " - role " + (data.role || "-"));
           showToast("Modifications enregistrees.");
         }catch(error){
+          setModalError(els.editUserError, error.message || "Modification impossible.");
           showToast(error.message || "Modification impossible.", true);
         }finally{
           setLoading(false);
@@ -836,7 +897,7 @@
       }
 
       async function persistRelationForm(data){
-        setLoading(true);
+        setLoading(true, "Synchronisation des rattachements", "Mise a jour des droits responsables en cours.");
         try{
           applyData(await postAdmin({
             action: "setRelation",
@@ -861,12 +922,15 @@
 
       async function submitPasswordForm(event){
         event.preventDefault();
+        event.stopPropagation();
+        setModalError(els.passwordError, "");
         const data = formDataObject(els.passwordForm);
         if (data.password !== data.passwordConfirm) {
+          setModalError(els.passwordError, "Les deux nouveaux codes ne correspondent pas.");
           showToast("Les deux nouveaux codes ne correspondent pas.", true);
           return;
         }
-        setLoading(true);
+        setLoading(true, "Changement du code", "Verification de l'ancien code puis enregistrement du nouveau.");
         try{
           applyData(await postAdmin({
             action: "setPassword",
@@ -879,6 +943,7 @@
           addAudit("Code modifie", userName(data.id));
           showToast("Code mis a jour.");
         }catch(error){
+          setModalError(els.passwordError, error.message || "Changement impossible.");
           showToast(error.message || "Changement impossible.", true);
         }finally{
           setLoading(false);
@@ -897,6 +962,8 @@
         }
 
         if (button.dataset.userAction === "password") {
+          els.passwordForm.reset();
+          setModalError(els.passwordError, "");
           els.passwordForm.elements.id.value = user.id;
           els.passwordTarget.textContent = "Nouveau code pour " + user.displayName + " (" + user.identifier + ").";
           els.passwordDialog.showModal();
@@ -1261,6 +1328,7 @@
       }
 
       function openEditUserDialog(user){
+        setModalError(els.editUserError, "");
         els.editUserForm.elements.id.value = user.id;
         els.editUserForm.elements.identifier.value = user.identifier;
         els.editUserForm.elements.displayName.value = user.displayName;
@@ -1269,6 +1337,12 @@
         els.editUserTarget.textContent = "Modification de " + user.displayName + " (" + user.identifier + ").";
         els.editUserDialog.showModal();
         els.editUserForm.elements.displayName.focus();
+      }
+
+      function setModalError(node, message){
+        if (!node) return;
+        node.textContent = message || "";
+        node.classList.toggle("show", Boolean(message));
       }
 
       function resetUserForm(){
@@ -1367,8 +1441,23 @@
         showToast.timer = setTimeout(function(){ els.toast.classList.remove("show"); }, 3200);
       }
 
-      function setLoading(value){
+      function setLoading(value, title, text){
         els.wrap.classList.toggle("loading", Boolean(value));
+        const finalTitle = title || "Synchronisation des donnees";
+        const finalText = text || "Operation en cours, on met les donnees a jour.";
+        if (els.syncOverlay) {
+          els.syncTitle.textContent = finalTitle;
+          els.syncText.textContent = finalText;
+          els.syncOverlay.classList.toggle("show", Boolean(value));
+          els.syncOverlay.setAttribute("aria-hidden", value ? "false" : "true");
+        }
+        if (!els.syncDialog) return;
+        els.syncDialogTitle.textContent = finalTitle;
+        els.syncDialogText.textContent = finalText;
+        try{
+          if (value && !els.syncDialog.open) els.syncDialog.showModal();
+          if (!value && els.syncDialog.open) els.syncDialog.close();
+        }catch{}
       }
 
       function escapeHtml(value){
