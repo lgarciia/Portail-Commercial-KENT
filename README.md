@@ -39,6 +39,7 @@ Portail statique en HTML/CSS/JS avec fichiers de donnees Excel servis directemen
 - Phase 2 : le fichier `supabase_portal_users.sql` prepare une vraie table utilisateurs Supabase (`portal_users`) et les rattachements (`portal_user_relations`).
 - Par defaut l'authentification est hybride : Supabase si les comptes existent, puis fallback `PORTAL_USERS`.
 - Plus tard, quand la migration sera totalement validee, `PORTAL_AUTH_SOURCE=supabase` permettra de forcer uniquement Supabase.
+- La console admin utilise `/api/admin-users` et necessite `SUPABASE_SERVICE_ROLE_KEY` dans Vercel. Cette cle doit rester serveur, jamais dans le navigateur.
 
 ## Verification rapide avant push
 
@@ -48,3 +49,4 @@ Portail statique en HTML/CSS/JS avec fichiers de donnees Excel servis directemen
 4. Sur Vercel, definir `PORTAL_USERS` et `ACCESS_SESSION_SECRET`, puis redeployer.
 5. Garder `ACCESS_DAILY_CODE` pendant la transition si on veut conserver l'ancien code de secours.
 6. Pour activer la phase 2 Supabase, lancer `supabase_portal_users.sql`, ajouter les utilisateurs dans `portal_users`, puis redeployer.
+7. Pour gerer les utilisateurs depuis la page admin, definir `SUPABASE_SERVICE_ROLE_KEY` sur Vercel, lancer `supabase_portal_admin_access.sql`, puis redeployer.

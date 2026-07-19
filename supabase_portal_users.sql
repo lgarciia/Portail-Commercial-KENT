@@ -2,7 +2,7 @@
 -- Safe: cree uniquement de nouvelles tables public.portal_* et des fonctions associees.
 -- Aucune table metier existante n'est modifiee ou supprimee.
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.portal_users (
   id uuid primary key default gen_random_uuid(),
@@ -136,6 +136,9 @@ revoke all on table public.portal_user_relations from anon, authenticated;
 
 revoke all on function public.portal_hash_password(text) from public;
 grant execute on function public.portal_authenticate_user(text, text) to anon, authenticated;
+grant execute on function public.portal_hash_password(text) to service_role;
+grant select, insert, update, delete on table public.portal_users to service_role;
+grant select, insert, update, delete on table public.portal_user_relations to service_role;
 
 -- Exemples a adapter dans le SQL Editor si tu veux migrer les comptes Vercel vers Supabase.
 -- Remplace les mots de passe avant execution.

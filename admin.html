@@ -10,15 +10,18 @@
   <style>
     :root{
       --bg:#080b14;
-      --panel:rgba(255,255,255,.065);
+      --panel:rgba(255,255,255,.066);
       --panel-soft:rgba(255,255,255,.042);
       --line:rgba(255,255,255,.13);
+      --line-strong:rgba(255,255,255,.22);
       --text:rgba(255,255,255,.94);
-      --muted:rgba(255,255,255,.64);
+      --muted:rgba(255,255,255,.63);
+      --muted-2:rgba(255,255,255,.48);
       --purple:#8b5cf6;
       --blue:#38bdf8;
       --green:#22c55e;
       --amber:#f59e0b;
+      --red:#ef4444;
       --shadow:0 22px 60px rgba(0,0,0,.42);
     }
     *{box-sizing:border-box}
@@ -33,13 +36,15 @@
         radial-gradient(850px 620px at 60% 110%, rgba(34,197,94,.10), transparent 58%),
         var(--bg);
     }
-    .wrap{max-width:1260px;margin:0 auto;padding:28px}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .wrap{max-width:1460px;margin:0 auto;padding:26px}
     .identity{
-      margin-bottom:16px;
-      border:1px solid rgba(255,255,255,.14);
+      margin-bottom:14px;
+      border:1px solid var(--line);
       background:linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.035));
       border-radius:22px;
-      padding:13px 14px;
+      padding:12px 14px;
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -48,112 +53,144 @@
     }
     .identity-left{display:flex;align-items:center;gap:12px;min-width:0}
     .avatar{
-      width:42px;
-      height:42px;
-      border-radius:15px;
-      display:grid;
-      place-items:center;
-      flex:0 0 auto;
+      width:42px;height:42px;border-radius:15px;display:grid;place-items:center;flex:0 0 auto;
       background:linear-gradient(135deg, rgba(139,92,246,.95), rgba(56,189,248,.70));
-      font-weight:1000;
-      box-shadow:0 14px 26px rgba(139,92,246,.24);
+      font-weight:1000;box-shadow:0 14px 26px rgba(139,92,246,.24);
     }
     .identity-copy{display:grid;gap:3px;min-width:0}
-    .identity-copy small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+    .identity-copy small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:11px}
     .identity-copy strong{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .identity-copy span{color:rgba(255,255,255,.72);font-size:13px}
-    .source-chip{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-height:34px;
-      padding:0 12px;
-      border-radius:999px;
-      border:1px solid rgba(34,197,94,.30);
-      background:rgba(34,197,94,.11);
-      color:#bbf7d0;
-      font-size:12px;
-      font-weight:950;
-      white-space:nowrap;
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{
+      min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      padding:0 15px;border-radius:15px;border:1px solid var(--line);
+      background:rgba(255,255,255,.075);color:var(--text);text-decoration:none;
+      font-weight:950;white-space:nowrap;transition:.15s;
     }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.12)}
+    .btn.primary{background:linear-gradient(135deg, rgba(139,92,246,.86), rgba(56,189,248,.72));border-color:rgba(255,255,255,.20)}
+    .btn.green{background:linear-gradient(135deg, rgba(34,197,94,.84), rgba(16,185,129,.62));border-color:rgba(34,197,94,.30)}
+    .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.30);color:#fecaca}
+    .btn.ghost{background:rgba(255,255,255,.04)}
+    .btn.small{min-height:32px;border-radius:12px;padding:0 10px;font-size:12px}
     .hero{
       border:1px solid var(--line);
       background:linear-gradient(135deg, rgba(30,27,75,.78), rgba(2,6,23,.76));
-      border-radius:28px;
-      padding:28px;
-      box-shadow:var(--shadow);
-      display:flex;
-      justify-content:space-between;
-      gap:20px;
-      align-items:flex-start;
+      border-radius:28px;padding:24px;box-shadow:var(--shadow);
+      display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;
     }
     .badge{
-      display:inline-flex;
-      align-items:center;
-      height:34px;
-      padding:0 14px;
-      border-radius:999px;
-      border:1px solid rgba(139,92,246,.38);
-      background:rgba(139,92,246,.14);
-      color:#ddd6fe;
-      font-weight:950;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      font-size:12px;
+      display:inline-flex;align-items:center;height:32px;padding:0 13px;border-radius:999px;
+      border:1px solid rgba(139,92,246,.38);background:rgba(139,92,246,.14);
+      color:#ddd6fe;font-weight:950;letter-spacing:.08em;text-transform:uppercase;font-size:12px;
     }
-    h1{font-size:clamp(34px,5vw,60px);line-height:.98;margin:20px 0 12px;letter-spacing:-.055em}
-    p{color:var(--muted);font-size:18px;line-height:1.55;max-width:820px;margin:0}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-    .btn{
-      min-height:44px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:0 18px;
-      border-radius:16px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.075);
-      color:var(--text);
-      text-decoration:none;
-      font-weight:950;
-      white-space:nowrap;
-      transition:.15s;
+    h1{font-size:clamp(32px,4.2vw,56px);line-height:.98;margin:18px 0 10px;letter-spacing:-.055em}
+    p{color:var(--muted);font-size:16px;line-height:1.52;max-width:900px;margin:0}
+    .status-line{
+      margin-top:14px;border:1px solid rgba(56,189,248,.18);background:rgba(14,165,233,.08);
+      border-radius:18px;padding:12px 14px;color:#dbeafe;font-weight:850;line-height:1.45;
     }
-    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.12)}
-    .btn.primary{background:linear-gradient(135deg, rgba(139,92,246,.84), rgba(56,189,248,.72));border-color:rgba(255,255,255,.18)}
-    .grid{
-      margin-top:18px;
-      display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:14px;
+    .stats{
+      margin-top:16px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;
     }
-    .card{
-      min-height:142px;
-      border:1px solid var(--line);
-      border-radius:22px;
-      background:var(--panel);
-      box-shadow:0 18px 46px rgba(0,0,0,.20);
-      padding:17px;
+    .stat{
+      border:1px solid var(--line);background:var(--panel-soft);border-radius:18px;padding:13px;
+      min-height:84px;
     }
-    .card strong{display:block;font-size:18px;margin-bottom:7px}
-    .card span{display:block;color:var(--muted);line-height:1.42;font-size:14px}
-    .pill{
-      margin-top:14px;
-      display:inline-flex;
-      padding:6px 9px;
-      border-radius:999px;
-      background:var(--panel-soft);
-      border:1px solid var(--line);
-      color:rgba(255,255,255,.72);
-      font-size:11px;
-      font-weight:900;
+    .stat span{display:block;color:var(--muted-2);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .stat strong{display:block;margin-top:8px;font-size:26px;letter-spacing:-.035em}
+    .layout{
+      margin-top:16px;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
-    .ready{border-color:rgba(34,197,94,.24);background:linear-gradient(135deg, rgba(34,197,94,.105), rgba(255,255,255,.04))}
-    .safe{border-color:rgba(245,158,11,.24);background:linear-gradient(135deg, rgba(245,158,11,.095), rgba(255,255,255,.04))}
-    @media(max-width:980px){
-      .hero,.identity{flex-direction:column;align-items:flex-start}
-      .actions{justify-content:flex-start}
-      .grid{grid-template-columns:1fr}
+    .panel{
+      border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.048);
+      box-shadow:0 18px 46px rgba(0,0,0,.22);padding:18px;min-width:0;
+    }
+    .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+    .panel h2{margin:0;font-size:22px;letter-spacing:-.03em}
+    .panel .sub{margin-top:5px;color:var(--muted);font-size:13px;line-height:1.4}
+    .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .search,.field input,.field select,.field textarea{
+      width:100%;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.055);
+      color:var(--text);outline:none;padding:12px 13px;min-height:42px;
+    }
+    .search{max-width:280px}
+    .field textarea{min-height:74px;resize:vertical}
+    .field input:focus,.field select:focus,.field textarea:focus,.search:focus{
+      border-color:rgba(139,92,246,.62);box-shadow:0 0 0 4px rgba(139,92,246,.14);
+    }
+    option{background:#111827;color:#fff}
+    .filters{display:flex;gap:7px;flex-wrap:wrap}
+    .filter{
+      min-height:34px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.045);
+      color:var(--muted);padding:0 11px;font-weight:900;font-size:12px;
+    }
+    .filter.active{background:rgba(139,92,246,.20);border-color:rgba(139,92,246,.42);color:#fff}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    .field{display:grid;gap:7px}
+    .field.full{grid-column:1/-1}
+    .field label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:950}
+    .form-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:20px;background:rgba(3,7,18,.22)}
+    table{width:100%;border-collapse:collapse;min-width:840px}
+    th,td{padding:12px 12px;border-bottom:1px solid rgba(255,255,255,.085);text-align:left;vertical-align:middle}
+    th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:rgba(255,255,255,.035);position:sticky;top:0}
+    td{font-size:14px;color:rgba(255,255,255,.86)}
+    tr:last-child td{border-bottom:none}
+    .user-main{display:grid;gap:3px}
+    .user-main strong{font-size:14px;color:#fff}
+    .user-main span{font-size:12px;color:var(--muted)}
+    .role-chip,.state-chip,.relation-chip{
+      display:inline-flex;align-items:center;height:28px;padding:0 9px;border-radius:999px;
+      border:1px solid var(--line);font-size:11px;font-weight:950;white-space:nowrap;
+    }
+    .role-admin{background:rgba(139,92,246,.16);border-color:rgba(139,92,246,.30);color:#ddd6fe}
+    .role-responsable{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.28);color:#bae6fd}
+    .role-commercial{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.26);color:#bbf7d0}
+    .state-ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.28);color:#bbf7d0}
+    .state-off{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28);color:#fecaca}
+    .relation-principal{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.28);color:#fde68a}
+    .relation-exceptionnel{background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.30);color:#ddd6fe}
+    .row-actions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
+    .empty{
+      border:1px dashed rgba(255,255,255,.18);border-radius:18px;padding:18px;color:var(--muted);
+      text-align:center;background:rgba(255,255,255,.03);
+    }
+    .relations-list{display:grid;gap:10px;margin-top:12px}
+    .relation-row{
+      border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.045);
+      padding:12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;
+    }
+    .relation-row strong{display:block;margin-bottom:5px}
+    .relation-row span{color:var(--muted);font-size:13px}
+    dialog{
+      border:1px solid var(--line-strong);border-radius:24px;background:#0d1322;color:var(--text);
+      box-shadow:0 34px 120px rgba(0,0,0,.62);width:min(520px,calc(100vw - 28px));padding:0;
+    }
+    dialog::backdrop{background:rgba(0,0,0,.66);backdrop-filter:blur(6px)}
+    .modal-body{padding:20px}
+    .modal-body h3{margin:0 0 8px;font-size:22px}
+    .modal-body p{font-size:14px}
+    .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+    .toast{
+      position:fixed;right:22px;bottom:22px;z-index:20;display:none;max-width:min(460px,calc(100vw - 44px));
+      border:1px solid var(--line);border-radius:18px;padding:13px 15px;background:#0f172a;
+      box-shadow:0 20px 60px rgba(0,0,0,.36);font-weight:850;color:#fff;
+    }
+    .toast.show{display:block}
+    .toast.error{border-color:rgba(239,68,68,.38);background:#2a1118;color:#fecaca}
+    .loading{opacity:.62;pointer-events:none}
+    @media(max-width:1180px){
+      .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .layout{grid-template-columns:1fr}
+    }
+    @media(max-width:780px){
+      .wrap{padding:16px}
+      .hero,.identity,.panel-head{display:flex;flex-direction:column;align-items:flex-start}
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .form-grid{grid-template-columns:1fr}
+      .search{max-width:none}
     }
   </style>
 </head>
@@ -168,69 +205,636 @@
           <span data-session-role>R&ocirc;le administrateur actif</span>
         </span>
       </div>
-      <span class="source-chip" data-session-source>Session s&eacute;curis&eacute;e</span>
+      <div class="top-actions">
+        <span class="btn ghost small" data-session-source>Session s&eacute;curis&eacute;e</span>
+        <a class="btn small" href="responsable.html">Vue responsable</a>
+        <a class="btn small" href="index.html">Portail commercial</a>
+        <a class="btn danger small" href="/deconnexion">D&eacute;connexion</a>
+      </div>
     </section>
 
     <section class="hero">
       <div>
-        <span class="badge">Espace Admin</span>
-        <h1>Pilotage administrateur</h1>
+        <span class="badge">Administration</span>
+        <h1>Utilisateurs et rattachements</h1>
         <p>
-          Cette page confirme que tu es sur une session admin. La base utilisateurs Supabase est
-          pr&eacute;par&eacute;e en phase 2, avec un fallback Vercel pour ne jamais bloquer l'acc&egrave;s existant.
+          Cr&eacute;e et pilote les comptes admin, responsables et commerciaux. Les suppressions sont des masquages :
+          on conserve l'historique et on &eacute;vite les pertes de donn&eacute;es.
         </p>
+        <div class="status-line">
+          Donn&eacute;es m&eacute;tier intactes : cette console ne rattache pas encore les ventes historiques.
+          L'affectation de l'existant &agrave; Guillaume Garcia sera trait&eacute;e dans une phase s&eacute;par&eacute;e.
+        </div>
       </div>
-      <nav class="actions" aria-label="Navigation admin">
-        <a class="btn primary" href="responsable.html">Vue responsable</a>
-        <a class="btn" href="index.html">Portail commercial</a>
-        <a class="btn" href="/deconnexion">D&eacute;connexion</a>
-      </nav>
+      <button class="btn primary" type="button" data-refresh>Rafraichir</button>
     </section>
 
-    <section class="grid" aria-label="Fondations admin">
-      <article class="card ready">
-        <strong>Session admin</strong>
-        <span>Affichage clair de l'utilisateur, du r&ocirc;le et de la source de connexion.</span>
-        <div class="pill">Pr&ecirc;t</div>
-      </article>
-      <article class="card ready">
-        <strong>Utilisateurs Supabase</strong>
-        <span>Structure pr&eacute;par&eacute;e pour stocker admin, responsables et commerciaux.</span>
-        <div class="pill">Phase 2</div>
-      </article>
-      <article class="card">
-        <strong>Rattachements</strong>
-        <span>Un responsable principal par commercial, avec acc&egrave;s exceptionnel possible.</span>
-        <div class="pill">Prochaine brique</div>
-      </article>
-      <article class="card safe">
-        <strong>Garde-fou</strong>
-        <span>Aucune table m&eacute;tier n'est modifi&eacute;e : clients, ventes, budgets et documents restent intacts.</span>
-        <div class="pill">Safe</div>
-      </article>
+    <section class="stats" aria-label="Indicateurs admin">
+      <article class="stat"><span>Total comptes</span><strong data-stat="total">-</strong></article>
+      <article class="stat"><span>Actifs</span><strong data-stat="active">-</strong></article>
+      <article class="stat"><span>Admins</span><strong data-stat="admins">-</strong></article>
+      <article class="stat"><span>Responsables</span><strong data-stat="responsables">-</strong></article>
+      <article class="stat"><span>Commerciaux</span><strong data-stat="commerciaux">-</strong></article>
+      <article class="stat"><span>Rattachements</span><strong data-stat="relations">-</strong></article>
+    </section>
+
+    <section class="layout">
+      <section class="panel" aria-label="Gestion utilisateurs">
+        <div class="panel-head">
+          <div>
+            <h2 data-form-title>Nouvel utilisateur</h2>
+            <div class="sub">Ajoute un compte ou modifie un compte existant. Le code n'est jamais affich&eacute;.</div>
+          </div>
+          <div class="toolbar">
+            <input class="search" type="search" placeholder="Rechercher..." data-search>
+          </div>
+        </div>
+
+        <form id="userForm" autocomplete="off">
+          <input type="hidden" name="id">
+          <div class="form-grid">
+            <div class="field">
+              <label>Identifiant</label>
+              <input name="identifier" placeholder="Ex : Guillaume.Garcia" required>
+            </div>
+            <div class="field">
+              <label>Nom affich&eacute;</label>
+              <input name="displayName" placeholder="Ex : Guillaume Garcia" required>
+            </div>
+            <div class="field">
+              <label>R&ocirc;le</label>
+              <select name="role">
+                <option value="commercial">Commercial</option>
+                <option value="responsable">Responsable</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Page d'accueil</label>
+              <input name="homePath" placeholder="/, /admin.html, /responsable.html">
+            </div>
+            <div class="field full">
+              <label>Code d'acc&egrave;s</label>
+              <input name="password" type="password" placeholder="Obligatoire &agrave; la cr&eacute;ation, optionnel en modification">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn ghost" type="button" data-reset-form>Annuler</button>
+            <button class="btn green" type="submit" data-save-user>Enregistrer</button>
+          </div>
+        </form>
+
+        <div class="filters" style="margin:14px 0 10px">
+          <button class="filter active" type="button" data-filter="active">Actifs</button>
+          <button class="filter" type="button" data-filter="all">Tous</button>
+          <button class="filter" type="button" data-filter="hidden">Masqu&eacute;s</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>R&ocirc;le</th>
+                <th>Statut</th>
+                <th>Page</th>
+                <th>Derni&egrave;re connexion</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody data-users-body>
+              <tr><td colspan="6">Chargement...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="panel" aria-label="Rattachements responsables">
+        <div class="panel-head">
+          <div>
+            <h2>Rattachements</h2>
+            <div class="sub">Un commercial a un responsable principal. Les exceptions donnent une visibilit&eacute; ponctuelle.</div>
+          </div>
+        </div>
+
+        <form id="relationForm" autocomplete="off">
+          <div class="form-grid">
+            <div class="field full">
+              <label>Responsable</label>
+              <select name="responsableUserId" required></select>
+            </div>
+            <div class="field full">
+              <label>Commercial</label>
+              <select name="commercialUserId" required></select>
+            </div>
+            <div class="field full">
+              <label>Type</label>
+              <select name="relationType">
+                <option value="principal">Responsable principal</option>
+                <option value="exceptionnel">Acc&egrave;s exceptionnel</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label>Note interne</label>
+              <textarea name="note" placeholder="Optionnel : motif de l'exception, contexte..."></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn green" type="submit">Ajouter le rattachement</button>
+          </div>
+        </form>
+
+        <div class="relations-list" data-relations-list>
+          <div class="empty">Chargement des rattachements...</div>
+        </div>
+      </aside>
     </section>
   </main>
 
+  <dialog id="passwordDialog">
+    <form method="dialog" class="modal-body" id="passwordForm">
+      <h3>Changer le code</h3>
+      <p data-password-target>Utilisateur selectionn&eacute;.</p>
+      <input type="hidden" name="id">
+      <div class="field" style="margin-top:14px">
+        <label>Nouveau code</label>
+        <input name="password" type="password" required minlength="4" placeholder="Nouveau code d'acc&egrave;s">
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" value="cancel" type="button" data-close-password>Annuler</button>
+        <button class="btn green" value="confirm" type="submit">Valider</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirmDialog">
+    <div class="modal-body">
+      <h3 data-confirm-title>Confirmation</h3>
+      <p data-confirm-text>Confirmer l'action ?</p>
+      <div class="modal-actions">
+        <button class="btn ghost" type="button" data-confirm-cancel>Annuler</button>
+        <button class="btn danger" type="button" data-confirm-ok>Confirmer</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" data-toast></div>
+
   <script>
     (function(){
-      const nameNode = document.querySelector("[data-session-name]");
-      const roleNode = document.querySelector("[data-session-role]");
-      const sourceNode = document.querySelector("[data-session-source]");
+      const state = {
+        currentUser: null,
+        users: [],
+        relations: [],
+        stats: {},
+        filter: "active",
+        search: "",
+        pendingConfirm: null
+      };
+
+      const els = {
+        wrap: document.querySelector(".wrap"),
+        name: document.querySelector("[data-session-name]"),
+        role: document.querySelector("[data-session-role]"),
+        source: document.querySelector("[data-session-source]"),
+        userForm: document.getElementById("userForm"),
+        relationForm: document.getElementById("relationForm"),
+        usersBody: document.querySelector("[data-users-body]"),
+        relationsList: document.querySelector("[data-relations-list]"),
+        formTitle: document.querySelector("[data-form-title]"),
+        search: document.querySelector("[data-search]"),
+        toast: document.querySelector("[data-toast]"),
+        passwordDialog: document.getElementById("passwordDialog"),
+        passwordForm: document.getElementById("passwordForm"),
+        passwordTarget: document.querySelector("[data-password-target]"),
+        confirmDialog: document.getElementById("confirmDialog"),
+        confirmTitle: document.querySelector("[data-confirm-title]"),
+        confirmText: document.querySelector("[data-confirm-text]")
+      };
+
       const sourceLabels = {
         supabase: "Source Supabase",
         env: "Source Vercel",
         legacy: "Acces historique"
       };
 
-      fetch("/api/session", { cache: "no-store" })
-        .then(response => response.ok ? response.json() : null)
-        .then(payload => {
+      init();
+
+      function init(){
+        bindEvents();
+        loadSession();
+        loadAdminData();
+      }
+
+      function bindEvents(){
+        document.querySelector("[data-refresh]").addEventListener("click", loadAdminData);
+        document.querySelector("[data-reset-form]").addEventListener("click", resetUserForm);
+        els.search.addEventListener("input", function(){
+          state.search = els.search.value.trim().toLowerCase();
+          renderUsers();
+        });
+
+        document.querySelectorAll("[data-filter]").forEach(function(button){
+          button.addEventListener("click", function(){
+            state.filter = button.dataset.filter;
+            document.querySelectorAll("[data-filter]").forEach(function(item){
+              item.classList.toggle("active", item === button);
+            });
+            renderUsers();
+          });
+        });
+
+        els.userForm.addEventListener("submit", submitUserForm);
+        els.relationForm.addEventListener("submit", submitRelationForm);
+        els.usersBody.addEventListener("click", handleUserAction);
+        els.relationsList.addEventListener("click", handleRelationAction);
+        els.passwordForm.addEventListener("submit", submitPasswordForm);
+        document.querySelector("[data-close-password]").addEventListener("click", function(){
+          els.passwordDialog.close();
+        });
+        document.querySelector("[data-confirm-cancel]").addEventListener("click", function(){
+          state.pendingConfirm = null;
+          els.confirmDialog.close();
+        });
+        document.querySelector("[data-confirm-ok]").addEventListener("click", async function(){
+          const action = state.pendingConfirm;
+          state.pendingConfirm = null;
+          els.confirmDialog.close();
+          if (typeof action === "function") await action();
+        });
+      }
+
+      async function loadSession(){
+        try{
+          const payload = await fetchJson("/api/session");
           if (!payload || !payload.user) return;
-          nameNode.textContent = payload.user.name || "Administrateur";
-          roleNode.textContent = "Role : " + (payload.user.roleLabel || payload.user.role || "admin");
-          sourceNode.textContent = sourceLabels[payload.user.source] || "Session securisee";
-        })
-        .catch(() => {});
+          els.name.textContent = payload.user.name || "Administrateur";
+          els.role.textContent = "Role : " + (payload.user.roleLabel || payload.user.role || "admin");
+          els.source.textContent = sourceLabels[payload.user.source] || "Session securisee";
+        }catch{}
+      }
+
+      async function loadAdminData(){
+        setLoading(true);
+        try{
+          const payload = await fetchJson("/api/admin-users");
+          applyData(payload);
+          showToast("Console admin synchronisee.");
+        }catch(error){
+          showToast(error.message || "Chargement impossible.", true);
+          els.usersBody.innerHTML = '<tr><td colspan="6">' + escapeHtml(error.message || "Chargement impossible.") + '</td></tr>';
+          els.relationsList.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Chargement impossible.") + '</div>';
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      function applyData(payload){
+        state.currentUser = payload.currentUser || null;
+        state.users = Array.isArray(payload.users) ? payload.users : [];
+        state.relations = Array.isArray(payload.relations) ? payload.relations : [];
+        state.stats = payload.stats || {};
+        renderStats();
+        renderUsers();
+        renderRelationOptions();
+        renderRelations();
+      }
+
+      async function submitUserForm(event){
+        event.preventDefault();
+        const data = formDataObject(els.userForm);
+        const isEdit = Boolean(data.id);
+        if (!isEdit && !data.password) {
+          showToast("Code obligatoire pour creer un utilisateur.", true);
+          return;
+        }
+
+        setLoading(true);
+        try{
+          const payload = await postAdmin({
+            action: isEdit ? "updateUser" : "createUser",
+            id: data.id,
+            identifier: data.identifier,
+            displayName: data.displayName,
+            role: data.role,
+            homePath: data.homePath
+          });
+          applyData(payload);
+
+          if (isEdit && data.password) {
+            applyData(await postAdmin({
+              action: "setPassword",
+              id: data.id,
+              password: data.password
+            }));
+          }
+
+          resetUserForm();
+          showToast(isEdit ? "Utilisateur mis a jour." : "Utilisateur cree.");
+        }catch(error){
+          showToast(error.message || "Enregistrement impossible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      async function submitRelationForm(event){
+        event.preventDefault();
+        const data = formDataObject(els.relationForm);
+        setLoading(true);
+        try{
+          applyData(await postAdmin({
+            action: "setRelation",
+            responsableUserId: data.responsableUserId,
+            commercialUserId: data.commercialUserId,
+            relationType: data.relationType,
+            note: data.note
+          }));
+          els.relationForm.reset();
+          renderRelationOptions();
+          showToast("Rattachement enregistre.");
+        }catch(error){
+          showToast(error.message || "Rattachement impossible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      async function submitPasswordForm(event){
+        event.preventDefault();
+        const data = formDataObject(els.passwordForm);
+        setLoading(true);
+        try{
+          applyData(await postAdmin({
+            action: "setPassword",
+            id: data.id,
+            password: data.password
+          }));
+          els.passwordDialog.close();
+          els.passwordForm.reset();
+          showToast("Code mis a jour.");
+        }catch(error){
+          showToast(error.message || "Changement impossible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      function handleUserAction(event){
+        const button = event.target.closest("[data-user-action]");
+        if (!button) return;
+        const user = state.users.find(function(item){ return item.id === button.dataset.userId; });
+        if (!user) return;
+
+        if (button.dataset.userAction === "edit") {
+          fillUserForm(user);
+          return;
+        }
+
+        if (button.dataset.userAction === "password") {
+          els.passwordForm.elements.id.value = user.id;
+          els.passwordTarget.textContent = "Nouveau code pour " + user.displayName + " (" + user.identifier + ").";
+          els.passwordDialog.showModal();
+          return;
+        }
+
+        if (button.dataset.userAction === "hide") {
+          openConfirm(
+            "Masquer cet utilisateur ?",
+            "Le compte sera desactive et masque, mais aucune donnee metier ne sera supprimee.",
+            async function(){
+              setLoading(true);
+              try{
+                applyData(await postAdmin({ action: "hideUser", id: user.id }));
+                showToast("Utilisateur masque.");
+              }catch(error){
+                showToast(error.message || "Masquage impossible.", true);
+              }finally{
+                setLoading(false);
+              }
+            }
+          );
+          return;
+        }
+
+        if (button.dataset.userAction === "restore") {
+          openConfirm(
+            "Restaurer cet utilisateur ?",
+            "Le compte redeviendra visible et actif.",
+            async function(){
+              setLoading(true);
+              try{
+                applyData(await postAdmin({ action: "restoreUser", id: user.id }));
+                showToast("Utilisateur restaure.");
+              }catch(error){
+                showToast(error.message || "Restauration impossible.", true);
+              }finally{
+                setLoading(false);
+              }
+            }
+          );
+        }
+      }
+
+      function handleRelationAction(event){
+        const button = event.target.closest("[data-relation-action]");
+        if (!button) return;
+        const relation = state.relations.find(function(item){ return item.id === button.dataset.relationId; });
+        if (!relation) return;
+
+        openConfirm(
+          "Retirer ce rattachement ?",
+          "Le lien sera desactive, pas supprime definitivement.",
+          async function(){
+            setLoading(true);
+            try{
+              applyData(await postAdmin({ action: "removeRelation", id: relation.id }));
+              showToast("Rattachement retire.");
+            }catch(error){
+              showToast(error.message || "Retrait impossible.", true);
+            }finally{
+              setLoading(false);
+            }
+          }
+        );
+      }
+
+      function renderStats(){
+        Object.keys(state.stats || {}).forEach(function(key){
+          const node = document.querySelector('[data-stat="' + key + '"]');
+          if (node) node.textContent = String(state.stats[key] ?? 0);
+        });
+      }
+
+      function renderUsers(){
+        let users = state.users.slice();
+        if (state.filter === "active") users = users.filter(function(user){ return user.active && !user.hidden; });
+        if (state.filter === "hidden") users = users.filter(function(user){ return user.hidden || !user.active; });
+        if (state.search) {
+          users = users.filter(function(user){
+            return [user.displayName, user.identifier, user.role, user.homePath]
+              .join(" ")
+              .toLowerCase()
+              .includes(state.search);
+          });
+        }
+
+        if (!users.length) {
+          els.usersBody.innerHTML = '<tr><td colspan="6">Aucun utilisateur dans cette vue.</td></tr>';
+          return;
+        }
+
+        els.usersBody.innerHTML = users.map(function(user){
+          const visible = user.active && !user.hidden;
+          const actionButton = visible
+            ? '<button class="btn danger small" type="button" data-user-action="hide" data-user-id="' + user.id + '">Masquer</button>'
+            : '<button class="btn green small" type="button" data-user-action="restore" data-user-id="' + user.id + '">Restaurer</button>';
+          return [
+            '<tr>',
+              '<td><span class="user-main"><strong>' + escapeHtml(user.displayName) + '</strong><span>' + escapeHtml(user.identifier) + '</span></span></td>',
+              '<td><span class="role-chip role-' + escapeHtml(user.role) + '">' + escapeHtml(user.roleLabel) + '</span></td>',
+              '<td><span class="state-chip ' + (visible ? "state-ok" : "state-off") + '">' + (visible ? "Actif" : "Masque") + '</span></td>',
+              '<td>' + escapeHtml(user.homePath || "-") + '</td>',
+              '<td>' + escapeHtml(formatDate(user.lastLoginAt)) + '</td>',
+              '<td><span class="row-actions">',
+                '<button class="btn ghost small" type="button" data-user-action="edit" data-user-id="' + user.id + '">Modifier</button>',
+                '<button class="btn ghost small" type="button" data-user-action="password" data-user-id="' + user.id + '">Code</button>',
+                actionButton,
+              '</span></td>',
+            '</tr>'
+          ].join("");
+        }).join("");
+      }
+
+      function renderRelationOptions(){
+        const responsables = state.users.filter(function(user){
+          return user.role === "responsable" && user.active && !user.hidden;
+        });
+        const commerciaux = state.users.filter(function(user){
+          return user.role === "commercial" && user.active && !user.hidden;
+        });
+        const responsableSelect = els.relationForm.elements.responsableUserId;
+        const commercialSelect = els.relationForm.elements.commercialUserId;
+
+        responsableSelect.innerHTML = responsables.length
+          ? responsables.map(optionHtml).join("")
+          : '<option value="">Aucun responsable actif</option>';
+        commercialSelect.innerHTML = commerciaux.length
+          ? commerciaux.map(optionHtml).join("")
+          : '<option value="">Aucun commercial actif</option>';
+      }
+
+      function renderRelations(){
+        const activeRelations = state.relations.filter(function(relation){ return relation.active; });
+        if (!activeRelations.length) {
+          els.relationsList.innerHTML = '<div class="empty">Aucun rattachement actif pour le moment.</div>';
+          return;
+        }
+
+        els.relationsList.innerHTML = activeRelations.map(function(relation){
+          const responsable = userName(relation.responsableUserId);
+          const commercial = userName(relation.commercialUserId);
+          return [
+            '<article class="relation-row">',
+              '<div>',
+                '<strong>' + escapeHtml(responsable) + ' -> ' + escapeHtml(commercial) + '</strong>',
+                '<span class="relation-chip relation-' + escapeHtml(relation.relationType) + '">' + escapeHtml(relation.relationType === "principal" ? "Principal" : "Exceptionnel") + '</span>',
+                relation.note ? '<span style="display:block;margin-top:7px">' + escapeHtml(relation.note) + '</span>' : '',
+              '</div>',
+              '<button class="btn danger small" type="button" data-relation-action="remove" data-relation-id="' + relation.id + '">Retirer</button>',
+            '</article>'
+          ].join("");
+        }).join("");
+      }
+
+      function fillUserForm(user){
+        els.formTitle.textContent = "Modifier utilisateur";
+        els.userForm.elements.id.value = user.id;
+        els.userForm.elements.identifier.value = user.identifier;
+        els.userForm.elements.displayName.value = user.displayName;
+        els.userForm.elements.role.value = user.role;
+        els.userForm.elements.homePath.value = user.homePath || "";
+        els.userForm.elements.password.value = "";
+        els.userForm.elements.identifier.focus();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function resetUserForm(){
+        els.formTitle.textContent = "Nouvel utilisateur";
+        els.userForm.reset();
+        els.userForm.elements.id.value = "";
+      }
+
+      function openConfirm(title, text, action){
+        els.confirmTitle.textContent = title;
+        els.confirmText.textContent = text;
+        state.pendingConfirm = action;
+        els.confirmDialog.showModal();
+      }
+
+      async function postAdmin(payload){
+        return fetchJson("/api/admin-users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      async function fetchJson(url, options){
+        const response = await fetch(url, Object.assign({ cache: "no-store" }, options || {}));
+        const payload = await response.json().catch(function(){ return {}; });
+        if (!response.ok) throw new Error(payload.error || "Erreur reseau.");
+        return payload;
+      }
+
+      function formDataObject(form){
+        return Object.fromEntries(new FormData(form).entries());
+      }
+
+      function userName(id){
+        const user = state.users.find(function(item){ return item.id === id; });
+        return user ? user.displayName + " (" + user.identifier + ")" : "Utilisateur masque";
+      }
+
+      function optionHtml(user){
+        return '<option value="' + user.id + '">' + escapeHtml(user.displayName + " - " + user.identifier) + '</option>';
+      }
+
+      function formatDate(value){
+        if (!value) return "-";
+        try{
+          return new Intl.DateTimeFormat("fr-FR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          }).format(new Date(value));
+        }catch{
+          return "-";
+        }
+      }
+
+      function showToast(message, isError){
+        els.toast.textContent = message;
+        els.toast.classList.toggle("error", Boolean(isError));
+        els.toast.classList.add("show");
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(function(){ els.toast.classList.remove("show"); }, 3200);
+      }
+
+      function setLoading(value){
+        els.wrap.classList.toggle("loading", Boolean(value));
+      }
+
+      function escapeHtml(value){
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
     })();
   </script>
 </body>
