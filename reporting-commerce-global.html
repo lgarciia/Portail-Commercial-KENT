@@ -1233,22 +1233,40 @@
         lte: { column: "date_visite", value: monthBounds.endStr },
         order: [{ column: "date_visite", ascending: true }, { column: "id", ascending: true }]
       });
-      const lignes = await fetchInChunks(source.tables.lignes, "id, visite_id, produit_id, quantite, prix_unitaire", "visite_id", visites.map(v => v.id), {
-        order: [{ column: "visite_id", ascending: true }, { column: "id", ascending: true }]
-      });
-      const clients = await fetchInChunks(source.tables.clients, "id, nom, numero_compte", "id", visites.map(v => v.client_id), {
-        order: { column: "id", ascending: true }
-      });
-      const produits = await fetchInChunks(source.tables.produits, "id, nom, reference_produit", "id", lignes.map(ligne => ligne.produit_id), {
-        order: { column: "id", ascending: true }
-      });
+      let clients = [];
+      try {
+        clients = await fetchInChunks(source.tables.clients, "id, nom, numero_compte", "id", visites.map(v => v.client_id), {
+          order: { column: "id", ascending: true }
+        });
+      } catch (error) {
+        console.warn(`Clients indisponibles pour ${source.label}, conservation du CA sans libelle client.`, error);
+      }
+      let lignes = [];
+      try {
+        lignes = await fetchInChunks(source.tables.lignes, "id, visite_id, produit_id, quantite, prix_unitaire", "visite_id", visites.map(v => v.id), {
+          order: [{ column: "visite_id", ascending: true }, { column: "id", ascending: true }]
+        });
+      } catch (error) {
+        console.warn(`Lignes produits indisponibles pour ${source.label}, fallback total commande.`, error);
+        return buildFallbackRowsFromVisits(source, visites, clients);
+      }
+      let produits = [];
+      try {
+        produits = await fetchInChunks(source.tables.produits, "id, nom, reference_produit", "id", lignes.map(ligne => ligne.produit_id), {
+          order: { column: "id", ascending: true }
+        });
+      } catch (error) {
+        console.warn(`Produits indisponibles pour ${source.label}, conservation du CA sans detail produit.`, error);
+      }
       const visitesById = new Map(visites.map(visite => [String(visite.id), visite]));
       const clientsById = new Map(clients.map(client => [String(client.id), client]));
       const produitsById = new Map(produits.map(produit => [String(produit.id), produit]));
+      const visitsWithLines = new Set();
       const rows = [];
       lignes.forEach(ligne => {
         const visite = visitesById.get(String(ligne.visite_id));
         if (!visite || !isOrderVisit(visite)) return;
+        visitsWithLines.add(String(visite.id));
         const client = clientsById.get(String(visite.client_id));
         const produit = produitsById.get(String(ligne.produit_id));
         const quantite = Number(ligne.quantite || 0);
@@ -1272,7 +1290,35 @@
           total_ligne: quantite * prixUnitaire
         });
       });
+      rows.push(...buildFallbackRowsFromVisits(source, visites.filter(visite => !visitsWithLines.has(String(visite.id))), clients));
       return rows;
+    }
+    function buildFallbackRowsFromVisits(source, visites, clients) {
+      const clientsById = new Map((clients || []).map(client => [String(client.id), client]));
+      return (visites || [])
+        .filter(visite => isOrderVisit(visite) && Number(visite.total_commande || 0) > 0)
+        .map(visite => {
+          const client = clientsById.get(String(visite.client_id));
+          const total = Number(visite.total_commande || 0);
+          return {
+            source: source.key,
+            sourceLabel: source.label,
+            visite_id: visite.id,
+            client_id: visite.client_id || "",
+            client_key: `${source.key}:${visite.client_id || client?.nom || "client"}`,
+            client_nom: client?.nom || "Client inconnu",
+            numero_compte: client?.numero_compte || "-",
+            produit_id: "",
+            product_key: `${source.key}:${visite.id}:total-commande`,
+            reference_produit: "-",
+            designation: "Total commande",
+            date_visite: visite.date_visite || "",
+            visit_type: resolveVisitTypeFromRecord(visite),
+            quantite: 1,
+            prix_unitaire: total,
+            total_ligne: total
+          };
+        });
     }
     function getFilteredRows() {
       const sector = dom.sectorFilter.value;
@@ -1619,23 +1665,37 @@
       return DEFAULT_AUTO_BUDGET_ENTITIES.slice();
     }
     async function loadAutoEntityBudget(entity, year, utils) {
-      const files = window.KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
-      const { budgetData, meta } = await utils.loadBudgetData({
-        entityKey: entity.key,
-        year,
-        fileCandidates: files,
-        budgetConfig: BUDGET_CONFIG,
-        allowExcelFallback: false
-      });
-      const totals = utils.computeBudgetMonthlyTotals(budgetData);
-      const source = meta?.source || "supabase_empty";
-      return { key: entity.key, label: entity.label, totals, source, available: source === "supabase" };
+      if (!window.BudgetSupabase || typeof window.BudgetSupabase.getActiveBudgetData !== "function") {
+        throw new Error("BudgetSupabase indisponible.");
+      }
+      const snapshot = await window.BudgetSupabase.getActiveBudgetData(entity.key, year);
+      if (!snapshot) {
+        return {
+          key: entity.key,
+          label: entity.label,
+          totals: Array.from({ length: 12 }, () => 0),
+          source: "supabase_empty",
+          available: false
+        };
+      }
+      const totals = utils.computeBudgetMonthlyTotals(snapshot.budgetData);
+      return {
+        key: entity.key,
+        label: entity.label,
+        totals,
+        source: snapshot.meta?.source || "supabase",
+        available: true
+      };
+    }
+    function budgetCacheKey(year) {
+      const userId = window.KentCommercialScope?.getCommercialUserId?.() || "global";
+      return `${userId}:${String(year)}`;
     }
     async function loadBudgetSnapshot(year) {
-      const cacheKey = String(year);
+      const cacheKey = budgetCacheKey(year);
       if (state.budgetCache.has(cacheKey)) return state.budgetCache.get(cacheKey);
-      if (!window.KentDataConfig || !window.ReportingDataUtils) {
-        const unavailable = emptyBudgetSnapshot(year, "Budget non disponible : bibliotheques budget non chargees.");
+      if (!window.ReportingDataUtils || !window.BudgetSupabase) {
+        const unavailable = emptyBudgetSnapshot(year, "Budget non disponible : bibliotheques Supabase budget non chargees.");
         state.budgetCache.set(cacheKey, unavailable);
         return unavailable;
       }
