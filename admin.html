@@ -174,11 +174,12 @@
     .field.full{grid-column:1/-1}
     .field label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:950}
     .form-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px}
-    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:20px;background:rgba(3,7,18,.22)}
-    table{width:100%;border-collapse:collapse;min-width:840px}
-    th,td{padding:12px 12px;border-bottom:1px solid rgba(255,255,255,.085);text-align:left;vertical-align:middle}
+    .table-wrap{overflow:hidden;border:1px solid var(--line);border-radius:20px;background:rgba(3,7,18,.22)}
+    table{width:100%;border-collapse:collapse;min-width:0}
+    th,td{padding:10px 9px;border-bottom:1px solid rgba(255,255,255,.085);text-align:left;vertical-align:middle}
     th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:rgba(255,255,255,.035);position:sticky;top:0}
-    td{font-size:14px;color:rgba(255,255,255,.86)}
+    td{font-size:13px;color:rgba(255,255,255,.86)}
+    th:nth-child(4),td:nth-child(4){max-width:135px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     tr:last-child td{border-bottom:none}
     .user-main{display:grid;gap:3px}
     .user-main strong{font-size:14px;color:#fff}
@@ -194,7 +195,7 @@
     .state-off{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28);color:#fecaca}
     .relation-principal{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.28);color:#fde68a}
     .relation-exceptionnel{background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.30);color:#ddd6fe}
-    .row-actions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
+    .row-actions{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap}
     .empty{
       border:1px dashed rgba(255,255,255,.18);border-radius:18px;padding:18px;color:var(--muted);
       text-align:center;background:rgba(255,255,255,.03);
@@ -333,7 +334,7 @@
         <div class="panel-head">
           <div>
             <h2 data-form-title>Nouvel utilisateur</h2>
-            <div class="sub">Ajoute un compte ou modifie un compte existant. Le code n'est jamais affich&eacute;.</div>
+            <div class="sub">Ajoute un compte. Les modifications se font ensuite dans une fen&ecirc;tre d&eacute;di&eacute;e.</div>
           </div>
           <div class="toolbar">
             <input class="search" type="search" placeholder="Rechercher..." data-search>
@@ -365,7 +366,11 @@
             </div>
             <div class="field full">
               <label>Code d'acc&egrave;s</label>
-              <input name="password" type="password" placeholder="Obligatoire &agrave; la cr&eacute;ation, optionnel en modification">
+              <input name="password" type="password" required minlength="4" placeholder="Code d'acc&egrave;s">
+            </div>
+            <div class="field full">
+              <label>Confirmer le code d'acc&egrave;s</label>
+              <input name="passwordConfirm" type="password" required minlength="4" placeholder="Retape le m&ecirc;me code">
             </div>
           </div>
           <div class="form-actions">
@@ -513,12 +518,54 @@
       <p data-password-target>Utilisateur selectionn&eacute;.</p>
       <input type="hidden" name="id">
       <div class="field" style="margin-top:14px">
+        <label>Ancien code</label>
+        <input name="oldPassword" type="password" required minlength="4" placeholder="Code actuel">
+      </div>
+      <div class="field" style="margin-top:14px">
         <label>Nouveau code</label>
         <input name="password" type="password" required minlength="4" placeholder="Nouveau code d'acc&egrave;s">
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>Confirmer le nouveau code</label>
+        <input name="passwordConfirm" type="password" required minlength="4" placeholder="Retape le nouveau code">
       </div>
       <div class="modal-actions">
         <button class="btn ghost" value="cancel" type="button" data-close-password>Annuler</button>
         <button class="btn green" value="confirm" type="submit">Valider</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="editUserDialog">
+    <form method="dialog" class="modal-body" id="editUserForm">
+      <h3>Modifier l'utilisateur</h3>
+      <p data-edit-user-target>Compte selectionn&eacute;.</p>
+      <input type="hidden" name="id">
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field">
+          <label>Identifiant</label>
+          <input name="identifier" required placeholder="Ex : Guillaume.Garcia">
+        </div>
+        <div class="field">
+          <label>Nom affich&eacute;</label>
+          <input name="displayName" required placeholder="Ex : Guillaume Garcia">
+        </div>
+        <div class="field">
+          <label>R&ocirc;le</label>
+          <select name="role">
+            <option value="commercial">Commercial</option>
+            <option value="responsable">Responsable</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Page d'accueil</label>
+          <input name="homePath" placeholder="/, /admin.html, /responsable.html">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" value="cancel" type="button" data-close-edit-user>Annuler</button>
+        <button class="btn green" value="confirm" type="submit">Enregistrer</button>
       </div>
     </form>
   </dialog>
@@ -575,6 +622,9 @@
         passwordDialog: document.getElementById("passwordDialog"),
         passwordForm: document.getElementById("passwordForm"),
         passwordTarget: document.querySelector("[data-password-target]"),
+        editUserDialog: document.getElementById("editUserDialog"),
+        editUserForm: document.getElementById("editUserForm"),
+        editUserTarget: document.querySelector("[data-edit-user-target]"),
         confirmDialog: document.getElementById("confirmDialog"),
         confirmTitle: document.querySelector("[data-confirm-title]"),
         confirmText: document.querySelector("[data-confirm-text]")
@@ -635,7 +685,13 @@
         els.hiddenUsers.addEventListener("click", handleUserAction);
         els.passwordForm.addEventListener("submit", submitPasswordForm);
         document.querySelector("[data-close-password]").addEventListener("click", function(){
+          els.passwordForm.reset();
           els.passwordDialog.close();
+        });
+        els.editUserForm.addEventListener("submit", submitEditUserForm);
+        document.querySelector("[data-close-edit-user]").addEventListener("click", function(){
+          els.editUserForm.reset();
+          els.editUserDialog.close();
         });
         document.querySelector("[data-confirm-cancel]").addEventListener("click", function(){
           state.pendingConfirm = null;
@@ -692,31 +748,23 @@
       async function submitUserForm(event){
         event.preventDefault();
         const data = formDataObject(els.userForm);
-        const isEdit = Boolean(data.id);
-        if (!isEdit && !data.password) {
+        if (!data.password) {
           showToast("Code obligatoire pour creer un utilisateur.", true);
           return;
         }
-
-        if (isEdit) {
-          const user = state.users.find(function(item){ return item.id === data.id; });
-          openConfirm(
-            "Valider la modification ?",
-            "Tu vas modifier le compte " + (user ? user.displayName : "selectionne") + ". Les donnees metier ne seront pas modifiees.",
-            function(){ return persistUserForm(data, isEdit); }
-          );
+        if (data.password !== data.passwordConfirm) {
+          showToast("Les deux codes d'acces ne correspondent pas.", true);
           return;
         }
 
-        await persistUserForm(data, isEdit);
+        await persistUserForm(data);
       }
 
-      async function persistUserForm(data, isEdit){
+      async function persistUserForm(data){
         setLoading(true);
         try{
           const payload = await postAdmin({
-            action: isEdit ? "updateUser" : "createUser",
-            id: data.id,
+            action: "createUser",
             identifier: data.identifier,
             displayName: data.displayName,
             role: data.role,
@@ -725,22 +773,44 @@
           });
           applyData(payload);
 
-          if (isEdit && data.password) {
-            applyData(await postAdmin({
-              action: "setPassword",
-              id: data.id,
-              password: data.password
-            }));
-          }
-
           resetUserForm();
           addAudit(
-            isEdit ? "Utilisateur modifie" : "Utilisateur cree",
+            "Utilisateur cree",
             (data.displayName || data.identifier || "Compte") + " - role " + (data.role || "-")
           );
-          showToast(isEdit ? "Utilisateur mis a jour." : "Utilisateur cree.");
+          showToast("Utilisateur cree.");
         }catch(error){
           showToast(error.message || "Enregistrement impossible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      async function submitEditUserForm(event){
+        event.preventDefault();
+        const data = formDataObject(els.editUserForm);
+        const user = state.users.find(function(item){ return item.id === data.id; });
+        if (!user) {
+          showToast("Utilisateur introuvable.", true);
+          return;
+        }
+
+        setLoading(true);
+        try{
+          applyData(await postAdmin({
+            action: "updateUser",
+            id: data.id,
+            identifier: data.identifier,
+            displayName: data.displayName,
+            role: data.role,
+            homePath: data.homePath
+          }));
+          els.editUserDialog.close();
+          els.editUserForm.reset();
+          addAudit("Utilisateur modifie", (data.displayName || data.identifier || "Compte") + " - role " + (data.role || "-"));
+          showToast("Modifications enregistrees.");
+        }catch(error){
+          showToast(error.message || "Modification impossible.", true);
         }finally{
           setLoading(false);
         }
@@ -792,11 +862,16 @@
       async function submitPasswordForm(event){
         event.preventDefault();
         const data = formDataObject(els.passwordForm);
+        if (data.password !== data.passwordConfirm) {
+          showToast("Les deux nouveaux codes ne correspondent pas.", true);
+          return;
+        }
         setLoading(true);
         try{
           applyData(await postAdmin({
             action: "setPassword",
             id: data.id,
+            oldPassword: data.oldPassword,
             password: data.password
           }));
           els.passwordDialog.close();
@@ -817,8 +892,7 @@
         if (!user) return;
 
         if (button.dataset.userAction === "edit") {
-          setAdminView("utilisateurs");
-          fillUserForm(user);
+          openEditUserDialog(user);
           return;
         }
 
@@ -1064,7 +1138,7 @@
               '<td><span class="role-chip role-' + escapeHtml(user.role) + '">' + escapeHtml(user.roleLabel || user.role) + '</span></td>',
               '<td>' + escapeHtml(formatDate(user.lastLoginAt)) + '</td>',
               '<td><span class="row-actions">',
-                '<button class="btn ghost small" type="button" data-user-action="edit" data-user-id="' + user.id + '">Voir</button>',
+                '<button class="btn ghost small" type="button" data-user-action="edit" data-user-id="' + user.id + '">Modif.</button>',
                 '<button class="btn green small" type="button" data-user-action="restore" data-user-id="' + user.id + '">Restaurer</button>',
               '</span></td>',
             '</tr>'
@@ -1136,7 +1210,7 @@
               '<td>' + escapeHtml(user.homePath || "-") + '</td>',
               '<td>' + escapeHtml(formatDate(user.lastLoginAt)) + '</td>',
               '<td><span class="row-actions">',
-                '<button class="btn ghost small" type="button" data-user-action="edit" data-user-id="' + user.id + '">Modifier</button>',
+                '<button class="btn ghost small" type="button" data-user-action="edit" data-user-id="' + user.id + '">Modif.</button>',
                 '<button class="btn ghost small" type="button" data-user-action="password" data-user-id="' + user.id + '">Code</button>',
                 actionButton,
               '</span></td>',
@@ -1186,16 +1260,15 @@
         }).join("");
       }
 
-      function fillUserForm(user){
-        els.formTitle.textContent = "Modifier utilisateur";
-        els.userForm.elements.id.value = user.id;
-        els.userForm.elements.identifier.value = user.identifier;
-        els.userForm.elements.displayName.value = user.displayName;
-        els.userForm.elements.role.value = user.role;
-        els.userForm.elements.homePath.value = user.homePath || "";
-        els.userForm.elements.password.value = "";
-        els.userForm.elements.identifier.focus();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+      function openEditUserDialog(user){
+        els.editUserForm.elements.id.value = user.id;
+        els.editUserForm.elements.identifier.value = user.identifier;
+        els.editUserForm.elements.displayName.value = user.displayName;
+        els.editUserForm.elements.role.value = user.role;
+        els.editUserForm.elements.homePath.value = user.homePath || "";
+        els.editUserTarget.textContent = "Modification de " + user.displayName + " (" + user.identifier + ").";
+        els.editUserDialog.showModal();
+        els.editUserForm.elements.displayName.focus();
       }
 
       function resetUserForm(){

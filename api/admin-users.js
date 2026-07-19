@@ -1,11 +1,16 @@
 import {
   ROLE_LABELS,
+  getSupabaseAdminConfig,
   normalizeRole,
   normalizeText,
   requireRole,
   sendJson,
   supabaseAdminFetch
 } from "./_auth.js";
+
+const SUPABASE_ANON_KEY =
+  process.env.SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
 
 const USER_SELECT = [
   "id",
@@ -191,9 +196,15 @@ async function updateUser(body, session) {
 
 async function setPassword(body) {
   const id = normalizeUuid(body?.id);
+  const oldPassword = normalizeText(body?.oldPassword);
   const password = normalizeText(body?.password);
   if (!id) throw badRequest("Utilisateur introuvable.");
+  if (oldPassword.length < 4) throw badRequest("Ancien code obligatoire.");
   if (password.length < 4) throw badRequest("Le code doit contenir au moins 4 caracteres.");
+
+  const current = await getUserById(id);
+  if (!current) throw badRequest("Utilisateur introuvable.");
+  await assertOldPasswordMatches(current, oldPassword);
 
   const passwordHash = await hashPassword(password);
   await supabaseAdminFetch(`/rest/v1/portal_users?id=eq.${encodeURIComponent(id)}`, {
@@ -362,6 +373,62 @@ async function hashPassword(password) {
   throw new Error("Hash de mot de passe impossible.");
 }
 
+async function assertOldPasswordMatches(user, oldPassword) {
+  const result = await supabaseAnonFetch("/rest/v1/rpc/portal_authenticate_user", {
+    method: "POST",
+    body: JSON.stringify({
+      p_identifier: user.identifier,
+      p_password: oldPassword
+    })
+  });
+  const ok = Array.isArray(result) && result.some((item) => normalizeUuid(item?.user_id) === user.id);
+  if (!ok) throw badRequest("Ancien code incorrect pour cet utilisateur.");
+
+  await supabaseAdminFetch(`/rest/v1/portal_users?id=eq.${encodeURIComponent(user.id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ last_login_at: user.last_login_at || null })
+  });
+}
+
+async function supabaseAnonFetch(path, options = {}) {
+  const config = getSupabaseAdminConfig();
+  if (!config.ok) {
+    const error = new Error(config.error);
+    error.code = "missing_service_role_key";
+    throw error;
+  }
+
+  const response = await fetch(`${config.url}${path}`, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  const text = await response.text();
+  let payload = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = text;
+    }
+  }
+
+  if (!response.ok) {
+    const error = new Error(extractSupabaseError(payload) || `Supabase ${response.status}`);
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
+  }
+
+  return payload;
+}
+
 async function getUserById(id) {
   const data = await supabaseAdminFetch(
     `/rest/v1/portal_users?select=${encodeURIComponent(USER_SELECT)}&id=eq.${encodeURIComponent(id)}&limit=1`
@@ -463,6 +530,12 @@ function badRequest(message) {
   const error = new Error(message);
   error.status = 400;
   return error;
+}
+
+function extractSupabaseError(payload) {
+  if (!payload) return "";
+  if (typeof payload === "string") return payload;
+  return payload.message || payload.details || payload.hint || payload.error || "";
 }
 
 async function readBody(request) {
