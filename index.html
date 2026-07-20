@@ -270,6 +270,30 @@
       display:block;
       line-height:1;
     }
+    .logoutBtn{
+      height:34px;
+      padding:0 9px;
+      border-radius:999px;
+      gap:7px;
+      font-size:12px;
+      color:var(--muted);
+      border-color:rgba(255,255,255,.10);
+      background:rgba(255,255,255,.035);
+      box-shadow:none;
+    }
+    .logoutBtn:hover{
+      color:var(--text);
+      border-color:rgba(248,113,113,.34);
+      background:rgba(248,113,113,.08);
+    }
+    .logoutBtn .material-symbols-outlined{
+      font-size:17px;
+      color:#fca5a5;
+    }
+    html[data-theme="light"] .logoutBtn{
+      border-color:rgba(10,14,22,.10);
+      background:rgba(255,255,255,.46);
+    }
     .releaseCount{
       position:absolute;
       top:-7px;
@@ -634,6 +658,11 @@
             <div class="releaseList" id="releaseList"></div>
           </div>
         </div>
+
+        <a class="toolBtn logoutBtn" href="/deconnexion" title="Se d&eacute;connecter">
+          <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+          <span>Sortir</span>
+        </a>
       </div>
     </div>
 
