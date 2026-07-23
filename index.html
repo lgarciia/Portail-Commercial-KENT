@@ -680,7 +680,7 @@
               <span>Outils de pilotage, atterrissage, exports, reporting.</span>
             </div>
           </div>
-          <div class="badge">2 modules</div>
+          <div class="badge">3 modules</div>
         </div>
 
         <div class="links">
@@ -692,6 +692,14 @@
             <div class="chev">›</div>
           </a>
 
+
+          <a class="link app" href="projection-budget.html" data-tags="projection budget atterrissage reel budget ecart prevision">
+            <div class="left">
+              <div class="name">Projection</div>
+              <div class="desc">Atterrissage reel vs budget mois par mois</div>
+            </div>
+            <div class="chev">&rsaquo;</div>
+          </a>
           <a class="link app" href="mes-budgets.html" data-tags="budget budgets valides actifs entites projections">
             <div class="left">
               <div class="name">Mes budgets</div>
@@ -766,7 +774,7 @@
         <div class="links">
           <a class="link app" href="accrequeteant.html" data-tags="requete sur les années précedentes">
             <div class="left">
-              <div class="name">Requête Anterieur</div>
+              <div class="name">Requ&ecirc;te ant&eacute;rieure</div>
               <div class="desc">Filtres en colonnes + cumul/détail + tri CA</div>
             </div>
             <div class="chev">›</div>
@@ -928,6 +936,14 @@
       const user = window.KentCommercialScope && typeof window.KentCommercialScope.load === "function"
         ? await window.KentCommercialScope.load()
         : null;
+      if (user?.role === "admin") {
+        window.location.replace("admin.html");
+        return;
+      }
+      if (user?.role === "responsable") {
+        window.location.replace("responsable.html");
+        return;
+      }
       const label = commercialLabelFromUser(user);
       portalCommercialTitle.textContent = label ? `Portail Commercial - ${label}` : "Portail Commercial";
     }catch(error){

@@ -414,7 +414,7 @@
       <div class="top-actions">
         <span class="btn ghost small" data-session-source>Session s&eacute;curis&eacute;e</span>
         <a class="btn small" href="responsable.html">Vue responsable</a>
-        <a class="btn small" href="index.html">Portail commercial</a>
+        <a class="btn small" href="requete-commerce.html?scope=equipe">Requ&ecirc;te commerce</a>
         <a class="btn danger small" href="/deconnexion">D&eacute;connexion</a>
       </div>
     </section>
@@ -454,6 +454,8 @@
       <button class="admin-tab" type="button" data-admin-tab="rattachements">Rattachements</button>
       <button class="admin-tab" type="button" data-admin-tab="securite">Securite</button>
       <button class="admin-tab" type="button" data-admin-tab="finance">Finance</button>
+      <button class="admin-tab" type="button" data-admin-tab="imports">Mes imports</button>
+      <button class="admin-tab" type="button" data-admin-tab="budgets-global">Les budgets</button>
     </nav>
 
     <section class="admin-view active" data-admin-view="pilotage">
@@ -520,6 +522,36 @@
 
         <div class="finance-panel" data-finance-body>
           <div class="empty">Ouvre la vue Finance pour charger les chiffres.</div>
+        </div>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="imports">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Mes imports</h2>
+            <div class="sub">Espace reserve aux futurs imports reels centralises.</div>
+          </div>
+        </div>
+        <div class="empty">
+          Rien a importer ici pour le moment. Cette vue servira plus tard a centraliser les imports reels
+          admin, avec controle, historique et validation avant envoi dans Supabase.
+        </div>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="budgets-global">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Les budgets</h2>
+            <div class="sub">Espace reserve a la lecture ou future gestion des budgets commerciaux.</div>
+          </div>
+        </div>
+        <div class="empty">
+          Vue en attente. Elle pourra recevoir plus tard la consolidation des budgets par commercial,
+          responsable, entite et groupe, sans modifier la logique actuelle des commerciaux.
         </div>
       </section>
     </section>

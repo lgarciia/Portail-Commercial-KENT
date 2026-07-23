@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr" data-theme="dark">
 <head>
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
@@ -892,7 +892,7 @@
     <div class="page-header">
       <div class="page-title">
         <h1>Rapport journalier Industrie</h1>
-        <p>Generation rapide d'un PDF recapitulatif des visites terrain de la journée</p>
+        <p>Generation rapide d'un PDF recapitulatif des visites terrain de la journ�e</p>
       </div>
     </div>
 
@@ -920,7 +920,7 @@
 
       <div class="field-group" style="margin-top:16px;">
         <label for="globalComment">Commentaire global</label>
-        <textarea id="globalComment" placeholder="Résumé global de la journée, faits marquants, points d'attention, actions à suivre..."></textarea>
+        <textarea id="globalComment" placeholder="R�sum� global de la journ�e, faits marquants, points d'attention, actions � suivre..."></textarea>
       </div>
 
       <div id="statusBar" class="status-bar">Connexion en cours...</div>
@@ -928,7 +928,7 @@
 
     <div class="glass-card summary-card">
       <div class="section-title">
-        <h2>Résumé de la journée</h2>
+        <h2>R�sum� de la journ�e</h2>
       </div>
       <div class="summary-grid">
         <div class="summary-chip">
@@ -953,7 +953,7 @@
         </div>
         <div class="summary-chip">
           <div class="summary-chip-label">CA du jour</div>
-          <div class="summary-chip-value" id="summaryCA">0 €</div>
+          <div class="summary-chip-value" id="summaryCA">0 �</div>
         </div>
         <div class="summary-chip">
           <div class="summary-chip-label">Stock client observe</div>
@@ -976,9 +976,9 @@
       </div>
       <div class="analysis-grid">
         <div class="analysis-panel">
-          <div class="analysis-block-title">Synthèse executive</div>
+          <div class="analysis-block-title">Synth�se executive</div>
           <div id="executiveSummary" class="analysis-list">
-            <div class="analysis-item">Charge une date pour generer une synthèse automatique de la journée.</div>
+            <div class="analysis-item">Charge une date pour generer une synth�se automatique de la journ�e.</div>
           </div>
         </div>
         <div class="analysis-panel">
@@ -1016,6 +1016,8 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
+    const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
 
     let rapportVisites = [];
     let reportStats = {
@@ -1060,11 +1062,27 @@
         green: "Vert",
         blue: "Bleu"
       };
-      return map[color] || "Non dÃ©fini";
+      return map[color] || "Non défini";
     }
 
     function getColorDotClass(color) {
       return ["red", "yellow", "green", "blue"].includes(color) ? color : "gray";
+    }
+
+    function normalizeVisitType(type) {
+      const normalized = String(type || "").trim().toLowerCase().replaceAll("-", "_").replaceAll(" ", "_");
+      if (["commande_telephone", "commande_tel", "appel_telephonique", "telephone", "tel"].includes(normalized)) return VISIT_TYPE_PHONE_ORDER;
+      return normalized || "vente";
+    }
+
+    function isPhoneOrderVisit(visite) {
+      const type = normalizeVisitType(visite?.type_visite);
+      const note = String(visite?.note || "").toUpperCase();
+      return type === VISIT_TYPE_PHONE_ORDER || note.includes(PHONE_ORDER_NOTE_MARKER);
+    }
+
+    function isTerrainVisit(visite) {
+      return !isPhoneOrderVisit(visite);
     }
 
     async function fetchRapportRows(tableName, columns, options = {}) {
@@ -1156,7 +1174,7 @@
       let nbVerts = 0;
 
       visites.forEach(visite => {
-        if (visite.client?.id) uniqueClients.add(visite.client.id);
+        if (isTerrainVisit(visite) && visite.client?.id) uniqueClients.add(visite.client.id);
         (visite.commandes || []).forEach(cmd => {
           nbLignes += 1;
           if ((cmd.couleur || "") === "green") nbVerts += 1;
@@ -1164,7 +1182,7 @@
       });
 
       return {
-        nbVisites: visites.length,
+        nbVisites: visites.filter(isTerrainVisit).length,
         nbClients: uniqueClients.size,
         nbLignes,
         nbVerts
@@ -1182,15 +1200,15 @@
       const container = document.getElementById("previewList");
 
       if (!visites.length) {
-        container.innerHTML = `<div class="empty-state">Aucune visite trouvÃ©e pour cette date.</div>`;
+        container.innerHTML = `<div class="empty-state">Aucune visite trouvée pour cette date.</div>`;
         return;
       }
 
       container.innerHTML = visites.map(visite => {
         const clientNom = visite.client?.nom || "Client inconnu";
-        const compte = visite.client?.numero_compte || "â€”";
-        const tel = visite.client?.telephone || "â€”";
-        const adresse = visite.client?.adresse || "â€”";
+        const compte = visite.client?.numero_compte || "—";
+        const tel = visite.client?.telephone || "—";
+        const adresse = visite.client?.adresse || "—";
         const note = visite.note?.trim() || "Aucune note";
 
         const lignesHtml = (visite.commandes || []).length
@@ -1200,7 +1218,7 @@
                 <thead>
                   <tr>
                     <th>Produit</th>
-                    <th>QuantitÃ©</th>
+                    <th>Quantité</th>
                     <th>Stock client</th>
                     <th>Statut</th>
                   </tr>
@@ -1210,7 +1228,7 @@
                     <tr>
                       <td>
                         ${escapeHtml(cmd.produit?.nom || "Produit inconnu")}
-                        <span class="ref-text">RÃ©f : ${escapeHtml(cmd.produit?.reference_produit || "-")}</span>
+                        <span class="ref-text">Réf : ${escapeHtml(cmd.produit?.reference_produit || "-")}</span>
                       </td>
                       <td>${cmd.quantite ?? 0}</td>
                       <td>${cmd.stock_client ?? 0}</td>
@@ -1235,7 +1253,7 @@
                 <h3>${escapeHtml(clientNom)}</h3>
                 <div class="visit-meta">
                   Compte : ${escapeHtml(compte)}<br>
-                  TÃ©lÃ©phone : ${escapeHtml(tel)}<br>
+                  Téléphone : ${escapeHtml(tel)}<br>
                   Adresse : ${escapeHtml(adresse)}
                 </div>
               </div>
@@ -1252,15 +1270,15 @@
 
     function buildPdfHtml() {
       const reportDate = document.getElementById("reportDate").value;
-      const commercialName = document.getElementById("commercialName").value.trim() || "Non renseignÃ©";
+      const commercialName = document.getElementById("commercialName").value.trim() || "Non renseigné";
       const reportTitle = document.getElementById("reportTitle").value.trim() || "Rapport journalier des visites";
       const globalComment = document.getElementById("globalComment").value.trim();
 
       const visitsHtml = rapportVisites.map(visite => {
         const clientNom = visite.client?.nom || "Client inconnu";
-        const compte = visite.client?.numero_compte || "â€”";
-        const tel = visite.client?.telephone || "â€”";
-        const adresse = visite.client?.adresse || "â€”";
+        const compte = visite.client?.numero_compte || "—";
+        const tel = visite.client?.telephone || "—";
+        const adresse = visite.client?.adresse || "—";
         const note = visite.note?.trim() || "Aucune note";
         const commandes = visite.commandes || [];
 
@@ -1271,10 +1289,10 @@
                 <div class="pdf-product-item">
                   <div class="pdf-product-top">
                     <div class="pdf-product-name">${escapeHtml(cmd.produit?.nom || "Produit inconnu")}</div>
-                    <div class="pdf-product-ref">RÃ©f : ${escapeHtml(cmd.produit?.reference_produit || "-")}</div>
+                    <div class="pdf-product-ref">Réf : ${escapeHtml(cmd.produit?.reference_produit || "-")}</div>
                   </div>
                   <div class="pdf-product-meta">
-                    <span class="pdf-product-badge">QtÃ© : ${cmd.quantite ?? 0}</span>
+                    <span class="pdf-product-badge">Qté : ${cmd.quantite ?? 0}</span>
                     <span class="pdf-product-badge">Stock client : ${cmd.stock_client ?? 0}</span>
                     <span class="pdf-product-badge">Statut : ${escapeHtml(getColorLabel(cmd.couleur))}</span>
                   </div>
@@ -1291,7 +1309,7 @@
                 <div class="pdf-visit-client">${escapeHtml(clientNom)}</div>
                 <div class="pdf-visit-meta">
                   Compte : ${escapeHtml(compte)}<br>
-                  TÃ©lÃ©phone : ${escapeHtml(tel)}<br>
+                  Téléphone : ${escapeHtml(tel)}<br>
                   Adresse : ${escapeHtml(adresse)}
                 </div>
               </div>
@@ -1336,10 +1354,10 @@
 
           ${globalComment ? `<div class="pdf-note"><strong>Commentaire global :</strong><br>${escapeHtml(globalComment)}</div>` : ""}
 
-          ${visitsHtml || `<div class="pdf-note">Aucune visite trouvÃ©e pour cette date.</div>`}
+          ${visitsHtml || `<div class="pdf-note">Aucune visite trouvée pour cette date.</div>`}
 
           <div class="pdf-footer-note">
-            Rapport gÃ©nÃ©rÃ© automatiquement depuis lâ€™application de suivi commercial.
+            Rapport généré automatiquement depuis l’application de suivi commercial.
           </div>
         </div>
       `;
@@ -1359,7 +1377,7 @@
         reportStats = calculateStats(rapportVisites);
         renderSummary(reportStats);
         renderPreview(rapportVisites);
-        setStatus(`${reportStats.nbVisites} visite(s) chargÃ©e(s) pour le ${formatDate(reportDate)}.`);
+        setStatus(`${reportStats.nbVisites} visite(s) chargée(s) pour le ${formatDate(reportDate)}.`);
       } catch (error) {
         console.error(error);
         rapportVisites = [];
@@ -1375,17 +1393,17 @@
       const reportDate = document.getElementById("reportDate").value;
 
       if (!reportDate) {
-        alert("Veuillez choisir une date avant dâ€™exporter le PDF.");
+        alert("Veuillez choisir une date avant d’exporter le PDF.");
         return;
       }
 
       if (!rapportVisites.length) {
-        alert("Aucune visite chargÃ©e pour cette date.");
+        alert("Aucune visite chargée pour cette date.");
         return;
       }
 
       try {
-        setStatus("GÃ©nÃ©ration du PDF en cours...");
+        setStatus("Génération du PDF en cours...");
 
         const pdfContainer = document.getElementById("pdfReport");
         pdfContainer.innerHTML = buildPdfHtml();
@@ -1407,12 +1425,12 @@
         await html2pdf().set(options).from(element).save();
 
         pdfContainer.style.display = "none";
-        setStatus("PDF gÃ©nÃ©rÃ© avec succÃ¨s.");
+        setStatus("PDF généré avec succès.");
       } catch (error) {
         console.error("Erreur export PDF:", error);
         document.getElementById("pdfReport").style.display = "none";
-        setStatus("Erreur pendant la gÃ©nÃ©ration du PDF.");
-        alert("Impossible de gÃ©nÃ©rer le PDF.");
+        setStatus("Erreur pendant la génération du PDF.");
+        alert("Impossible de générer le PDF.");
       }
     }
 
@@ -1422,7 +1440,7 @@
       const mm = String(today.getMonth() + 1).padStart(2, "0");
       const dd = String(today.getDate()).padStart(2, "0");
       document.getElementById("reportDate").value = `${yyyy}-${mm}-${dd}`;
-      setStatus("PrÃªt. Choisis une date puis charge les visites.");
+      setStatus("Prêt. Choisis une date puis charge les visites.");
     }
 
     initPage();

@@ -24,6 +24,8 @@ const PUBLIC_PATHS = new Set([
   "/reporting-hero.png"
 ]);
 const ROLE_GUARDS = [
+  { path: "/", roles: new Set(["commercial"]) },
+  { path: "/index.html", roles: new Set(["commercial"]) },
   { path: "/admin.html", roles: new Set(["admin"]) },
   { path: "/responsable.html", roles: new Set(["admin", "responsable"]) }
 ];

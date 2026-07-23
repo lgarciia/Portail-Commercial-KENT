@@ -437,16 +437,16 @@ function summarizeSalesRows(rows, visits, period) {
   for (const visit of visits) {
     const commercial = ensureSalesCommercial(byCommercial, visit.commercialUserId);
     if (sameMonth(visit.date, period.year, period.month)) {
-      visitKeysMonth.add(`${visit.secteur}:${visit.id}`);
-      clientKeysMonth.add(`${visit.secteur}:${visit.clientId || visit.clientNom}`);
-      commercial.visitsMonth += 1;
       if (visit.isPhoneOrder) {
         phoneVisitKeysMonth.add(`${visit.secteur}:${visit.id}`);
         commercial.phoneMonth += 1;
       } else {
+        visitKeysMonth.add(`${visit.secteur}:${visit.id}`);
+        clientKeysMonth.add(`${visit.secteur}:${visit.clientId || visit.clientNom}`);
+        commercial.visitsMonth += 1;
         commercial.terrainMonth += 1;
+        commercial.clientsMonthSet.add(`${visit.secteur}:${visit.clientId || visit.clientNom}`);
       }
-      commercial.clientsMonthSet.add(`${visit.secteur}:${visit.clientId || visit.clientNom}`);
     }
   }
 
@@ -693,6 +693,7 @@ async function buildDocumentsBlock(commercialIds, period) {
   const recent = [];
   const totals = {
     total: 0,
+    sansStatut: 0,
     enCours: 0,
     valide: 0,
     nonValide: 0,
@@ -804,7 +805,7 @@ function buildAlerts(commercials) {
   docs.forEach((item) => alerts.push({
     type: "document",
     level: "warning",
-    title: `${item.displayName} a des documents en cours`,
+    title: `${item.displayName} a des documents transmis`,
     message: `${item.metrics.documentsEnCours} document(s) BDC/devis a suivre.`
   }));
 
@@ -975,8 +976,9 @@ function normalizeDocumentStatus(row) {
   const status = normalizeText(row?.statut_validation).toLowerCase();
   if (status === "valide") return "valide";
   if (status === "non_valide") return "nonValide";
+  if (status === "transmis" || status === "en_cours") return "enCours";
   if (row?.valide === true) return "valide";
-  return "enCours";
+  return "sansStatut";
 }
 
 function normalizeDocumentRow(row) {
@@ -1148,7 +1150,7 @@ function emptyRealCommercialObject() {
 }
 
 function emptyDocumentCommercial() {
-  return { total: 0, enCours: 0, valide: 0, nonValide: 0, bdcEnCours: 0, devisEnCours: 0 };
+  return { total: 0, sansStatut: 0, enCours: 0, valide: 0, nonValide: 0, bdcEnCours: 0, devisEnCours: 0 };
 }
 
 function normalizeBudgetCommercials(byCommercial) {
@@ -1192,7 +1194,7 @@ function emptyRealBlock() {
 
 function emptyDocumentsBlock() {
   return {
-    totals: { total: 0, enCours: 0, valide: 0, nonValide: 0, bdcEnCours: 0, devisEnCours: 0, montantEnCours: 0 },
+    totals: { total: 0, sansStatut: 0, enCours: 0, valide: 0, nonValide: 0, bdcEnCours: 0, devisEnCours: 0, montantEnCours: 0 },
     byCommercial: {},
     recent: [],
     rows: []

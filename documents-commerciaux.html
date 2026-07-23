@@ -290,9 +290,14 @@
       background: rgba(34, 197, 94, 0.09);
       border-color: rgba(34, 197, 94, 0.22);
     }
+    .doc-card.status-transmis,
     .doc-card.status-en_cours {
       background: rgba(245, 158, 11, 0.07);
       border-color: rgba(245, 158, 11, 0.18);
+    }
+    .doc-card.status-none {
+      background: rgba(255, 255, 255, 0.035);
+      border-color: rgba(148, 163, 184, 0.14);
     }
     .doc-card.status-non_valide {
       background: rgba(239, 68, 68, 0.08);
@@ -395,6 +400,10 @@
       border: 1px solid rgba(245, 158, 11, 0.28);
       transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
     }
+    .status-switch.status-none .status-knob {
+      opacity: 0;
+    }
+    .status-switch.status-transmis .status-knob,
     .status-switch.status-en_cours .status-knob {
       transform: translateX(100%);
       background: rgba(245, 158, 11, 0.26);
@@ -427,6 +436,7 @@
     }
     .status-option.active { color: var(--text); }
     .status-option[data-status="valide"].active { color: #dcfce7; }
+    .status-option[data-status="transmis"].active { color: #fde68a; }
     .status-option[data-status="en_cours"].active { color: #fde68a; }
     .status-option[data-status="non_valide"].active { color: #fecaca; }
 
@@ -567,7 +577,8 @@
           <label for="validationFilter">Validation</label>
           <select id="validationFilter">
             <option value="all">Tous</option>
-            <option value="en_cours">En cours</option>
+            <option value="sans_statut">Sans statut</option>
+            <option value="transmis">Transmis</option>
             <option value="valide">Validés</option>
             <option value="non_valide">Non validés</option>
           </select>
@@ -636,15 +647,17 @@
     const DOCUMENTS_BUCKET = "documents-commerciaux";
     const DOCUMENTS_TABLE = "documents_commerciaux";
     const DOCUMENT_STATUS = {
-      EN_COURS: "en_cours",
+      TRANSMIS: "transmis",
       VALIDE: "valide",
       NON_VALIDE: "non_valide"
     };
     const STATUS_LABELS = {
-      en_cours: "En cours",
+      transmis: "Transmis",
+      en_cours: "Transmis",
       valide: "Valid\u00e9",
       non_valide: "Non valid\u00e9"
     };
+    const NO_STATUS_LABEL = "Sans statut";
 
     const state = { documents: [], deleteCandidateId: null, deleting: false, exporting: false };
     const dom = {};
@@ -724,9 +737,10 @@
 
     function getDocumentStatus(doc) {
       const status = String(doc?.statut_validation || "").trim();
+      if (status === "en_cours") return DOCUMENT_STATUS.TRANSMIS;
       if (Object.values(DOCUMENT_STATUS).includes(status)) return status;
       if (doc?.valide === true || doc?.valide === "true") return DOCUMENT_STATUS.VALIDE;
-      return DOCUMENT_STATUS.EN_COURS;
+      return "";
     }
 
     function getFilteredDocuments() {
@@ -740,7 +754,8 @@
         const status = getDocumentStatus(doc);
         if (sector !== "all" && doc.secteur !== sector) return false;
         if (type !== "all" && doc.type_document !== type) return false;
-        if (validation !== "all" && status !== validation) return false;
+        if (validation === "sans_statut" && status) return false;
+        if (validation !== "all" && validation !== "sans_statut" && status !== validation) return false;
         if (dateMonth && !String(doc.date_document || "").startsWith(dateMonth)) return false;
         if (!search) return true;
         const haystack = [
@@ -770,8 +785,10 @@
 
     function renderDocumentCard(doc) {
       const status = getDocumentStatus(doc);
+      const statusClass = status || "none";
       const accountLabel = [doc.numero_compte, doc.numero_compte_libelle].filter(Boolean).join(" - ") || "-";
-      return `<article class="doc-card status-${escapeHtml(status)}" data-id="${escapeHtml(doc.id)}">
+      const statusTitle = STATUS_LABELS[status] || NO_STATUS_LABEL;
+      return `<article class="doc-card status-${escapeHtml(statusClass)}" data-id="${escapeHtml(doc.id)}">
         <div class="doc-top">
           <div class="doc-title">${escapeHtml(doc.client_nom || "Client")}</div>
           <div class="doc-file">${escapeHtml(doc.nom_fichier || "document.pdf")}</div>
@@ -783,10 +800,10 @@
           ${doc.numero_document ? `<span>${escapeHtml(doc.numero_document)}</span>` : ""}
         </div>
         <div class="doc-actions">
-          <div class="status-switch status-${escapeHtml(status)}" title="Statut du document : ${escapeHtml(STATUS_LABELS[status] || "En cours")}">
+          <div class="status-switch status-${escapeHtml(statusClass)}" title="Statut du document : ${escapeHtml(statusTitle)}">
             <span class="status-knob" aria-hidden="true"></span>
             <button class="status-option ${status === DOCUMENT_STATUS.NON_VALIDE ? "active" : ""}" type="button" data-action="status" data-status="non_valide" data-id="${escapeHtml(doc.id)}" title="Marquer non valide">Non</button>
-            <button class="status-option ${status === DOCUMENT_STATUS.EN_COURS ? "active" : ""}" type="button" data-action="status" data-status="en_cours" data-id="${escapeHtml(doc.id)}" title="Marquer en cours">Cours</button>
+            <button class="status-option ${status === DOCUMENT_STATUS.TRANSMIS ? "active" : ""}" type="button" data-action="status" data-status="transmis" data-id="${escapeHtml(doc.id)}" title="Marquer transmis">Trans.</button>
             <button class="status-option ${status === DOCUMENT_STATUS.VALIDE ? "active" : ""}" type="button" data-action="status" data-status="valide" data-id="${escapeHtml(doc.id)}" title="Marquer valide">Valid&eacute;</button>
           </div>
           <button class="btn btn-primary" type="button" data-action="download" data-id="${escapeHtml(doc.id)}" title="Telecharger">Telech.</button>

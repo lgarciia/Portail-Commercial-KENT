@@ -899,7 +899,7 @@ function buildTopClients({ plan, period, normalizedFilters, clientsById, plaques
     }
 
     const row = aggregate.get(clientId);
-    row.nb_visites += 1;
+    if (isTerrainVisit(visite)) row.nb_visites += 1;
     row.ca_ht = round2(row.ca_ht + toNumber(visite?.total_commande));
   }
 
@@ -952,7 +952,7 @@ function buildSalesEvolution({ plan, period, normalizedFilters, clientsById, vis
 
     const row = aggregate.get(bucket);
     row.ca_ht = round2(row.ca_ht + toNumber(visite?.total_commande));
-    row.nb_visites += 1;
+    if (isTerrainVisit(visite)) row.nb_visites += 1;
   }
 
   const rows = Array.from(aggregate.entries())
@@ -1240,7 +1240,7 @@ function buildSalesByPeriod({ plan, period, normalizedFilters, clientsById, plaq
 
     const row = aggregate.get(plaqueLabel);
     row.ca_ht = round2(row.ca_ht + toNumber(visite?.total_commande));
-    row.nb_visites += 1;
+    if (isTerrainVisit(visite)) row.nb_visites += 1;
   }
 
   const rows = Array.from(aggregate.entries())
@@ -1332,10 +1332,11 @@ function buildActionPlan({ plan, period, normalizedFilters, clients, clientsById
     onlySales: false
   });
 
+  const terrainScopedVisits = scopedVisits.filter(isTerrainVisit);
   const salesVisits = scopedVisits.filter(isSaleVisit);
-  const noSaleVisits = scopedVisits.length - salesVisits.length;
+  const noSaleVisits = terrainScopedVisits.filter(visit => !isSaleVisit(visit)).length;
   const salesMetrics = summarizeVisits(salesVisits);
-  const noSaleRate = scopedVisits.length ? round2((noSaleVisits / scopedVisits.length) * 100) : 0;
+  const noSaleRate = terrainScopedVisits.length ? round2((noSaleVisits / terrainScopedVisits.length) * 100) : 0;
 
   const scopedAllTimeVisits = filterVisits(visites, {
     clientsById,
@@ -1414,7 +1415,7 @@ function buildActionPlan({ plan, period, normalizedFilters, clients, clientsById
     rows,
     summary: `Plan d'action priorise genere sur ${period.label}.`,
     finalResult:
-      `Base analysee: ${scopedVisits.length} visites, CA ${formatNumberFr(salesMetrics.ca)} EUR, ` +
+      `Base analysee: ${terrainScopedVisits.length} visites terrain, CA ${formatNumberFr(salesMetrics.ca)} EUR, ` +
       `${inactiveOver60} client(s) inactif(s) >60j, ${formatNumberFr(noSaleRate)} % de visites sans vente.`,
     periodLabel: period.label
   };
@@ -1422,7 +1423,7 @@ function buildActionPlan({ plan, period, normalizedFilters, clients, clientsById
 
 function summarizeVisits(visits) {
   const ca = round2(visits.reduce((sum, visite) => sum + toNumber(visite?.total_commande), 0));
-  const nb_visites = visits.length;
+  const nb_visites = visits.filter(isTerrainVisit).length;
   const panier_moyen = nb_visites ? round2(ca / nb_visites) : 0;
   return { ca, nb_visites, panier_moyen };
 }
@@ -1734,7 +1735,26 @@ function getPlaqueLabel(plaqueId, plaquesById) {
 function isSaleVisit(visite) {
   const type = String(visite?.type_visite || "").trim().toLowerCase();
   const total = toNumber(visite?.total_commande);
-  return total > 0 || type === "vente";
+  return total > 0 || type === "vente" || isPhoneOrderVisit(visite);
+}
+
+function normalizeVisitTypeForStats(visite) {
+  return String(visite?.type_visite || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+}
+
+function isPhoneOrderVisit(visite) {
+  const type = normalizeVisitTypeForStats(visite);
+  const note = String(visite?.note || "").toUpperCase();
+  return ["commande_telephone", "commande_tel", "appel_telephonique", "telephone", "tel"].includes(type)
+    || note.includes("[COMMANDE_TELEPHONE]");
+}
+
+function isTerrainVisit(visite) {
+  return !isPhoneOrderVisit(visite);
 }
 
 function toNumber(value) {

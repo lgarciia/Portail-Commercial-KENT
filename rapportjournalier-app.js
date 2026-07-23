@@ -7,6 +7,8 @@
   var groupedClients = [];
   var reportStats = createEmptyStats();
   var currentLoadedDate = "";
+  var VISIT_TYPE_PHONE_ORDER = "commande_telephone";
+  var PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
 
   window.__RAPPORT_JOURNALIER_BOOTED__ = true;
 
@@ -73,14 +75,33 @@
       .replaceAll("-", "_")
       .replaceAll(" ", "_");
     if (normalized === "vente") return "vente";
+    if (["commande_telephone", "commande_tel", "appel_telephonique", "telephone", "tel"].includes(normalized)) return VISIT_TYPE_PHONE_ORDER;
     if (normalized === "passage_sans_vente") return "passage_sans_vente";
     if (normalized === "client_ferme") return "client_ferme";
     return "";
   }
 
-  function isSaleVisit(visite) {
+  function hasPhoneOrderNoteMarker(note) {
+    return String(note || "").includes(PHONE_ORDER_NOTE_MARKER);
+  }
+
+  function resolveVisitTypeFromRecord(visite) {
     var visitType = normalizeVisitType(visite && visite.type_visite);
-    if (visitType === "vente") return true;
+    if (visitType === "vente" && hasPhoneOrderNoteMarker(visite && visite.note)) return VISIT_TYPE_PHONE_ORDER;
+    return visitType;
+  }
+
+  function isPhoneOrderVisit(visite) {
+    return resolveVisitTypeFromRecord(visite) === VISIT_TYPE_PHONE_ORDER;
+  }
+
+  function isTerrainVisit(visite) {
+    return !isPhoneOrderVisit(visite);
+  }
+
+  function isSaleVisit(visite) {
+    var visitType = resolveVisitTypeFromRecord(visite);
+    if (visitType === "vente" || visitType === VISIT_TYPE_PHONE_ORDER) return true;
     if (visitType) return false;
     if (normalizeNumber(visite && visite.total_commande) > 0) return true;
     return Boolean(visite && visite.commandes && visite.commandes.length);
@@ -313,20 +334,22 @@
     var uniqueClients = new Set();
     var clientMap = new Map();
     var productMap = new Map();
+    var terrainLineCount = 0;
 
-    stats.nbVisites = visites.length;
+    stats.nbVisites = visites.filter(isTerrainVisit).length;
     stats.nbVisitesAvecVente = 0;
     stats.nbVisitesSansVente = 0;
 
     visites.forEach(function (visite) {
       var visitMetrics = computeVisitMetrics(visite);
       var saleVisit = isSaleVisit(visite);
+      var terrainVisit = isTerrainVisit(visite);
       var clientName = visite.client && visite.client.nom ? visite.client.nom : "Client inconnu";
       var clientId =
         (visite.client && visite.client.id) ||
         (visite.client_id ? "client-" + visite.client_id : "client-" + clientName.toLowerCase().replace(/\\s+/g, "-"));
 
-      uniqueClients.add(String(clientId));
+      if (terrainVisit) uniqueClients.add(String(clientId));
 
       stats.nbLignes += visitMetrics.nbLignes;
       stats.totalQuantite += visitMetrics.totalQuantite;
@@ -336,8 +359,11 @@
       stats.nbJaunes += visitMetrics.nbJaunes;
       stats.nbVerts += visitMetrics.nbVerts;
       stats.nbBleus += visitMetrics.nbBleus;
-      if (saleVisit) stats.nbVisitesAvecVente += 1;
-      else stats.nbVisitesSansVente += 1;
+      if (terrainVisit) {
+        terrainLineCount += visitMetrics.nbLignes;
+        if (saleVisit) stats.nbVisitesAvecVente += 1;
+        else stats.nbVisitesSansVente += 1;
+      }
 
       if (!clientMap.has(String(clientId))) {
         clientMap.set(String(clientId), {
@@ -361,7 +387,7 @@
       }
 
       var clientEntry = clientMap.get(String(clientId));
-      clientEntry.visits += 1;
+      if (terrainVisit) clientEntry.visits += 1;
       clientEntry.lines += visitMetrics.nbLignes;
       clientEntry.quantity += visitMetrics.totalQuantite;
       clientEntry.stock += visitMetrics.totalStock;
@@ -442,7 +468,7 @@
 
     stats.nbClients = uniqueClients.size;
     stats.tauxTransformation = stats.nbVisites ? (stats.nbVisitesAvecVente / stats.nbVisites) * 100 : 0;
-    stats.avgLinesPerVisit = stats.nbVisites ? stats.nbLignes / stats.nbVisites : 0;
+    stats.avgLinesPerVisit = stats.nbVisites ? terrainLineCount / stats.nbVisites : 0;
 
     groupedClients = Array.from(clientMap.values())
       .map(function (client) {

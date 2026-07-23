@@ -141,7 +141,7 @@
     }
     .filters{
       display:grid;
-      grid-template-columns:repeat(9,minmax(0,1fr));
+      grid-template-columns:repeat(10,minmax(0,1fr));
       gap:8px;
       align-items:start;
     }
@@ -196,12 +196,12 @@
     <div class="brand">
       <div class="logo"></div>
       <div class="title">
-        <b>Requete Commerce (ventes reelles)</b>
-        <span>Auto + Industrie depuis Supabase - filtres en colonnes, cumul, tri CA et export CSV</span>
+        <b id="pageTitle">Requete Commerce (ventes reelles)</b>
+        <span id="pageSubtitle">Auto + Industrie depuis Supabase - filtres en colonnes, cumul, tri CA et export CSV</span>
       </div>
     </div>
     <div class="top-actions">
-      <a class="btn" href="index.html">Portail</a>
+      <a class="btn" id="homeLink" href="index.html">Portail</a>
       <a class="btn" href="reporting-commerce-global.html">Reporting global</a>
       <button class="btn" id="reloadBtn" type="button">Recharger Supabase</button>
       <button class="btn green" id="exportBtn" type="button" disabled>Exporter CSV</button>
@@ -212,7 +212,7 @@
     <div class="meta">
       <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargement...</span></span>
       <span class="chip"><span class="dot ok"></span><span>Source : <b>Supabase Auto + Industrie</b></span></span>
-      <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes : 9 filtres + quantite + CA</span></span>
+      <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes : commercial + 9 filtres + quantite + CA</span></span>
     </div>
     <div class="small">Les ventes telephone sont incluses. Le CA est calcule comme dans Mes ventes et Reporting global : quantite x prix unitaire.</div>
   </div>
@@ -227,6 +227,7 @@
       <button class="quickViewBtn" type="button" data-preset="industry-product">Industrie par produit</button>
     </div>
     <div class="filters">
+      <div class="fbox" id="boxCommercial"></div>
       <div class="fbox" id="boxActivity"></div>
       <div class="fbox" id="boxYear"></div>
       <div class="fbox" id="boxMonth"></div>
@@ -273,6 +274,7 @@ const SOURCES = [
   { key:"industrie", label:"Industrie", tables:{ clients:"industrie_clients", produits:"industrie_produits", visites:"industrie_visites", lignes:"industrie_visite_commandes" } }
 ];
 const COLS = {
+  COMMERCIAL:"Commercial",
   ACTIVITY:"Activite",
   YEAR:"Annee",
   MONTH:"Mois",
@@ -286,6 +288,8 @@ const COLS = {
   CA:"CA HT"
 };
 const $ = id => document.getElementById(id);
+let currentSessionUser = null;
+let isTeamQuery = false;
 const normalize = value => String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const toNumber = value => {
   if (value === null || value === undefined) return 0;
@@ -422,6 +426,7 @@ let lastResult = [];
 let lastHeaders = [];
 let sortKey = "ca";
 let sortAsc = false;
+const boxCommercial = buildListBox("boxCommercial", "Commercial");
 const boxActivity = buildListBox("boxActivity", "Activite");
 const boxYear = buildListBox("boxYear", "Annee");
 const boxMonth = buildListBox("boxMonth", "Mois");
@@ -432,6 +437,7 @@ const boxClient = buildListBox("boxClient", "Client");
 const boxRef = buildListBox("boxRef", "Reference");
 const boxDes = buildListBox("boxDes", "Designation");
 const chain = [
+  { box:boxCommercial, key:"COMMERCIAL", labelFn:null, sortFn:null },
   { box:boxActivity, key:"ACTIVITY", labelFn:null, sortFn:null },
   { box:boxYear, key:"YEAR", labelFn:null, sortFn:(a,b)=>Number(a)-Number(b) },
   { box:boxMonth, key:"MONTH", labelFn:monthLabel, sortFn:(a,b)=>Number(a)-Number(b) },
@@ -466,6 +472,29 @@ function currentYearValue(){
 }
 function currentMonthValue(){
   return String(new Date().getMonth() + 1);
+}
+function homePathForUser(user){
+  if (user?.role === "admin") return "admin.html";
+  if (user?.role === "responsable") return "responsable.html";
+  return "index.html";
+}
+function homeLabelForUser(user){
+  if (user?.role === "admin") return "Admin";
+  if (user?.role === "responsable") return "Responsable";
+  return "Portail";
+}
+function hydratePageForSession(user, scope = null){
+  currentSessionUser = user || null;
+  isTeamQuery = user?.role === "admin" || user?.role === "responsable";
+  $("homeLink").href = homePathForUser(user);
+  $("homeLink").textContent = homeLabelForUser(user);
+  $("pageTitle").textContent = isTeamQuery ? "Requete Commerce equipe" : "Requete Commerce (ventes reelles)";
+  $("pageSubtitle").textContent = isTeamQuery
+    ? "Ventes reelles cumulees Auto + Industrie - lecture equipe selon ton role"
+    : "Auto + Industrie depuis Supabase - filtres en colonnes, cumul, tri CA et export CSV";
+  if (scope?.commercialCount !== undefined) {
+    $("colsDebug").textContent = `${scope.commercialCount} commercial(aux) visible(s) - commercial + 9 filtres + quantite + CA`;
+  }
 }
 function setBoxSelection(box, values){
   const wanted = new Set([].concat(values || []).map(value => String(value)));
@@ -647,6 +676,7 @@ function exportCSV(){
   URL.revokeObjectURL(url);
 }
 async function loadSourceRows(source){
+  const commercialLabel = currentSessionUser?.name || currentSessionUser?.id || "Commercial";
   const [clients, produits, visites, lignes] = await Promise.all([
     fetchPaged(source.tables.clients, "id, nom, numero_compte", { order:{ column:"nom", ascending:true } }),
     fetchPaged(source.tables.produits, "id, nom, reference_produit", { order:{ column:"nom", ascending:true } }),
@@ -668,6 +698,7 @@ async function loadSourceRows(source){
     const quantite = toNumber(ligne.quantite);
     const prixUnitaire = toNumber(ligne.prix_unitaire);
     mapped.push({
+      [COLS.COMMERCIAL]: commercialLabel,
       [COLS.ACTIVITY]: source.label,
       [COLS.YEAR]: year || "",
       [COLS.MONTH]: String(Number(month || 0) || ""),
@@ -683,6 +714,32 @@ async function loadSourceRows(source){
   }
   return mapped;
 }
+function mapTeamApiRow(row){
+  return {
+    [COLS.COMMERCIAL]: row.commercial || "Commercial",
+    [COLS.ACTIVITY]: row.activity || "",
+    [COLS.YEAR]: row.year || "",
+    [COLS.MONTH]: row.month || "",
+    [COLS.DATE]: row.date || "",
+    [COLS.TYPE]: row.type || "",
+    [COLS.CLIENT_INT]: row.clientNumber || "-",
+    [COLS.CLIENT]: row.client || "Client inconnu",
+    [COLS.REF]: row.reference || "-",
+    [COLS.DES]: row.designation || "Produit archive",
+    [COLS.QTY]: toNumber(row.quantity),
+    [COLS.CA]: toNumber(row.revenue)
+  };
+}
+async function loadTeamRows(){
+  const response = await fetch("/api/team-commerce-query", {
+    cache: "no-store",
+    credentials: "same-origin"
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "Requete equipe indisponible.");
+  hydratePageForSession(currentSessionUser, payload.scope || null);
+  return (payload.rows || []).map(mapTeamApiRow);
+}
 function populateFilters(){
   for (const item of chain){
     item.box.setOptions(rows.map(row => row[COLS[item.key]]), { labelFn:item.labelFn, preserve:false, sortFn:item.sortFn });
@@ -694,12 +751,17 @@ async function loadData(){
   $("exportBtn").disabled = true;
   $("genBtn").disabled = true;
   try{
-    await window.KentCommercialScope.load();
-    const sourceRows = await Promise.all(SOURCES.map(loadSourceRows));
-    rows = sourceRows.flat().sort((a,b) => String(b[COLS.DATE]).localeCompare(String(a[COLS.DATE])));
+    const user = await window.KentCommercialScope.load();
+    hydratePageForSession(user);
+    if (isTeamQuery) {
+      rows = (await loadTeamRows()).sort((a,b) => String(b[COLS.DATE]).localeCompare(String(a[COLS.DATE])));
+    } else {
+      const sourceRows = await Promise.all(SOURCES.map(loadSourceRows));
+      rows = sourceRows.flat().sort((a,b) => String(b[COLS.DATE]).localeCompare(String(a[COLS.DATE])));
+    }
     populateFilters();
     setStatus("ok", `${fmtNumber(rows.length)} ligne(s) de vente chargee(s).`);
-    $("colsDebug").textContent = `Auto + Industrie - ${fmtNumber(rows.length)} lignes reelles`;
+    if (!isTeamQuery) $("colsDebug").textContent = `Auto + Industrie - ${fmtNumber(rows.length)} lignes reelles`;
     generate();
   }catch(error){
     console.error(error);

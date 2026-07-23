@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Projection budget</title>
+  <script src="./app-data-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./reporting-data-utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./commercial-scope.js"></script>
+  <script src="./budget-supabase.js"></script>
+  <script src="./reel-supabase.js"></script>
+  <style>
+    :root{
+      --bg:#07111f;
+      --panel:rgba(15,23,42,.82);
+      --panel2:rgba(8,15,28,.72);
+      --line:rgba(148,163,184,.18);
+      --text:#e8f0ff;
+      --muted:#9fb1ca;
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --gold:#f59e0b;
+      --red:#ef4444;
+      --purple:#8b5cf6;
+      --shadow:0 28px 80px rgba(0,0,0,.36);
+      --radius:24px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:"Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(56,189,248,.18), transparent 30%),
+        radial-gradient(circle at 88% 5%, rgba(245,158,11,.14), transparent 32%),
+        linear-gradient(135deg,#06111f 0%,#081827 54%,#04101c 100%);
+      padding:22px;
+    }
+    .wrap{max-width:1700px;margin:0 auto}
+    .hero,.panel,.kpi{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg,rgba(15,23,42,.88),rgba(8,15,28,.78));
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(16px);
+    }
+    .hero{
+      border-radius:28px;
+      padding:20px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:18px;
+      align-items:end;
+      margin-bottom:14px;
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      width:max-content;
+      padding:8px 12px;
+      border-radius:999px;
+      color:#fde68a;
+      background:rgba(245,158,11,.12);
+      border:1px solid rgba(245,158,11,.28);
+      font-weight:950;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-size:12px;
+      margin-bottom:12px;
+    }
+    h1{margin:0;font-size:clamp(34px,4vw,64px);line-height:.98;letter-spacing:-.06em}
+    .subtitle{margin:12px 0 0;color:var(--muted);font-weight:760;font-size:17px;line-height:1.45;max-width:920px}
+    .actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+    .btn,.input{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      min-height:42px;
+      border-radius:14px;
+      font-weight:900;
+      text-decoration:none;
+      outline:none;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:10px 14px;
+      cursor:pointer;
+      transition:.16s transform,.16s background,.16s border-color;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11)}
+    .btn.primary{background:linear-gradient(135deg,var(--blue),#2563eb);border-color:transparent}
+    .btn.gold{color:#111827;background:linear-gradient(135deg,#fde68a,var(--gold));border-color:transparent}
+    .input{padding:0 12px;min-width:210px}
+    .filters{
+      display:grid;
+      grid-template-columns:170px minmax(220px,310px) auto;
+      gap:10px;
+      align-items:end;
+      margin-bottom:14px;
+    }
+    .field{display:flex;flex-direction:column;gap:6px}
+    label{font-size:11px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.05em}
+    .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
+    .kpi{border-radius:18px;padding:13px;min-height:98px}
+    .kpi span{display:block;color:var(--muted);font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
+    .kpi strong{display:block;margin-top:8px;font-size:clamp(18px,2vw,28px);letter-spacing:-.04em}
+    .kpi small{display:block;margin-top:5px;color:var(--muted);font-weight:750;line-height:1.35}
+    .kpi.good strong,.good{color:#86efac}
+    .kpi.bad strong,.bad{color:#fca5a5}
+    .kpi.neutral strong{color:#bfdbfe}
+    .panel{border-radius:var(--radius);padding:14px;margin-bottom:14px}
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .panel-head h2{margin:0;font-size:20px;letter-spacing:-.03em}
+    .panel-head p{margin:5px 0 0;color:var(--muted);font-weight:740}
+    .legend{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+    .chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted)}
+    .chip.actual::before{background:var(--blue)}
+    .chip.projected::before{background:var(--gold)}
+    .chip.budget::before{background:var(--purple)}
+    .status{
+      border:1px solid rgba(56,189,248,.22);
+      background:rgba(14,165,233,.10);
+      color:#dbeafe;
+      border-radius:16px;
+      padding:12px 14px;
+      font-weight:850;
+      margin-bottom:14px;
+    }
+    .table-wrap{
+      overflow:auto;
+      border-radius:18px;
+      border:1px solid rgba(148,163,184,.14);
+      background:rgba(2,6,23,.24);
+    }
+    table{border-collapse:separate;border-spacing:0;width:100%;min-width:1180px}
+    th,td{border-bottom:1px solid rgba(255,255,255,.07);border-right:1px solid rgba(255,255,255,.055)}
+    th:last-child,td:last-child{border-right:0}
+    th{
+      padding:10px 9px;
+      color:#cbd5e1;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      background:rgba(8,15,28,.96);
+      position:sticky;
+      top:0;
+      z-index:2;
+    }
+    td{padding:10px 9px;text-align:right;font-weight:900;font-size:13px}
+    .row-label{
+      position:sticky;
+      left:0;
+      z-index:1;
+      text-align:left;
+      min-width:150px;
+      background:rgba(8,15,28,.96);
+      color:#e5edf9;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+    th.row-label{z-index:3}
+    .month-head{min-width:86px;text-align:center}
+    .month-tag{
+      display:block;
+      margin-top:5px;
+      font-size:10px;
+      font-weight:950;
+      letter-spacing:.04em;
+      color:var(--muted);
+    }
+    .month-tag.actual{color:#7dd3fc}
+    .month-tag.projected{color:#fcd34d}
+    td.actual{
+      background:linear-gradient(180deg,rgba(56,189,248,.13),rgba(56,189,248,.055));
+      color:#dff7ff;
+    }
+    td.projected{
+      background:linear-gradient(180deg,rgba(245,158,11,.14),rgba(245,158,11,.055));
+      color:#fff3c4;
+    }
+    td.budget{
+      color:#ddd6fe;
+      background:rgba(139,92,246,.06);
+    }
+    td.gap.positive{color:#86efac}
+    td.gap.negative{color:#fca5a5}
+    .entity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+    .entity-row{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.045);
+      border-radius:14px;
+      padding:10px;
+      display:grid;
+      gap:4px;
+    }
+    .entity-row b{font-size:14px}
+    .entity-row span{color:var(--muted);font-size:12px;font-weight:800}
+    .empty{padding:18px;color:var(--muted);font-weight:850}
+    @media(max-width:980px){
+      body{padding:14px}
+      .hero{grid-template-columns:1fr}
+      .actions{justify-content:flex-start}
+      .filters{grid-template-columns:1fr}
+      .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .input{width:100%}
+    }
+    @media(max-width:560px){.kpis{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">Projection</div>
+        <h1>Atterrissage budget</h1>
+        <p class="subtitle">
+          Lecture Supabase uniquement : on compare le réel clôturé au budget, puis on projette les mois restants avec le même taux d'avance ou de retard.
+        </p>
+      </div>
+      <div class="actions">
+        <a class="btn" href="index.html">Portail</a>
+        <a class="btn" href="accbudget.html">Budget annuel</a>
+        <button class="btn primary" id="reloadBtn" type="button">Recalculer</button>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="filters">
+        <div class="field">
+          <label for="yearInput">Année</label>
+          <input class="input" id="yearInput" type="number" min="2024" max="2035" step="1" />
+        </div>
+        <div class="field">
+          <label for="entitySelect">Périmètre</label>
+          <select class="input" id="entitySelect">
+            <option value="all">Toutes les entités</option>
+          </select>
+        </div>
+        <button class="btn gold" id="applyBtn" type="button">Calculer la projection</button>
+      </div>
+      <div class="status" id="statusBar">Chargement de la projection...</div>
+      <div class="kpis">
+        <article class="kpi neutral"><span>Réel à date</span><strong id="kpiReal">-</strong><small id="kpiRealHint">Mois clôturés</small></article>
+        <article class="kpi neutral"><span>Budget à date</span><strong id="kpiBudgetDate">-</strong><small>Même périmètre</small></article>
+        <article class="kpi" id="kpiGapCard"><span>Écart à date</span><strong id="kpiGap">-</strong><small id="kpiGapHint">Réel - budget</small></article>
+        <article class="kpi neutral"><span>Taux appliqué</span><strong id="kpiRate">-</strong><small>Écart / budget à date</small></article>
+        <article class="kpi neutral"><span>Projection année</span><strong id="kpiProjection">-</strong><small>Réel clôturé + mois projetés</small></article>
+        <article class="kpi neutral"><span>Budget annuel</span><strong id="kpiAnnualBudget">-</strong><small>Budget actif Supabase</small></article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Détail mensuel</h2>
+          <p>Passe la souris sur une cellule pour voir la formule utilisée.</p>
+        </div>
+        <div class="legend">
+          <span class="chip actual">Réel clôturé</span>
+          <span class="chip projected">Projeté</span>
+          <span class="chip budget">Budget</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table aria-label="Projection budget mensuelle">
+          <thead id="projectionHead"></thead>
+          <tbody id="projectionBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Sources par entité</h2>
+          <p>Contrôle rapide des entités consolidées dans le calcul.</p>
+        </div>
+      </div>
+      <div class="entity-grid" id="entityGrid"></div>
+    </section>
+  </div>
+
+  <script>
+  (function(){
+    const DEFAULT_ENTITIES = [
+      { key:"psa", label:"PSA" },
+      { key:"gueudet", label:"Gueudet" },
+      { key:"ford", label:"Ford" },
+      { key:"direct", label:"Direct" }
+    ];
+    const budgetConfig = {
+      clientCandidates:["client", "clients", "nom client", "nom du client"],
+      codeCandidates:["n client", "n client interne", "n° client", "no client", "numero client", "num client", "nclient", "code livré", "code livre", "code"]
+    };
+    const els = {};
+    const state = { entities: [], loaded: [] };
+
+    function cacheDom(){
+      ["yearInput","entitySelect","applyBtn","reloadBtn","statusBar","kpiReal","kpiRealHint","kpiBudgetDate","kpiGap","kpiGapHint","kpiRate","kpiProjection","kpiAnnualBudget","kpiGapCard","projectionHead","projectionBody","entityGrid"].forEach(id => {
+        els[id] = document.getElementById(id);
+      });
+    }
+
+    function money(value){
+      return Number(value || 0).toLocaleString("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
+    }
+
+    function percent(value){
+      return `${Number(value || 0).toLocaleString("fr-FR", { maximumFractionDigits:1 })} %`;
+    }
+
+    function signedMoney(value){
+      const amount = Number(value || 0);
+      return `${amount >= 0 ? "+" : "-"}${money(Math.abs(amount))}`;
+    }
+
+    function setStatus(message, tone){
+      els.statusBar.textContent = message;
+      els.statusBar.style.borderColor = tone === "error" ? "rgba(239,68,68,.34)" : "rgba(56,189,248,.22)";
+      els.statusBar.style.background = tone === "error" ? "rgba(239,68,68,.10)" : "rgba(14,165,233,.10)";
+    }
+
+    function getDefaultYear(){
+      const now = new Date();
+      return Number.isFinite(now.getFullYear()) ? now.getFullYear() : 2026;
+    }
+
+    function monthClosedCount(year){
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      if (Number(year) < currentYear) return 12;
+      if (Number(year) > currentYear) return 0;
+      return Math.max(0, now.getMonth());
+    }
+
+    function emptyTotals(){
+      return Array.from({ length: 12 }, () => 0);
+    }
+
+    function dedupeEntities(rows){
+      const map = new Map();
+      for (const row of rows || []) {
+        const key = String(row.key || "").trim().toLowerCase();
+        if (!key || map.has(key)) continue;
+        map.set(key, { key, label: row.label || row.libelle || row.key || "Entité" });
+      }
+      return Array.from(map.values());
+    }
+
+    async function loadEntities(){
+      try{
+        if (window.BudgetSupabase && typeof window.BudgetSupabase.listEntities === "function") {
+          const rows = await window.BudgetSupabase.listEntities();
+          const mapped = dedupeEntities((rows || []).map(row => ({
+            key: row.key,
+            label: row.libelle || row.key
+          })));
+          if (mapped.length) return mapped;
+        }
+      }catch(error){
+        console.warn("Entités Supabase indisponibles:", error?.message || error);
+      }
+      return DEFAULT_ENTITIES.slice();
+    }
+
+    function renderEntitySelect(){
+      const current = els.entitySelect.value || "all";
+      els.entitySelect.innerHTML = '<option value="all">Toutes les entités</option>' + state.entities.map(entity => (
+        `<option value="${escapeHtml(entity.key)}">${escapeHtml(entity.label)}</option>`
+      )).join("");
+      els.entitySelect.value = state.entities.some(entity => entity.key === current) ? current : "all";
+    }
+
+    function escapeHtml(value){
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function loadBudgetTotals(entity, year){
+      if (!window.ReportingDataUtils || !window.KentDataConfig) return emptyTotals();
+      const fileCandidates = window.KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
+      const { budgetData } = await window.ReportingDataUtils.loadBudgetData({
+        entityKey: entity.key,
+        year,
+        fileCandidates,
+        budgetConfig,
+        allowExcelFallback:false
+      });
+      return window.ReportingDataUtils.computeBudgetMonthlyTotals(budgetData);
+    }
+
+    async function loadRealTotals(entity, year){
+      const totals = emptyTotals();
+      if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return totals;
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(entity.key, year);
+      for (const row of rows || []) {
+        const index = Number(row?.mois || 0) - 1;
+        if (index < 0 || index > 11) continue;
+        totals[index] += Number(row?.montant || 0);
+      }
+      return totals;
+    }
+
+    async function loadEntity(entity, year){
+      const [budgetTotals, realTotals] = await Promise.all([
+        loadBudgetTotals(entity, year),
+        loadRealTotals(entity, year)
+      ]);
+      return {
+        ...entity,
+        budgetTotals,
+        realTotals,
+        annualBudget: budgetTotals.reduce((sum, value) => sum + Number(value || 0), 0),
+        annualReal: realTotals.reduce((sum, value) => sum + Number(value || 0), 0)
+      };
+    }
+
+    function addTotals(target, values){
+      values.forEach((value, index) => {
+        target[index] += Number(value || 0);
+      });
+    }
+
+    function sumFirst(values, count){
+      return values.slice(0, count).reduce((sum, value) => sum + Number(value || 0), 0);
+    }
+
+    function getSelectedEntities(){
+      const selected = els.entitySelect.value;
+      if (selected === "all") return state.entities.slice();
+      return state.entities.filter(entity => entity.key === selected);
+    }
+
+    function buildProjection(months, budgetTotals, realTotals, closedCount){
+      const realToDate = sumFirst(realTotals, closedCount);
+      const budgetToDate = sumFirst(budgetTotals, closedCount);
+      const rate = budgetToDate ? (realToDate - budgetToDate) / budgetToDate : 0;
+
+      const forecast = months.map((month, index) => {
+        const isClosed = index < closedCount;
+        const budget = Number(budgetTotals[index] || 0);
+        const actualOrProjected = isClosed ? Number(realTotals[index] || 0) : budget * (1 + rate);
+        const gap = actualOrProjected - budget;
+        const gapPct = budget ? (gap / budget) * 100 : null;
+        return { month, index, isClosed, budget, value: actualOrProjected, gap, gapPct, rate };
+      });
+
+      return {
+        forecast,
+        realToDate,
+        budgetToDate,
+        rate,
+        annualProjection: forecast.reduce((sum, item) => sum + Number(item.value || 0), 0),
+        annualBudget: budgetTotals.reduce((sum, value) => sum + Number(value || 0), 0)
+      };
+    }
+
+    function renderProjectionTable(months, projection, closedCount, year){
+      const headCells = months.map((month, index) => {
+        const isClosed = index < closedCount;
+        return `<th class="month-head">${escapeHtml(month.label.slice(0, 3))}
+          <span class="month-tag ${isClosed ? "actual" : "projected"}">${isClosed ? "Réel" : "Projeté"}</span>
+        </th>`;
+      }).join("");
+      els.projectionHead.innerHTML = `<tr><th class="row-label">Indicateur</th>${headCells}</tr>`;
+
+      const rows = [
+        {
+          label:"Réel / projeté",
+          className:"value",
+          render:item => money(item.value),
+          cellClass:item => item.isClosed ? "actual" : "projected",
+          title:item => item.isClosed
+            ? `${item.month.label} ${year} : réel importé Supabase.`
+            : `${item.month.label} ${year} : budget du mois ${money(item.budget)} x (1 + ${percent(item.rate * 100)}) = ${money(item.value)}.`
+        },
+        {
+          label:"Budget",
+          className:"budget",
+          render:item => money(item.budget),
+          cellClass:() => "budget",
+          title:item => `${item.month.label} ${year} : budget actif Supabase.`
+        },
+        {
+          label:"Écart valeur",
+          className:"gap",
+          render:item => signedMoney(item.gap),
+          cellClass:item => `gap ${item.gap >= 0 ? "positive" : "negative"}`,
+          title:item => `${item.month.label} ${year} : réel/projeté ${money(item.value)} - budget ${money(item.budget)}.`
+        },
+        {
+          label:"Écart %",
+          className:"gap",
+          render:item => item.gapPct === null ? "-" : `${item.gapPct >= 0 ? "+" : ""}${percent(item.gapPct)}`,
+          cellClass:item => `gap ${item.gap >= 0 ? "positive" : "negative"}`,
+          title:item => item.budget ? `${item.month.label} ${year} : écart valeur / budget du mois.` : `${item.month.label} ${year} : budget nul, pourcentage non calculable.`
+        }
+      ];
+
+      els.projectionBody.innerHTML = rows.map(row => (
+        `<tr><td class="row-label">${escapeHtml(row.label)}</td>${projection.forecast.map(item => (
+          `<td class="${escapeHtml(row.cellClass(item))}" title="${escapeHtml(row.title(item))}">${escapeHtml(row.render(item))}</td>`
+        )).join("")}</tr>`
+      )).join("");
+    }
+
+    function renderKpis(projection, closedCount, months, year){
+      const closedLabel = closedCount > 0 ? months[closedCount - 1].label : "aucun mois clôturé";
+      const gap = projection.realToDate - projection.budgetToDate;
+      els.kpiReal.textContent = money(projection.realToDate);
+      els.kpiRealHint.textContent = closedCount > 0 ? `Janvier à ${closedLabel}` : `Aucun réel clôturé sur ${year}`;
+      els.kpiBudgetDate.textContent = money(projection.budgetToDate);
+      els.kpiGap.textContent = signedMoney(gap);
+      els.kpiGapHint.textContent = projection.budgetToDate ? `Soit ${gap >= 0 ? "+" : ""}${percent(projection.rate * 100)}` : "Budget à date nul";
+      els.kpiRate.textContent = projection.budgetToDate ? `${projection.rate >= 0 ? "+" : ""}${percent(projection.rate * 100)}` : "0 %";
+      els.kpiProjection.textContent = money(projection.annualProjection);
+      els.kpiAnnualBudget.textContent = money(projection.annualBudget);
+      els.kpiGapCard.classList.toggle("good", gap >= 0);
+      els.kpiGapCard.classList.toggle("bad", gap < 0);
+    }
+
+    function renderEntityGrid(loaded, closedCount){
+      if (!loaded.length) {
+        els.entityGrid.innerHTML = '<div class="empty">Aucune entité active disponible.</div>';
+        return;
+      }
+      els.entityGrid.innerHTML = loaded.map(entity => {
+        const realDate = sumFirst(entity.realTotals, closedCount);
+        const budgetDate = sumFirst(entity.budgetTotals, closedCount);
+        const gap = realDate - budgetDate;
+        return `<div class="entity-row">
+          <b>${escapeHtml(entity.label)}</b>
+          <span>Réel à date : ${escapeHtml(money(realDate))}</span>
+          <span>Budget à date : ${escapeHtml(money(budgetDate))}</span>
+          <span class="${gap >= 0 ? "good" : "bad"}">Écart : ${escapeHtml(signedMoney(gap))}</span>
+        </div>`;
+      }).join("");
+    }
+
+    async function refresh(){
+      const year = Number(els.yearInput.value || getDefaultYear());
+      const months = window.ReportingDataUtils?.MONTHS || [
+        { label:"Janvier" }, { label:"Février" }, { label:"Mars" }, { label:"Avril" }, { label:"Mai" }, { label:"Juin" },
+        { label:"Juillet" }, { label:"Août" }, { label:"Septembre" }, { label:"Octobre" }, { label:"Novembre" }, { label:"Décembre" }
+      ];
+      const selectedEntities = getSelectedEntities();
+      const closedCount = monthClosedCount(year);
+      const closedText = closedCount > 0 ? `jusqu'à ${months[closedCount - 1].label} ${year}` : `aucun mois clôturé sur ${year}`;
+      setStatus(`Calcul en cours : réel clôturé ${closedText}, budgets actifs Supabase, projection des mois restants...`);
+      els.applyBtn.disabled = true;
+      els.reloadBtn.disabled = true;
+
+      try{
+        const results = await Promise.allSettled(selectedEntities.map(entity => loadEntity(entity, year)));
+        const loaded = [];
+        const failed = [];
+        results.forEach((result, index) => {
+          if (result.status === "fulfilled") loaded.push(result.value);
+          else {
+            failed.push(selectedEntities[index]?.label || "Entité");
+            console.warn("Projection entité impossible:", selectedEntities[index], result.reason);
+          }
+        });
+
+        const budgetTotals = emptyTotals();
+        const realTotals = emptyTotals();
+        loaded.forEach(entity => {
+          addTotals(budgetTotals, entity.budgetTotals);
+          addTotals(realTotals, entity.realTotals);
+        });
+
+        const projection = buildProjection(months, budgetTotals, realTotals, closedCount);
+        renderProjectionTable(months, projection, closedCount, year);
+        renderKpis(projection, closedCount, months, year);
+        renderEntityGrid(loaded, closedCount);
+
+        const perimeter = els.entitySelect.value === "all" ? "toutes les entités" : (loaded[0]?.label || "entité sélectionnée");
+        const rateText = projection.budgetToDate ? `${projection.rate >= 0 ? "+" : ""}${percent(projection.rate * 100)}` : "0 %";
+        if (failed.length) {
+          setStatus(`Projection calculée partiellement sur ${perimeter}. Échec : ${failed.join(", ")}. Taux appliqué : ${rateText}.`, "error");
+        } else {
+          setStatus(`Projection calculée sur ${perimeter}. Base réelle ${closedText}. Taux appliqué aux mois futurs : ${rateText}.`);
+        }
+      }catch(error){
+        console.error(error);
+        setStatus(`Impossible de charger la projection : ${error?.message || "erreur inconnue"}`, "error");
+      }finally{
+        els.applyBtn.disabled = false;
+        els.reloadBtn.disabled = false;
+      }
+    }
+
+    async function init(){
+      cacheDom();
+      els.yearInput.value = String(getDefaultYear());
+      state.entities = await loadEntities();
+      renderEntitySelect();
+      els.applyBtn.addEventListener("click", refresh);
+      els.reloadBtn.addEventListener("click", refresh);
+      els.yearInput.addEventListener("change", refresh);
+      els.entitySelect.addEventListener("change", refresh);
+      await refresh();
+    }
+
+    init().catch(error => {
+      console.error(error);
+      if (els.statusBar) setStatus(`Erreur d'initialisation : ${error?.message || "erreur inconnue"}`, "error");
+    });
+  })();
+  </script>
+</body>
+</html>

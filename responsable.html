@@ -359,6 +359,7 @@
       </div>
       <div class="top-actions">
         <span class="btn ghost small" data-session-source>Session securisee</span>
+        <a class="btn small" href="requete-commerce.html?scope=equipe">Requete commerce</a>
         <button class="btn small" type="button" data-open-team>Equipe</button>
         <button class="btn small" type="button" data-refresh-top>Synchroniser</button>
         <a class="btn danger small" href="/deconnexion">Deconnexion</a>
@@ -409,7 +410,7 @@
       <article class="kpi"><span>Reel reporting a date</span><strong data-stat="reelReportingADate">-</strong><small>Depuis les imports reels actifs</small></article>
       <article class="kpi gold"><span>Budget a date</span><strong data-stat="budgetADate">-</strong><small>Budgets actifs Supabase</small></article>
       <article class="kpi" data-gap-card><span>Ecart a date</span><strong data-stat="ecartADate">-</strong><small data-stat-sub="gapRate">Reel vs budget</small></article>
-      <article class="kpi"><span>Documents en cours</span><strong data-stat="documentsEnCours">-</strong><small data-stat-sub="documentsSplit">BDC + devis</small></article>
+      <article class="kpi"><span>Documents transmis</span><strong data-stat="documentsEnCours">-</strong><small data-stat-sub="documentsSplit">BDC + devis</small></article>
     </section>
 
     <nav class="tabs" aria-label="Navigation responsable">
@@ -474,7 +475,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Commercial</th><th>Identifiant</th><th>Rattachement</th><th>Perimetre</th><th class="num">CA mois</th><th class="num">Budget a date</th><th class="num">Documents en cours</th><th>Derniere connexion</th></tr></thead>
+            <thead><tr><th>Commercial</th><th>Identifiant</th><th>Rattachement</th><th>Perimetre</th><th class="num">CA mois</th><th class="num">Budget a date</th><th class="num">Documents transmis</th><th>Derniere connexion</th></tr></thead>
             <tbody data-team-rows></tbody>
           </table>
         </div>
@@ -627,12 +628,12 @@
         <div class="panel-head">
           <div>
             <h2>Activite mensuelle</h2>
-            <div class="sub">Visites, commandes telephone et clients travailles sur le mois selectionne.</div>
+            <div class="sub">Visites terrain, commandes telephone et clients visites sur le mois selectionne.</div>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Commercial</th><th>Rattachement</th><th class="num">Visites mois</th><th class="num">Terrain</th><th class="num">Telephone</th><th class="num">Clients</th><th>Derniere connexion</th></tr></thead>
+            <thead><tr><th>Commercial</th><th>Rattachement</th><th class="num">Visites terrain</th><th class="num">Telephone</th><th class="num">Clients visites</th><th>Derniere connexion</th></tr></thead>
             <tbody data-activity-rows></tbody>
           </table>
         </div>
@@ -1127,12 +1128,12 @@
       function renderActivityRows(){
         const rows = scopedCommercials().slice().sort((a,b) => Number(b.metrics?.visitesMois || 0) - Number(a.metrics?.visitesMois || 0));
         if (!rows.length) {
-          els.activityRows.innerHTML = '<tr><td colspan="7"><div class="empty">Aucun commercial visible.</div></td></tr>';
+          els.activityRows.innerHTML = '<tr><td colspan="6"><div class="empty">Aucun commercial visible.</div></td></tr>';
           return;
         }
         els.activityRows.innerHTML = rows.map(function(item){
           const metrics = item.metrics || {};
-          return `<tr><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.identifier)}</span></div></td><td>${escapeHtml(item.relationLabel)}</td><td class="num">${integer(metrics.visitesMois)}</td><td class="num">${integer(metrics.terrainMois)}</td><td class="num">${integer(metrics.commandesTelephoneMois)}</td><td class="num">${integer(metrics.clientsMois)}</td><td>${escapeHtml(formatDateTime(item.lastLoginAt))}</td></tr>`;
+          return `<tr><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.identifier)}</span></div></td><td>${escapeHtml(item.relationLabel)}</td><td class="num">${integer(metrics.visitesMois)}</td><td class="num">${integer(metrics.commandesTelephoneMois)}</td><td class="num">${integer(metrics.clientsMois)}</td><td>${escapeHtml(formatDateTime(item.lastLoginAt))}</td></tr>`;
         }).join("");
       }
 
@@ -1461,7 +1462,8 @@
       function statusBadge(status){
         if (status === "valide") return '<span class="chip chip-green">Valide</span>';
         if (status === "nonValide") return '<span class="chip chip-red">Non valide</span>';
-        return '<span class="chip chip-principal">En cours</span>';
+        if (status === "enCours") return '<span class="chip chip-principal">Transmis</span>';
+        return '<span class="chip chip-none">Sans statut</span>';
       }
 
       async function fetchJson(url, options){

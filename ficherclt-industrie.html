@@ -262,6 +262,7 @@
       background:rgba(34,197,94,.15);
       color:#bbf7d0;
     }
+    .document-status-badge.status-transmis,
     .document-status-badge.status-en_cours{
       border-color:rgba(245,158,11,.35);
       background:rgba(245,158,11,.14);
@@ -1382,20 +1383,22 @@
     }
 
     const DOCUMENT_STATUS_LABELS = {
-      en_cours: "En cours",
+      transmis: "Transmis",
+      en_cours: "Transmis",
       valide: "Valid\u00e9",
       non_valide: "Non valid\u00e9"
     };
-    const DOCUMENT_STATUS_PRIORITY = { non_valide: 3, en_cours: 2, valide: 1 };
+    const DOCUMENT_STATUS_PRIORITY = { non_valide: 3, transmis: 2, en_cours: 2, valide: 1 };
     const DOCUMENT_TYPE_PRIORITY = { bdc: 2, devis: 1 };
 
     function normalizeDocumentStatus(value) {
       const status = String(value || "").trim();
+      if (status === "en_cours") return "transmis";
       return Object.prototype.hasOwnProperty.call(DOCUMENT_STATUS_LABELS, status) ? status : "";
     }
 
     function getDocumentStatus(doc) {
-      return normalizeDocumentStatus(doc?.statut_validation) || (doc?.valide === true ? "valide" : "en_cours");
+      return normalizeDocumentStatus(doc?.statut_validation) || (doc?.valide === true ? "valide" : "");
     }
 
     function pickDocumentStatusForVisit(documents) {
@@ -1430,8 +1433,9 @@
       const doc = state.documentStatusByVisitId.get(String(visiteId));
       if (!doc) return "";
       const status = getDocumentStatus(doc);
+      if (!status) return "";
       const typeLabel = String(doc.type_document || "").toLowerCase() === "bdc" ? "BDC" : "Devis";
-      return `<span class="document-status-badge status-${escapeHtml(status)}"><span class="doc-kind">${escapeHtml(typeLabel)}</span>${escapeHtml(DOCUMENT_STATUS_LABELS[status] || "En cours")}</span>`;
+      return `<span class="document-status-badge status-${escapeHtml(status)}"><span class="doc-kind">${escapeHtml(typeLabel)}</span>${escapeHtml(DOCUMENT_STATUS_LABELS[status] || "Transmis")}</span>`;
     }
 
 
@@ -2223,9 +2227,9 @@
     }
 
     function updateStats(currentVisites) {
-      const terrainVisites = currentVisites.filter(visite => isTerrainVisitType(visite.type_visite));
+      const terrainVisites = currentVisites.filter(visite => isTerrainVisitType(resolveVisitTypeFromRecord(visite)));
       const orderRecords = currentVisites.filter(visite =>
-        isOrderVisitType(visite.type_visite) || Number(visite.total_commande || 0) > 0 || (visite.commandes || []).length
+        isOrderVisitType(resolveVisitTypeFromRecord(visite)) || Number(visite.total_commande || 0) > 0 || (visite.commandes || []).length
       );
       const nbVisites = terrainVisites.length;
       const caCumule = currentVisites.reduce((sum, visite) => sum + Number(visite.total_commande || 0), 0);
@@ -2258,7 +2262,7 @@
         return;
       }
 
-      const terrainVisites = currentVisites.filter(visite => isTerrainVisitType(visite.type_visite));
+      const terrainVisites = currentVisites.filter(visite => isTerrainVisitType(resolveVisitTypeFromRecord(visite)));
       dom.clientLastVisit.textContent = terrainVisites[0]
         ? formatDateLong(terrainVisites[0].date_visite)
         : "Aucune visite terrain";
@@ -2752,7 +2756,7 @@
       }
 
       dom.visitesTableBody.innerHTML = state.visites.map(visite => {
-        const isPhoneOrder = isPhoneOrderVisitType(visite.type_visite);
+        const isPhoneOrder = isPhoneOrderVisitType(resolveVisitTypeFromRecord(visite));
         let rowHtml = `
           <tr class="${isPhoneOrder ? "visit-row-phone" : ""}">
             <td class="sticky-col sticky-col-1">
@@ -2836,13 +2840,16 @@
         updateClientInsights(state.visites);
         renderAllViews();
         const salesWithoutLines = state.visites.filter(visite => isVisitWithSale(visite) && !(visite.commandes || []).length).length;
+        const terrainVisitsLoaded = state.visites.filter(visite => isTerrainVisitType(resolveVisitTypeFromRecord(visite))).length;
+        const phoneOrdersLoaded = state.visites.filter(visite => isPhoneOrderVisitType(resolveVisitTypeFromRecord(visite))).length;
+        const loadedLabel = `${terrainVisitsLoaded} visite(s) terrain${phoneOrdersLoaded ? ` + ${phoneOrdersLoaded} commande(s) telephone` : ""}`;
         if (salesWithoutLines > 0) {
           setStatus(
-            `${state.visites.length} visite(s) chargée(s). Attention: ${salesWithoutLines} visite(s) vente sans detail ligne visible.`,
+            `${loadedLabel} chargee(s). Attention: ${salesWithoutLines} vente(s) sans detail ligne visible.`,
             "warning"
           );
         } else {
-          setStatus(`${state.visites.length} visite(s) chargée(s) pour ce client.`, "success");
+          setStatus(`${loadedLabel} chargee(s) pour ce client.`, "success");
         }
       } catch (error) {
         console.error("Erreur loadVisites:", error);
@@ -3558,6 +3565,11 @@
       return `${DOCUMENTS_SECTOR}/${safeType}/${safeDate}/${suffix}-${safeFilename}`;
     }
 
+    function isDocumentStatusSchemaError(error) {
+      const message = String(error?.message || error?.details || error?.hint || "").toLowerCase();
+      return message.includes("statut_validation") || message.includes("documents_commerciaux_statut_validation_check") || message.includes("not-null");
+    }
+
     async function archiveCommercialDocument({ type, doc, filename, client, dateVisite, montantHt, devisNumber, lineCount, visitType, account = null, visitId = null }) {
       if (!doc || !filename) return false;
       await ensurePortalSessionUser();
@@ -3589,14 +3601,30 @@
         type_visite: visitType || null,
         nb_lignes: Number(lineCount || 0),
         taille_octets: Number(pdfBlob.size || 0),
+        valide: false,
+        statut_validation: null,
         ...getCommercialOwnershipPayload()
       };
 
-      const { data: insertedDocument, error: insertError } = await supabaseClient
+      let { data: insertedDocument, error: insertError } = await supabaseClient
         .from(DOCUMENTS_TABLE)
         .insert(payload)
         .select("id")
         .single();
+      if (insertError && isDocumentStatusSchemaError(insertError)) {
+        console.warn("Schema statut BDC/devis pas encore a jour, archivage en compatibilite:", insertError.message || insertError);
+        const fallbackPayload = { ...payload, statut_validation: "en_cours", valide: false };
+        const retry = await supabaseClient
+          .from(DOCUMENTS_TABLE)
+          .insert(fallbackPayload)
+          .select("id")
+          .single();
+        insertedDocument = retry.data;
+        insertError = retry.error;
+        if (!insertError) {
+          showToast("Document archive. Lance le SQL statut Transmis pour avoir un statut vide par defaut.", "warning");
+        }
+      }
       if (insertError) {
         await supabaseClient.storage.from(DOCUMENTS_BUCKET).remove([storagePath]);
         throw insertError;
@@ -4253,6 +4281,7 @@
 
       const aggregation = {};
       state.visites.forEach(visite => {
+        const isTerrainVisit = isTerrainVisitType(resolveVisitTypeFromRecord(visite));
         (visite.commandes || []).forEach(commande => {
           const produit = getProduitDisplay(commande.produit_id);
 
@@ -4268,7 +4297,7 @@
           }
 
           aggregation[commande.produit_id].quantite += Number(commande.quantite || 0);
-          aggregation[commande.produit_id].visites += 1;
+          if (isTerrainVisit) aggregation[commande.produit_id].visites += 1;
           aggregation[commande.produit_id].chiffreAffaires += Number(commande.quantite || 0) * Number(commande.prix_unitaire || 0);
         });
       });
