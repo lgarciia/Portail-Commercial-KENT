@@ -189,7 +189,10 @@ async function loadSourceRows(source, commercialScope, commercialIds) {
           "id,client_id,date_visite,note,type_visite,total_commande,commercial_user_id",
           "client_id",
           ownedClientIds,
-          { order: "date_visite.desc,id.asc" }
+          {
+            commercial_user_id: "is.null",
+            order: "date_visite.desc,id.asc"
+          }
         )
       : Promise.resolve([])
   ]);

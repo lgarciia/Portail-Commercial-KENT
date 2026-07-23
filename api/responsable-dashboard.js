@@ -285,7 +285,10 @@ async function loadSalesSource(source, commercialIds, period) {
   const [visitsByCommercial, visitsByClient] = await Promise.all([
     fetchByCommercialChunks(source.visites, visitSelect, commercialIds, visitYearParams, { date_visite_lte: "date_visite" }),
     ownedClientIds.length
-      ? fetchByChunks(source.visites, visitSelect, "client_id", ownedClientIds, visitYearParams, { date_visite_lte: "date_visite" })
+      ? fetchByChunks(source.visites, visitSelect, "client_id", ownedClientIds, {
+          ...visitYearParams,
+          commercial_user_id: "is.null"
+        }, { date_visite_lte: "date_visite" })
       : Promise.resolve([])
   ]);
   const visits = mergeRowsById([...visitsByCommercial, ...visitsByClient]);
