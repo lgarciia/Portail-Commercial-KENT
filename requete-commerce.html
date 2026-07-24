@@ -141,65 +141,152 @@
     }
     .filters{
       display:grid;
-      grid-template-columns:repeat(5,minmax(155px,1fr));
-      gap:10px;
+      grid-template-columns:repeat(10,minmax(112px,1fr));
+      gap:8px;
       align-items:start;
+      position:relative;
     }
-    @media(max-width:1280px){.filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media(max-width:760px){body{padding:12px}.filters{grid-template-columns:1fr}.topbar{align-items:flex-start}.top-actions{justify-content:flex-start}}
+    @media(max-width:1280px){.filters{grid-template-columns:repeat(10,minmax(106px,1fr));gap:7px}}
+    @media(max-width:760px){body{padding:12px}.filters{grid-template-columns:repeat(10,128px);overflow-x:auto;padding-bottom:6px}.topbar{align-items:flex-start}.top-actions{justify-content:flex-start}}
     .fbox{
-      height:198px;
+      position:relative;
+      min-width:0;
+      z-index:2;
+    }
+    .fbox.is-open{z-index:80}
+    .filterTrigger{
+      width:100%;
+      height:58px;
       display:flex;
       flex-direction:column;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(2,6,23,.28);
-      border-radius:14px;
-      padding:8px;
-      transition:border-color .18s ease, background .18s ease, box-shadow .18s ease;
+      justify-content:center;
+      gap:4px;
+      border:1px solid rgba(148,163,184,.22);
+      border-radius:16px;
+      background:
+        linear-gradient(135deg,rgba(30,41,59,.92),rgba(15,23,42,.86)),
+        radial-gradient(circle at 15% 0%,rgba(56,189,248,.12),transparent 46%);
+      color:var(--text);
+      padding:9px 10px;
+      cursor:pointer;
+      text-align:left;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 12px 28px rgba(0,0,0,.16);
+      transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease;
     }
+    .filterTrigger:hover{
+      transform:translateY(-1px);
+      border-color:rgba(56,189,248,.38);
+      background:linear-gradient(135deg,rgba(37,51,75,.96),rgba(15,23,42,.90));
+    }
+    .filterTrigger:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(56,189,248,.18),0 12px 28px rgba(0,0,0,.16)}
+    .filterTop{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+    .filterLabel{
+      min-width:0;
+      color:#94a3b8;
+      font-size:9.5px;
+      line-height:1;
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .filterBadge{
+      flex:0 0 auto;
+      max-width:58px;
+      padding:2px 6px;
+      border-radius:999px;
+      background:rgba(148,163,184,.13);
+      border:1px solid rgba(148,163,184,.16);
+      color:#cbd5e1;
+      font-size:9px;
+      font-weight:1000;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .filterValue{
+      color:#f8fafc;
+      font-size:12px;
+      line-height:1.15;
+      font-weight:950;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      padding-right:10px;
+      position:relative;
+    }
+    .filterValue::after{
+      content:"";
+      position:absolute;
+      right:0;
+      top:50%;
+      width:6px;
+      height:6px;
+      border-right:2px solid rgba(226,232,240,.72);
+      border-bottom:2px solid rgba(226,232,240,.72);
+      transform:translateY(-65%) rotate(45deg);
+      transition:transform .16s ease;
+    }
+    .fbox.is-open .filterValue::after{transform:translateY(-30%) rotate(225deg)}
+    .fbox.is-filtered .filterTrigger{
+      border-color:rgba(245,158,11,.86);
+      background:linear-gradient(135deg,rgba(62,46,17,.96),rgba(15,23,42,.90));
+      box-shadow:0 0 0 1px rgba(245,158,11,.24),0 16px 34px rgba(245,158,11,.10);
+    }
+    .fbox.is-filtered .filterLabel{color:#fcd34d}
+    .fbox.is-filtered .filterBadge{
+      color:#111827;
+      border-color:transparent;
+      background:linear-gradient(135deg,#fde68a,#f59e0b);
+    }
+    .fbox.is-empty .filterTrigger{
+      border-color:rgba(248,113,113,.70);
+      background:linear-gradient(135deg,rgba(80,20,20,.92),rgba(15,23,42,.90));
+    }
+    .filterPanel{
+      display:none;
+      position:absolute;
+      top:calc(100% + 8px);
+      left:0;
+      width:min(320px,88vw);
+      padding:10px;
+      border:1px solid rgba(148,163,184,.24);
+      border-radius:18px;
+      background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(8,15,28,.97));
+      box-shadow:0 26px 70px rgba(0,0,0,.42);
+      backdrop-filter:blur(18px);
+    }
+    .fbox.is-open .filterPanel{display:block}
+    .fbox:nth-last-child(-n+3) .filterPanel{left:auto;right:0}
     .fhead{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px;font-size:11px;font-weight:950;color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
     .headLeft{display:flex;align-items:center;gap:7px;min-width:0}
     .badge{padding:3px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(255,255,255,.75);font-weight:950;white-space:nowrap}
     .headBtns{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
-    .miniBtn{padding:5px 7px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.88);font-weight:950;font-size:11px;cursor:pointer}
-    .miniBtn:hover{background:rgba(255,255,255,.09)}
+    .miniBtn{padding:5px 7px;border-radius:9px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.06);color:#e2e8f0;font-weight:950;font-size:11px;cursor:pointer}
+    .miniBtn:hover{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.28)}
     select[multiple]{
       width:100%;
-      flex:1;
-      min-height:0;
+      height:172px;
       border-radius:12px;
-      border:1px solid rgba(203,213,225,.72);
-      background:#f8fafc;
-      color:#0f172a;
+      border:1px solid rgba(148,163,184,.22);
+      background:rgba(2,6,23,.72);
+      color:#e2e8f0;
       padding:6px;
       outline:none;
       font-weight:850;
       overflow:auto;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.80);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
     }
-    option{padding:5px 6px;color:#0f172a;background:#f8fafc}
+    option{padding:5px 6px;color:#e2e8f0;background:#0f172a;border-radius:7px;margin:1px 0}
     select[multiple]:focus{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 3px rgba(56,189,248,.14)}
     select[multiple] option:checked{background:linear-gradient(135deg,#fde68a,#f59e0b);color:#07111f;font-weight:950}
-
-    .fbox.is-filtered{
-      border-color:rgba(245,158,11,.88);
-      background:linear-gradient(180deg,rgba(245,158,11,.16),rgba(2,6,23,.30));
-      box-shadow:0 0 0 1px rgba(245,158,11,.24),0 16px 34px rgba(245,158,11,.10);
-    }
-    .fbox.is-filtered .badge{
-      color:#06111f;
-      border-color:transparent;
-      background:linear-gradient(135deg,#fde68a,#f59e0b);
-    }
-    .fbox.is-empty{
-      border-color:rgba(248,113,113,.50);
-      background:rgba(127,29,29,.16);
-    }
-    select[multiple].has-filter option:not(:checked){color:#94a3b8;background:#f1f5f9}
+    select[multiple].has-filter option:not(:checked){color:#64748b;background:#0b1220}
     select[multiple].has-filter option:checked{background:linear-gradient(135deg,#fde68a,#f59e0b);color:#07111f;font-weight:950}
     .selectedPreview{
       display:none;
-      min-height:24px;
+      min-height:22px;
       margin-top:6px;
       gap:5px;
       align-items:center;
@@ -210,8 +297,8 @@
       max-width:100%;
       padding:4px 7px;
       border-radius:999px;
-      background:#fef3c7;
-      color:#111827;
+      background:rgba(245,158,11,.16);
+      color:#fde68a;
       border:1px solid rgba(245,158,11,.50);
       font-size:10.5px;
       font-weight:950;
@@ -441,17 +528,29 @@ async function fetchPaged(table, select, options = {}){
 function buildListBox(mountId, title){
   const mount = $(mountId);
   mount.innerHTML = `
-    <div class="fhead">
-      <div class="headLeft"><div>${title}</div><div class="badge" id="${mountId}_badge">-</div></div>
-      <div class="headBtns"><button class="miniBtn" type="button" id="${mountId}_all">Tout</button><button class="miniBtn" type="button" id="${mountId}_none">Aucun</button></div>
+    <button class="filterTrigger" id="${mountId}_trigger" type="button" aria-expanded="false">
+      <span class="filterTop">
+        <span class="filterLabel">${title}</span>
+        <span class="filterBadge" id="${mountId}_badge">Tout</span>
+      </span>
+      <span class="filterValue" id="${mountId}_value">Tout</span>
+    </button>
+    <div class="filterPanel" id="${mountId}_panel">
+      <div class="fhead">
+        <div class="headLeft"><div>${title}</div><div class="badge" id="${mountId}_panelBadge">-</div></div>
+        <div class="headBtns"><button class="miniBtn" type="button" id="${mountId}_all">Tout</button><button class="miniBtn" type="button" id="${mountId}_none">Aucun</button></div>
+      </div>
+      <select id="${mountId}_sel" multiple></select>
+      <div class="selectedPreview" id="${mountId}_preview"></div>
+      <div class="cumulRow"><input type="checkbox" id="${mountId}_cumul"><label for="${mountId}_cumul">Cumul</label></div>
     </div>
-    <select id="${mountId}_sel" multiple></select>
-    <div class="selectedPreview" id="${mountId}_preview"></div>
-    <div class="cumulRow"><input type="checkbox" id="${mountId}_cumul"><label for="${mountId}_cumul">Cumul</label></div>
   `;
+  const trigger = $(`${mountId}_trigger`);
   const sel = $(`${mountId}_sel`);
   const cumul = $(`${mountId}_cumul`);
   const badge = $(`${mountId}_badge`);
+  const panelBadge = $(`${mountId}_panelBadge`);
+  const valueLabel = $(`${mountId}_value`);
   const preview = $(`${mountId}_preview`);
   const btnAll = $(`${mountId}_all`);
   const btnNone = $(`${mountId}_none`);
@@ -470,12 +569,27 @@ function buildListBox(mountId, title){
     const selected = sel.selectedOptions.length;
     const filtered = total > 0 && selected > 0 && selected < total;
     const empty = total > 0 && selected === 0;
-    if (!total) badge.textContent = "0/0";
-    else if (empty) badge.textContent = `0/${total}`;
-    else if (filtered) badge.textContent = `Filtré ${selected}/${total}`;
-    else badge.textContent = "Tout";
-
     const selectedLabels = [...sel.selectedOptions].map(option => option.textContent || option.value);
+    if (!total) {
+      badge.textContent = "0";
+      panelBadge.textContent = "0/0";
+      valueLabel.textContent = "Aucune donnée";
+    } else if (empty) {
+      badge.textContent = "Aucun";
+      panelBadge.textContent = `0/${total}`;
+      valueLabel.textContent = "Aucune sélection";
+    } else if (filtered) {
+      badge.textContent = `${selected}/${total}`;
+      panelBadge.textContent = `${selected}/${total}`;
+      const visibleLabels = selectedLabels.slice(0, 2);
+      const rest = selectedLabels.length - visibleLabels.length;
+      valueLabel.textContent = visibleLabels.join(", ") + (rest > 0 ? ` +${rest}` : "");
+    } else {
+      badge.textContent = "Tout";
+      panelBadge.textContent = `${selected}/${total}`;
+      valueLabel.textContent = "Tout";
+    }
+
     if (filtered) {
       const visibleLabels = selectedLabels.slice(0, 2);
       const rest = selectedLabels.length - visibleLabels.length;
@@ -511,7 +625,23 @@ function buildListBox(mountId, title){
   cumul.addEventListener("change", markQueryDirty);
   btnAll.addEventListener("click", () => { selectAll(); cascadeFrom(mountId); markQueryDirty(); });
   btnNone.addEventListener("click", () => { selectNone(); cascadeFrom(mountId); markQueryDirty(); });
+  trigger.addEventListener("click", event => {
+    event.stopPropagation();
+    const shouldOpen = !mount.classList.contains("is-open");
+    closeAllFilterPanels(mountId);
+    mount.classList.toggle("is-open", shouldOpen);
+    trigger.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+  });
+  mount.addEventListener("click", event => event.stopPropagation());
   return { id: mountId, setOptions, getOptions, getSelected, setSelected, selectAll, selectNone, getCumul: () => cumul.checked, setCumul: value => cumul.checked = Boolean(value) };
+}
+function closeAllFilterPanels(exceptId = ""){
+  document.querySelectorAll(".fbox.is-open").forEach(box => {
+    if (box.id === exceptId) return;
+    box.classList.remove("is-open");
+    const trigger = box.querySelector(".filterTrigger");
+    if (trigger) trigger.setAttribute("aria-expanded", "false");
+  });
 }
 let rows = [];
 let lastResult = [];
@@ -890,6 +1020,10 @@ $("reloadBtn").addEventListener("click", loadData);
 $("exportBtn").addEventListener("click", exportCSV);
 document.querySelectorAll(".quickViewBtn").forEach(button => {
   button.addEventListener("click", () => applyPreset(button.dataset.preset));
+});
+document.addEventListener("click", () => closeAllFilterPanels());
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeAllFilterPanels();
 });
 loadData();
 </script>
