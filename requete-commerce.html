@@ -141,20 +141,21 @@
     }
     .filters{
       display:grid;
-      grid-template-columns:repeat(10,minmax(0,1fr));
-      gap:8px;
+      grid-template-columns:repeat(5,minmax(155px,1fr));
+      gap:10px;
       align-items:start;
     }
     @media(max-width:1280px){.filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media(max-width:760px){body{padding:12px}.filters{grid-template-columns:1fr}.topbar{align-items:flex-start}.top-actions{justify-content:flex-start}}
     .fbox{
-      height:188px;
+      height:198px;
       display:flex;
       flex-direction:column;
       border:1px solid rgba(255,255,255,.10);
       background:rgba(2,6,23,.28);
       border-radius:14px;
       padding:8px;
+      transition:border-color .18s ease, background .18s ease, box-shadow .18s ease;
     }
     .fhead{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px;font-size:11px;font-weight:950;color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
     .headLeft{display:flex;align-items:center;gap:7px;min-width:0}
@@ -162,19 +163,81 @@
     .headBtns{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
     .miniBtn{padding:5px 7px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.88);font-weight:950;font-size:11px;cursor:pointer}
     .miniBtn:hover{background:rgba(255,255,255,.09)}
-    select[multiple]{width:100%;flex:1;min-height:0;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);color:var(--text);padding:6px;outline:none;font-weight:800;overflow:auto}
-    option{padding:4px}
+    select[multiple]{
+      width:100%;
+      flex:1;
+      min-height:0;
+      border-radius:12px;
+      border:1px solid rgba(203,213,225,.72);
+      background:#f8fafc;
+      color:#0f172a;
+      padding:6px;
+      outline:none;
+      font-weight:850;
+      overflow:auto;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.80);
+    }
+    option{padding:5px 6px;color:#0f172a;background:#f8fafc}
     select[multiple]:focus{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 3px rgba(56,189,248,.14)}
-    select[multiple] option:checked{background:rgba(245,158,11,.78);color:#101827;font-weight:950}
+    select[multiple] option:checked{background:linear-gradient(135deg,#fde68a,#f59e0b);color:#07111f;font-weight:950}
 
+    .fbox.is-filtered{
+      border-color:rgba(245,158,11,.88);
+      background:linear-gradient(180deg,rgba(245,158,11,.16),rgba(2,6,23,.30));
+      box-shadow:0 0 0 1px rgba(245,158,11,.24),0 16px 34px rgba(245,158,11,.10);
+    }
+    .fbox.is-filtered .badge{
+      color:#06111f;
+      border-color:transparent;
+      background:linear-gradient(135deg,#fde68a,#f59e0b);
+    }
     .fbox.is-empty{
       border-color:rgba(248,113,113,.50);
       background:rgba(127,29,29,.16);
     }
-    select[multiple].has-filter option:not(:checked){color:rgba(232,240,255,.38);background:rgba(0,0,0,.14)}
-    select[multiple].has-filter option:checked{background:rgba(245,158,11,.86);color:#101827;font-weight:950;font-size:1.05em}
+    select[multiple].has-filter option:not(:checked){color:#94a3b8;background:#f1f5f9}
+    select[multiple].has-filter option:checked{background:linear-gradient(135deg,#fde68a,#f59e0b);color:#07111f;font-weight:950}
+    .selectedPreview{
+      display:none;
+      min-height:24px;
+      margin-top:6px;
+      gap:5px;
+      align-items:center;
+      overflow:hidden;
+    }
+    .selectedPreview.is-visible{display:flex}
+    .selectionPill{
+      max-width:100%;
+      padding:4px 7px;
+      border-radius:999px;
+      background:#fef3c7;
+      color:#111827;
+      border:1px solid rgba(245,158,11,.50);
+      font-size:10.5px;
+      font-weight:950;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
     .cumulRow{margin-top:6px;display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:900;font-size:11px}
     .genRow{display:flex;justify-content:center;margin-top:14px;gap:10px;flex-wrap:wrap}
+    .results-card.is-idle .resultContent{display:none}
+    .results-card:not(.is-idle) .idlePanel{display:none}
+    .idlePanel{
+      min-height:168px;
+      border:1px dashed rgba(148,163,184,.26);
+      border-radius:16px;
+      background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(245,158,11,.07));
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      padding:24px;
+      color:var(--muted);
+    }
+    .idlePanel b{display:block;color:var(--text);font-size:18px;margin-bottom:6px}
+    .idlePanel span{max-width:620px;line-height:1.45;font-weight:800}
     .tableWrap{overflow-x:hidden;overflow-y:auto;border-radius:16px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.34);max-height:62vh}
     table{border-collapse:collapse;width:100%;min-width:0;table-layout:fixed}
     th,td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
@@ -196,7 +259,7 @@
     <div class="brand">
       <div class="logo"></div>
       <div class="title">
-        <b id="pageTitle">Requete Commerce (ventes reelles)</b>
+        <b id="pageTitle">Requête Commerce (ventes réelles)</b>
         <span id="pageSubtitle">Auto + Industrie depuis Supabase - filtres en colonnes, cumul, tri CA et export CSV</span>
       </div>
     </div>
@@ -212,9 +275,9 @@
     <div class="meta">
       <span class="chip"><span class="dot" id="dotStatus"></span><span id="status">Chargement...</span></span>
       <span class="chip"><span class="dot ok"></span><span>Source : <b>Supabase Auto + Industrie</b></span></span>
-      <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes : commercial + 9 filtres + quantite + CA</span></span>
+      <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes : commercial + 9 filtres + quantité + CA</span></span>
     </div>
-    <div class="small">Les ventes telephone sont incluses. Le CA est calcule comme dans Mes ventes et Reporting global : quantite x prix unitaire.</div>
+    <div class="small">Les ventes téléphone sont incluses. Le CA est calculé comme dans Mes ventes et Reporting global : quantité x prix unitaire.</div>
   </div>
 
   <div class="card">
@@ -239,21 +302,27 @@
       <div class="fbox" id="boxDes"></div>
     </div>
     <div class="genRow">
-      <button class="btn primary" id="genBtn" type="button">Generer</button>
+      <button class="btn primary" id="genBtn" type="button">Générer</button>
     </div>
   </div>
 
-  <div class="card">
-    <div class="tableWrap">
-      <table>
-        <thead id="thead"></thead>
-        <tbody id="tbody"><tr><td style="color:var(--muted)">Chargement des donnees...</td></tr></tbody>
-      </table>
+  <div class="card results-card is-idle" id="resultCard">
+    <div class="idlePanel" id="idlePanel">
+      <b>Aucun résultat affiché</b>
+      <span>Choisis tes filtres puis clique sur Générer. La page reste plus légère tant que tu ne demandes pas le calcul.</span>
     </div>
-    <div class="kpis">
-      <div class="kpi"><div class="k">Lignes resultat</div><div class="v" id="kpiRows">-</div></div>
-      <div class="kpi"><div class="k">Quantite totale</div><div class="v" id="kpiQty">-</div></div>
-      <div class="kpi"><div class="k">CA total</div><div class="v" id="kpiCA">-</div></div>
+    <div class="resultContent">
+      <div class="tableWrap">
+        <table>
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="k">Lignes résultat</div><div class="v" id="kpiRows">-</div></div>
+        <div class="kpi"><div class="k">Quantité totale</div><div class="v" id="kpiQty">-</div></div>
+        <div class="kpi"><div class="k">CA total</div><div class="v" id="kpiCA">-</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -267,7 +336,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const PAGE_SIZE = 1000;
 const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
 const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
-const MONTHS_FR = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"];
+const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR" });
 const SOURCES = [
   { key:"auto", label:"Auto", tables:{ clients:"clients", produits:"produits", visites:"visites", lignes:"visite_commandes" } },
@@ -275,8 +344,8 @@ const SOURCES = [
 ];
 const COLS = {
   COMMERCIAL:"Commercial",
-  ACTIVITY:"Activite",
-  YEAR:"Annee",
+  ACTIVITY:"Activité",
+  YEAR:"Année",
   MONTH:"Mois",
   DATE:"Date",
   TYPE:"Type de vente",
@@ -284,7 +353,7 @@ const COLS = {
   CLIENT:"Client",
   REF:"Reference Produits",
   DES:"Designations",
-  QTY:"Quantite",
+  QTY:"Quantité",
   CA:"CA HT"
 };
 const $ = id => document.getElementById(id);
@@ -340,10 +409,10 @@ function resolveVisitTypeFromRecord(visite){
   return type;
 }
 function getVisitTypeLabel(type){
-  if (type === VISIT_TYPE_PHONE_ORDER) return "Commande telephone";
+  if (type === VISIT_TYPE_PHONE_ORDER) return "Commande téléphone";
   if (type === "vente") return "Vente terrain";
   if (type === "passage_sans_vente") return "Passage sans vente";
-  if (type === "client_ferme") return "Client ferme";
+  if (type === "client_ferme") return "Client fermé";
   return type || "Vente";
 }
 function isOrderVisit(visite){
@@ -377,11 +446,13 @@ function buildListBox(mountId, title){
       <div class="headBtns"><button class="miniBtn" type="button" id="${mountId}_all">Tout</button><button class="miniBtn" type="button" id="${mountId}_none">Aucun</button></div>
     </div>
     <select id="${mountId}_sel" multiple></select>
+    <div class="selectedPreview" id="${mountId}_preview"></div>
     <div class="cumulRow"><input type="checkbox" id="${mountId}_cumul"><label for="${mountId}_cumul">Cumul</label></div>
   `;
   const sel = $(`${mountId}_sel`);
   const cumul = $(`${mountId}_cumul`);
   const badge = $(`${mountId}_badge`);
+  const preview = $(`${mountId}_preview`);
   const btnAll = $(`${mountId}_all`);
   const btnNone = $(`${mountId}_none`);
   function syncFilterVisualState(){
@@ -395,7 +466,27 @@ function buildListBox(mountId, title){
     sel.classList.toggle("has-empty", empty);
   }
   function updateBadge(){
-    badge.textContent = sel.options.length ? `${sel.selectedOptions.length}/${sel.options.length}` : "0/0";
+    const total = sel.options.length;
+    const selected = sel.selectedOptions.length;
+    const filtered = total > 0 && selected > 0 && selected < total;
+    const empty = total > 0 && selected === 0;
+    if (!total) badge.textContent = "0/0";
+    else if (empty) badge.textContent = `0/${total}`;
+    else if (filtered) badge.textContent = `Filtré ${selected}/${total}`;
+    else badge.textContent = "Tout";
+
+    const selectedLabels = [...sel.selectedOptions].map(option => option.textContent || option.value);
+    if (filtered) {
+      const visibleLabels = selectedLabels.slice(0, 2);
+      const rest = selectedLabels.length - visibleLabels.length;
+      preview.innerHTML = visibleLabels
+        .map(label => `<span class="selectionPill" title="${escapeHtml(label)}">${escapeHtml(label)}</span>`)
+        .join("") + (rest > 0 ? `<span class="selectionPill">+${rest}</span>` : "");
+      preview.classList.add("is-visible");
+    } else {
+      preview.innerHTML = "";
+      preview.classList.remove("is-visible");
+    }
     syncFilterVisualState();
   }
   function selectAll(){ [...sel.options].forEach(option => option.selected = true); updateBadge(); }
@@ -416,9 +507,10 @@ function buildListBox(mountId, title){
     }
     updateBadge();
   }
-  sel.addEventListener("change", () => { updateBadge(); cascadeFrom(mountId); });
-  btnAll.addEventListener("click", () => { selectAll(); cascadeFrom(mountId); });
-  btnNone.addEventListener("click", () => { selectNone(); cascadeFrom(mountId); });
+  sel.addEventListener("change", () => { updateBadge(); cascadeFrom(mountId); markQueryDirty(); });
+  cumul.addEventListener("change", markQueryDirty);
+  btnAll.addEventListener("click", () => { selectAll(); cascadeFrom(mountId); markQueryDirty(); });
+  btnNone.addEventListener("click", () => { selectNone(); cascadeFrom(mountId); markQueryDirty(); });
   return { id: mountId, setOptions, getOptions, getSelected, setSelected, selectAll, selectNone, getCumul: () => cumul.checked, setCumul: value => cumul.checked = Boolean(value) };
 }
 let rows = [];
@@ -427,15 +519,15 @@ let lastHeaders = [];
 let sortKey = "ca";
 let sortAsc = false;
 const boxCommercial = buildListBox("boxCommercial", "Commercial");
-const boxActivity = buildListBox("boxActivity", "Activite");
-const boxYear = buildListBox("boxYear", "Annee");
+const boxActivity = buildListBox("boxActivity", "Activité");
+const boxYear = buildListBox("boxYear", "Année");
 const boxMonth = buildListBox("boxMonth", "Mois");
 const boxDate = buildListBox("boxDate", "Date");
 const boxType = buildListBox("boxType", "Type");
 const boxClientInt = buildListBox("boxClientInt", "N client");
 const boxClient = buildListBox("boxClient", "Client");
-const boxRef = buildListBox("boxRef", "Reference");
-const boxDes = buildListBox("boxDes", "Designation");
+const boxRef = buildListBox("boxRef", "Référence");
+const boxDes = buildListBox("boxDes", "Désignation");
 const chain = [
   { box:boxCommercial, key:"COMMERCIAL", labelFn:null, sortFn:null },
   { box:boxActivity, key:"ACTIVITY", labelFn:null, sortFn:null },
@@ -488,12 +580,12 @@ function hydratePageForSession(user, scope = null){
   isTeamQuery = user?.role === "admin" || user?.role === "responsable";
   $("homeLink").href = homePathForUser(user);
   $("homeLink").textContent = homeLabelForUser(user);
-  $("pageTitle").textContent = isTeamQuery ? "Requete Commerce equipe" : "Requete Commerce (ventes reelles)";
+  $("pageTitle").textContent = isTeamQuery ? "Requête Commerce équipe" : "Requête Commerce (ventes réelles)";
   $("pageSubtitle").textContent = isTeamQuery
-    ? "Ventes reelles cumulees Auto + Industrie - lecture equipe selon ton role"
+    ? "Ventes réelles cumulées Auto + Industrie - lecture équipe selon ton rôle"
     : "Auto + Industrie depuis Supabase - filtres en colonnes, cumul, tri CA et export CSV";
   if (scope?.commercialCount !== undefined) {
-    $("colsDebug").textContent = `${scope.commercialCount} commercial(aux) visible(s) - commercial + 9 filtres + quantite + CA`;
+    $("colsDebug").textContent = `${scope.commercialCount} commercial(aux) visible(s) - commercial + 9 filtres + quantité + CA`;
   }
 }
 function setBoxSelection(box, values){
@@ -556,20 +648,21 @@ function applyPreset(presetKey){
   }
 
   setPresetActive(presetKey);
-  generate();
+  renderIdle("Vue rapide appliquée. Vérifie la sélection puis clique sur Générer pour afficher les résultats.");
 }
 function buildKey(row, colsList){ return colsList.map(col => `${col}=${row[col] ?? ""}`).join("||"); }
 function prettyHeader(header){ return header; }
 function generate(){
   if (!rows.length) return;
+  $("resultCard").classList.remove("is-idle");
   let filtered = rows;
   for (const item of chain){
     const colName = COLS[item.key];
     const selected = new Set(item.box.getSelected());
-    if (!colName || selected.size === 0){ renderEmpty("Selection vide sur une colonne."); return; }
+    if (!colName || selected.size === 0){ renderEmpty("Sélection vide sur une colonne."); return; }
     filtered = filtered.filter(row => selected.has(String(row[colName] ?? "").trim()));
   }
-  if (!filtered.length){ renderEmpty("Aucune donnee pour cette requete."); return; }
+  if (!filtered.length){ renderEmpty("Aucune donnée pour cette requête."); return; }
   const groupCols = chain.filter(item => !item.box.getCumul()).map(item => COLS[item.key]).filter(Boolean);
   const colQ = COLS.QTY;
   const colCA = COLS.CA;
@@ -601,7 +694,24 @@ function generate(){
   renderTable(groupCols, colQ, colCA, result, totalQty, totalCA);
   $("exportBtn").disabled = result.length === 0;
 }
+function renderIdle(message){
+  $("resultCard").classList.add("is-idle");
+  $("idlePanel").innerHTML = `<b>Aucun résultat affiché</b><span>${escapeHtml(message || "Choisis tes filtres puis clique sur Générer.")}</span>`;
+  $("thead").innerHTML = "";
+  $("tbody").innerHTML = "";
+  $("kpiRows").textContent = "-";
+  $("kpiQty").textContent = "-";
+  $("kpiCA").textContent = "-";
+  $("exportBtn").disabled = true;
+  lastResult = [];
+  lastHeaders = [];
+}
+function markQueryDirty(){
+  if (!rows.length) return;
+  renderIdle("Filtres modifiés. Clique sur Générer pour recalculer la requête.");
+}
 function renderEmpty(message){
+  $("resultCard").classList.remove("is-idle");
   $("thead").innerHTML = "";
   $("tbody").innerHTML = `<tr><td style="color:var(--muted)">${escapeHtml(message)}</td></tr>`;
   $("kpiRows").textContent = "-";
@@ -746,8 +856,8 @@ function populateFilters(){
   }
 }
 async function loadData(){
-  setStatus("warn", "Chargement des ventes reelles...");
-  renderEmpty("Chargement des donnees...");
+  setStatus("warn", "Chargement des filtres...");
+  renderIdle("Chargement des filtres Supabase en cours...");
   $("exportBtn").disabled = true;
   $("genBtn").disabled = true;
   try{
@@ -760,9 +870,9 @@ async function loadData(){
       rows = sourceRows.flat().sort((a,b) => String(b[COLS.DATE]).localeCompare(String(a[COLS.DATE])));
     }
     populateFilters();
-    setStatus("ok", `${fmtNumber(rows.length)} ligne(s) de vente chargee(s).`);
-    if (!isTeamQuery) $("colsDebug").textContent = `Auto + Industrie - ${fmtNumber(rows.length)} lignes reelles`;
-    generate();
+    setStatus("ok", `${fmtNumber(rows.length)} ligne(s) prête(s). Clique sur Générer pour lancer la requête.`);
+    if (!isTeamQuery) $("colsDebug").textContent = `Auto + Industrie - ${fmtNumber(rows.length)} lignes réelles`;
+    renderIdle("Filtres prêts. Aucun tableau n'est calculé tant que tu ne cliques pas sur Générer.");
   }catch(error){
     console.error(error);
     rows = [];
