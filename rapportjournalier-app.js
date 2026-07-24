@@ -243,9 +243,9 @@
     points.push(
       "Volume du jour : " +
         formatNumber(stats.totalQuantite) +
-        " unite(s) vendues ou saisies et " +
+        " unité(s) vendues ou saisies et " +
         formatNumber(stats.totalStock) +
-        " unite(s) de stock client observees."
+        " unité(s) de stock client observées."
     );
 
     points.push(
@@ -255,7 +255,7 @@
         formatNumber(stats.nbJaunes) +
         " vigilance(s) jaune(s) et " +
         formatNumber(stats.nbVerts) +
-        " opportunite(s) verte(s)."
+        " opportunité(s) verte(s)."
     );
 
     if (stats.topClients.length) {
@@ -266,7 +266,7 @@
           formatCurrency(stats.topClients[0].ca) +
           " de CA et " +
           formatNumber(stats.topClients[0].quantity) +
-          " unite(s) travaillees."
+          " unité(s) travaillees."
       );
     }
 
@@ -280,7 +280,7 @@
           formatCurrency(stats.topProducts[0].ca) +
           " et " +
           formatNumber(stats.topProducts[0].quantity) +
-          " unite(s)."
+          " unité(s)."
       );
     }
 
@@ -658,7 +658,7 @@
           escapeHtml(buildColorSummary(product)) +
           "</div>" +
           "</div>" +
-          '<div class="client-product-value"><small>Quantite</small>' +
+          '<div class="client-product-value"><small>Quantité</small>' +
           formatNumber(product.quantity) +
           "</div>" +
           '<div class="client-product-value"><small>Stock</small>' +
@@ -740,7 +740,7 @@
           '<span class="visit-stat-chip">Lignes : ' +
           formatNumber(client.lines) +
           "</span>" +
-          '<span class="visit-stat-chip">Quantite : ' +
+          '<span class="visit-stat-chip">Quantité : ' +
           formatNumber(client.quantity) +
           "</span>" +
           '<span class="visit-stat-chip">Stock : ' +
@@ -788,12 +788,12 @@
     lines.push("- Taux transformation : " + formatAverage(reportStats.tauxTransformation) + "%");
     lines.push("- Clients : " + formatNumber(reportStats.nbClients));
     lines.push("- Lignes produits : " + formatNumber(reportStats.nbLignes));
-    lines.push("- Quantite totale : " + formatNumber(reportStats.totalQuantite));
-    lines.push("- Stock observe : " + formatNumber(reportStats.totalStock));
+    lines.push("- Quantité totale : " + formatNumber(reportStats.totalQuantite));
+    lines.push("- Stock observé : " + formatNumber(reportStats.totalStock));
     lines.push("- CA du jour : " + formatCurrency(reportStats.totalCA));
     lines.push("- Alertes rouges : " + formatNumber(reportStats.nbRouges));
     lines.push("- Vigilances jaunes : " + formatNumber(reportStats.nbJaunes));
-    lines.push("- Opportunites vertes : " + formatNumber(reportStats.nbVerts));
+    lines.push("- Opportunités vertes : " + formatNumber(reportStats.nbVerts));
 
     if (inputs.globalComment) {
       lines.push("");
@@ -825,7 +825,7 @@
             formatNumber(client.visits) +
             " | Lignes " +
             formatNumber(client.lines) +
-            " | Quantite " +
+            " | Quantité " +
             formatNumber(client.quantity) +
             " | Stock " +
             formatNumber(client.stock) +
@@ -872,8 +872,8 @@
       buildPreviewSummaryCard("Transfo", formatAverage(reportStats.tauxTransformation) + "%") +
       buildPreviewSummaryCard("Clients", formatNumber(reportStats.nbClients)) +
       buildPreviewSummaryCard("Lignes produits", formatNumber(reportStats.nbLignes)) +
-      buildPreviewSummaryCard("Quantite totale", formatNumber(reportStats.totalQuantite)) +
-      buildPreviewSummaryCard("Stock observe", formatNumber(reportStats.totalStock)) +
+      buildPreviewSummaryCard("Quantité totale", formatNumber(reportStats.totalQuantite)) +
+      buildPreviewSummaryCard("Stock observé", formatNumber(reportStats.totalStock)) +
       buildPreviewSummaryCard("CA du jour", formatCurrency(reportStats.totalCA)) +
       "</div>"
     );
@@ -918,7 +918,7 @@
       '<div class="preview-stat-row">' +
       buildPreviewStat("Visites", formatNumber(client.visits)) +
       buildPreviewStat("Lignes", formatNumber(client.lines)) +
-      buildPreviewStat("Quantite", formatNumber(client.quantity)) +
+      buildPreviewStat("Quantité", formatNumber(client.quantity)) +
       buildPreviewStat("Stock", formatNumber(client.stock)) +
       buildPreviewStat("Rouges", formatNumber(client.reds)) +
       buildPreviewStat("Verts", formatNumber(client.greens)) +
@@ -1153,7 +1153,7 @@
       '<h1 class="title">' +
       escapeHtml(inputs.reportTitle) +
       "</h1>" +
-      '<p class="subtext">Vue de synthese du rapport journalier avec chiffres globaux et recapitulatif par client.</p>' +
+      '<p class="subtext">Vue de synthèse du rapport journalier avec chiffres globaux et récapitulatif par client.</p>' +
       "</div></div>" +
       "<div>" +
       '<div class="meta">Date : ' +
@@ -1176,14 +1176,14 @@
       "<tr><th>Visites avec vente</th><td>" + escapeHtml(formatNumber(reportStats.nbVisitesAvecVente)) + "</td></tr>" +
       "<tr><th>Visites sans vente</th><td>" + escapeHtml(formatNumber(reportStats.nbVisitesSansVente)) + "</td></tr>" +
       "<tr><th>Taux transformation</th><td>" + escapeHtml(formatAverage(reportStats.tauxTransformation) + "%") + "</td></tr>" +
-      "<tr><th>Clients visites</th><td>" + escapeHtml(formatNumber(reportStats.nbClients)) + "</td></tr>" +
+      "<tr><th>Clients visités</th><td>" + escapeHtml(formatNumber(reportStats.nbClients)) + "</td></tr>" +
       "<tr><th>Lignes produits</th><td>" + escapeHtml(formatNumber(reportStats.nbLignes)) + "</td></tr>" +
-      "<tr><th>Quantite totale</th><td>" + escapeHtml(formatNumber(reportStats.totalQuantite)) + "</td></tr>" +
-      "<tr><th>Stock observe</th><td>" + escapeHtml(formatNumber(reportStats.totalStock)) + "</td></tr>" +
+      "<tr><th>Quantité totale</th><td>" + escapeHtml(formatNumber(reportStats.totalQuantite)) + "</td></tr>" +
+      "<tr><th>Stock observé</th><td>" + escapeHtml(formatNumber(reportStats.totalStock)) + "</td></tr>" +
       "<tr><th>CA du jour</th><td>" + escapeHtml(formatCurrency(reportStats.totalCA)) + "</td></tr>" +
       "<tr><th>Alertes rouges</th><td>" + escapeHtml(formatNumber(reportStats.nbRouges)) + "</td></tr>" +
       "<tr><th>Vigilances jaunes</th><td>" + escapeHtml(formatNumber(reportStats.nbJaunes)) + "</td></tr>" +
-      "<tr><th>Opportunites vertes</th><td>" + escapeHtml(formatNumber(reportStats.nbVerts)) + "</td></tr>" +
+      "<tr><th>Opportunités vertes</th><td>" + escapeHtml(formatNumber(reportStats.nbVerts)) + "</td></tr>" +
       "</tbody></table>" +
       (inputs.globalComment
         ? '<div class="note-item" style="margin-top:14px;"><strong>Commentaire global :</strong> ' + escapeHtml(inputs.globalComment) + "</div>"
@@ -1194,8 +1194,8 @@
       executiveHtml +
       "</ul>" +
       "</section>" +
-      '<section class="section"><div class="section-title">Recapitulatif par client</div>' +
-      '<table class="client-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantite</th><th>Stock</th><th>CA</th></tr></thead><tbody>' +
+      '<section class="section"><div class="section-title">Récapitulatif par client</div>' +
+      '<table class="client-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantité</th><th>Stock</th><th>CA</th></tr></thead><tbody>' +
       clientRowsHtml +
       "</tbody></table>" +
       "</section>" +
@@ -1255,12 +1255,12 @@
       ["Visites avec vente", formatNumber(reportStats.nbVisitesAvecVente)],
       ["Visites sans vente", formatNumber(reportStats.nbVisitesSansVente)],
       ["Taux transformation", formatAverage(reportStats.tauxTransformation) + "%"],
-      ["Quantite totale", formatNumber(reportStats.totalQuantite) + " unite(s)"],
-      ["Stock observe", formatNumber(reportStats.totalStock) + " unite(s)"],
+      ["Quantité totale", formatNumber(reportStats.totalQuantite) + " unité(s)"],
+      ["Stock observé", formatNumber(reportStats.totalStock) + " unité(s)"],
       ["Moyenne lignes / visite", formatAverage(reportStats.avgLinesPerVisit)],
       ["Alertes rouges", formatNumber(reportStats.nbRouges)],
       ["Vigilances jaunes", formatNumber(reportStats.nbJaunes)],
-      ["Opportunites vertes", formatNumber(reportStats.nbVerts)]
+      ["Opportunités vertes", formatNumber(reportStats.nbVerts)]
     ];
 
     return rows
@@ -1472,7 +1472,7 @@
       '<h1 class="pdf-title">' +
       escapeHtml(inputs.reportTitle) +
       "</h1>" +
-      '<div class="pdf-subtitle">Rapport journalier de synthese avec les indicateurs globaux et le recapitulatif par client.</div>' +
+      '<div class="pdf-subtitle">Rapport journalier de synthèse avec les indicateurs globaux et le récapitulatif par client.</div>' +
       "</div>" +
       "</div>" +
       '<div class="pdf-meta">Date : ' +
@@ -1493,7 +1493,7 @@
       '<div class="pdf-section"><div class="pdf-section-title">Lecture commerciale</div><ul class="pdf-bullets">' +
       executiveHtml +
       "</ul></div>" +
-      '<div class="pdf-section"><div class="pdf-section-title">Recapitulatif par client</div><table class="pdf-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantite</th><th>Stock</th><th>CA</th></tr></thead><tbody>' +
+      '<div class="pdf-section"><div class="pdf-section-title">Récapitulatif par client</div><table class="pdf-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantité</th><th>Stock</th><th>CA</th></tr></thead><tbody>' +
       clientRowsHtml +
       "</tbody></table></div>" +
       (notesHtml
@@ -1621,7 +1621,7 @@
     if (!ready) return;
 
     try {
-      setStatus("Generation du PDF en cours...");
+      setStatus("Génération du PDF en cours...");
 
       var pdfContainer = document.getElementById("pdfReport");
       pdfContainer.innerHTML = buildPdfHtml();
@@ -1649,7 +1649,7 @@
       console.error("Erreur export PDF:", error);
       document.getElementById("pdfReport").style.display = "none";
       setStatus("Erreur pendant la generation du PDF.");
-      alert("Impossible de generer le PDF.");
+      alert("Impossible de générer le PDF.");
     }
   }
 
@@ -1663,7 +1663,7 @@
     renderSummary(reportStats);
     renderInsights(reportStats);
     renderPreview([]);
-    setStatus("Pret. Choisis une date puis charge les visites.");
+    setStatus("Prêt. Choisis une date puis charge les visites.");
   }
 
   window.chargerRapportJournalier = chargerRapportJournalier;
