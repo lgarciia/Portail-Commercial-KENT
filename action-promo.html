@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Action Promo - Module preparatoire</title>
+  <script src="./shared-ui.js"></script>
+  <script src="./commercial-scope.js"></script>
+  <link rel="stylesheet" href="./shared-theme.css">
+  <style>
+    :root{
+      --bg:#06111f;
+      --panel:rgba(15,23,42,.84);
+      --panel-soft:rgba(15,23,42,.62);
+      --line:rgba(148,163,184,.20);
+      --text:#e8f0ff;
+      --muted:#9fb1ca;
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --gold:#f59e0b;
+      --red:#ef4444;
+      --shadow:0 24px 70px rgba(0,0,0,.34);
+      --r:20px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:"Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 12% -5%, rgba(56,189,248,.18), transparent 32%),
+        radial-gradient(circle at 88% 0%, rgba(245,158,11,.16), transparent 34%),
+        radial-gradient(circle at 70% 105%, rgba(34,197,94,.12), transparent 36%),
+        linear-gradient(135deg,#06111f 0%,#081827 52%,#04101c 100%);
+      padding:18px;
+    }
+    .wrap{max-width:1540px;margin:0 auto}
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      padding:18px;
+      border:1px solid var(--line);
+      border-radius:26px;
+      background:linear-gradient(180deg,rgba(15,23,42,.90),rgba(8,15,28,.82));
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(16px);
+    }
+    .brand{display:flex;align-items:center;gap:13px;min-width:0}
+    .logo{
+      width:46px;height:46px;border-radius:16px;
+      background:linear-gradient(135deg,rgba(245,158,11,.95),rgba(56,189,248,.78));
+      box-shadow:0 16px 34px rgba(245,158,11,.18);
+      flex:0 0 auto;
+    }
+    .title{min-width:0;line-height:1.12}
+    .title .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid rgba(245,158,11,.34);
+      color:#fde68a;
+      background:rgba(245,158,11,.10);
+      font-size:11px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      margin-bottom:8px;
+    }
+    .title h1{margin:0;font-size:clamp(28px,4vw,52px);letter-spacing:-.05em}
+    .title p{margin:8px 0 0;color:var(--muted);font-size:15px;line-height:1.45;max-width:760px;font-weight:750}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{
+      border:1px solid rgba(255,255,255,.11);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      min-height:42px;
+      padding:0 14px;
+      border-radius:14px;
+      font-weight:950;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      white-space:nowrap;
+      transition:transform .18s ease, background .18s ease, opacity .18s ease, border-color .18s ease;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.18)}
+    .btn:disabled{opacity:.52;cursor:not-allowed;transform:none}
+    .btn.primary{background:linear-gradient(135deg,#38bdf8,#2563eb);border:none;box-shadow:0 14px 30px rgba(37,99,235,.25)}
+    .btn.gold{color:#07111f;background:linear-gradient(135deg,#fde68a,var(--gold));border:none;box-shadow:0 14px 30px rgba(245,158,11,.22)}
+    .btn.green{background:linear-gradient(135deg,#22c55e,#059669);border:none;box-shadow:0 14px 30px rgba(5,150,105,.22)}
+    .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.24);color:#fecaca}
+    .notice{
+      margin-top:12px;
+      border:1px solid rgba(245,158,11,.32);
+      border-radius:18px;
+      background:linear-gradient(135deg,rgba(245,158,11,.13),rgba(2,6,23,.22));
+      color:#fde68a;
+      padding:12px 14px;
+      font-weight:850;
+      line-height:1.45;
+    }
+    .grid{display:grid;grid-template-columns:420px minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
+    @media(max-width:1050px){.grid{grid-template-columns:1fr}}
+    .card{
+      border:1px solid var(--line);
+      border-radius:var(--r);
+      background:linear-gradient(180deg,rgba(15,23,42,.86),rgba(8,15,28,.78));
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(16px);
+      padding:14px;
+    }
+    .cardTitle{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .cardTitle h2{margin:0;font-size:18px;letter-spacing:-.02em}
+    .chip{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:6px 9px;border-radius:999px;
+      border:1px solid rgba(148,163,184,.18);
+      background:rgba(2,6,23,.28);
+      color:var(--muted);
+      font-size:11px;font-weight:950;
+      white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:99px;background:var(--gold)}
+    .dot.green{background:var(--green)}
+    .dot.blue{background:var(--blue)}
+    .field{margin-bottom:11px}
+    label{display:block;color:var(--muted);font-weight:950;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    input,select,textarea{
+      width:100%;
+      border:1px solid rgba(148,163,184,.22);
+      border-radius:14px;
+      background:rgba(2,6,23,.46);
+      color:var(--text);
+      padding:11px 12px;
+      outline:none;
+      font-weight:850;
+      font-family:inherit;
+      min-height:42px;
+    }
+    textarea{min-height:132px;resize:vertical;line-height:1.45}
+    input::placeholder,textarea::placeholder{color:rgba(159,177,202,.70)}
+    input:focus,select:focus,textarea:focus{border-color:rgba(56,189,248,.58);box-shadow:0 0 0 4px rgba(56,189,248,.12)}
+    select option{background:#0f172a;color:#e8f0ff}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:640px){.two{grid-template-columns:1fr}}
+    .help{margin-top:6px;color:var(--muted);font-size:12px;line-height:1.35;font-weight:700}
+    .stepper{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+    @media(max-width:820px){.stepper{grid-template-columns:1fr 1fr}}
+    .step{
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:16px;
+      background:rgba(2,6,23,.28);
+      padding:10px;
+      min-height:74px;
+    }
+    .step b{display:block;font-size:13px;margin-bottom:4px}
+    .step span{display:block;color:var(--muted);font-size:12px;line-height:1.35;font-weight:750}
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    @media(max-width:820px){.kpis{grid-template-columns:1fr 1fr}}
+    .kpi{border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(2,6,23,.30);padding:11px}
+    .kpi .k{color:var(--muted);font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
+    .kpi .v{font-size:23px;font-weight:1000;margin-top:4px;letter-spacing:-.04em}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .toolbarLeft,.toolbarRight{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .miniBtn{min-height:34px;padding:0 10px;border-radius:12px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.055);color:var(--text);font-weight:950;cursor:pointer}
+    .miniBtn:hover{background:rgba(255,255,255,.10)}
+    .tableWrap{overflow:auto;border-radius:18px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.32);max-height:460px}
+    table{width:100%;border-collapse:collapse;min-width:900px}
+    th,td{padding:10px 11px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;white-space:nowrap}
+    th{position:sticky;top:0;background:rgba(8,15,28,.96);z-index:1;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+    td{font-weight:820;font-size:13px;color:#dbeafe}
+    tr.is-muted td{color:rgba(219,234,254,.48)}
+    .right{text-align:right}
+    .mailBadge{padding:4px 8px;border-radius:999px;font-size:11px;font-weight:950;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.05)}
+    .mailBadge.ok{color:#bbf7d0;background:rgba(34,197,94,.11);border-color:rgba(34,197,94,.24)}
+    .mailBadge.no{color:#fecaca;background:rgba(239,68,68,.11);border-color:rgba(239,68,68,.24)}
+    .previewBox{border:1px solid rgba(148,163,184,.16);border-radius:18px;background:rgba(2,6,23,.26);padding:14px;min-height:218px;line-height:1.5;color:#dbeafe}
+    .previewBox h3{margin:0 0 8px;font-size:16px}
+    .previewBox p{margin:0 0 10px;color:var(--muted);font-weight:750}
+    .previewBox .mailSubject{color:#f8fafc;font-weight:950;margin-bottom:8px}
+    .footerGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+    @media(max-width:900px){.footerGrid{grid-template-columns:1fr}}
+    .roadmap{display:grid;gap:8px}
+    .roadmapItem{display:flex;gap:9px;align-items:flex-start;color:var(--muted);font-size:13px;font-weight:800;line-height:1.35}
+    .roadmapItem .num{flex:0 0 auto;width:24px;height:24px;border-radius:9px;background:rgba(56,189,248,.13);border:1px solid rgba(56,189,248,.24);color:#bae6fd;display:flex;align-items:center;justify-content:center;font-weight:1000;font-size:11px}
+    .modalBackdrop{position:fixed;inset:0;background:rgba(2,6,23,.72);display:none;align-items:center;justify-content:center;padding:18px;z-index:50;backdrop-filter:blur(10px)}
+    .modalBackdrop.is-open{display:flex}
+    .modal{width:min(620px,100%);border:1px solid rgba(148,163,184,.22);border-radius:24px;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(8,15,28,.96));box-shadow:0 30px 90px rgba(0,0,0,.48);padding:18px}
+    .modal h2{margin:0 0 8px;font-size:24px;letter-spacing:-.04em}
+    .modal p{margin:0 0 12px;color:var(--muted);line-height:1.45;font-weight:760}
+    .modalActions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:14px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <div class="eyebrow">Action promo</div>
+        <h1>Campagne produit</h1>
+        <p>Cible rapidement les clients qui ont deja achete une reference, prepare ton message et verrouille la selection avant le futur branchement email.</p>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="index.html">Portail</a>
+      <a class="btn" href="requete-commerce.html">Requete commerce</a>
+      <button class="btn gold" id="openStatusBtn" type="button">Mode preparatoire</button>
+    </div>
+  </header>
+
+  <div class="notice">
+    Module non branche volontairement : aucun email n'est envoye, aucune piece jointe n'est transferee, aucune donnee Supabase n'est modifiee. La page prepare le parcours final et la logique d'utilisation.
+  </div>
+
+  <main class="grid">
+    <section class="card">
+      <div class="cardTitle">
+        <h2>1. Ciblage</h2>
+        <span class="chip"><span class="dot blue"></span>Futur Supabase</span>
+      </div>
+
+      <div class="two">
+        <div class="field">
+          <label for="sourceSelect">Source de donnees</label>
+          <select id="sourceSelect">
+            <option value="validated">CA valide importe</option>
+            <option value="sales">Ventes saisies terrain</option>
+            <option value="both">Les deux sources</option>
+          </select>
+          <div class="help">Recommande : CA valide importe, pour cibler sur les ventes reelles confirmees.</div>
+        </div>
+        <div class="field">
+          <label for="activitySelect">Perimetre</label>
+          <select id="activitySelect">
+            <option value="all">Auto + Industrie</option>
+            <option value="auto">Automobile</option>
+            <option value="industrie">Industrie</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="productRef">Reference ou produit promo</label>
+        <input id="productRef" placeholder="Ex : 30190 00, Eponge mousse, produit A..." value="30190 00" />
+      </div>
+
+      <div class="two">
+        <div class="field">
+          <label for="periodSelect">Periode d'achat</label>
+          <select id="periodSelect">
+            <option value="12">12 derniers mois</option>
+            <option value="6">6 derniers mois</option>
+            <option value="3">3 derniers mois</option>
+            <option value="all">Depuis le debut</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="minCa">CA minimum produit</label>
+          <input id="minCa" type="number" min="0" step="1" value="0" />
+        </div>
+      </div>
+
+      <button class="btn primary" id="previewBtn" type="button">Previsualiser le ciblage</button>
+      <div class="help">Pour l'instant, le bouton charge un jeu de donnees exemple. Le branchement final utilisera les ventes validees par reference produit.</div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">
+        <h2>2. Parcours final prevu</h2>
+        <span class="chip"><span class="dot green"></span>80% pret UI</span>
+      </div>
+      <div class="stepper">
+        <div class="step"><b>Produit</b><span>Recherche par reference, designation ou famille.</span></div>
+        <div class="step"><b>Clients</b><span>Selection globale puis retrait manuel si besoin.</span></div>
+        <div class="step"><b>Message</b><span>Email personnalise, piece jointe ou lien document.</span></div>
+        <div class="step"><b>Envoi</b><span>Un email individuel par client via Resend ou Outlook Graph.</span></div>
+      </div>
+      <div class="previewBox" id="workflowPreview">
+        <h3>Principe</h3>
+        <p>Le client ne verra jamais les autres destinataires. Le futur envoi sera fait en individuel, avec l'email du commercial en reponse.</p>
+        <p>Le module pourra aussi historiser la campagne : date, produit, clients selectionnes, statut envoye / sans email / erreur.</p>
+      </div>
+    </section>
+  </main>
+
+  <section class="card" style="margin-top:14px">
+    <div class="cardTitle">
+      <h2>3. Clients cibles</h2>
+      <span class="chip"><span class="dot" id="targetDot"></span><span id="targetStatus">Aucun ciblage lance</span></span>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="k">Clients trouves</div><div class="v" id="kpiFound">-</div></div>
+      <div class="kpi"><div class="k">Selectionnes</div><div class="v" id="kpiSelected">-</div></div>
+      <div class="kpi"><div class="k">Avec email</div><div class="v" id="kpiEmails">-</div></div>
+      <div class="kpi"><div class="k">CA valide cible</div><div class="v" id="kpiRevenue">-</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbarLeft">
+        <button class="miniBtn" id="selectAllBtn" type="button">Tout cocher</button>
+        <button class="miniBtn" id="selectNoneBtn" type="button">Tout decocher</button>
+        <button class="miniBtn" id="onlyEmailBtn" type="button">Garder clients avec email</button>
+      </div>
+      <div class="toolbarRight">
+        <span class="chip"><span class="dot blue"></span>Les clients sans email restent visibles mais exclus de l'envoi.</span>
+      </div>
+    </div>
+
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Selection</th>
+            <th>Client</th>
+            <th>Compte</th>
+            <th>Activite</th>
+            <th>Dernier achat</th>
+            <th class="right">Quantite</th>
+            <th class="right">CA valide</th>
+            <th>Email</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="targetBody">
+          <tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une previsualisation pour afficher les clients cibles.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="footerGrid">
+    <div class="card">
+      <div class="cardTitle">
+        <h2>4. Message</h2>
+        <span class="chip"><span class="dot"></span>Brouillon</span>
+      </div>
+      <div class="field">
+        <label for="subjectInput">Objet</label>
+        <input id="subjectInput" value="Promotion speciale sur votre produit habituel" />
+      </div>
+      <div class="field">
+        <label for="messageInput">Corps du message</label>
+        <textarea id="messageInput">Bonjour,
+
+Nous avons actuellement une offre interessante sur un produit que vous utilisez deja.
+
+Je me permets de vous transmettre l'information afin que vous puissiez en profiter si besoin.
+
+Je reste disponible si vous souhaitez que je vous chiffre une quantite.
+
+Bien cordialement,</textarea>
+        <div class="help">Variables futures possibles : nom client, reference produit, dernier achat, commercial, lien document.</div>
+      </div>
+      <div class="field">
+        <label for="docInput">Document promo</label>
+        <input id="docInput" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" />
+        <div class="help">Prototype uniquement : le fichier n'est pas envoye et n'est pas stocke.</div>
+      </div>
+      <button class="btn gold" id="prepareBtn" type="button">Preparer l'envoi</button>
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">
+        <h2>5. Apercu campagne</h2>
+        <span class="chip"><span class="dot green"></span>Envoi verrouille</span>
+      </div>
+      <div class="previewBox" id="mailPreview">
+        <h3>Apercu non genere</h3>
+        <p>Selectionne les clients, ajuste le message, puis clique sur Preparer l'envoi.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn green" id="fakeSendBtn" type="button" disabled>Simuler l'envoi</button>
+        <button class="btn danger" id="resetBtn" type="button">Reinitialiser</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <div class="cardTitle">
+      <h2>Branchements restants</h2>
+      <span class="chip"><span class="dot"></span>Roadmap</span>
+    </div>
+    <div class="roadmap">
+      <div class="roadmapItem"><span class="num">1</span><span>Brancher la recherche clients sur les lignes de CA valide par reference produit.</span></div>
+      <div class="roadmapItem"><span class="num">2</span><span>Ajouter le consentement / opposition commerciale et exclure automatiquement les clients bloques.</span></div>
+      <div class="roadmapItem"><span class="num">3</span><span>Connecter l'envoi individuel via Resend ou Microsoft Graph avec Reply-To commercial.</span></div>
+      <div class="roadmapItem"><span class="num">4</span><span>Historiser chaque campagne : produit, fichier, clients, date, statut et erreurs.</span></div>
+    </div>
+  </section>
+</div>
+
+<div class="modalBackdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <h2 id="modalTitle">Module preparatoire</h2>
+    <p id="modalText">Aucun envoi reel n'est branche pour le moment.</p>
+    <div class="modalActions">
+      <button class="btn primary" id="closeModalBtn" type="button">Compris</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
+const sampleClients = [
+  { id:1, selected:true, client:"A+ GLASS", account:"0005", activity:"Auto", last:"2026-06-18", qty:24, revenue:774, email:"atelier@aglass.fr", status:"Email pret" },
+  { id:2, selected:true, client:"ADC AUTOMOBILES", account:"0006", activity:"Auto", last:"2026-06-04", qty:12, revenue:428, email:"contact@adc-auto.fr", status:"Email pret" },
+  { id:3, selected:true, client:"La Trinite Automobile", account:"5143", activity:"Auto", last:"2026-07-01", qty:36, revenue:1215, email:"", status:"Email manquant" },
+  { id:4, selected:true, client:"Kent Industrie Test", account:"IND-001", activity:"Industrie", last:"2026-05-29", qty:8, revenue:980, email:"maintenance@kent-industrie.fr", status:"Email pret" },
+  { id:5, selected:true, client:"Maintenance Normandie", account:"IND-014", activity:"Industrie", last:"2026-04-12", qty:18, revenue:1520, email:"achat@maintenance-normandie.fr", status:"Email pret" }
+];
+let targets = [];
+const $ = id => document.getElementById(id);
+function escapeHtml(value){
+  return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function showModal(title, text){
+  $("modalTitle").textContent = title;
+  $("modalText").textContent = text;
+  $("modalBackdrop").classList.add("is-open");
+}
+function filteredSample(){
+  const activity = $("activitySelect").value;
+  const minCa = Number($("minCa").value || 0);
+  return sampleClients
+    .filter(row => activity === "all" || row.activity.toLowerCase() === activity)
+    .filter(row => row.revenue >= minCa)
+    .map(row => ({ ...row, selected: Boolean(row.email) }));
+}
+function renderTargets(){
+  if (!targets.length){
+    $("targetBody").innerHTML = '<tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une previsualisation pour afficher les clients cibles.</td></tr>';
+    updateKpis();
+    return;
+  }
+  $("targetBody").innerHTML = targets.map(row => {
+    const hasEmail = Boolean(row.email);
+    return `
+      <tr class="${hasEmail ? "" : "is-muted"}">
+        <td><input type="checkbox" data-id="${row.id}" ${row.selected && hasEmail ? "checked" : ""} ${hasEmail ? "" : "disabled"}></td>
+        <td>${escapeHtml(row.client)}</td>
+        <td>${escapeHtml(row.account)}</td>
+        <td>${escapeHtml(row.activity)}</td>
+        <td>${escapeHtml(row.last)}</td>
+        <td class="right">${row.qty.toLocaleString("fr-FR")}</td>
+        <td class="right">${eur.format(row.revenue)}</td>
+        <td>${hasEmail ? escapeHtml(row.email) : "-"}</td>
+        <td><span class="mailBadge ${hasEmail ? "ok" : "no"}">${escapeHtml(row.status)}</span></td>
+      </tr>`;
+  }).join("");
+  document.querySelectorAll('#targetBody input[type="checkbox"]').forEach(input => {
+    input.addEventListener("change", () => {
+      const id = Number(input.dataset.id);
+      const target = targets.find(row => row.id === id);
+      if (target) target.selected = input.checked;
+      updateKpis();
+    });
+  });
+  updateKpis();
+}
+function updateKpis(){
+  const found = targets.length;
+  const selected = targets.filter(row => row.selected && row.email).length;
+  const emails = targets.filter(row => row.email).length;
+  const revenue = targets.filter(row => row.selected && row.email).reduce((sum,row) => sum + row.revenue, 0);
+  $("kpiFound").textContent = found ? found.toLocaleString("fr-FR") : "-";
+  $("kpiSelected").textContent = found ? selected.toLocaleString("fr-FR") : "-";
+  $("kpiEmails").textContent = found ? emails.toLocaleString("fr-FR") : "-";
+  $("kpiRevenue").textContent = found ? eur.format(revenue) : "-";
+  $("targetStatus").textContent = found ? `${found} client(s) exemple charge(s)` : "Aucun ciblage lance";
+}
+function prepareMailPreview(){
+  const selectedTargets = targets.filter(row => row.selected && row.email);
+  if (!selectedTargets.length){
+    showModal("Selection vide", "Aucun client avec email n'est selectionne pour cette campagne.");
+    return;
+  }
+  const product = $("productRef").value.trim() || "produit selectionne";
+  const subject = $("subjectInput").value.trim() || "Promotion produit";
+  const doc = $("docInput").files && $("docInput").files[0] ? $("docInput").files[0].name : "Aucun document selectionne";
+  const first = selectedTargets[0];
+  $("mailPreview").innerHTML = `
+    <h3>Campagne prete a brancher</h3>
+    <div class="mailSubject">Objet : ${escapeHtml(subject)}</div>
+    <p><b>${selectedTargets.length.toLocaleString("fr-FR")}</b> email(s) individuel(s) seraient prepares pour la reference <b>${escapeHtml(product)}</b>.</p>
+    <p>Exemple destinataire : <b>${escapeHtml(first.client)}</b> - ${escapeHtml(first.email)}</p>
+    <p>Document : ${escapeHtml(doc)}</p>
+    <p>Statut : envoi reel desactive. Prochain branchement possible via Resend ou Outlook Graph.</p>`;
+  $("fakeSendBtn").disabled = false;
+}
+$("previewBtn").addEventListener("click", () => {
+  targets = filteredSample();
+  renderTargets();
+  $("workflowPreview").innerHTML = `
+    <h3>Ciblage simule</h3>
+    <p>Reference analysee : <b>${escapeHtml($("productRef").value || "-")}</b></p>
+    <p>Source future : <b>${escapeHtml($("sourceSelect").selectedOptions[0].textContent)}</b>. Pour l'instant, les lignes affichees sont des exemples de validation parcours.</p>`;
+});
+$("selectAllBtn").addEventListener("click", () => { targets.forEach(row => row.selected = Boolean(row.email)); renderTargets(); });
+$("selectNoneBtn").addEventListener("click", () => { targets.forEach(row => row.selected = false); renderTargets(); });
+$("onlyEmailBtn").addEventListener("click", () => { targets = targets.filter(row => row.email); targets.forEach(row => row.selected = true); renderTargets(); });
+$("prepareBtn").addEventListener("click", prepareMailPreview);
+$("fakeSendBtn").addEventListener("click", () => showModal("Envoi non branche", "Le parcours est pret, mais aucun email reel n'est envoye. Il faudra brancher Resend ou Outlook Graph avant activation."));
+$("resetBtn").addEventListener("click", () => {
+  targets = [];
+  renderTargets();
+  $("mailPreview").innerHTML = '<h3>Apercu non genere</h3><p>Selectionne les clients, ajuste le message, puis clique sur Preparer l\'envoi.</p>';
+  $("fakeSendBtn").disabled = true;
+});
+$("openStatusBtn").addEventListener("click", () => showModal("Mode preparatoire", "Cette page est volontairement non branchee : aucune requete Supabase, aucun upload et aucun email reel."));
+$("closeModalBtn").addEventListener("click", () => $("modalBackdrop").classList.remove("is-open"));
+$("modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") $("modalBackdrop").classList.remove("is-open"); });
+renderTargets();
+</script>
+</body>
+</html>
