@@ -181,6 +181,59 @@
     td{font-weight:820;font-size:13px;color:#dbeafe}
     tr.is-muted td{color:rgba(219,234,254,.48)}
     .right{text-align:right}
+    .sourcePill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(56,189,248,.22);
+      background:rgba(56,189,248,.10);
+      color:#bae6fd;
+      font-size:11px;
+      font-weight:950;
+    }
+    .checkCell{text-align:center;width:62px}
+    .prettyCheck{
+      appearance:none;
+      -webkit-appearance:none;
+      width:22px;
+      height:22px;
+      margin:0;
+      border-radius:8px;
+      border:1px solid rgba(148,163,184,.34);
+      background:
+        linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03)),
+        rgba(2,6,23,.40);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 18px rgba(0,0,0,.20);
+      cursor:pointer;
+      display:inline-grid;
+      place-items:center;
+      transition:transform .15s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease;
+      vertical-align:middle;
+    }
+    .prettyCheck:hover{
+      transform:translateY(-1px);
+      border-color:rgba(56,189,248,.55);
+      box-shadow:0 0 0 4px rgba(56,189,248,.10),0 10px 20px rgba(0,0,0,.22);
+    }
+    .prettyCheck:checked{
+      border-color:transparent;
+      background:linear-gradient(135deg,#fde68a,#f59e0b);
+      box-shadow:0 12px 24px rgba(245,158,11,.20);
+    }
+    .prettyCheck:checked::after{
+      content:"";
+      width:6px;
+      height:11px;
+      border:solid #07111f;
+      border-width:0 2px 2px 0;
+      transform:rotate(45deg) translate(-1px,-1px);
+    }
+    .prettyCheck:focus-visible{
+      outline:none;
+      box-shadow:0 0 0 4px rgba(56,189,248,.18),0 10px 20px rgba(0,0,0,.22);
+    }
     .mailBadge{padding:4px 8px;border-radius:999px;font-size:11px;font-weight:950;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.05)}
     .mailBadge.ok{color:#bbf7d0;background:rgba(34,197,94,.11);border-color:rgba(34,197,94,.24)}
     .mailBadge.no{color:#fecaca;background:rgba(239,68,68,.11);border-color:rgba(239,68,68,.24)}
@@ -215,19 +268,19 @@
     <div class="actions">
       <a class="btn" href="index.html">Portail</a>
       <a class="btn" href="requete-commerce.html">Requete commerce</a>
-      <button class="btn gold" id="openStatusBtn" type="button">Mode preparatoire</button>
+      <button class="btn gold" id="openStatusBtn" type="button">Envoi verrouille</button>
     </div>
   </header>
 
   <div class="notice">
-    Module non branche volontairement : aucun email n'est envoye, aucune piece jointe n'est transferee, aucune donnee Supabase n'est modifiee. La page prepare le parcours final et la logique d'utilisation.
+    Lecture Supabase active : le ciblage clients est reel. L'envoi email reste volontairement verrouille, aucune piece jointe n'est transferee et aucune donnee Supabase n'est modifiee.
   </div>
 
   <main class="grid">
     <section class="card">
       <div class="cardTitle">
         <h2>1. Ciblage</h2>
-        <span class="chip"><span class="dot blue"></span>Futur Supabase</span>
+        <span class="chip"><span class="dot blue"></span>Supabase reel</span>
       </div>
 
       <div class="two">
@@ -272,7 +325,7 @@
       </div>
 
       <button class="btn primary" id="previewBtn" type="button">Previsualiser le ciblage</button>
-      <div class="help">Pour l'instant, le bouton charge un jeu de donnees exemple. Le branchement final utilisera les ventes validees par reference produit.</div>
+      <div class="help">Lecture seule : on recherche la reference ou la designation dans les ventes reelles, sans modifier la base.</div>
     </section>
 
     <section class="card">
@@ -304,7 +357,7 @@
       <div class="kpi"><div class="k">Clients trouves</div><div class="v" id="kpiFound">-</div></div>
       <div class="kpi"><div class="k">Selectionnes</div><div class="v" id="kpiSelected">-</div></div>
       <div class="kpi"><div class="k">Avec email</div><div class="v" id="kpiEmails">-</div></div>
-      <div class="kpi"><div class="k">CA valide cible</div><div class="v" id="kpiRevenue">-</div></div>
+      <div class="kpi"><div class="k">CA cible</div><div class="v" id="kpiRevenue">-</div></div>
     </div>
 
     <div class="toolbar">
@@ -322,13 +375,13 @@
       <table>
         <thead>
           <tr>
-            <th>Selection</th>
+            <th class="checkCell">Selection</th>
             <th>Client</th>
             <th>Compte</th>
             <th>Activite</th>
             <th>Dernier achat</th>
             <th class="right">Quantite</th>
-            <th class="right">CA valide</th>
+            <th class="right">CA cible</th>
             <th>Email</th>
             <th>Statut</th>
           </tr>
@@ -393,7 +446,7 @@ Bien cordialement,</textarea>
       <span class="chip"><span class="dot"></span>Roadmap</span>
     </div>
     <div class="roadmap">
-      <div class="roadmapItem"><span class="num">1</span><span>Brancher la recherche clients sur les lignes de CA valide par reference produit.</span></div>
+      <div class="roadmapItem"><span class="num">1</span><span>Ajouter les emails clients dans le referentiel quand on aura valide la structure.</span></div>
       <div class="roadmapItem"><span class="num">2</span><span>Ajouter le consentement / opposition commerciale et exclure automatiquement les clients bloques.</span></div>
       <div class="roadmapItem"><span class="num">3</span><span>Connecter l'envoi individuel via Resend ou Microsoft Graph avec Reply-To commercial.</span></div>
       <div class="roadmapItem"><span class="num">4</span><span>Historiser chaque campagne : produit, fichier, clients, date, statut et erreurs.</span></div>
@@ -411,33 +464,353 @@ Bien cordialement,</textarea>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
-const sampleClients = [
-  { id:1, selected:true, client:"A+ GLASS", account:"0005", activity:"Auto", last:"2026-06-18", qty:24, revenue:774, email:"atelier@aglass.fr", status:"Email pret" },
-  { id:2, selected:true, client:"ADC AUTOMOBILES", account:"0006", activity:"Auto", last:"2026-06-04", qty:12, revenue:428, email:"contact@adc-auto.fr", status:"Email pret" },
-  { id:3, selected:true, client:"La Trinite Automobile", account:"5143", activity:"Auto", last:"2026-07-01", qty:36, revenue:1215, email:"", status:"Email manquant" },
-  { id:4, selected:true, client:"Kent Industrie Test", account:"IND-001", activity:"Industrie", last:"2026-05-29", qty:8, revenue:980, email:"maintenance@kent-industrie.fr", status:"Email pret" },
-  { id:5, selected:true, client:"Maintenance Normandie", account:"IND-014", activity:"Industrie", last:"2026-04-12", qty:18, revenue:1520, email:"achat@maintenance-normandie.fr", status:"Email pret" }
+const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PAGE_SIZE = 1000;
+const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
+const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
+const SOURCES = [
+  { key:"auto", label:"Auto", tables:{ clients:"clients", produits:"produits", visites:"visites", lignes:"visite_commandes" } },
+  { key:"industrie", label:"Industrie", tables:{ clients:"industrie_clients", produits:"industrie_produits", visites:"industrie_visites", lignes:"industrie_visite_commandes" } }
 ];
-let targets = [];
+const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
 const $ = id => document.getElementById(id);
+let targets = [];
+let currentUser = null;
+
+const normalize = value => String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const compact = value => normalize(value).replace(/[^a-z0-9]/g, "");
+const toNumber = value => {
+  if (value === null || value === undefined) return 0;
+  const parsed = Number(String(value).replace(",", ".").replace(/\s/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 function escapeHtml(value){
   return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
+
 function showModal(title, text){
   $("modalTitle").textContent = title;
   $("modalText").textContent = text;
   $("modalBackdrop").classList.add("is-open");
 }
-function filteredSample(){
-  const activity = $("activitySelect").value;
-  const minCa = Number($("minCa").value || 0);
-  return sampleClients
-    .filter(row => activity === "all" || row.activity.toLowerCase() === activity)
-    .filter(row => row.revenue >= minCa)
-    .map(row => ({ ...row, selected: Boolean(row.email) }));
+
+function setLoading(isLoading, text = ""){
+  $("previewBtn").disabled = isLoading;
+  $("previewBtn").textContent = isLoading ? "Recherche..." : "Previsualiser le ciblage";
+  if (text) $("targetStatus").textContent = text;
 }
+
+function shouldScopeTable(table){
+  return ["clients", "visites", "industrie_clients", "industrie_visites", "v_reel_lignes_actives"].includes(table);
+}
+
+function applyCommercialScope(table, query){
+  return shouldScopeTable(table) && window.KentCommercialScope
+    ? window.KentCommercialScope.applyToQuery(query)
+    : query;
+}
+
+async function fetchPaged(table, select, options = {}){
+  const all = [];
+  for (let from = 0; ; from += PAGE_SIZE){
+    let query = supabaseClient.from(table).select(select).range(from, from + PAGE_SIZE - 1);
+    query = applyCommercialScope(table, query);
+    if (options.eq) {
+      [].concat(options.eq).forEach(item => { query = query.eq(item.column, item.value); });
+    }
+    if (options.gte) {
+      [].concat(options.gte).forEach(item => { query = query.gte(item.column, item.value); });
+    }
+    if (options.lte) {
+      [].concat(options.lte).forEach(item => { query = query.lte(item.column, item.value); });
+    }
+    if (options.in) {
+      query = query.in(options.in.column, options.in.values);
+    }
+    const orders = Array.isArray(options.order) ? options.order : (options.order ? [options.order] : []);
+    orders.forEach(order => { query = query.order(order.column, { ascending: order.ascending ?? true }); });
+    const { data, error } = await query;
+    if (error) throw new Error(`${table}: ${error.message}`);
+    const batch = data || [];
+    all.push(...batch);
+    if (batch.length < PAGE_SIZE) break;
+  }
+  return all;
+}
+
+async function fetchInChunks(table, select, column, values, options = {}){
+  const clean = [...new Set((values || [])
+    .filter(value => value !== null && value !== undefined)
+    .map(value => String(value))
+    .filter(Boolean))];
+  if (!clean.length) return [];
+  const all = [];
+  const chunkSize = options.chunkSize || 100;
+  for (let index = 0; index < clean.length; index += chunkSize){
+    all.push(...await fetchPaged(table, select, {
+      ...options,
+      in:{ column, values:clean.slice(index, index + chunkSize) }
+    }));
+  }
+  return all;
+}
+
+function normalizeVisitType(value){
+  const normalized = normalize(value);
+  if (["commande_telephone", "commande_tel", "appel_telephonique", "telephone", "tel"].includes(normalized)) return VISIT_TYPE_PHONE_ORDER;
+  if (["vente", "visite", "terrain", "commande"].includes(normalized)) return "vente";
+  if (["passage_sans_vente", "sans_vente"].includes(normalized)) return "passage_sans_vente";
+  if (["client_ferme", "ferme"].includes(normalized)) return "client_ferme";
+  return normalized || "vente";
+}
+
+function resolveVisitTypeFromRecord(visite){
+  const type = normalizeVisitType(visite?.type_visite);
+  if (type === "vente" && String(visite?.note || "").includes(PHONE_ORDER_NOTE_MARKER)) return VISIT_TYPE_PHONE_ORDER;
+  return type;
+}
+
+function isOrderVisit(visite){
+  const type = resolveVisitTypeFromRecord(visite);
+  return type === "vente" || type === VISIT_TYPE_PHONE_ORDER || Number(visite?.total_commande || 0) > 0;
+}
+
+function productMatches(row, term){
+  if (!term) return false;
+  const haystack = `${row.reference || ""} ${row.designation || ""} ${row.reference_produit || ""} ${row.nom || ""}`;
+  return normalize(haystack).includes(term) || compact(haystack).includes(compact(term));
+}
+
+function periodCutoff(){
+  const value = $("periodSelect").value;
+  if (value === "all") return null;
+  const months = Number(value);
+  if (!Number.isFinite(months)) return null;
+  const cutoff = new Date();
+  cutoff.setHours(0,0,0,0);
+  cutoff.setMonth(cutoff.getMonth() - months);
+  return cutoff;
+}
+
+function isoFromDate(date){
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
+
+function rowDateValue(row){
+  if (row?.date) return String(row.date).slice(0, 10);
+  if (row?.date_piece) return String(row.date_piece).slice(0, 10);
+  const year = Number(row?.annee);
+  const month = Number(row?.mois);
+  if (year && month) return `${year}-${String(month).padStart(2,"0")}-01`;
+  return "";
+}
+
+function isInPeriod(row){
+  const cutoff = periodCutoff();
+  if (!cutoff) return true;
+  const raw = rowDateValue(row);
+  if (!raw) return true;
+  const [year, month, day] = raw.split("-").map(Number);
+  const date = new Date(year || 1970, (month || 1) - 1, day || 1);
+  return date >= cutoff;
+}
+
+function formatDate(value){
+  const raw = String(value || "").slice(0, 10);
+  if (!raw) return "-";
+  const [year, month, day] = raw.split("-").map(Number);
+  const date = new Date(year, (month || 1) - 1, day || 1);
+  return Number.isNaN(date.getTime()) ? raw : date.toLocaleDateString("fr-FR");
+}
+
+function inferActivityFromReal(row){
+  const text = normalize(`${row.entite_key || ""} ${row.entite_libelle || ""} ${row.source_file || ""}`);
+  return text.includes("indus") || text.includes("industrie") ? "Industrie" : "Auto";
+}
+
+function activityAllowed(label){
+  const selected = $("activitySelect").value;
+  if (selected === "all") return true;
+  return normalize(label).includes(selected);
+}
+
+function targetKey(row){
+  return `${normalize(row.activity)}::${normalize(row.account)}::${normalize(row.client)}`;
+}
+
+function aggregateRows(rows){
+  const minCa = toNumber($("minCa").value);
+  const map = new Map();
+  for (const row of rows){
+    const key = targetKey(row);
+    if (!map.has(key)){
+      map.set(key, {
+        id:key,
+        selected:true,
+        client:row.client || "Client inconnu",
+        account:row.account || "-",
+        activity:row.activity || "-",
+        lastRaw:"",
+        qty:0,
+        revenue:0,
+        email:"",
+        status:"Email a ajouter",
+        sources:new Set(),
+        refs:new Set(),
+        designations:new Set()
+      });
+    }
+    const target = map.get(key);
+    target.qty += toNumber(row.qty);
+    target.revenue += toNumber(row.revenue);
+    target.sources.add(row.source || "Supabase");
+    if (row.reference) target.refs.add(String(row.reference));
+    if (row.designation) target.designations.add(String(row.designation));
+    const nextDate = rowDateValue(row);
+    if (nextDate && (!target.lastRaw || nextDate > target.lastRaw)) target.lastRaw = nextDate;
+  }
+  return [...map.values()]
+    .map(row => ({
+      ...row,
+      last:formatDate(row.lastRaw),
+      sourceLabel:[...row.sources].join(" + "),
+      refs:[...row.refs],
+      designations:[...row.designations]
+    }))
+    .filter(row => row.revenue >= minCa)
+    .sort((a,b) => (b.revenue - a.revenue) || String(a.client).localeCompare(String(b.client), "fr", { sensitivity:"base" }));
+}
+
+async function loadValidatedRows(term){
+  const cutoff = periodCutoff();
+  const options = {
+    order:[{ column:"annee", ascending:false }, { column:"mois", ascending:false }]
+  };
+  if (cutoff) options.gte = { column:"annee", value:cutoff.getFullYear() };
+  const rows = await fetchPaged(
+    "v_reel_lignes_actives",
+    "id,commercial_user_id,commercial_identifier,commercial_name,entite_key,entite_libelle,annee,mois,client_code,client_nom,montant,quantite,reference,designation,date_piece,source_file",
+    options
+  );
+  return rows
+    .filter(row => productMatches(row, term))
+    .filter(isInPeriod)
+    .map(row => {
+      const activity = inferActivityFromReal(row);
+      return {
+        source:"CA valide",
+        client:row.client_nom || "Client inconnu",
+        account:row.client_code || "-",
+        activity,
+        date:rowDateValue(row),
+        qty:toNumber(row.quantite),
+        revenue:toNumber(row.montant),
+        reference:row.reference || "",
+        designation:row.designation || ""
+      };
+    })
+    .filter(row => activityAllowed(row.activity));
+}
+
+async function loadSalesRowsForSource(source, term){
+  if (!activityAllowed(source.label)) return [];
+  const products = await fetchPaged(source.tables.produits, "id,nom,reference_produit", {
+    order:{ column:"nom", ascending:true }
+  });
+  const matchingProducts = products.filter(product => productMatches(product, term));
+  if (!matchingProducts.length) return [];
+
+  const productIds = matchingProducts.map(product => product.id);
+  const productById = new Map(matchingProducts.map(product => [String(product.id), product]));
+  const lines = await fetchInChunks(source.tables.lignes, "id,visite_id,produit_id,quantite,prix_unitaire", "produit_id", productIds, {
+    order:[{ column:"visite_id", ascending:true }, { column:"id", ascending:true }]
+  });
+  if (!lines.length) return [];
+
+  const cutoff = periodCutoff();
+  const visitOptions = {
+    order:[{ column:"date_visite", ascending:false }, { column:"id", ascending:true }]
+  };
+  if (cutoff) visitOptions.gte = { column:"date_visite", value:isoFromDate(cutoff) };
+  const visits = await fetchInChunks(source.tables.visites, "id,client_id,date_visite,note,type_visite,total_commande", "id", lines.map(row => row.visite_id), visitOptions);
+  const validVisits = visits.filter(isOrderVisit).filter(isInPeriod);
+  const visitById = new Map(validVisits.map(visit => [String(visit.id), visit]));
+  if (!visitById.size) return [];
+
+  const clients = await fetchInChunks(source.tables.clients, "id,nom,numero_compte", "id", validVisits.map(visit => visit.client_id), {
+    order:{ column:"nom", ascending:true }
+  });
+  const clientById = new Map(clients.map(client => [String(client.id), client]));
+
+  return lines
+    .map(line => {
+      const visit = visitById.get(String(line.visite_id));
+      if (!visit) return null;
+      const product = productById.get(String(line.produit_id));
+      const client = clientById.get(String(visit.client_id));
+      const qty = toNumber(line.quantite);
+      return {
+        source:"Vente saisie",
+        client:client?.nom || "Client inconnu",
+        account:client?.numero_compte || "-",
+        activity:source.label,
+        date:String(visit.date_visite || "").slice(0, 10),
+        qty,
+        revenue:qty * toNumber(line.prix_unitaire),
+        reference:product?.reference_produit || "",
+        designation:product?.nom || ""
+      };
+    })
+    .filter(Boolean);
+}
+
+async function loadSalesRows(term){
+  const rowsBySource = await Promise.all(SOURCES.map(source => loadSalesRowsForSource(source, term)));
+  return rowsBySource.flat();
+}
+
+async function loadTargets(){
+  const term = normalize($("productRef").value);
+  if (!term){
+    showModal("Reference obligatoire", "Renseigne une reference ou un morceau de designation produit pour lancer le ciblage.");
+    return;
+  }
+  setLoading(true, "Recherche Supabase en cours...");
+  $("targetDot").className = "dot";
+  try{
+    currentUser = window.KentCommercialScope && typeof window.KentCommercialScope.load === "function"
+      ? await window.KentCommercialScope.load()
+      : null;
+    const sourceMode = $("sourceSelect").value;
+    const blocks = [];
+    if (sourceMode === "validated" || sourceMode === "both") blocks.push(loadValidatedRows(term));
+    if (sourceMode === "sales" || sourceMode === "both") blocks.push(loadSalesRows(term));
+    const rows = (await Promise.all(blocks)).flat();
+    targets = aggregateRows(rows);
+    renderTargets();
+    $("targetDot").className = "dot green";
+    $("workflowPreview").innerHTML = `
+      <h3>Ciblage reel charge</h3>
+      <p>Produit analyse : <b>${escapeHtml($("productRef").value || "-")}</b></p>
+      <p>Source : <b>${escapeHtml($("sourceSelect").selectedOptions[0].textContent)}</b>. Perimetre : <b>${escapeHtml($("activitySelect").selectedOptions[0].textContent)}</b>.</p>
+      <p>${targets.length ? "Les clients ci-dessous sont issus de Supabase." : "Aucun client trouve avec ces criteres."}</p>`;
+  }catch(error){
+    console.error(error);
+    targets = [];
+    renderTargets();
+    $("targetDot").className = "dot";
+    $("targetStatus").textContent = "Erreur Supabase";
+    showModal("Ciblage impossible", error.message || "Impossible de charger les clients cibles.");
+  }finally{
+    setLoading(false);
+  }
+}
+
 function renderTargets(){
   if (!targets.length){
     $("targetBody").innerHTML = '<tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une previsualisation pour afficher les clients cibles.</td></tr>';
@@ -448,12 +821,12 @@ function renderTargets(){
     const hasEmail = Boolean(row.email);
     return `
       <tr class="${hasEmail ? "" : "is-muted"}">
-        <td><input type="checkbox" data-id="${row.id}" ${row.selected && hasEmail ? "checked" : ""} ${hasEmail ? "" : "disabled"}></td>
-        <td>${escapeHtml(row.client)}</td>
+        <td class="checkCell"><input class="prettyCheck" type="checkbox" data-id="${escapeHtml(row.id)}" ${row.selected ? "checked" : ""} aria-label="Selectionner ${escapeHtml(row.client)}"></td>
+        <td title="${escapeHtml(row.client)}">${escapeHtml(row.client)}</td>
         <td>${escapeHtml(row.account)}</td>
-        <td>${escapeHtml(row.activity)}</td>
+        <td><span class="sourcePill">${escapeHtml(row.activity)}</span></td>
         <td>${escapeHtml(row.last)}</td>
-        <td class="right">${row.qty.toLocaleString("fr-FR")}</td>
+        <td class="right">${(Math.round(row.qty * 100) / 100).toLocaleString("fr-FR")}</td>
         <td class="right">${eur.format(row.revenue)}</td>
         <td>${hasEmail ? escapeHtml(row.email) : "-"}</td>
         <td><span class="mailBadge ${hasEmail ? "ok" : "no"}">${escapeHtml(row.status)}</span></td>
@@ -461,64 +834,70 @@ function renderTargets(){
   }).join("");
   document.querySelectorAll('#targetBody input[type="checkbox"]').forEach(input => {
     input.addEventListener("change", () => {
-      const id = Number(input.dataset.id);
-      const target = targets.find(row => row.id === id);
+      const target = targets.find(row => row.id === input.dataset.id);
       if (target) target.selected = input.checked;
       updateKpis();
     });
   });
   updateKpis();
 }
+
 function updateKpis(){
   const found = targets.length;
-  const selected = targets.filter(row => row.selected && row.email).length;
-  const emails = targets.filter(row => row.email).length;
-  const revenue = targets.filter(row => row.selected && row.email).reduce((sum,row) => sum + row.revenue, 0);
+  const selectedRows = targets.filter(row => row.selected);
+  const selectedWithEmail = selectedRows.filter(row => row.email);
+  const revenue = selectedRows.reduce((sum,row) => sum + row.revenue, 0);
   $("kpiFound").textContent = found ? found.toLocaleString("fr-FR") : "-";
-  $("kpiSelected").textContent = found ? selected.toLocaleString("fr-FR") : "-";
-  $("kpiEmails").textContent = found ? emails.toLocaleString("fr-FR") : "-";
+  $("kpiSelected").textContent = found ? selectedRows.length.toLocaleString("fr-FR") : "-";
+  $("kpiEmails").textContent = found ? selectedWithEmail.length.toLocaleString("fr-FR") : "-";
   $("kpiRevenue").textContent = found ? eur.format(revenue) : "-";
-  $("targetStatus").textContent = found ? `${found} client(s) exemple charge(s)` : "Aucun ciblage lance";
+  $("targetStatus").textContent = found ? `${found.toLocaleString("fr-FR")} client(s) charge(s)` : "Aucun ciblage lance";
 }
+
 function prepareMailPreview(){
-  const selectedTargets = targets.filter(row => row.selected && row.email);
+  const selectedTargets = targets.filter(row => row.selected);
   if (!selectedTargets.length){
-    showModal("Selection vide", "Aucun client avec email n'est selectionne pour cette campagne.");
+    showModal("Selection vide", "Aucun client n'est selectionne pour cette campagne.");
     return;
   }
+  const selectedWithEmail = selectedTargets.filter(row => row.email);
   const product = $("productRef").value.trim() || "produit selectionne";
   const subject = $("subjectInput").value.trim() || "Promotion produit";
   const doc = $("docInput").files && $("docInput").files[0] ? $("docInput").files[0].name : "Aucun document selectionne";
   const first = selectedTargets[0];
   $("mailPreview").innerHTML = `
-    <h3>Campagne prete a brancher</h3>
+    <h3>Campagne preparee</h3>
     <div class="mailSubject">Objet : ${escapeHtml(subject)}</div>
-    <p><b>${selectedTargets.length.toLocaleString("fr-FR")}</b> email(s) individuel(s) seraient prepares pour la reference <b>${escapeHtml(product)}</b>.</p>
-    <p>Exemple destinataire : <b>${escapeHtml(first.client)}</b> - ${escapeHtml(first.email)}</p>
+    <p><b>${selectedTargets.length.toLocaleString("fr-FR")}</b> client(s) selectionne(s) pour la reference <b>${escapeHtml(product)}</b>.</p>
+    <p><b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b> email(s) envoyable(s) aujourd'hui. Les autres resteront a enrichir quand la colonne email sera ajoutee.</p>
+    <p>Premier client cible : <b>${escapeHtml(first.client)}</b> - compte ${escapeHtml(first.account)}</p>
     <p>Document : ${escapeHtml(doc)}</p>
     <p>Statut : envoi reel desactive. Prochain branchement possible via Resend ou Outlook Graph.</p>`;
-  $("fakeSendBtn").disabled = false;
+  $("fakeSendBtn").disabled = selectedWithEmail.length === 0;
 }
-$("previewBtn").addEventListener("click", () => {
-  targets = filteredSample();
-  renderTargets();
-  $("workflowPreview").innerHTML = `
-    <h3>Ciblage simule</h3>
-    <p>Reference analysee : <b>${escapeHtml($("productRef").value || "-")}</b></p>
-    <p>Source future : <b>${escapeHtml($("sourceSelect").selectedOptions[0].textContent)}</b>. Pour l'instant, les lignes affichees sont des exemples de validation parcours.</p>`;
-});
-$("selectAllBtn").addEventListener("click", () => { targets.forEach(row => row.selected = Boolean(row.email)); renderTargets(); });
+
+$("previewBtn").addEventListener("click", loadTargets);
+$("selectAllBtn").addEventListener("click", () => { targets.forEach(row => row.selected = true); renderTargets(); });
 $("selectNoneBtn").addEventListener("click", () => { targets.forEach(row => row.selected = false); renderTargets(); });
-$("onlyEmailBtn").addEventListener("click", () => { targets = targets.filter(row => row.email); targets.forEach(row => row.selected = true); renderTargets(); });
+$("onlyEmailBtn").addEventListener("click", () => {
+  if (!targets.some(row => row.email)){
+    showModal("Aucun email disponible", "C'est normal pour le moment : la colonne email client n'est pas encore ajoutee. La liste reste intacte.");
+    return;
+  }
+  targets = targets.filter(row => row.email);
+  targets.forEach(row => row.selected = true);
+  renderTargets();
+});
 $("prepareBtn").addEventListener("click", prepareMailPreview);
-$("fakeSendBtn").addEventListener("click", () => showModal("Envoi non branche", "Le parcours est pret, mais aucun email reel n'est envoye. Il faudra brancher Resend ou Outlook Graph avant activation."));
+$("fakeSendBtn").addEventListener("click", () => showModal("Envoi non branche", "Le ciblage est reel, mais aucun email reel n'est envoye. Il faudra brancher Resend ou Outlook Graph avant activation."));
 $("resetBtn").addEventListener("click", () => {
   targets = [];
   renderTargets();
   $("mailPreview").innerHTML = '<h3>Apercu non genere</h3><p>Selectionne les clients, ajuste le message, puis clique sur Preparer l\'envoi.</p>';
   $("fakeSendBtn").disabled = true;
+  $("workflowPreview").innerHTML = '<h3>Principe</h3><p>Le client ne verra jamais les autres destinataires. Le futur envoi sera fait en individuel, avec l\'email du commercial en reponse.</p><p>Le module pourra aussi historiser la campagne : date, produit, clients selectionnes, statut envoye / sans email / erreur.</p>';
 });
-$("openStatusBtn").addEventListener("click", () => showModal("Mode preparatoire", "Cette page est volontairement non branchee : aucune requete Supabase, aucun upload et aucun email reel."));
+$("openStatusBtn").addEventListener("click", () => showModal("Lecture seule active", "Le ciblage lit Supabase en temps reel, mais aucun email n'est envoye et aucune donnee n'est modifiee."));
 $("closeModalBtn").addEventListener("click", () => $("modalBackdrop").classList.remove("is-open"));
 $("modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") $("modalBackdrop").classList.remove("is-open"); });
 renderTargets();
