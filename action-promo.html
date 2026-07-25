@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Action Promo - Module preparatoire</title>
+  <title>Action Promo - Module préparatoire</title>
   <script src="./shared-ui.js"></script>
   <script src="./commercial-scope.js"></script>
   <link rel="stylesheet" href="./shared-theme.css">
@@ -287,39 +287,39 @@
       <div class="title">
         <div class="eyebrow">Action promo</div>
         <h1>Campagne produit</h1>
-        <p>Cible rapidement les clients qui ont deja achete une reference, prepare ton message et verrouille la selection avant le futur branchement email.</p>
+        <p>Cible rapidement les clients qui ont déjà acheté une référence, prépare ton message et verrouille la sélection avant le futur branchement email.</p>
       </div>
     </div>
     <div class="actions">
       <a class="btn" href="index.html">Portail</a>
-      <a class="btn" href="requete-commerce.html">Requete commerce</a>
-      <button class="btn gold" id="openStatusBtn" type="button">Envoi verrouille</button>
+      <a class="btn" href="requete-commerce.html">Requête commerce</a>
+      <button class="btn gold" id="openStatusBtn" type="button">Envoi verrouillé</button>
     </div>
   </header>
 
   <div class="notice">
-    Lecture Supabase active : le ciblage clients est reel. L'envoi email reste volontairement verrouille, aucune piece jointe n'est transferee et aucune donnee Supabase n'est modifiee.
+    Lecture Supabase active : le ciblage clients est réel. L'envoi email reste volontairement verrouillé, aucune pièce jointe n'est transférée et aucune donnée Supabase n'est modifiée.
   </div>
 
   <main class="grid">
     <section class="card filterBanner">
       <div class="cardTitle">
         <h2>Ciblage</h2>
-        <span class="chip"><span class="dot blue"></span>Supabase reel</span>
+        <span class="chip"><span class="dot blue"></span>Supabase réel</span>
       </div>
 
       <div class="filterFields">
         <div class="field">
-          <label for="sourceSelect">Source de donnees</label>
+          <label for="sourceSelect">Source de données</label>
           <select id="sourceSelect">
-            <option value="validated">CA valide importe</option>
+            <option value="validated">CA validé importé</option>
             <option value="sales">Ventes saisies terrain</option>
             <option value="both">Les deux sources</option>
           </select>
         </div>
 
         <div class="field">
-          <label for="activitySelect">Perimetre</label>
+          <label for="activitySelect">Périmètre</label>
           <select id="activitySelect">
             <option value="all">Auto + Industrie</option>
             <option value="auto">Automobile</option>
@@ -328,17 +328,17 @@
         </div>
 
         <div class="field">
-          <label for="productRef">Reference ou produit promo</label>
-          <input id="productRef" placeholder="Ex : 30190 00, Eponge mousse..." value="30190 00" />
+          <label for="productRef">Référence ou produit promo</label>
+          <input id="productRef" placeholder="Ex : 30190 00, Éponge mousse..." value="30190 00" />
         </div>
 
         <div class="field">
-          <label for="periodSelect">Periode d'achat</label>
+          <label for="periodSelect">Période d'achat</label>
           <select id="periodSelect">
             <option value="12">12 derniers mois</option>
             <option value="6">6 derniers mois</option>
             <option value="3">3 derniers mois</option>
-            <option value="all">Depuis le debut</option>
+            <option value="all">Depuis le début</option>
           </select>
         </div>
 
@@ -347,12 +347,12 @@
           <input id="minCa" type="number" min="0" step="1" value="0" />
         </div>
 
-        <button class="btn primary" id="previewBtn" type="button">Previsualiser</button>
+        <button class="btn primary" id="previewBtn" type="button">Prévisualiser</button>
       </div>
 
       <div class="filterHelpLine">
-        <span><b>Lecture seule</b> : recherche par reference ou designation dans les ventes reelles, sans modifier la base.</span>
-        <span>Recommande : CA valide importe pour cibler sur les ventes confirmees.</span>
+        <span><b>Lecture seule</b> : recherche par référence ou désignation dans les ventes réelles, sans modifier la base.</span>
+        <span>Recommandé : CA validé importé pour cibler sur les ventes confirmées.</span>
       </div>
     </section>
   </main>
@@ -360,12 +360,12 @@
   <section class="card" style="margin-top:14px">
     <div class="cardTitle">
       <h2>Clients cibles</h2>
-      <span class="chip"><span class="dot" id="targetDot"></span><span id="targetStatus">Aucun ciblage lance</span></span>
+      <span class="chip"><span class="dot" id="targetDot"></span><span id="targetStatus">Aucun ciblage lancé</span></span>
     </div>
 
     <div class="kpis">
-      <div class="kpi"><div class="k">Clients trouves</div><div class="v" id="kpiFound">-</div></div>
-      <div class="kpi"><div class="k">Selectionnes</div><div class="v" id="kpiSelected">-</div></div>
+      <div class="kpi"><div class="k">Clients trouvés</div><div class="v" id="kpiFound">-</div></div>
+      <div class="kpi"><div class="k">Sélectionnés</div><div class="v" id="kpiSelected">-</div></div>
       <div class="kpi"><div class="k">Avec email</div><div class="v" id="kpiEmails">-</div></div>
       <div class="kpi"><div class="k">CA cible</div><div class="v" id="kpiRevenue">-</div></div>
     </div>
@@ -373,7 +373,7 @@
     <div class="toolbar">
       <div class="toolbarLeft">
         <button class="miniBtn" id="selectAllBtn" type="button">Tout cocher</button>
-        <button class="miniBtn" id="selectNoneBtn" type="button">Tout decocher</button>
+        <button class="miniBtn" id="selectNoneBtn" type="button">Tout décocher</button>
         <button class="miniBtn" id="onlyEmailBtn" type="button">Garder clients avec email</button>
       </div>
       <div class="toolbarRight">
@@ -385,19 +385,19 @@
       <table>
         <thead>
           <tr>
-            <th class="checkCell">Selection</th>
+            <th class="checkCell">Sélection</th>
             <th>Client</th>
             <th>Compte</th>
-            <th>Activite</th>
+            <th>Activité</th>
             <th>Dernier achat</th>
-            <th class="right">Quantite</th>
+            <th class="right">Quantité</th>
             <th class="right">CA cible</th>
             <th>Email</th>
             <th>Statut</th>
           </tr>
         </thead>
         <tbody id="targetBody">
-          <tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une previsualisation pour afficher les clients cibles.</td></tr>
+          <tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une prévisualisation pour afficher les clients ciblés.</td></tr>
         </tbody>
       </table>
     </div>
@@ -411,41 +411,41 @@
       </div>
       <div class="field">
         <label for="subjectInput">Objet</label>
-        <input id="subjectInput" value="Promotion speciale sur votre produit habituel" />
+        <input id="subjectInput" value="Promotion spéciale sur votre produit habituel" />
       </div>
       <div class="field">
         <label for="messageInput">Corps du message</label>
         <textarea id="messageInput">Bonjour,
 
-Nous avons actuellement une offre interessante sur un produit que vous utilisez deja.
+Nous avons actuellement une offre intéressante sur un produit que vous utilisez déjà.
 
 Je me permets de vous transmettre l'information afin que vous puissiez en profiter si besoin.
 
-Je reste disponible si vous souhaitez que je vous chiffre une quantite.
+Je reste disponible si vous souhaitez que je vous chiffre une quantité.
 
 Bien cordialement,</textarea>
-        <div class="help">Variables futures possibles : nom client, reference produit, dernier achat, commercial, lien document.</div>
+        <div class="help">Variables futures possibles : nom client, référence produit, dernier achat, commercial, lien document.</div>
       </div>
       <div class="field">
         <label for="docInput">Document promo</label>
         <input id="docInput" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" />
-        <div class="help">Prototype uniquement : le fichier n'est pas envoye et n'est pas stocke.</div>
+        <div class="help">Prototype uniquement : le fichier n'est pas envoyé et n'est pas stocké.</div>
       </div>
-      <button class="btn gold" id="prepareBtn" type="button">Preparer l'envoi</button>
+      <button class="btn gold" id="prepareBtn" type="button">Préparer l'envoi</button>
     </div>
 
     <div class="card">
       <div class="cardTitle">
-        <h2>Apercu campagne</h2>
-        <span class="chip"><span class="dot green"></span>Envoi verrouille</span>
+        <h2>Aperçu campagne</h2>
+        <span class="chip"><span class="dot green"></span>Envoi verrouillé</span>
       </div>
       <div class="previewBox" id="mailPreview">
-        <h3>Apercu non genere</h3>
-        <p>Selectionne les clients, ajuste le message, puis clique sur Preparer l'envoi.</p>
+        <h3>Aperçu non généré</h3>
+        <p>Sélectionne les clients, ajuste le message, puis clique sur Préparer l'envoi.</p>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
         <button class="btn green" id="fakeSendBtn" type="button" disabled>Simuler l'envoi</button>
-        <button class="btn danger" id="resetBtn" type="button">Reinitialiser</button>
+        <button class="btn danger" id="resetBtn" type="button">Réinitialiser</button>
       </div>
     </div>
   </section>
@@ -456,8 +456,8 @@ Bien cordialement,</textarea>
       <span class="chip"><span class="dot"></span>Roadmap</span>
     </div>
     <div class="roadmap">
-      <div class="roadmapItem"><span class="num">1</span><span>Ajouter les emails clients dans le referentiel quand on aura valide la structure.</span></div>
-      <div class="roadmapItem"><span class="num">2</span><span>Ajouter le consentement / opposition commerciale et exclure automatiquement les clients bloques.</span></div>
+      <div class="roadmapItem"><span class="num">1</span><span>Ajouter les emails clients dans le référentiel quand on aura validé la structure.</span></div>
+      <div class="roadmapItem"><span class="num">2</span><span>Ajouter le consentement / opposition commerciale et exclure automatiquement les clients bloqués.</span></div>
       <div class="roadmapItem"><span class="num">3</span><span>Connecter l'envoi individuel via Resend ou Microsoft Graph avec Reply-To commercial.</span></div>
       <div class="roadmapItem"><span class="num">4</span><span>Historiser chaque campagne : produit, fichier, clients, date, statut et erreurs.</span></div>
     </div>
@@ -466,8 +466,8 @@ Bien cordialement,</textarea>
 
 <div class="modalBackdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal">
-    <h2 id="modalTitle">Module preparatoire</h2>
-    <p id="modalText">Aucun envoi reel n'est branche pour le moment.</p>
+    <h2 id="modalTitle">Module préparatoire</h2>
+    <p id="modalText">Aucun envoi réel n'est branché pour le moment.</p>
     <div class="modalActions">
       <button class="btn primary" id="closeModalBtn" type="button">Compris</button>
     </div>
@@ -511,7 +511,7 @@ function showModal(title, text){
 
 function setLoading(isLoading, text = ""){
   $("previewBtn").disabled = isLoading;
-  $("previewBtn").textContent = isLoading ? "Recherche..." : "Previsualiser";
+  $("previewBtn").textContent = isLoading ? "Recherche..." : "Prévisualiser";
   if (text) $("targetStatus").textContent = text;
 }
 
@@ -669,7 +669,7 @@ function aggregateRows(rows){
         qty:0,
         revenue:0,
         email:"",
-        status:"Email a ajouter",
+        status:"Email à ajouter",
         sources:new Set(),
         refs:new Set(),
         designations:new Set()
@@ -713,7 +713,7 @@ async function loadValidatedRows(term){
     .map(row => {
       const activity = inferActivityFromReal(row);
       return {
-        source:"CA valide",
+        source:"CA validé",
         client:row.client_nom || "Client inconnu",
         account:row.client_code || "-",
         activity,
@@ -787,7 +787,7 @@ async function loadSalesRows(term){
 async function loadTargets(){
   const term = normalize($("productRef").value);
   if (!term){
-    showModal("Reference obligatoire", "Renseigne une reference ou un morceau de designation produit pour lancer le ciblage.");
+    showModal("Référence obligatoire", "Renseigne une référence ou un morceau de désignation produit pour lancer le ciblage.");
     return;
   }
   setLoading(true, "Recherche Supabase en cours...");
@@ -810,7 +810,7 @@ async function loadTargets(){
     renderTargets();
     $("targetDot").className = "dot";
     $("targetStatus").textContent = "Erreur Supabase";
-    showModal("Ciblage impossible", error.message || "Impossible de charger les clients cibles.");
+    showModal("Ciblage impossible", error.message || "Impossible de charger les clients ciblés.");
   }finally{
     setLoading(false);
   }
@@ -818,7 +818,7 @@ async function loadTargets(){
 
 function renderTargets(){
   if (!targets.length){
-    $("targetBody").innerHTML = '<tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une previsualisation pour afficher les clients cibles.</td></tr>';
+    $("targetBody").innerHTML = '<tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une prévisualisation pour afficher les clients ciblés.</td></tr>';
     updateKpis();
     return;
   }
@@ -826,7 +826,7 @@ function renderTargets(){
     const hasEmail = Boolean(row.email);
     return `
       <tr class="${hasEmail ? "" : "is-muted"}">
-        <td class="checkCell"><input class="prettyCheck" type="checkbox" data-id="${escapeHtml(row.id)}" ${row.selected ? "checked" : ""} aria-label="Selectionner ${escapeHtml(row.client)}"></td>
+        <td class="checkCell"><input class="prettyCheck" type="checkbox" data-id="${escapeHtml(row.id)}" ${row.selected ? "checked" : ""} aria-label="Sélectionner ${escapeHtml(row.client)}"></td>
         <td title="${escapeHtml(row.client)}">${escapeHtml(row.client)}</td>
         <td>${escapeHtml(row.account)}</td>
         <td><span class="sourcePill">${escapeHtml(row.activity)}</span></td>
@@ -856,28 +856,28 @@ function updateKpis(){
   $("kpiSelected").textContent = found ? selectedRows.length.toLocaleString("fr-FR") : "-";
   $("kpiEmails").textContent = found ? selectedWithEmail.length.toLocaleString("fr-FR") : "-";
   $("kpiRevenue").textContent = found ? eur.format(revenue) : "-";
-  $("targetStatus").textContent = found ? `${found.toLocaleString("fr-FR")} client(s) charge(s)` : "Aucun ciblage lance";
+  $("targetStatus").textContent = found ? `${found.toLocaleString("fr-FR")} client(s) chargé(s)` : "Aucun ciblage lancé";
 }
 
 function prepareMailPreview(){
   const selectedTargets = targets.filter(row => row.selected);
   if (!selectedTargets.length){
-    showModal("Selection vide", "Aucun client n'est selectionne pour cette campagne.");
+    showModal("Sélection vide", "Aucun client n'est sélectionné pour cette campagne.");
     return;
   }
   const selectedWithEmail = selectedTargets.filter(row => row.email);
-  const product = $("productRef").value.trim() || "produit selectionne";
+  const product = $("productRef").value.trim() || "produit sélectionné";
   const subject = $("subjectInput").value.trim() || "Promotion produit";
-  const doc = $("docInput").files && $("docInput").files[0] ? $("docInput").files[0].name : "Aucun document selectionne";
+  const doc = $("docInput").files && $("docInput").files[0] ? $("docInput").files[0].name : "Aucun document sélectionné";
   const first = selectedTargets[0];
   $("mailPreview").innerHTML = `
-    <h3>Campagne preparee</h3>
+    <h3>Campagne préparée</h3>
     <div class="mailSubject">Objet : ${escapeHtml(subject)}</div>
-    <p><b>${selectedTargets.length.toLocaleString("fr-FR")}</b> client(s) selectionne(s) pour la reference <b>${escapeHtml(product)}</b>.</p>
-    <p><b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b> email(s) envoyable(s) aujourd'hui. Les autres resteront a enrichir quand la colonne email sera ajoutee.</p>
+    <p><b>${selectedTargets.length.toLocaleString("fr-FR")}</b> client(s) sélectionné(s) pour la référence <b>${escapeHtml(product)}</b>.</p>
+    <p><b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b> email(s) envoyable(s) aujourd'hui. Les autres resteront à enrichir quand la colonne email sera ajoutée.</p>
     <p>Premier client cible : <b>${escapeHtml(first.client)}</b> - compte ${escapeHtml(first.account)}</p>
     <p>Document : ${escapeHtml(doc)}</p>
-    <p>Statut : envoi reel desactive. Prochain branchement possible via Resend ou Outlook Graph.</p>`;
+    <p>Statut : envoi réel désactivé. Prochain branchement possible via Resend ou Outlook Graph.</p>`;
   $("fakeSendBtn").disabled = selectedWithEmail.length === 0;
 }
 
@@ -886,7 +886,7 @@ $("selectAllBtn").addEventListener("click", () => { targets.forEach(row => row.s
 $("selectNoneBtn").addEventListener("click", () => { targets.forEach(row => row.selected = false); renderTargets(); });
 $("onlyEmailBtn").addEventListener("click", () => {
   if (!targets.some(row => row.email)){
-    showModal("Aucun email disponible", "C'est normal pour le moment : la colonne email client n'est pas encore ajoutee. La liste reste intacte.");
+    showModal("Aucun email disponible", "C'est normal pour le moment : la colonne email client n'est pas encore ajoutée. La liste reste intacte.");
     return;
   }
   targets = targets.filter(row => row.email);
@@ -894,14 +894,14 @@ $("onlyEmailBtn").addEventListener("click", () => {
   renderTargets();
 });
 $("prepareBtn").addEventListener("click", prepareMailPreview);
-$("fakeSendBtn").addEventListener("click", () => showModal("Envoi non branche", "Le ciblage est reel, mais aucun email reel n'est envoye. Il faudra brancher Resend ou Outlook Graph avant activation."));
+$("fakeSendBtn").addEventListener("click", () => showModal("Envoi non branché", "Le ciblage est réel, mais aucun email réel n'est envoyé. Il faudra brancher Resend ou Outlook Graph avant activation."));
 $("resetBtn").addEventListener("click", () => {
   targets = [];
   renderTargets();
-  $("mailPreview").innerHTML = '<h3>Apercu non genere</h3><p>Selectionne les clients, ajuste le message, puis clique sur Preparer l\'envoi.</p>';
+  $("mailPreview").innerHTML = '<h3>Aperçu non généré</h3><p>Sélectionne les clients, ajuste le message, puis clique sur Préparer l\'envoi.</p>';
   $("fakeSendBtn").disabled = true;
 });
-$("openStatusBtn").addEventListener("click", () => showModal("Lecture seule active", "Le ciblage lit Supabase en temps reel, mais aucun email n'est envoye et aucune donnee n'est modifiee."));
+$("openStatusBtn").addEventListener("click", () => showModal("Lecture seule active", "Le ciblage lit Supabase en temps réel, mais aucun email n'est envoyé et aucune donnée n'est modifiée."));
 $("closeModalBtn").addEventListener("click", () => $("modalBackdrop").classList.remove("is-open"));
 $("modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") $("modalBackdrop").classList.remove("is-open"); });
 renderTargets();
