@@ -109,8 +109,7 @@
       font-weight:850;
       line-height:1.45;
     }
-    .grid{display:grid;grid-template-columns:420px minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
-    @media(max-width:1050px){.grid{grid-template-columns:1fr}}
+    .grid{margin-top:14px}
     .card{
       border:1px solid var(--line);
       border-radius:var(--r);
@@ -154,22 +153,47 @@
     .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     @media(max-width:640px){.two{grid-template-columns:1fr}}
     .help{margin-top:6px;color:var(--muted);font-size:12px;line-height:1.35;font-weight:700}
-    .stepper{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
-    @media(max-width:820px){.stepper{grid-template-columns:1fr 1fr}}
-    .step{
-      border:1px solid rgba(148,163,184,.16);
-      border-radius:16px;
-      background:rgba(2,6,23,.28);
-      padding:10px;
-      min-height:74px;
+    .filterBanner{
+      padding:13px;
+      background:
+        radial-gradient(circle at 0% 0%,rgba(56,189,248,.10),transparent 38%),
+        radial-gradient(circle at 100% 0%,rgba(245,158,11,.10),transparent 34%),
+        linear-gradient(180deg,rgba(15,23,42,.88),rgba(8,15,28,.78));
     }
-    .step b{display:block;font-size:13px;margin-bottom:4px}
-    .step span{display:block;color:var(--muted);font-size:12px;line-height:1.35;font-weight:750}
-    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    .filterBanner .cardTitle{margin-bottom:10px}
+    .filterFields{
+      display:grid;
+      grid-template-columns:minmax(185px,.85fr) minmax(155px,.65fr) minmax(280px,1.35fr) minmax(165px,.75fr) minmax(130px,.55fr) auto;
+      gap:10px;
+      align-items:end;
+    }
+    .filterBanner .field{margin-bottom:0}
+    .filterBanner .btn{min-height:44px;padding:0 18px}
+    .filterHelpLine{
+      margin-top:9px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.35;
+      font-weight:780;
+    }
+    .filterHelpLine b{color:#dbeafe}
+    @media(max-width:1280px){
+      .filterFields{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .filterBanner .btn{width:100%}
+    }
+    @media(max-width:760px){
+      .filterFields{grid-template-columns:1fr}
+    }
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
     @media(max-width:820px){.kpis{grid-template-columns:1fr 1fr}}
-    .kpi{border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(2,6,23,.30);padding:11px}
-    .kpi .k{color:var(--muted);font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
-    .kpi .v{font-size:23px;font-weight:1000;margin-top:4px;letter-spacing:-.04em}
+    .kpi{border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(2,6,23,.30);padding:8px 10px}
+    .kpi .k{color:var(--muted);font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
+    .kpi .v{font-size:20px;font-weight:1000;margin-top:2px;letter-spacing:-.04em}
     .toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
     .toolbarLeft,.toolbarRight{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .miniBtn{min-height:34px;padding:0 10px;border-radius:12px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.055);color:var(--text);font-weight:950;cursor:pointer}
@@ -193,7 +217,7 @@
       font-size:11px;
       font-weight:950;
     }
-    .checkCell{text-align:center;width:62px}
+    th.checkCell,td.checkCell{text-align:center!important;width:54px;padding-left:8px;padding-right:8px}
     .prettyCheck{
       appearance:none;
       -webkit-appearance:none;
@@ -207,8 +231,9 @@
         rgba(2,6,23,.40);
       box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 18px rgba(0,0,0,.20);
       cursor:pointer;
-      display:inline-grid;
+      display:grid;
       place-items:center;
+      margin:0 auto;
       transition:transform .15s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease;
       vertical-align:middle;
     }
@@ -277,13 +302,13 @@
   </div>
 
   <main class="grid">
-    <section class="card">
+    <section class="card filterBanner">
       <div class="cardTitle">
-        <h2>1. Ciblage</h2>
+        <h2>Ciblage</h2>
         <span class="chip"><span class="dot blue"></span>Supabase reel</span>
       </div>
 
-      <div class="two">
+      <div class="filterFields">
         <div class="field">
           <label for="sourceSelect">Source de donnees</label>
           <select id="sourceSelect">
@@ -291,8 +316,8 @@
             <option value="sales">Ventes saisies terrain</option>
             <option value="both">Les deux sources</option>
           </select>
-          <div class="help">Recommande : CA valide importe, pour cibler sur les ventes reelles confirmees.</div>
         </div>
+
         <div class="field">
           <label for="activitySelect">Perimetre</label>
           <select id="activitySelect">
@@ -301,14 +326,12 @@
             <option value="industrie">Industrie</option>
           </select>
         </div>
-      </div>
 
-      <div class="field">
-        <label for="productRef">Reference ou produit promo</label>
-        <input id="productRef" placeholder="Ex : 30190 00, Eponge mousse, produit A..." value="30190 00" />
-      </div>
+        <div class="field">
+          <label for="productRef">Reference ou produit promo</label>
+          <input id="productRef" placeholder="Ex : 30190 00, Eponge mousse..." value="30190 00" />
+        </div>
 
-      <div class="two">
         <div class="field">
           <label for="periodSelect">Periode d'achat</label>
           <select id="periodSelect">
@@ -318,38 +341,25 @@
             <option value="all">Depuis le debut</option>
           </select>
         </div>
+
         <div class="field">
           <label for="minCa">CA minimum produit</label>
           <input id="minCa" type="number" min="0" step="1" value="0" />
         </div>
+
+        <button class="btn primary" id="previewBtn" type="button">Previsualiser</button>
       </div>
 
-      <button class="btn primary" id="previewBtn" type="button">Previsualiser le ciblage</button>
-      <div class="help">Lecture seule : on recherche la reference ou la designation dans les ventes reelles, sans modifier la base.</div>
-    </section>
-
-    <section class="card">
-      <div class="cardTitle">
-        <h2>2. Parcours final prevu</h2>
-        <span class="chip"><span class="dot green"></span>80% pret UI</span>
-      </div>
-      <div class="stepper">
-        <div class="step"><b>Produit</b><span>Recherche par reference, designation ou famille.</span></div>
-        <div class="step"><b>Clients</b><span>Selection globale puis retrait manuel si besoin.</span></div>
-        <div class="step"><b>Message</b><span>Email personnalise, piece jointe ou lien document.</span></div>
-        <div class="step"><b>Envoi</b><span>Un email individuel par client via Resend ou Outlook Graph.</span></div>
-      </div>
-      <div class="previewBox" id="workflowPreview">
-        <h3>Principe</h3>
-        <p>Le client ne verra jamais les autres destinataires. Le futur envoi sera fait en individuel, avec l'email du commercial en reponse.</p>
-        <p>Le module pourra aussi historiser la campagne : date, produit, clients selectionnes, statut envoye / sans email / erreur.</p>
+      <div class="filterHelpLine">
+        <span><b>Lecture seule</b> : recherche par reference ou designation dans les ventes reelles, sans modifier la base.</span>
+        <span>Recommande : CA valide importe pour cibler sur les ventes confirmees.</span>
       </div>
     </section>
   </main>
 
   <section class="card" style="margin-top:14px">
     <div class="cardTitle">
-      <h2>3. Clients cibles</h2>
+      <h2>Clients cibles</h2>
       <span class="chip"><span class="dot" id="targetDot"></span><span id="targetStatus">Aucun ciblage lance</span></span>
     </div>
 
@@ -396,7 +406,7 @@
   <section class="footerGrid">
     <div class="card">
       <div class="cardTitle">
-        <h2>4. Message</h2>
+        <h2>Message</h2>
         <span class="chip"><span class="dot"></span>Brouillon</span>
       </div>
       <div class="field">
@@ -426,7 +436,7 @@ Bien cordialement,</textarea>
 
     <div class="card">
       <div class="cardTitle">
-        <h2>5. Apercu campagne</h2>
+        <h2>Apercu campagne</h2>
         <span class="chip"><span class="dot green"></span>Envoi verrouille</span>
       </div>
       <div class="previewBox" id="mailPreview">
@@ -501,7 +511,7 @@ function showModal(title, text){
 
 function setLoading(isLoading, text = ""){
   $("previewBtn").disabled = isLoading;
-  $("previewBtn").textContent = isLoading ? "Recherche..." : "Previsualiser le ciblage";
+  $("previewBtn").textContent = isLoading ? "Recherche..." : "Previsualiser";
   if (text) $("targetStatus").textContent = text;
 }
 
@@ -794,11 +804,6 @@ async function loadTargets(){
     targets = aggregateRows(rows);
     renderTargets();
     $("targetDot").className = "dot green";
-    $("workflowPreview").innerHTML = `
-      <h3>Ciblage reel charge</h3>
-      <p>Produit analyse : <b>${escapeHtml($("productRef").value || "-")}</b></p>
-      <p>Source : <b>${escapeHtml($("sourceSelect").selectedOptions[0].textContent)}</b>. Perimetre : <b>${escapeHtml($("activitySelect").selectedOptions[0].textContent)}</b>.</p>
-      <p>${targets.length ? "Les clients ci-dessous sont issus de Supabase." : "Aucun client trouve avec ces criteres."}</p>`;
   }catch(error){
     console.error(error);
     targets = [];
@@ -895,7 +900,6 @@ $("resetBtn").addEventListener("click", () => {
   renderTargets();
   $("mailPreview").innerHTML = '<h3>Apercu non genere</h3><p>Selectionne les clients, ajuste le message, puis clique sur Preparer l\'envoi.</p>';
   $("fakeSendBtn").disabled = true;
-  $("workflowPreview").innerHTML = '<h3>Principe</h3><p>Le client ne verra jamais les autres destinataires. Le futur envoi sera fait en individuel, avec l\'email du commercial en reponse.</p><p>Le module pourra aussi historiser la campagne : date, produit, clients selectionnes, statut envoye / sans email / erreur.</p>';
 });
 $("openStatusBtn").addEventListener("click", () => showModal("Lecture seule active", "Le ciblage lit Supabase en temps reel, mais aucun email n'est envoye et aucune donnee n'est modifiee."));
 $("closeModalBtn").addEventListener("click", () => $("modalBackdrop").classList.remove("is-open"));
