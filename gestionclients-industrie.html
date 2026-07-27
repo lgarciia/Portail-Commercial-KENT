@@ -400,6 +400,11 @@
           </div>
 
           <div class="field">
+            <label for="clientEmailInput">Email</label>
+            <input type="email" id="clientEmailInput" placeholder="contact@client.fr" autocomplete="email" />
+          </div>
+
+          <div class="field">
             <label for="clientPlaqueSelect">Plaque</label>
             <select id="clientPlaqueSelect"></select>
           </div>
@@ -494,6 +499,7 @@
       dom.clientNumeroCompteInput = document.getElementById("clientNumeroCompteInput");
       dom.clientNumeroHint = document.getElementById("clientNumeroHint");
       dom.clientTelephoneInput = document.getElementById("clientTelephoneInput");
+      dom.clientEmailInput = document.getElementById("clientEmailInput");
       dom.clientAdresseInput = document.getElementById("clientAdresseInput");
       dom.clientPlaqueSelect = document.getElementById("clientPlaqueSelect");
       dom.saveClientBtn = document.getElementById("saveClientBtn");
@@ -532,6 +538,16 @@
 
     function normalizeText(value) {
       return String(value ?? "").trim().toLowerCase();
+    }
+
+    function normalizeEmail(value) {
+      return String(value ?? "").trim().toLowerCase();
+    }
+
+    function isValidEmail(value) {
+      const email = normalizeEmail(value);
+      if (!email) return true;
+      return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
     }
 
     function parseClientNumberValue(value) {
@@ -594,21 +610,41 @@
       return plaque?.nom || "—";
     }
 
-    async function fetchClients() {
+    function isMissingEmailColumnError(error) {
+      return Boolean(error && /email/i.test(error.message || ""));
+    }
+
+    async function fetchClientsWithSelect(selectColumns) {
       let query = supabaseClient
         .from("industrie_clients")
-        .select(`
-          id,
-          nom,
-          numero_compte,
-          adresse,
-          telephone,
-          plaque_id
-        `)
+        .select(selectColumns)
         .order("nom", { ascending: true });
       query = applyCommercialScope(query);
-      const { data, error } = await query;
+      return await query;
+    }
 
+    async function fetchClients() {
+      const selectWithEmail = `
+        id,
+        nom,
+        numero_compte,
+        adresse,
+        telephone,
+        email,
+        plaque_id
+      `;
+      const selectWithoutEmail = `
+        id,
+        nom,
+        numero_compte,
+        adresse,
+        telephone,
+        plaque_id
+      `;
+      let { data, error } = await fetchClientsWithSelect(selectWithEmail);
+      if (isMissingEmailColumnError(error)) {
+        ({ data, error } = await fetchClientsWithSelect(selectWithoutEmail));
+      }
       if (error) throw error;
       return data || [];
     }
@@ -664,6 +700,7 @@
           client.nom,
           client.numero_compte,
           client.telephone,
+          client.email,
           client.adresse,
           getPlaqueName(client)
         ];
@@ -708,6 +745,7 @@
       dom.clientNomInput.value = "";
       dom.clientNumeroCompteInput.value = "";
       dom.clientTelephoneInput.value = "";
+      dom.clientEmailInput.value = "";
       dom.clientAdresseInput.value = "";
       buildPlaqueSelectOptions();
       updateClientNumberHint();
@@ -722,6 +760,7 @@
         dom.clientNomInput.value = client.nom || "";
         dom.clientNumeroCompteInput.value = client.numero_compte || "";
         dom.clientTelephoneInput.value = client.telephone || "";
+        dom.clientEmailInput.value = client.email || "";
         dom.clientAdresseInput.value = client.adresse || "";
         buildPlaqueSelectOptions(client.plaque_id || "");
         updateClientNumberHint();
@@ -808,12 +847,14 @@
       const nom = String(dom.clientNomInput.value || "").trim();
       const numeroCompte = String(dom.clientNumeroCompteInput.value || "").trim();
       const telephone = String(dom.clientTelephoneInput.value || "").trim();
+      const email = normalizeEmail(dom.clientEmailInput.value);
       const adresse = String(dom.clientAdresseInput.value || "").trim();
       const plaqueId = dom.clientPlaqueSelect.value;
 
       if (!nom) return showToast("Renseigne le nom du client.", "warning");
       if (!numeroCompte) return showToast("Renseigne le numero client / compte.", "warning");
       if (!plaqueId) return showToast("Selectionne une plaque.", "warning");
+      if (!isValidEmail(email)) return showToast("Renseigne un email valide.", "warning");
 
       const duplicateClient = findClientByCompteAndPlaque(numeroCompte, plaqueId, editingId);
       if (duplicateClient) {
@@ -825,6 +866,7 @@
         nom,
         numero_compte: numeroCompte,
         telephone: telephone || null,
+        email: email || null,
         adresse: adresse || null,
         plaque_id: plaqueId
       };

@@ -169,6 +169,77 @@
     }
     .filterBanner .field{margin-bottom:0}
     .filterBanner .btn{min-height:44px;padding:0 18px}
+    .suggestField{position:relative}
+    .suggestPanel{
+      position:absolute;
+      left:0;
+      right:0;
+      top:calc(100% + 8px);
+      z-index:30;
+      display:none;
+      max-height:310px;
+      overflow:auto;
+      border:1px solid rgba(56,189,248,.24);
+      border-radius:16px;
+      background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(8,15,28,.97));
+      box-shadow:0 24px 60px rgba(0,0,0,.42);
+      padding:7px;
+      backdrop-filter:blur(16px);
+    }
+    .suggestPanel.is-open{display:block}
+    .suggestItem{
+      width:100%;
+      border:1px solid transparent;
+      border-radius:13px;
+      background:transparent;
+      color:var(--text);
+      padding:9px 10px;
+      text-align:left;
+      cursor:pointer;
+      display:grid;
+      grid-template-columns:minmax(92px,.34fr) minmax(0,1fr);
+      gap:10px;
+      align-items:center;
+      font-family:inherit;
+    }
+    .suggestItem:hover,.suggestItem.is-active{
+      border-color:rgba(56,189,248,.28);
+      background:rgba(56,189,248,.10);
+    }
+    .suggestRef{
+      color:#fde68a;
+      font-weight:1000;
+      font-size:13px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .suggestName{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .suggestName b{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:13px;
+    }
+    .suggestName span{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:850;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .suggestEmpty{
+      padding:10px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:850;
+    }
     .filterHelpLine{
       margin-top:9px;
       display:flex;
@@ -292,7 +363,6 @@
     </div>
     <div class="actions">
       <a class="btn" href="index.html">Portail</a>
-      <a class="btn" href="requete-commerce.html">Requête commerce</a>
       <button class="btn gold" id="openStatusBtn" type="button">Envoi verrouillé</button>
     </div>
   </header>
@@ -327,9 +397,10 @@
           </select>
         </div>
 
-        <div class="field">
+        <div class="field suggestField">
           <label for="productRef">Référence ou produit promo</label>
-          <input id="productRef" placeholder="Ex : 30190 00, Éponge mousse..." value="30190 00" />
+          <input id="productRef" placeholder="Ex : 30190 00, Éponge mousse..." value="30190 00" autocomplete="off" aria-autocomplete="list" aria-expanded="false" aria-controls="productSuggest" />
+          <div class="suggestPanel" id="productSuggest" role="listbox" aria-label="Suggestions produits"></div>
         </div>
 
         <div class="field">
@@ -456,7 +527,7 @@ Bien cordialement,</textarea>
       <span class="chip"><span class="dot"></span>Roadmap</span>
     </div>
     <div class="roadmap">
-      <div class="roadmapItem"><span class="num">1</span><span>Ajouter les emails clients dans le référentiel quand on aura validé la structure.</span></div>
+      <div class="roadmapItem"><span class="num">1</span><span>Renseigner les emails clients dans les fiches quand la colonne Supabase est prête.</span></div>
       <div class="roadmapItem"><span class="num">2</span><span>Ajouter le consentement / opposition commerciale et exclure automatiquement les clients bloqués.</span></div>
       <div class="roadmapItem"><span class="num">3</span><span>Connecter l'envoi individuel via Resend ou Microsoft Graph avec Reply-To commercial.</span></div>
       <div class="roadmapItem"><span class="num">4</span><span>Historiser chaque campagne : produit, fichier, clients, date, statut et erreurs.</span></div>
@@ -490,9 +561,19 @@ const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR", m
 const $ = id => document.getElementById(id);
 let targets = [];
 let currentUser = null;
+let productCatalog = [];
+let productCatalogKey = "";
+let productCatalogPromise = null;
+let clientEmailIndex = new Map();
+let clientEmailIndexKey = "";
+let clientEmailIndexPromise = null;
+let suggestionTimer = null;
+let activeSuggestionIndex = -1;
+let visibleSuggestions = [];
 
 const normalize = value => String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const compact = value => normalize(value).replace(/[^a-z0-9]/g, "");
+const normalizeEmail = value => String(value ?? "").trim().toLowerCase();
 const toNumber = value => {
   if (value === null || value === undefined) return 0;
   const parsed = Number(String(value).replace(",", ".").replace(/\s/g, ""));
@@ -568,6 +649,264 @@ async function fetchInChunks(table, select, column, values, options = {}){
     }));
   }
   return all;
+}
+
+function isMissingEmailColumnError(error){
+  return Boolean(error && /email/i.test(error.message || ""));
+}
+
+async function fetchClientRows(table, ids = null){
+  const run = select => ids && ids.length
+    ? fetchInChunks(table, select, "id", ids, { order:{ column:"nom", ascending:true } })
+    : fetchPaged(table, select, { order:{ column:"nom", ascending:true } });
+  try {
+    return await run("id,nom,numero_compte,email");
+  } catch (error) {
+    if (!isMissingEmailColumnError(error)) throw error;
+    return run("id,nom,numero_compte");
+  }
+}
+
+function currentCatalogKey(){
+  const userId = window.KentCommercialScope?.getCommercialUserId?.() || "global";
+  return `${userId}::${$("sourceSelect").value}::${$("activitySelect").value}`;
+}
+
+function emailLookupKeys(activity, account, client){
+  const scope = normalize(activity || "");
+  const keys = [];
+  const cleanAccount = normalize(account || "");
+  const cleanClient = normalize(client || "");
+  if (cleanAccount && cleanAccount !== "-") keys.push(`${scope}::account::${cleanAccount}`);
+  if (cleanClient) keys.push(`${scope}::client::${cleanClient}`);
+  return keys;
+}
+
+function addClientEmailToIndex(index, source, client){
+  const email = normalizeEmail(client?.email);
+  if (!email) return;
+  emailLookupKeys(source.label, client?.numero_compte, client?.nom).forEach(key => {
+    if (!index.has(key)) index.set(key, email);
+  });
+}
+
+function findClientEmail(row, index){
+  for (const key of emailLookupKeys(row?.activity, row?.account, row?.client)){
+    const email = index.get(key);
+    if (email) return email;
+  }
+  return "";
+}
+
+async function loadClientEmailIndex(){
+  const key = currentCatalogKey();
+  if (clientEmailIndexKey === key && clientEmailIndex.size) return clientEmailIndex;
+  if (clientEmailIndexPromise && clientEmailIndexKey === key) return clientEmailIndexPromise;
+
+  clientEmailIndexKey = key;
+  clientEmailIndexPromise = (async () => {
+    const index = new Map();
+    const rowsBySource = await Promise.all(SOURCES.map(async source => {
+      if (!activityAllowed(source.label)) return [];
+      const clients = await fetchClientRows(source.tables.clients);
+      return clients.map(client => ({ source, client }));
+    }));
+    rowsBySource.flat().forEach(({ source, client }) => addClientEmailToIndex(index, source, client));
+    clientEmailIndex = index;
+    clientEmailIndexPromise = null;
+    return clientEmailIndex;
+  })().catch(error => {
+    clientEmailIndexPromise = null;
+    console.warn("Emails clients indisponibles:", error?.message || error);
+    return new Map();
+  });
+  return clientEmailIndexPromise;
+}
+
+function suggestionLabel(row){
+  const ref = String(row.reference || "").trim();
+  const designation = String(row.designation || "").trim();
+  return [ref, designation].filter(Boolean).join(" - ") || "Produit sans libellé";
+}
+
+function productCatalogItem(reference, designation, activity, source){
+  const ref = String(reference || "").trim();
+  const name = String(designation || "").trim();
+  return {
+    reference:ref,
+    designation:name,
+    activity:activity || "-",
+    source:source || "Supabase",
+    query:ref || name,
+    label:suggestionLabel({ reference:ref, designation:name }),
+    search:normalize(`${ref} ${name}`),
+    compactSearch:compact(`${ref} ${name}`)
+  };
+}
+
+function mergeCatalogItems(items){
+  const map = new Map();
+  for (const item of items){
+    if (!item.reference && !item.designation) continue;
+    const key = `${compact(item.reference)}::${compact(item.designation)}::${normalize(item.activity)}`;
+    if (!map.has(key)){
+      map.set(key, item);
+      continue;
+    }
+    const existing = map.get(key);
+    existing.source = [...new Set(`${existing.source} + ${item.source}`.split(" + ").filter(Boolean))].join(" + ");
+  }
+  return [...map.values()].sort((a,b) => a.label.localeCompare(b.label, "fr", { numeric:true, sensitivity:"base" }));
+}
+
+async function loadValidatedCatalog(){
+  const rows = await fetchPaged("v_reel_lignes_actives", "reference,designation,entite_key,entite_libelle,source_file", {
+    order:[{ column:"reference", ascending:true }]
+  });
+  return rows
+    .map(row => productCatalogItem(row.reference, row.designation, inferActivityFromReal(row), "CA validé"))
+    .filter(row => activityAllowed(row.activity));
+}
+
+async function loadSalesCatalogForSource(source){
+  if (!activityAllowed(source.label)) return [];
+  const rows = await fetchPaged(source.tables.produits, "reference_produit,nom", {
+    order:{ column:"nom", ascending:true }
+  });
+  return rows.map(row => productCatalogItem(row.reference_produit, row.nom, source.label, "Ventes saisies"));
+}
+
+async function loadProductCatalog(){
+  const key = currentCatalogKey();
+  if (productCatalogKey === key && productCatalog.length) return productCatalog;
+  if (productCatalogPromise && productCatalogKey === key) return productCatalogPromise;
+
+  productCatalogKey = key;
+  productCatalogPromise = (async () => {
+    const sourceMode = $("sourceSelect").value;
+    const blocks = [];
+    if (sourceMode === "validated" || sourceMode === "both") blocks.push(loadValidatedCatalog());
+    if (sourceMode === "sales" || sourceMode === "both") {
+      blocks.push(Promise.all(SOURCES.map(loadSalesCatalogForSource)).then(rows => rows.flat()));
+    }
+    const loaded = (await Promise.all(blocks)).flat();
+    productCatalog = mergeCatalogItems(loaded);
+    productCatalogPromise = null;
+    return productCatalog;
+  })().catch(error => {
+    productCatalogPromise = null;
+    console.warn("Suggestions produits indisponibles:", error?.message || error);
+    return [];
+  });
+  return productCatalogPromise;
+}
+
+function scoreSuggestion(item, term){
+  const compactTerm = compact(term);
+  const ref = normalize(item.reference);
+  const name = normalize(item.designation);
+  if (compact(item.reference) === compactTerm) return 0;
+  if (ref.startsWith(term)) return 1;
+  if (compact(item.reference).startsWith(compactTerm)) return 2;
+  if (name.startsWith(term)) return 3;
+  if (ref.includes(term)) return 4;
+  if (name.includes(term)) return 5;
+  if (item.compactSearch.includes(compactTerm)) return 6;
+  return 99;
+}
+
+function findProductSuggestions(term){
+  const cleanTerm = normalize(term);
+  const compactTerm = compact(cleanTerm);
+  if (cleanTerm.length < 2 && compactTerm.length < 2) return [];
+  return productCatalog
+    .map(item => ({ item, score:scoreSuggestion(item, cleanTerm) }))
+    .filter(entry => entry.score < 99)
+    .sort((a,b) => (a.score - b.score) || a.item.label.localeCompare(b.item.label, "fr", { numeric:true, sensitivity:"base" }))
+    .slice(0, 9)
+    .map(entry => entry.item);
+}
+
+function hideProductSuggestions(){
+  const panel = $("productSuggest");
+  panel.classList.remove("is-open");
+  panel.innerHTML = "";
+  $("productRef").setAttribute("aria-expanded", "false");
+  activeSuggestionIndex = -1;
+  visibleSuggestions = [];
+}
+
+function renderProductSuggestions(items, message = ""){
+  const panel = $("productSuggest");
+  visibleSuggestions = items || [];
+  if (!visibleSuggestions.length) activeSuggestionIndex = -1;
+  else if (activeSuggestionIndex < 0 || activeSuggestionIndex >= visibleSuggestions.length) activeSuggestionIndex = 0;
+  $("productRef").setAttribute("aria-expanded", visibleSuggestions.length || message ? "true" : "false");
+  if (message && !visibleSuggestions.length){
+    panel.innerHTML = `<div class="suggestEmpty">${escapeHtml(message)}</div>`;
+    panel.classList.add("is-open");
+    return;
+  }
+  if (!visibleSuggestions.length){
+    hideProductSuggestions();
+    return;
+  }
+  panel.innerHTML = visibleSuggestions.map((item, index) => `
+    <button class="suggestItem ${index === activeSuggestionIndex ? "is-active" : ""}" type="button" data-index="${index}" role="option" aria-selected="${index === activeSuggestionIndex ? "true" : "false"}">
+      <span class="suggestRef">${escapeHtml(item.reference || "-")}</span>
+      <span class="suggestName">
+        <b>${escapeHtml(item.designation || "Produit sans désignation")}</b>
+        <span>${escapeHtml(item.activity)} · ${escapeHtml(item.source)}</span>
+      </span>
+    </button>
+  `).join("");
+  panel.querySelectorAll(".suggestItem").forEach(button => {
+    button.addEventListener("mousedown", event => {
+      event.preventDefault();
+      chooseProductSuggestion(Number(button.dataset.index));
+    });
+  });
+  panel.classList.add("is-open");
+}
+
+function chooseProductSuggestion(index){
+  const item = visibleSuggestions[index];
+  if (!item) return;
+  $("productRef").value = item.query;
+  hideProductSuggestions();
+  $("productRef").focus();
+}
+
+function refreshProductSuggestions(){
+  clearTimeout(suggestionTimer);
+  suggestionTimer = setTimeout(async () => {
+    const value = $("productRef").value;
+    const term = normalize(value);
+    if (term.length < 2 && compact(term).length < 2){
+      hideProductSuggestions();
+      return;
+    }
+    renderProductSuggestions([], "Recherche de suggestions...");
+    await loadProductCatalog();
+    const suggestions = findProductSuggestions(value);
+    renderProductSuggestions(suggestions, suggestions.length ? "" : "Aucune suggestion trouvée.");
+  }, 180);
+}
+
+function moveSuggestion(delta){
+  if (!visibleSuggestions.length) return;
+  activeSuggestionIndex = (activeSuggestionIndex + delta + visibleSuggestions.length) % visibleSuggestions.length;
+  renderProductSuggestions(visibleSuggestions);
+}
+
+function resetProductCatalog(){
+  productCatalog = [];
+  productCatalogKey = "";
+  productCatalogPromise = null;
+  clientEmailIndex = new Map();
+  clientEmailIndexKey = "";
+  clientEmailIndexPromise = null;
+  hideProductSuggestions();
 }
 
 function normalizeVisitType(value){
@@ -659,6 +998,7 @@ function aggregateRows(rows){
   for (const row of rows){
     const key = targetKey(row);
     if (!map.has(key)){
+      const firstEmail = normalizeEmail(row.email);
       map.set(key, {
         id:key,
         selected:true,
@@ -668,8 +1008,8 @@ function aggregateRows(rows){
         lastRaw:"",
         qty:0,
         revenue:0,
-        email:"",
-        status:"Email à ajouter",
+        email:firstEmail,
+        status:firstEmail ? "Email prêt" : "Email à ajouter",
         sources:new Set(),
         refs:new Set(),
         designations:new Set()
@@ -678,6 +1018,8 @@ function aggregateRows(rows){
     const target = map.get(key);
     target.qty += toNumber(row.qty);
     target.revenue += toNumber(row.revenue);
+    if (!target.email && row.email) target.email = normalizeEmail(row.email);
+    target.status = target.email ? "Email prêt" : "Email à ajouter";
     target.sources.add(row.source || "Supabase");
     if (row.reference) target.refs.add(String(row.reference));
     if (row.designation) target.designations.add(String(row.designation));
@@ -707,12 +1049,13 @@ async function loadValidatedRows(term){
     "id,commercial_user_id,commercial_identifier,commercial_name,entite_key,entite_libelle,annee,mois,client_code,client_nom,montant,quantite,reference,designation,date_piece,source_file",
     options
   );
+  const emailIndex = await loadClientEmailIndex();
   return rows
     .filter(row => productMatches(row, term))
     .filter(isInPeriod)
     .map(row => {
       const activity = inferActivityFromReal(row);
-      return {
+      const mapped = {
         source:"CA validé",
         client:row.client_nom || "Client inconnu",
         account:row.client_code || "-",
@@ -723,6 +1066,8 @@ async function loadValidatedRows(term){
         reference:row.reference || "",
         designation:row.designation || ""
       };
+      mapped.email = findClientEmail(mapped, emailIndex);
+      return mapped;
     })
     .filter(row => activityAllowed(row.activity));
 }
@@ -752,9 +1097,7 @@ async function loadSalesRowsForSource(source, term){
   const visitById = new Map(validVisits.map(visit => [String(visit.id), visit]));
   if (!visitById.size) return [];
 
-  const clients = await fetchInChunks(source.tables.clients, "id,nom,numero_compte", "id", validVisits.map(visit => visit.client_id), {
-    order:{ column:"nom", ascending:true }
-  });
+  const clients = await fetchClientRows(source.tables.clients, validVisits.map(visit => visit.client_id));
   const clientById = new Map(clients.map(client => [String(client.id), client]));
 
   return lines
@@ -772,6 +1115,7 @@ async function loadSalesRowsForSource(source, term){
         date:String(visit.date_visite || "").slice(0, 10),
         qty,
         revenue:qty * toNumber(line.prix_unitaire),
+        email:normalizeEmail(client?.email),
         reference:product?.reference_produit || "",
         designation:product?.nom || ""
       };
@@ -874,7 +1218,7 @@ function prepareMailPreview(){
     <h3>Campagne préparée</h3>
     <div class="mailSubject">Objet : ${escapeHtml(subject)}</div>
     <p><b>${selectedTargets.length.toLocaleString("fr-FR")}</b> client(s) sélectionné(s) pour la référence <b>${escapeHtml(product)}</b>.</p>
-    <p><b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b> email(s) envoyable(s) aujourd'hui. Les autres resteront à enrichir quand la colonne email sera ajoutée.</p>
+    <p><b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b> email(s) envoyable(s) aujourd'hui. Les autres resteront à enrichir dans les fiches clients.</p>
     <p>Premier client cible : <b>${escapeHtml(first.client)}</b> - compte ${escapeHtml(first.account)}</p>
     <p>Document : ${escapeHtml(doc)}</p>
     <p>Statut : envoi réel désactivé. Prochain branchement possible via Resend ou Outlook Graph.</p>`;
@@ -882,11 +1226,46 @@ function prepareMailPreview(){
 }
 
 $("previewBtn").addEventListener("click", loadTargets);
+$("productRef").addEventListener("input", refreshProductSuggestions);
+$("productRef").addEventListener("focus", refreshProductSuggestions);
+$("productRef").addEventListener("keydown", event => {
+  if (!visibleSuggestions.length) {
+    if (event.key === "Escape") hideProductSuggestions();
+    return;
+  }
+  if (event.key === "ArrowDown"){
+    event.preventDefault();
+    moveSuggestion(1);
+    return;
+  }
+  if (event.key === "ArrowUp"){
+    event.preventDefault();
+    moveSuggestion(-1);
+    return;
+  }
+  if (event.key === "Enter" && $("productSuggest").classList.contains("is-open")){
+    event.preventDefault();
+    chooseProductSuggestion(activeSuggestionIndex);
+    return;
+  }
+  if (event.key === "Escape") hideProductSuggestions();
+});
+$("sourceSelect").addEventListener("change", () => {
+  resetProductCatalog();
+  refreshProductSuggestions();
+});
+$("activitySelect").addEventListener("change", () => {
+  resetProductCatalog();
+  refreshProductSuggestions();
+});
+document.addEventListener("mousedown", event => {
+  if (!event.target.closest(".suggestField")) hideProductSuggestions();
+});
 $("selectAllBtn").addEventListener("click", () => { targets.forEach(row => row.selected = true); renderTargets(); });
 $("selectNoneBtn").addEventListener("click", () => { targets.forEach(row => row.selected = false); renderTargets(); });
 $("onlyEmailBtn").addEventListener("click", () => {
   if (!targets.some(row => row.email)){
-    showModal("Aucun email disponible", "C'est normal pour le moment : la colonne email client n'est pas encore ajoutée. La liste reste intacte.");
+    showModal("Aucun email disponible", "Aucun email n'est renseigné pour les clients ciblés. La liste reste intacte.");
     return;
   }
   targets = targets.filter(row => row.email);

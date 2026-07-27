@@ -903,6 +903,11 @@
           </div>
 
           <div class="field-group">
+            <label for="clientEmailInput">Email</label>
+            <input type="email" id="clientEmailInput" placeholder="contact@client.fr" autocomplete="email" />
+          </div>
+
+          <div class="field-group">
             <label for="clientPlaqueSelect">Plaque</label>
             <select id="clientPlaqueSelect"></select>
           </div>
@@ -1174,6 +1179,7 @@
       dom.clientNumeroCompteInput = document.getElementById("clientNumeroCompteInput");
       dom.clientNumeroHint = document.getElementById("clientNumeroHint");
       dom.clientTelephoneInput = document.getElementById("clientTelephoneInput");
+      dom.clientEmailInput = document.getElementById("clientEmailInput");
       dom.clientAdresseInput = document.getElementById("clientAdresseInput");
       dom.clientPlaqueSelect = document.getElementById("clientPlaqueSelect");
       dom.saveClientBtn = document.getElementById("saveClientBtn");
@@ -1233,6 +1239,16 @@
 
     function normalizeText(value) {
       return String(value ?? "").trim().toLowerCase();
+    }
+
+    function normalizeEmail(value) {
+      return String(value ?? "").trim().toLowerCase();
+    }
+
+    function isValidEmail(value) {
+      const email = normalizeEmail(value);
+      if (!email) return true;
+      return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
     }
 
     function normalizeBdcRef(value) {
@@ -2316,6 +2332,7 @@
       dom.clientNomInput.value = "";
       dom.clientNumeroCompteInput.value = "";
       dom.clientTelephoneInput.value = "";
+      dom.clientEmailInput.value = "";
       dom.clientAdresseInput.value = "";
       dom.clientPlaqueSelect.innerHTML = buildPlaqueOptions();
       dom.saveClientBtn.textContent = "Enregistrer client";
@@ -2345,12 +2362,14 @@
       const nom = String(dom.clientNomInput.value || "").trim();
       const numeroCompte = String(dom.clientNumeroCompteInput.value || "").trim();
       const telephone = String(dom.clientTelephoneInput.value || "").trim();
+      const email = normalizeEmail(dom.clientEmailInput.value);
       const adresse = String(dom.clientAdresseInput.value || "").trim();
       const plaqueId = dom.clientPlaqueSelect.value;
 
       if (!nom) return showToast("Renseigne le nom du client.", "warning");
       if (!numeroCompte) return showToast("Renseigne le numero client / compte.", "warning");
       if (!plaqueId) return showToast("Selectionne une plaque.", "warning");
+      if (!isValidEmail(email)) return showToast("Renseigne un email valide.", "warning");
 
       const existingClient = findExistingClientByCompteAndPlaque(numeroCompte, plaqueId);
       if (existingClient) {
@@ -2372,6 +2391,7 @@
         plaque_id: plaqueId,
         ...getCommercialOwnershipPayload()
       };
+      if (email) payload.email = email;
 
       try {
         dom.saveClientBtn.disabled = true;
