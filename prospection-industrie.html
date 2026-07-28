@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prospection Industrie - KENT</title>
+  <script src="./shared-ui.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#07121b;--bg-soft:#0c1a29;--panel:rgba(10,20,34,.82);--line:rgba(255,255,255,.10);--line-strong:rgba(255,255,255,.16);--text:#eef4ff;--muted:#9fb2c8;--muted-2:#72849b;--blue:#38bdf8;--green:#22c55e;--gold:#f59e0b;--red:#ef4444;--shadow:0 28px 70px rgba(2,6,23,.44);--radius:24px}
+    *::-webkit-scrollbar{width:10px;height:10px}
+    *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:999px}
+    body{min-height:100vh;font-family:"Aptos","Segoe UI",sans-serif;color:var(--text);background:radial-gradient(circle at top left,rgba(56,189,248,.18),transparent 28%),radial-gradient(circle at top right,rgba(245,158,11,.13),transparent 26%),radial-gradient(circle at bottom left,rgba(34,197,94,.11),transparent 30%),linear-gradient(145deg,var(--bg),var(--bg-soft));padding:24px;overflow-x:hidden}
+    .app{max-width:1720px;margin:0 auto}
+    .glass{background:linear-gradient(180deg,rgba(15,23,42,.86),rgba(8,15,28,.78));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+    .hero{padding:22px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:end;margin-bottom:16px;background:radial-gradient(circle at 0 0,rgba(56,189,248,.14),transparent 34%),radial-gradient(circle at 100% 0,rgba(245,158,11,.13),transparent 30%),linear-gradient(180deg,rgba(15,23,42,.92),rgba(8,15,28,.84))}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid rgba(245,158,11,.32);background:rgba(245,158,11,.10);color:#fde68a;text-transform:uppercase;letter-spacing:.08em;font-weight:950;font-size:12px;margin-bottom:12px}
+    h1{font-size:clamp(34px,5vw,64px);letter-spacing:-.06em;line-height:.96;margin:0}
+    .hero p{color:var(--muted);font-weight:760;line-height:1.5;margin-top:10px;max-width:920px}
+    .heroActions,.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);color:var(--text);min-height:42px;padding:0 14px;border-radius:14px;font-weight:950;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-family:inherit;transition:transform .18s ease,background .18s ease,opacity .18s ease,border-color .18s ease}
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.20)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .btn.primary{background:linear-gradient(135deg,#38bdf8,#2563eb);border:none;box-shadow:0 15px 32px rgba(37,99,235,.24)}
+    .btn.green{background:linear-gradient(135deg,#22c55e,#059669);border:none;box-shadow:0 15px 32px rgba(5,150,105,.22)}
+    .btn.gold{color:#08111f;background:linear-gradient(135deg,#fde68a,#f59e0b);border:none;box-shadow:0 15px 32px rgba(245,158,11,.22)}
+    .btn.danger{color:#fecaca;background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.24)}
+    .btn.small{min-height:34px;padding:0 10px;border-radius:11px;font-size:12px}
+    .toolbar{padding:14px;margin-bottom:14px;display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(190px,.75fr) minmax(170px,.7fr) minmax(170px,.7fr) auto;gap:10px;align-items:end}
+    .field{display:flex;flex-direction:column;gap:7px;min-width:0}
+    label{color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+    input,select,textarea{width:100%;min-height:42px;border:1px solid rgba(148,163,184,.22);border-radius:14px;background:rgba(2,6,23,.42);color:var(--text);padding:10px 12px;outline:none;font:inherit;font-weight:800}
+    textarea{min-height:110px;line-height:1.45;resize:vertical}
+    input::placeholder,textarea::placeholder{color:rgba(159,178,200,.68)}
+    input:focus,select:focus,textarea:focus{border-color:rgba(56,189,248,.62);box-shadow:0 0 0 4px rgba(56,189,248,.12)}
+    select option{background:#0f172a;color:#eef4ff}
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+    .kpi{padding:14px;border-radius:20px;border:1px solid var(--line);background:rgba(15,23,42,.66)}
+    .kpi .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:950;margin-bottom:6px}
+    .kpi .value{font-size:28px;font-weight:1000;letter-spacing:-.04em}
+    .kpi .sub{color:var(--muted);font-size:12px;font-weight:750;margin-top:4px}
+    .statusBar{padding:12px 14px;margin-bottom:14px;border-radius:16px;border:1px solid rgba(56,189,248,.18);background:rgba(56,189,248,.09);color:#d8f3ff;font-weight:850}
+    .statusBar[data-tone="success"]{border-color:rgba(34,197,94,.24);background:rgba(34,197,94,.10);color:#dcfce7}
+    .statusBar[data-tone="warning"]{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.10);color:#fde68a}
+    .statusBar[data-tone="error"]{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.10);color:#fecaca}
+    .boardShell{padding:14px;overflow-x:auto}
+    .board{display:grid;grid-template-columns:repeat(8,minmax(245px,1fr));gap:12px;min-width:2050px}
+    .stage{min-height:430px;border:1px solid var(--line);border-radius:20px;background:rgba(2,6,23,.28);padding:10px}
+    .stageHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+    .stageTitle{font-size:13px;font-weight:1000;text-transform:uppercase;letter-spacing:.04em;color:#e8f0ff}
+    .stageCount{font-size:12px;color:var(--muted);font-weight:950;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.05);border-radius:999px;padding:5px 8px}
+    .stageList{display:grid;gap:9px}
+    .prospectCard{text-align:left;width:100%;border:1px solid rgba(148,163,184,.16);border-radius:17px;background:linear-gradient(180deg,rgba(15,23,42,.86),rgba(8,15,28,.72));padding:11px;color:var(--text);cursor:pointer;box-shadow:0 18px 34px rgba(0,0,0,.18);transition:transform .18s ease,border-color .18s ease,background .18s ease}
+    .prospectCard:hover{transform:translateY(-2px);border-color:rgba(56,189,248,.34);background:rgba(15,23,42,.92)}
+    .prospectCard[data-priority="urgente"]{border-color:rgba(239,68,68,.42)}
+    .prospectCard[data-priority="haute"]{border-color:rgba(245,158,11,.38)}
+    .prospectName{font-size:15px;font-weight:1000;letter-spacing:-.02em;margin-bottom:6px;line-height:1.18}
+    .prospectMeta{display:grid;gap:4px;color:var(--muted);font-size:12px;font-weight:750;line-height:1.35}
+    .cardFooter{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.05);border-radius:999px;padding:5px 8px;font-size:11px;font-weight:950;color:var(--muted);white-space:nowrap}
+    .pill.blue{color:#bae6fd;border-color:rgba(56,189,248,.24);background:rgba(56,189,248,.10)}
+    .pill.green{color:#bbf7d0;border-color:rgba(34,197,94,.24);background:rgba(34,197,94,.10)}
+    .pill.gold{color:#fde68a;border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.10)}
+    .pill.red{color:#fecaca;border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.10)}
+    .empty{border:1px dashed rgba(255,255,255,.12);border-radius:16px;padding:18px 12px;color:var(--muted);font-size:13px;text-align:center;background:rgba(255,255,255,.03);font-weight:750}
+    .modalOverlay{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,.74);backdrop-filter:blur(10px);padding:18px}
+    .modalOverlay.active{display:flex}
+    .modal{width:min(1040px,100%);max-height:92vh;overflow:auto;padding:20px;border-radius:28px;border:1px solid var(--line-strong);background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(8,15,28,.97));box-shadow:0 34px 100px rgba(0,0,0,.50)}
+    .modalHead{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:15px}
+    .modalHead h2{font-size:26px;letter-spacing:-.04em;margin-bottom:4px}
+    .modalHead p{color:var(--muted);font-weight:760}
+    .closeBtn{width:40px;height:40px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--text);font-size:18px;cursor:pointer}
+    .modalGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+    .modalGrid .full{grid-column:1/-1}
+    .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.55fr);gap:14px;margin-top:14px}
+    .panel{border:1px solid var(--line);border-radius:20px;background:rgba(2,6,23,.28);padding:13px}
+    .panel h3{font-size:16px;margin-bottom:10px;letter-spacing:-.02em}
+    .history{display:grid;gap:8px;max-height:280px;overflow:auto;padding-right:3px}
+    .historyItem{border:1px solid rgba(255,255,255,.08);border-radius:15px;background:rgba(255,255,255,.04);padding:10px}
+    .historyItem strong{display:block;font-size:13px;margin-bottom:4px}
+    .historyItem p{color:var(--muted);font-size:12px;line-height:1.4;margin-top:3px;white-space:pre-wrap}
+    .historyDate{color:var(--muted-2);font-size:11px;font-weight:850}
+    .modalActions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:15px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+    .leftActions,.rightActions{display:flex;gap:9px;flex-wrap:wrap}
+    .toastWrap{position:fixed;right:18px;bottom:18px;z-index:12000;display:grid;gap:10px}
+    .toast{padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(15,23,42,.96);box-shadow:0 18px 42px rgba(0,0,0,.28);color:var(--text);font-weight:850;opacity:0;transform:translateY(8px);transition:.22s ease}
+    .toast.visible{opacity:1;transform:translateY(0)}
+    .toast.success{border-color:rgba(34,197,94,.28);color:#dcfce7}.toast.warning{border-color:rgba(245,158,11,.30);color:#fde68a}.toast.error{border-color:rgba(239,68,68,.30);color:#fecaca}
+    .confirmModal{width:min(520px,100%)}
+    .confirmModal p{color:var(--muted);line-height:1.5;font-weight:760;margin-top:6px}
+    @media(max-width:1100px){.hero,.split{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.heroActions{justify-content:flex-start}}
+    @media(max-width:700px){body{padding:14px}.toolbar,.kpis,.modalGrid{grid-template-columns:1fr}.board{min-width:1900px}.modalActions{align-items:stretch}.leftActions,.rightActions,.btn{width:100%;justify-content:center}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero glass">
+      <div>
+        <div class="eyebrow">Prospection Industrie</div>
+        <h1>Pipeline prospects</h1>
+        <p>Transforme une piste industrie en client : identification, documentation, relance, rendez-vous, qualification, offre puis conversion volontaire en fiche client industrie.</p>
+      </div>
+      <div class="heroActions">
+        <a class="btn" href="commerce-industrie.html">Commerce Industrie</a>
+        <a class="btn" href="gestionclients-industrie.html">Clients Industrie</a>
+        <button class="btn primary" id="newProspectBtn" type="button">Nouveau prospect</button>
+      </div>
+    </section>
+
+    <section class="toolbar glass">
+      <div class="field"><label for="searchInput">Recherche</label><input id="searchInput" placeholder="Entreprise, contact, secteur, ville, email..." autocomplete="off" /></div>
+      <div class="field"><label for="stageFilter">Statut</label><select id="stageFilter"></select></div>
+      <div class="field"><label for="priorityFilter">Priorité</label><select id="priorityFilter"><option value="">Toutes</option><option value="urgente">Urgente</option><option value="haute">Haute</option><option value="normale">Normale</option><option value="basse">Basse</option></select></div>
+      <div class="field"><label for="dueFilter">Relance</label><select id="dueFilter"><option value="">Toutes</option><option value="due">À traiter</option><option value="week">Cette semaine</option><option value="none">Sans date</option></select></div>
+      <button class="btn gold" id="refreshBtn" type="button">Actualiser</button>
+    </section>
+
+    <div class="kpis">
+      <div class="kpi"><div class="label">Prospects actifs</div><div class="value" id="kpiActive">-</div><div class="sub">Hors perdus et convertis</div></div>
+      <div class="kpi"><div class="label">Relances à traiter</div><div class="value" id="kpiDue">-</div><div class="sub">Date de contact dépassée ou du jour</div></div>
+      <div class="kpi"><div class="label">Potentiel pondéré</div><div class="value" id="kpiWeighted">-</div><div class="sub">Potentiel x probabilité</div></div>
+      <div class="kpi"><div class="label">Conversions</div><div class="value" id="kpiConverted">-</div><div class="sub">Prospects déjà passés en clients</div></div>
+    </div>
+
+    <div class="statusBar" id="statusBar">Prêt.</div>
+    <section class="boardShell glass"><div class="board" id="board"></div></section>
+  </div>
+
+  <div class="modalOverlay" id="prospectModalOverlay">
+    <div class="modal">
+      <div class="modalHead"><div><h2 id="prospectModalTitle">Nouveau prospect</h2><p id="prospectModalSubtitle">Renseigne la piste industrie puis fais avancer le dossier étape par étape.</p></div><button class="closeBtn" id="closeProspectModalBtn" type="button">×</button></div>
+      <form id="prospectForm">
+        <input type="hidden" id="prospectIdInput" />
+        <div class="modalGrid">
+          <div class="field"><label for="companyInput">Entreprise</label><input id="companyInput" placeholder="Nom de l'entreprise" /></div>
+          <div class="field"><label for="contactInput">Contact</label><input id="contactInput" placeholder="Nom du contact" /></div>
+          <div class="field"><label for="phoneInput">Téléphone</label><input id="phoneInput" placeholder="Téléphone" /></div>
+          <div class="field"><label for="emailInput">Email</label><input id="emailInput" type="email" placeholder="contact@entreprise.fr" autocomplete="email" /></div>
+          <div class="field"><label for="sectorInput">Secteur d'activité</label><input id="sectorInput" placeholder="Ex : maintenance, production, carrosserie industrielle..." /></div>
+          <div class="field"><label for="sourceInput">Source</label><input id="sourceInput" placeholder="Ex : recommandation, salon, appel entrant..." /></div>
+          <div class="field"><label for="stageInput">Statut</label><select id="stageInput"></select></div>
+          <div class="field"><label for="priorityInput">Priorité</label><select id="priorityInput"><option value="basse">Basse</option><option value="normale">Normale</option><option value="haute">Haute</option><option value="urgente">Urgente</option></select></div>
+          <div class="field"><label for="nextContactInput">Prochain contact</label><input id="nextContactInput" type="date" /></div>
+          <div class="field"><label for="potentialInput">Potentiel CA estimé</label><input id="potentialInput" inputmode="decimal" placeholder="0" /></div>
+          <div class="field"><label for="probabilityInput">Probabilité (%)</label><input id="probabilityInput" type="number" min="0" max="100" step="5" placeholder="10" /></div>
+          <div class="field full"><label for="addressInput">Adresse</label><input id="addressInput" placeholder="Adresse du prospect" /></div>
+          <div class="field full"><label for="notesInput">Notes internes</label><textarea id="notesInput" placeholder="Contexte, besoin, objections, personnes à contacter..."></textarea></div>
+        </div>
+      </form>
+      <div class="split">
+        <section class="panel" id="actionPanel">
+          <h3>Historique et prochaine action</h3>
+          <form id="actionForm" class="modalGrid" style="grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px">
+            <div class="field"><label for="actionTypeInput">Type</label><select id="actionTypeInput"><option value="note">Note</option><option value="appel">Appel</option><option value="email">Email</option><option value="documentation">Documentation envoyée</option><option value="relance">Relance</option><option value="rdv">Rendez-vous</option><option value="offre">Offre</option></select></div>
+            <div class="field"><label for="actionNextInput">Prochaine relance</label><input id="actionNextInput" type="date" /></div>
+            <div class="field full"><label for="actionCommentInput">Commentaire</label><textarea id="actionCommentInput" placeholder="Résumé de l'action"></textarea></div>
+            <div class="full actions" style="justify-content:flex-start"><button class="btn primary" id="saveActionBtn" type="submit">Ajouter l'action</button></div>
+          </form>
+          <div class="history" id="historyList"></div>
+        </section>
+        <section class="panel" id="conversionPanel">
+          <h3>Conversion en client industrie</h3>
+          <div id="convertedInfo" class="empty" style="display:none"></div>
+          <div id="conversionForm">
+            <div class="field" style="margin-bottom:10px"><label for="clientNumberInput">Numéro client / compte</label><input id="clientNumberInput" placeholder="Compte industrie" /></div>
+            <div class="field" style="margin-bottom:12px"><label for="plaqueSelect">Plaque tarifaire</label><select id="plaqueSelect"></select></div>
+            <button class="btn green" id="convertBtn" type="button">Convertir en client</button>
+            <p style="color:var(--muted);font-size:12px;line-height:1.45;margin-top:10px;font-weight:760">La conversion crée volontairement une ligne dans <b>industrie_clients</b>. Le prospect reste historisé et relié au client créé.</p>
+          </div>
+        </section>
+      </div>
+      <div class="modalActions"><div class="leftActions"><button class="btn danger" id="archiveProspectBtn" type="button">Masquer</button></div><div class="rightActions"><button class="btn" id="cancelProspectBtn" type="button">Annuler</button><button class="btn primary" id="saveProspectBtn" type="submit" form="prospectForm">Enregistrer</button></div></div>
+    </div>
+  </div>
+
+  <div class="modalOverlay" id="confirmOverlay"><div class="modal confirmModal"><div class="modalHead"><div><h2 id="confirmTitle">Confirmation</h2><p id="confirmText">Confirmer cette action ?</p></div></div><div class="modalActions"><div></div><div class="rightActions"><button class="btn" id="confirmCancelBtn" type="button">Annuler</button><button class="btn danger" id="confirmOkBtn" type="button">Confirmer</button></div></div></div></div>
+  <div class="toastWrap" id="toastWrap"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./commercial-scope.js"></script>
+  <script src="./prospection-industrie.js"></script>
+</body>
+</html>
