@@ -950,8 +950,64 @@
       }).join("");
     }
 
+    function getBestHeaderCandidate(tokens, rawCells, scoreFn) {
+      let best = { index: -1, score: 0 };
+      tokens.forEach((token, index) => {
+        const score = scoreFn(token, rawCells[index] || "");
+        if (score > best.score) best = { index, score };
+      });
+      return best.index;
+    }
+
+    function scoreReferenceHeader(token, rawCell) {
+      const raw = normalizeText(rawCell)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, "");
+      if (raw === "ref." || raw === "ref") return 100;
+      if (token === "ref" || token === "reference") return 95;
+      if (token.includes("reference") && (token.includes("produit") || token.includes("article"))) return 88;
+      if (token.includes("ref") && (token.includes("produit") || token.includes("article"))) return 84;
+      if (token === "codeproduit" || token === "codearticle") return 72;
+      if (token === "code") return 45;
+      return 0;
+    }
+
+    function scoreDesignationHeader(token) {
+      if (token === "designation" || token === "designationproduit") return 100;
+      if (token.includes("designation")) return 92;
+      if (token === "libelle" || token === "libelleproduit" || token === "libellearticle") return 86;
+      if (token.includes("libelle")) return 80;
+      if (token === "description" || token === "descriptionproduit") return 78;
+      if (token.includes("description")) return 72;
+      if (token === "produit" || token === "nomproduit") return 62;
+      return 0;
+    }
+
+    function scoreTarifHeader(token, mode = "header-detect") {
+      if (!token) return 0;
+      if (mode === "gueudet-prof-header") {
+        if (token.includes("tarif") && token.includes("professionnel")) return 100;
+        if (token.includes("tarif") && token.includes("pro")) return 94;
+        return 0;
+      }
+
+      if (token === "tarif" || token === "tarifht" || token === "tarifvente") return 100;
+      if (token.includes("tarif") && (token.includes("revente") || token.includes("vente") || token.includes("client"))) return 96;
+      if (token.includes("tarif") && token.includes("achat")) return 74;
+      if (token.includes("tarif")) return 90;
+      if (token === "prix" || token === "prixht" || token === "prixvente" || token === "prixnet") return 86;
+      if (token.includes("prix") && (token.includes("vente") || token.includes("client") || token.includes("net"))) return 82;
+      if (token.includes("prix") && token.includes("achat")) return 66;
+      if (token.includes("prix")) return 76;
+      if (token === "pu" || token === "puht" || token === "p.u" || token === "p.u.") return 72;
+      if (token.includes("puclient") || token.includes("punet") || token.includes("puht")) return 70;
+      return 0;
+    }
+
     function findHeaderInRows(rows, mode = "header-detect") {
-      const maxScan = Math.min(rows.length, 40);
+      const maxScan = Math.min(rows.length, 80);
       for (let rowIndex = 0; rowIndex < maxScan; rowIndex += 1) {
         const row = rows[rowIndex] || [];
         const rawCells = row.map(cell => normalizeText(cell));
@@ -968,26 +1024,11 @@
           });
         }
 
-        tokens.forEach((token, index) => {
-          if (refIndex === -1 && (token === "ref" || token === "ref." || token === "reference")) {
-            refIndex = index;
-          }
-          if (
-            designationIndex === -1 &&
-            (token.includes("designation") || token.includes("description"))
-          ) {
-            designationIndex = index;
-          }
-          if (
-            tarifIndex === -1 &&
-            (
-              (mode === "gueudet-prof-header" && token.includes("tarif") && token.includes("professionnel")) ||
-              (mode !== "gueudet-prof-header" && (token.includes("tarif") || token === "prix"))
-            )
-          ) {
-            tarifIndex = index;
-          }
-        });
+        if (refIndex === -1) {
+          refIndex = getBestHeaderCandidate(tokens, rawCells, scoreReferenceHeader);
+        }
+        designationIndex = getBestHeaderCandidate(tokens, rawCells, scoreDesignationHeader);
+        tarifIndex = getBestHeaderCandidate(tokens, rawCells, token => scoreTarifHeader(token, mode));
 
         if (refIndex >= 0 && designationIndex >= 0 && tarifIndex >= 0) {
           return { rowIndex, refIndex, designationIndex, tarifIndex };
