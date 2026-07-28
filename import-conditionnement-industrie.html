@@ -116,7 +116,7 @@
         <div class="card-head">
           <div>
             <h2>Fichier</h2>
-            <div class="muted">Colonnes attendues: Ref 5, Code Produit, Categorie, Famille, Sous-Famille, Description, Grains, Emballage, Tarif Revente.</div>
+            <div class="muted">Colonnes attendues: Ref/Ref 5 et EMBAL/Emballage. Les autres colonnes restent optionnelles.</div>
           </div>
         </div>
         <div class="form-grid">
@@ -224,15 +224,15 @@
     const CHUNK_SIZE = 500;
 
     const HEADER_ALIASES = {
-      ref_5: ["ref 5", "ref5", "reference 5", "reference5"],
-      code_produit: ["code produit", "codeproduit", "ref kent", "ref. kent", "ref kent"],
+      ref_5: ["ref", "ref.", "ref 5", "ref5", "reference", "reference 5", "reference5", "reference produit", "reference article"],
+      code_produit: ["code", "code produit", "codeproduit", "code article", "codearticle", "ref kent", "ref. kent", "ref kent"],
       categorie: ["categorie", "categorie produit", "category"],
       famille: ["famille", "famille produit"],
       sous_famille: ["sous famille", "sous-famille", "sousfamille"],
-      description: ["description", "designation", "designation produit", "designation produits kent"],
+      description: ["description", "designation", "designation produit", "designation produits kent", "libelle", "libelle produit", "produit"],
       grains: ["grains", "grain"],
-      emballage: ["emballage", "conditionnement", "packaging"],
-      tarif_revente: ["tarif revente", "tarif", "prix revente", "pu client", "prix"]
+      emballage: ["embal", "embal.", "emballage", "conditionnement", "packaging"],
+      tarif_revente: ["tarif revente", "tarif vente", "tarif client", "tarif", "prix revente", "prix vente", "prix ht", "pu client", "pu", "prix"]
     };
 
     const state = {
@@ -289,6 +289,10 @@
         .trim();
     }
 
+    function normalizeCompact(value) {
+      return normalizeText(value).replace(/\s+/g, "");
+    }
+
     function normalizeRef(value) {
       return String(value ?? "")
         .normalize("NFD")
@@ -328,31 +332,55 @@
 
     function findHeaderMap(headers) {
       const normalizedHeaders = headers.map(header => normalizeText(header));
+      const compactHeaders = headers.map(header => normalizeCompact(header));
       const map = {};
       Object.entries(HEADER_ALIASES).forEach(([field, aliases]) => {
         const normalizedAliases = aliases.map(alias => normalizeText(alias));
-        const index = normalizedHeaders.findIndex(header => normalizedAliases.includes(header));
-        if (index >= 0) map[field] = headers[index];
+        const compactAliases = aliases.map(alias => normalizeCompact(alias));
+        const index = normalizedHeaders.findIndex((header, headerIndex) =>
+          normalizedAliases.includes(header) ||
+          compactAliases.includes(compactHeaders[headerIndex])
+        );
+        if (index >= 0) map[field] = index;
       });
       return map;
     }
 
     function getCell(row, header) {
-      if (!header) return "";
+      if (header === null || header === undefined || header === "") return "";
+      if (Array.isArray(row)) return row[header] ?? "";
       return row[header] ?? "";
+    }
+
+    function findHeaderInRows(rows) {
+      const maxScan = Math.min(rows.length, 80);
+      for (let rowIndex = 0; rowIndex < maxScan; rowIndex += 1) {
+        const row = rows[rowIndex] || [];
+        const headerMap = findHeaderMap(row);
+        if (Number.isInteger(headerMap.ref_5) && Number.isInteger(headerMap.emballage)) {
+          return { rowIndex, headerMap };
+        }
+      }
+      return null;
     }
 
     function readWorkbookRows(workbook) {
       const rows = [];
       workbook.SheetNames.forEach(sheetName => {
         const sheet = workbook.Sheets[sheetName];
-        const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
-        if (!jsonRows.length) return;
-        const headers = Object.keys(jsonRows[0] || {});
-        const headerMap = findHeaderMap(headers);
-        jsonRows.forEach((rawRow, rowIndex) => {
-          rows.push(normalizeImportRow(rawRow, headerMap, sheetName, rowIndex + 2));
+        if (!sheet) return;
+        const sheetRows = XLSX.utils.sheet_to_json(sheet, {
+          header: 1,
+          defval: "",
+          raw: false,
+          blankrows: false
         });
+        if (!sheetRows.length) return;
+        const headerInfo = findHeaderInRows(sheetRows);
+        if (!headerInfo) return;
+        for (let rowIndex = headerInfo.rowIndex + 1; rowIndex < sheetRows.length; rowIndex += 1) {
+          rows.push(normalizeImportRow(sheetRows[rowIndex], headerInfo.headerMap, sheetName, rowIndex + 1));
+        }
       });
       return rows;
     }
@@ -383,6 +411,9 @@
       } else if (!ref5) {
         row.status = "error";
         row.detail = "Ref 5 manquante";
+      } else if (!row.emballage) {
+        row.status = "error";
+        row.detail = "EMBAL manquant";
       }
 
       return row;
