@@ -38,36 +38,33 @@ create table if not exists public.documents_commerciaux (
   nb_lignes integer not null default 0,
   taille_octets bigint not null default 0,
   valide boolean not null default false,
-  statut_validation text not null default 'en_cours',
+  statut_validation text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 alter table public.documents_commerciaux
   add column if not exists valide boolean not null default false,
-  add column if not exists statut_validation text not null default 'en_cours',
+  add column if not exists statut_validation text,
   add column if not exists numero_compte_libelle text,
   add column if not exists compte_client_id uuid,
   add column if not exists visite_id text;
 
-update public.documents_commerciaux
-set statut_validation = 'valide'
-where valide is true
-  and statut_validation = 'en_cours';
+alter table public.documents_commerciaux
+  alter column statut_validation drop not null;
 
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_constraint
-    where conname = 'documents_commerciaux_statut_validation_check'
-      and conrelid = 'public.documents_commerciaux'::regclass
-  ) then
-    alter table public.documents_commerciaux
-      add constraint documents_commerciaux_statut_validation_check
-      check (statut_validation in ('en_cours', 'valide', 'non_valide'));
-  end if;
-end $$;
+alter table public.documents_commerciaux
+  alter column statut_validation drop default;
+
+alter table public.documents_commerciaux
+  drop constraint if exists documents_commerciaux_statut_validation_check;
+
+alter table public.documents_commerciaux
+  add constraint documents_commerciaux_statut_validation_check
+  check (
+    statut_validation is null
+    or statut_validation in ('transmis', 'en_cours', 'valide', 'non_valide')
+  ) not valid;
 
 create index if not exists idx_documents_commerciaux_type
   on public.documents_commerciaux (type_document);

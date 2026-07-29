@@ -168,6 +168,7 @@
     .finance-pill{
       border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.055);
       color:rgba(255,255,255,.70);font-weight:1000;min-height:38px;padding:0 13px;white-space:nowrap;
+      display:inline-flex;align-items:center;justify-content:center;text-decoration:none;
     }
     .finance-pill.active{background:linear-gradient(135deg,#38bdf8,#22c55e);color:#06111f;border-color:transparent}
     .finance-summary{
@@ -414,7 +415,6 @@
       <div class="top-actions">
         <span class="btn ghost small" data-session-source>Session s&eacute;curis&eacute;e</span>
         <a class="btn small" href="responsable.html">Vue responsable</a>
-        <a class="btn small" href="requete-commerce.html?scope=equipe">Requ&ecirc;te commerce</a>
         <a class="btn danger small" href="/deconnexion">D&eacute;connexion</a>
       </div>
     </section>
@@ -436,7 +436,7 @@
           <a class="btn danger small" href="/deconnexion">Se reconnecter en admin</a>
         </div>
       </div>
-      <button class="btn primary" type="button" data-refresh>Rafraichir</button>
+      <button class="btn primary" type="button" data-refresh>Rafra&icirc;chir</button>
     </section>
 
     <section class="stats" aria-label="Indicateurs admin">
@@ -452,7 +452,7 @@
       <button class="admin-tab active" type="button" data-admin-tab="pilotage">Pilotage</button>
       <button class="admin-tab" type="button" data-admin-tab="utilisateurs">Utilisateurs</button>
       <button class="admin-tab" type="button" data-admin-tab="rattachements">Rattachements</button>
-      <button class="admin-tab" type="button" data-admin-tab="securite">Securite</button>
+      <button class="admin-tab" type="button" data-admin-tab="securite">S&eacute;curit&eacute;</button>
       <button class="admin-tab" type="button" data-admin-tab="finance">Finance</button>
       <button class="admin-tab" type="button" data-admin-tab="imports">Mes imports</button>
       <button class="admin-tab" type="button" data-admin-tab="budgets-global">Les budgets</button>
@@ -464,23 +464,23 @@
           <div class="panel-head">
             <div>
               <h2>Vue globale</h2>
-              <div class="sub">Etat de la structure admin, des roles et des rattachements actifs.</div>
+              <div class="sub">&Eacute;tat de la structure admin, des r&ocirc;les et des rattachements actifs.</div>
             </div>
-            <button class="btn small primary" type="button" data-open-user-create>Creer un utilisateur</button>
+            <button class="btn small primary" type="button" data-open-user-create>Cr&eacute;er un utilisateur</button>
           </div>
           <div class="role-grid" data-role-cards>
-            <div class="empty">Chargement des roles...</div>
+            <div class="empty">Chargement des r&ocirc;les...</div>
           </div>
         </section>
         <aside class="panel">
           <div class="panel-head">
             <div>
-              <h2>Points de controle</h2>
-              <div class="sub">Ce qui merite ton attention avant de confier l'app a une equipe.</div>
+              <h2>Points de contr&ocirc;le</h2>
+              <div class="sub">Ce qui m&eacute;rite ton attention avant de confier l'app &agrave; une &eacute;quipe.</div>
             </div>
           </div>
           <div class="health-grid" data-health-cards>
-            <div class="empty">Chargement des controles...</div>
+            <div class="empty">Chargement des contr&ocirc;les...</div>
           </div>
         </aside>
       </div>
@@ -492,7 +492,7 @@
           <div>
             <h2>Pilotage groupe</h2>
             <p>
-              Responsables, vendeurs, reel vs budget.
+              Responsables, vendeurs, r&eacute;el vs budget.
             </p>
           </div>
           <div class="finance-controls">
@@ -501,7 +501,7 @@
               <input type="date" data-finance-day>
             </div>
             <div class="field compact">
-              <label>Mois analyse</label>
+              <label>Mois analys&eacute;</label>
               <select data-finance-month></select>
             </div>
             <button class="btn green" type="button" data-finance-refresh>Synchroniser</button>
@@ -509,11 +509,12 @@
         </div>
 
         <div class="finance-nav" aria-label="Vues finance">
-          <button class="finance-pill active" type="button" data-finance-view="day">CA a jour</button>
-          <button class="finance-pill" type="button" data-finance-view="week">CA hebdo</button>
-          <button class="finance-pill" type="button" data-finance-view="month">CA mensuel</button>
-          <button class="finance-pill" type="button" data-finance-view="year">CA annuel</button>
+          <button class="finance-pill active" type="button" data-finance-view="day">CA / jour</button>
+          <button class="finance-pill" type="button" data-finance-view="week">CA / hebdo</button>
+          <button class="finance-pill" type="button" data-finance-view="month">CA / mensuel</button>
+          <button class="finance-pill" type="button" data-finance-view="year">CA / annuel</button>
           <button class="finance-pill" type="button" data-finance-view="performance">Indicateurs performance</button>
+          <a class="finance-pill finance-link" href="requete-commerce.html?scope=equipe">Requ&ecirc;te commerce</a>
         </div>
 
         <div class="finance-summary" data-finance-summary>
@@ -531,12 +532,12 @@
         <div class="panel-head">
           <div>
             <h2>Mes imports</h2>
-            <div class="sub">Espace reserve aux futurs imports reels centralises.</div>
+            <div class="sub">Espace r&eacute;serv&eacute; aux futurs imports r&eacute;els centralis&eacute;s.</div>
           </div>
         </div>
         <div class="empty">
-          Rien a importer ici pour le moment. Cette vue servira plus tard a centraliser les imports reels
-          admin, avec controle, historique et validation avant envoi dans Supabase.
+          Rien &agrave; importer ici pour le moment. Cette vue servira plus tard &agrave; centraliser les imports r&eacute;els
+          admin, avec contr&ocirc;le, historique et validation avant envoi dans Supabase.
         </div>
       </section>
     </section>
@@ -546,12 +547,12 @@
         <div class="panel-head">
           <div>
             <h2>Les budgets</h2>
-            <div class="sub">Espace reserve a la lecture ou future gestion des budgets commerciaux.</div>
+            <div class="sub">Espace r&eacute;serv&eacute; &agrave; la lecture ou future gestion des budgets commerciaux.</div>
           </div>
         </div>
         <div class="empty">
           Vue en attente. Elle pourra recevoir plus tard la consolidation des budgets par commercial,
-          responsable, entite et groupe, sans modifier la logique actuelle des commerciaux.
+          responsable, entit&eacute; et groupe, sans modifier la logique actuelle des commerciaux.
         </div>
       </section>
     </section>
@@ -679,7 +680,7 @@
         <div class="panel-head">
           <div>
             <h2>Cartographie responsables</h2>
-            <div class="sub">Vision claire de chaque responsable, de ses commerciaux principaux et de ses acces exceptionnels.</div>
+            <div class="sub">Vision claire de chaque responsable, de ses commerciaux principaux et de ses acc&egrave;s exceptionnels.</div>
           </div>
           <button class="btn small primary" type="button" data-open-relations-config>Configurer un rattachement</button>
         </div>
@@ -691,7 +692,7 @@
         <div class="panel-head">
           <div>
             <h2>Commerciaux sans responsable principal</h2>
-            <div class="sub">Ils peuvent exister, mais ils ne remonteront pas dans une vue responsable tant qu'ils ne sont pas rattaches.</div>
+              <div class="sub">Ils peuvent exister, mais ils ne remonteront pas dans une vue responsable tant qu'ils ne sont pas rattach&eacute;s.</div>
           </div>
         </div>
         <div class="relations-list" data-orphan-list>
@@ -705,8 +706,8 @@
         <section class="panel">
           <div class="panel-head">
             <div>
-              <h2>Comptes masques</h2>
-              <div class="sub">Aucune suppression dure : on restaure si besoin, l'historique reste conserve.</div>
+              <h2>Comptes masqu&eacute;s</h2>
+              <div class="sub">Aucune suppression dure : on restaure si besoin, l'historique reste conserv&eacute;.</div>
             </div>
           </div>
           <div class="table-wrap">
@@ -714,8 +715,8 @@
               <thead>
                 <tr>
                   <th>Utilisateur</th>
-                  <th>Role</th>
-                  <th>Derniere connexion</th>
+                  <th>R&ocirc;le</th>
+                  <th>Derni&egrave;re connexion</th>
                   <th style="text-align:right">Actions</th>
                 </tr>
               </thead>
@@ -743,7 +744,7 @@
   <dialog id="passwordDialog">
     <form class="modal-body" id="passwordForm" autocomplete="off">
       <h3>Changer le code</h3>
-      <p data-password-target>Utilisateur selectionn&eacute;.</p>
+      <p data-password-target>Utilisateur s&eacute;lectionn&eacute;.</p>
       <input type="hidden" name="id">
       <div class="field" style="margin-top:14px">
         <label>Ancien code</label>
@@ -768,7 +769,7 @@
   <dialog id="editUserDialog">
     <form class="modal-body" id="editUserForm" autocomplete="off">
       <h3>Modifier l'utilisateur</h3>
-      <p data-edit-user-target>Compte selectionn&eacute;.</p>
+      <p data-edit-user-target>Compte s&eacute;lectionn&eacute;.</p>
       <input type="hidden" name="id">
       <div class="form-grid" style="margin-top:14px">
         <div class="field">
@@ -824,15 +825,15 @@
   <div class="toast" data-toast></div>
   <div class="sync-overlay" data-sync-overlay aria-live="polite" aria-hidden="true">
     <div class="sync-card">
-      <div class="sync-title" data-sync-title>Synchronisation des donnees</div>
-      <div class="sync-text" data-sync-text>Enregistrement en cours, on securise la mise a jour.</div>
+      <div class="sync-title" data-sync-title>Synchronisation des donn&eacute;es</div>
+      <div class="sync-text" data-sync-text>Enregistrement en cours, on s&eacute;curise la mise &agrave; jour.</div>
       <div class="sync-bar" aria-hidden="true"></div>
     </div>
   </div>
   <dialog class="sync-dialog" id="syncDialog" aria-live="polite">
     <div class="sync-card">
-      <div class="sync-title" data-sync-dialog-title>Synchronisation des donnees</div>
-      <div class="sync-text" data-sync-dialog-text>Enregistrement en cours, on securise la mise a jour.</div>
+      <div class="sync-title" data-sync-dialog-title>Synchronisation des donn&eacute;es</div>
+      <div class="sync-text" data-sync-dialog-text>Enregistrement en cours, on s&eacute;curise la mise &agrave; jour.</div>
       <div class="sync-bar" aria-hidden="true"></div>
     </div>
   </dialog>
@@ -911,7 +912,7 @@
       const sourceLabels = {
         supabase: "Source Supabase",
         env: "Source Vercel",
-        legacy: "Acces historique"
+        legacy: "Accès historique"
       };
 
       init();
@@ -1038,8 +1039,8 @@
           const payload = await fetchJson("/api/session");
           if (!payload || !payload.user) return;
           els.name.textContent = payload.user.name || "Administrateur";
-          els.role.textContent = "Role : " + (payload.user.roleLabel || payload.user.role || "admin");
-          els.source.textContent = sourceLabels[payload.user.source] || "Session securisee";
+          els.role.textContent = "Rôle : " + (payload.user.roleLabel || payload.user.role || "admin");
+          els.source.textContent = sourceLabels[payload.user.source] || "Session sécurisée";
         }catch{}
       }
 
@@ -1048,7 +1049,7 @@
         try{
           const payload = await fetchJson("/api/admin-users");
           applyData(payload);
-          showToast("Console admin synchronisee.");
+          showToast("Console admin synchronisée.");
         }catch(error){
           showToast(error.message || "Chargement impossible.", true);
           els.usersBody.innerHTML = '<tr><td colspan="6">' + escapeHtml(error.message || "Chargement impossible.") + '</td></tr>';
@@ -1078,11 +1079,11 @@
         event.preventDefault();
         const data = formDataObject(els.userForm);
         if (!data.password) {
-          showToast("Code obligatoire pour creer un utilisateur.", true);
+          showToast("Code obligatoire pour créer un utilisateur.", true);
           return;
         }
         if (data.password !== data.passwordConfirm) {
-          showToast("Les deux codes d'acces ne correspondent pas.", true);
+          showToast("Les deux codes d'accès ne correspondent pas.", true);
           return;
         }
 
@@ -1104,10 +1105,10 @@
 
           resetUserForm();
           addAudit(
-            "Utilisateur cree",
+            "Utilisateur créé",
             (data.displayName || data.identifier || "Compte") + " - role " + (data.role || "-")
           );
-          showToast("Utilisateur cree.");
+          showToast("Utilisateur créé.");
         }catch(error){
           showToast(error.message || "Enregistrement impossible.", true);
         }finally{
@@ -1126,7 +1127,7 @@
           return;
         }
 
-        setLoading(true, "Synchronisation des donnees", "Modification de " + user.displayName + " en cours.");
+        setLoading(true, "Synchronisation des données", "Modification de " + user.displayName + " en cours.");
         try{
           const payload = await postAdmin({
             action: "updateUser",
@@ -1139,8 +1140,8 @@
           applyData(payload);
           if (els.editUserDialog.open) els.editUserDialog.close();
           els.editUserForm.reset();
-          addAudit("Utilisateur modifie", (data.displayName || data.identifier || "Compte") + " - role " + (data.role || "-"));
-          showToast("Modifications enregistrees.");
+          addAudit("Utilisateur modifié", (data.displayName || data.identifier || "Compte") + " - rôle " + (data.role || "-"));
+          showToast("Modifications enregistrées.");
         }catch(error){
           setModalError(els.editUserError, error.message || "Modification impossible.");
           showToast(error.message || "Modification impossible.", true);
@@ -1159,7 +1160,7 @@
           if (existing && existing.responsableUserId !== data.responsableUserId) {
             openConfirm(
               "Changer le responsable principal ?",
-              userName(data.commercialUserId) + " passera de " + userName(existing.responsableUserId) + " a " + userName(data.responsableUserId) + ". L'historique reste conserve.",
+              userName(data.commercialUserId) + " passera de " + userName(existing.responsableUserId) + " à " + userName(data.responsableUserId) + ". L'historique reste conservé.",
               function(){ return persistRelationForm(data); }
             );
             return;
@@ -1169,7 +1170,7 @@
       }
 
       async function persistRelationForm(data){
-        setLoading(true, "Synchronisation des rattachements", "Mise a jour des droits responsables en cours.");
+        setLoading(true, "Synchronisation des rattachements", "Mise à jour des droits responsables en cours.");
         try{
           applyData(await postAdmin({
             action: "setRelation",
@@ -1181,10 +1182,10 @@
           els.relationForm.reset();
           renderRelationOptions();
           addAudit(
-            "Rattachement enregistre",
+            "Rattachement enregistré",
             userName(data.responsableUserId) + " -> " + userName(data.commercialUserId) + " (" + data.relationType + ")"
           );
-          showToast("Rattachement enregistre.");
+          showToast("Rattachement enregistré.");
         }catch(error){
           showToast(error.message || "Rattachement impossible.", true);
         }finally{
@@ -1202,7 +1203,7 @@
           showToast("Les deux nouveaux codes ne correspondent pas.", true);
           return;
         }
-        setLoading(true, "Changement du code", "Verification de l'ancien code puis enregistrement du nouveau.");
+        setLoading(true, "Changement du code", "Vérification de l'ancien code puis enregistrement du nouveau.");
         try{
           applyData(await postAdmin({
             action: "setPassword",
@@ -1212,8 +1213,8 @@
           }));
           els.passwordDialog.close();
           els.passwordForm.reset();
-          addAudit("Code modifie", userName(data.id));
-          showToast("Code mis a jour.");
+          addAudit("Code modifié", userName(data.id));
+          showToast("Code mis à jour.");
         }catch(error){
           setModalError(els.passwordError, error.message || "Changement impossible.");
           showToast(error.message || "Changement impossible.", true);
@@ -1248,13 +1249,13 @@
           }).length;
           openConfirm(
             "Masquer cet utilisateur ?",
-            user.displayName + " sera desactive et masque. Aucune donnee metier ne sera supprimee. Rattachements actifs concernes : " + linkedRelations + ".",
+            user.displayName + " sera désactivé et masqué. Aucune donnée métier ne sera supprimée. Rattachements actifs concernés : " + linkedRelations + ".",
             async function(){
               setLoading(true);
               try{
                 applyData(await postAdmin({ action: "hideUser", id: user.id }));
-                addAudit("Utilisateur masque", user.displayName + " - aucune donnee supprimee");
-                showToast("Utilisateur masque.");
+                addAudit("Utilisateur masqué", user.displayName + " - aucune donnée supprimée");
+                showToast("Utilisateur masqué.");
               }catch(error){
                 showToast(error.message || "Masquage impossible.", true);
               }finally{
@@ -1293,7 +1294,7 @@
 
         openConfirm(
           "Retirer ce rattachement ?",
-          userName(relation.responsableUserId) + " ne verra plus " + userName(relation.commercialUserId) + " via ce lien. Le rattachement sera desactive, pas supprime definitivement.",
+          userName(relation.responsableUserId) + " ne verra plus " + userName(relation.commercialUserId) + " via ce lien. Le rattachement sera désactivé, pas supprimé définitivement.",
           async function(){
             setLoading(true);
             try{
@@ -1322,7 +1323,7 @@
 
       function setAdminView(view){
         state.activeView = view || "pilotage";
-        els.wrap.classList.toggle("finance-mode", state.activeView === "finance");
+        els.wrap.classList.toggle("finance-mode", ["finance", "imports", "budgets-global"].includes(state.activeView));
         els.tabs.forEach(function(tab){
           tab.classList.toggle("active", tab.dataset.adminTab === state.activeView);
         });
@@ -1350,7 +1351,7 @@
           state.financeSettingsWarning = settingsPayload.warning || "";
           state.expandedFinanceManager = "";
           renderFinance();
-          showToast("Finance admin synchronisee.");
+          showToast("Finance admin synchronisée.");
         }catch(error){
           state.financePayload = null;
           els.financeSummary.innerHTML = '<article class="finance-kpi negative"><span>Erreur</span><strong>Indisponible</strong></article>';
@@ -1392,7 +1393,7 @@
         setLoading(
           true,
           "Enregistrement source finance",
-          "Mois " + monthShortLabel(month - 1) + " : passage en " + (nextSource === "real" ? "reel importe" : "ventes saisies") + "."
+          "Mois " + monthShortLabel(month - 1) + " : passage en " + (nextSource === "real" ? "réel importé" : "ventes saisies") + "."
         );
         try{
           const payload = await fetchJson("/api/admin-finance-settings", {
@@ -1409,7 +1410,7 @@
           state.financeSettingsWarning = "";
           state.expandedFinanceManager = "";
           renderFinance();
-          showToast("Source finance enregistree : " + monthShortLabel(month - 1) + " en " + (nextSource === "real" ? "reel importe." : "ventes saisies."));
+          showToast("Source finance enregistrée : " + monthShortLabel(month - 1) + " en " + (nextSource === "real" ? "réel importé." : "ventes saisies."));
         }catch(error){
           showToast(error.message || "Enregistrement source impossible.", true);
         }finally{
@@ -1420,7 +1421,7 @@
       function renderFinance(){
         if (!state.financePayload) {
           els.financeSummary.innerHTML = '<article class="finance-kpi"><span>Finance</span><strong>-</strong></article>';
-          els.financeBody.innerHTML = '<div class="empty">Aucune donnee finance chargee.</div>';
+          els.financeBody.innerHTML = '<div class="empty">Aucune donnée finance chargée.</div>';
           return;
         }
 
@@ -1449,7 +1450,7 @@
           managerMap.set(manager.id, emptyFinanceGroup(manager.id, manager.displayName, manager.identifier));
         });
         const unassignedId = "__sans_responsable__";
-        managerMap.set(unassignedId, emptyFinanceGroup(unassignedId, "Sans responsable principal", "A rattacher"));
+        managerMap.set(unassignedId, emptyFinanceGroup(unassignedId, "Sans responsable principal", "À rattacher"));
 
         (payload.commercials || []).forEach(function(commercial){
           const managerId = commercial.relationType === "principal" && commercial.responsableId
@@ -1459,7 +1460,7 @@
             const manager = findStateUser(managerId);
             managerMap.set(managerId, emptyFinanceGroup(
               managerId,
-              manager ? manager.displayName : "Responsable masque",
+              manager ? manager.displayName : "Responsable masqué",
               manager ? manager.identifier : ""
             ));
           }
@@ -1640,7 +1641,7 @@
           state.financeView === "month" ? financeSourceNote(model) : '',
           '<div class="finance-legend">',
             '<span><i class="finance-dot real"></i> ' + escapeHtml(config.sourceLabel) + '</span>',
-            '<span><i class="finance-dot budget"></i> Budget prorate jours ouvres</span>',
+            '<span><i class="finance-dot budget"></i> Budget proratisé jours ouvrés</span>',
           '</div>',
           '<div class="finance-table" style="margin-top:12px">',
             renderFinanceHeaderRow("Responsable"),
@@ -1667,7 +1668,7 @@
 
       function renderFinanceSellerDetails(group){
         if (!group.commercials.length) {
-          return '<div class="finance-detail"><div class="empty">Aucun vendeur rattache.</div></div>';
+          return '<div class="finance-detail"><div class="empty">Aucun vendeur rattaché.</div></div>';
         }
         return '<div class="finance-detail">' + group.commercials.map(function(commercial){
           const finance = commercial.finance || {};
@@ -1698,7 +1699,7 @@
 
         els.financeBody.innerHTML = [
           '<div class="finance-legend">',
-            '<span><i class="finance-dot real"></i> Reel mensuel</span>',
+            '<span><i class="finance-dot real"></i> Réel mensuel</span>',
             '<span><i class="finance-dot budget"></i> Budget mensuel</span>',
           '</div>',
           '<div class="finance-chart">',
@@ -1758,12 +1759,12 @@
           '<div class="finance-month-popup">',
             '<div class="finance-month-popup-row header">',
               '<span>Analyse</span>',
-              '<span>CA reel</span>',
+              '<span>CA réel</span>',
               '<span>Budget</span>',
               '<span>Ecart</span>',
             '</div>',
             renderAnnualMonthRow(monthLongLabel(index), actual, budget, gap),
-            renderAnnualMonthRow("Cumule a date", cumulativeActual, cumulativeBudget, cumulativeGap),
+            renderAnnualMonthRow("Cumulé à date", cumulativeActual, cumulativeBudget, cumulativeGap),
           '</div>'
         ].join("");
       }
@@ -1792,7 +1793,7 @@
           { label: "Vendeurs suivis", value: String(sellers.length) },
           { label: "Responsables", value: String(model.groups.filter(function(group){ return group.id !== "__sans_responsable__"; }).length) },
           { label: "CA mois groupe", value: formatEuro(sumSellers(sellers, "month")) },
-          { label: "CA annee groupe", value: formatEuro(sumSellers(sellers, "year")) }
+          { label: "CA année groupe", value: formatEuro(sumSellers(sellers, "year")) }
         ]);
         const cards = topConfigs.map(function(config){
           const top = sellers.slice().sort(function(a, b){
@@ -1803,7 +1804,7 @@
               '<span>' + escapeHtml(config.label) + '</span>',
               '<strong>' + escapeHtml(top ? top.displayName : '-') + '</strong>',
               '<b>' + formatEuro(top ? top.finance[config.key] : 0) + '</b>',
-              '<span>Budget repere : ' + formatEuro(top ? top.finance[config.budget] : 0) + '</span>',
+              '<span>Budget repère : ' + formatEuro(top ? top.finance[config.budget] : 0) + '</span>',
             '</article>'
           ].join("");
         }).join("");
@@ -1827,7 +1828,7 @@
           '</div>',
           '<div class="finance-table" style="margin-top:14px">',
             '<div class="finance-row header" style="grid-template-columns:minmax(190px,1.5fr) repeat(4,minmax(110px,.75fr))">',
-              '<div>Vendeur</div><div>Jour</div><div>Semaine</div><div>Mois</div><div>Annee</div>',
+              '<div>Vendeur</div><div>Jour</div><div>Semaine</div><div>Mois</div><div>Année</div>',
             '</div>',
             '<div class="finance-detail" style="margin-left:0;border-left:0;padding-left:0">',
               ranking || '<div class="empty">Aucun classement disponible.</div>',
@@ -1851,7 +1852,7 @@
         return [
           '<div class="finance-row header">',
             '<div>' + escapeHtml(firstLabel) + '</div>',
-            '<div>Reel</div>',
+            '<div>Réel</div>',
             '<div>Budget</div>',
             '<div>Ecart</div>',
             '<div>Atteinte</div>',
@@ -1885,7 +1886,7 @@
             'data-finance-source-month="' + month + '" ',
             disabled ? 'disabled title="Lance le SQL finance_source_settings pour enregistrer ce choix"' : '',
           '>',
-            isReal ? 'Reel actif' : 'Mettre au reel',
+            isReal ? 'Réel actif' : 'Mettre au réel',
           '</button>'
         ].join("");
       }
@@ -1896,12 +1897,12 @@
         }
         if (state.financeView === "month") {
           const source = financeSourceForMonth(model.period.year, model.period.month);
-          return '<div class="finance-source-note">Source du mois ' + escapeHtml(monthShortLabel(model.period.month - 1)) + ' : ' + (source === "real" ? "reel importe Supabase" : "ventes saisies dans l'app") + '.</div>';
+          return '<div class="finance-source-note">Source du mois ' + escapeHtml(monthShortLabel(model.period.month - 1)) + ' : ' + (source === "real" ? "réel importé Supabase" : "ventes saisies dans l'app") + '.</div>';
         }
         const realMonths = Array.from({ length: 12 }, function(_, index){ return index + 1; })
           .filter(function(month){ return financeSourceForMonth(model.period.year, month) === "real"; })
           .map(function(month){ return monthShortLabel(month - 1); });
-        return '<div class="finance-source-note">Source CA annuel hybride : ' + (realMonths.length ? "reel importe pour " + realMonths.join(", ") + ", ventes saisies pour les autres mois." : "ventes saisies pour tous les mois.") + '</div>';
+        return '<div class="finance-source-note">Source CA annuel hybride : ' + (realMonths.length ? "réel importé pour " + realMonths.join(", ") + ", ventes saisies pour les autres mois." : "ventes saisies pour tous les mois.") + '</div>';
       }
 
       function financeCell(value, signed){
@@ -1912,7 +1913,7 @@
 
       function financeViewConfig(){
         if (state.financeView === "week") return { actualLabel: "CA semaine ventes saisies", budgetLabel: "Budget semaine", sourceLabel: "Ventes saisies" };
-        if (state.financeView === "month") return { actualLabel: "CA mois selon source", budgetLabel: "Budget mois", sourceLabel: "Source mois selectionnee" };
+        if (state.financeView === "month") return { actualLabel: "CA mois selon source", budgetLabel: "Budget mois", sourceLabel: "Source mois sélectionnée" };
         return { actualLabel: "CA jour ventes saisies", budgetLabel: "Budget jour", sourceLabel: "Ventes saisies" };
       }
 
@@ -2101,8 +2102,8 @@
       function renderOverview(){
         const active = activeUsers();
         const roles = [
-          { key: "admin", label: "Admins", help: "Pilotage total, securite et parametres." },
-          { key: "responsable", label: "Responsables", help: "Lecture equipe, suivi CA, budgets et documents." },
+          { key: "admin", label: "Admins", help: "Pilotage total, sécurité et paramètres." },
+          { key: "responsable", label: "Responsables", help: "Lecture équipe, suivi CA, budgets et documents." },
           { key: "commercial", label: "Commerciaux", help: "Saisie terrain, ventes, BDC, devis et reporting personnel." }
         ];
         els.roleCards.innerHTML = roles.map(function(role){
@@ -2130,27 +2131,27 @@
 
         const checks = [
           {
-            title: "Commerciaux non rattaches",
+            title: "Commerciaux non rattachés",
             value: orphanCommercials.length,
-            text: orphanCommercials.length ? "A rattacher pour qu'ils remontent dans une vue responsable." : "Tout commercial actif a un responsable principal.",
+            text: orphanCommercials.length ? "À rattacher pour qu'ils remontent dans une vue responsable." : "Tout commercial actif a un responsable principal.",
             level: orphanCommercials.length ? "warn" : "good"
           },
           {
-            title: "Responsables sans equipe",
+            title: "Responsables sans équipe",
             value: emptyManagers.length,
-            text: emptyManagers.length ? "Aucun commercial principal rattache a certains responsables." : "Chaque responsable actif a au moins un rattachement principal.",
+            text: emptyManagers.length ? "Aucun commercial principal rattaché à certains responsables." : "Chaque responsable actif a au moins un rattachement principal.",
             level: emptyManagers.length ? "warn" : "good"
           },
           {
-            title: "Acces exceptionnels",
+            title: "Accès exceptionnels",
             value: exceptionRelations.length,
-            text: exceptionRelations.length ? "Visibilites ponctuelles actives, a revoir regulierement." : "Aucun acces exceptionnel actif.",
+            text: exceptionRelations.length ? "Visibilités ponctuelles actives, à revoir régulièrement." : "Aucun accès exceptionnel actif.",
             level: exceptionRelations.length ? "warn" : "good"
           },
           {
-            title: "Comptes masques",
+            title: "Comptes masqués",
             value: hiddenCount,
-            text: hiddenCount ? "Comptes inactifs conserves pour garder les historiques." : "Aucun compte masque.",
+            text: hiddenCount ? "Comptes inactifs conservés pour garder les historiques." : "Aucun compte masqué.",
             level: hiddenCount ? "warn" : "good"
           }
         ];
@@ -2192,7 +2193,7 @@
                   renderCommercialPills(principal),
                 '</div>',
                 '<div>',
-                  '<span class="sub">Acces exceptionnels</span>',
+                  '<span class="sub">Accès exceptionnels</span>',
                   renderCommercialPills(exceptional),
                 '</div>',
               '</article>'
@@ -2235,7 +2236,7 @@
       function renderHiddenUsers(){
         const users = hiddenUsers();
         if (!users.length) {
-          els.hiddenUsers.innerHTML = '<tr><td colspan="4">Aucun compte masque.</td></tr>';
+          els.hiddenUsers.innerHTML = '<tr><td colspan="4">Aucun compte masqué.</td></tr>';
           return;
         }
         els.hiddenUsers.innerHTML = users.map(function(user){
@@ -2451,7 +2452,7 @@
 
       function userName(id){
         const user = state.users.find(function(item){ return item.id === id; });
-        return user ? user.displayName + " (" + user.identifier + ")" : "Utilisateur masque";
+        return user ? user.displayName + " (" + user.identifier + ")" : "Utilisateur masqué";
       }
 
       function optionHtml(user){
@@ -2483,8 +2484,8 @@
 
       function setLoading(value, title, text){
         els.wrap.classList.toggle("loading", Boolean(value));
-        const finalTitle = title || "Synchronisation des donnees";
-        const finalText = text || "Operation en cours, on met les donnees a jour.";
+        const finalTitle = title || "Synchronisation des données";
+        const finalText = text || "Opération en cours, on met les données à jour.";
         if (els.syncOverlay) {
           els.syncTitle.textContent = finalTitle;
           els.syncText.textContent = finalText;
