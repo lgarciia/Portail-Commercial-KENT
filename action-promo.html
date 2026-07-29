@@ -39,16 +39,22 @@
     .wrap{max-width:1540px;margin:0 auto}
     .topbar{
       display:flex;
-      align-items:center;
-      justify-content:space-between;
+      flex-direction:column;
+      align-items:stretch;
       gap:14px;
-      flex-wrap:wrap;
       padding:18px;
       border:1px solid var(--line);
       border-radius:26px;
       background:linear-gradient(180deg,rgba(15,23,42,.90),rgba(8,15,28,.82));
       box-shadow:var(--shadow);
       backdrop-filter:blur(16px);
+    }
+    .campaignHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
     }
     .brand{display:flex;align-items:center;gap:13px;min-width:0}
     .logo{
@@ -99,16 +105,6 @@
     .btn.gold{color:#07111f;background:linear-gradient(135deg,#fde68a,var(--gold));border:none;box-shadow:0 14px 30px rgba(245,158,11,.22)}
     .btn.green{background:linear-gradient(135deg,#22c55e,#059669);border:none;box-shadow:0 14px 30px rgba(5,150,105,.22)}
     .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.24);color:#fecaca}
-    .notice{
-      margin-top:12px;
-      border:1px solid rgba(245,158,11,.32);
-      border-radius:18px;
-      background:linear-gradient(135deg,rgba(245,158,11,.13),rgba(2,6,23,.22));
-      color:#fde68a;
-      padding:12px 14px;
-      font-weight:850;
-      line-height:1.45;
-    }
     .grid{margin-top:14px}
     .card{
       position:relative;
@@ -160,6 +156,8 @@
       z-index:40;
       overflow:visible;
       padding:13px;
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:20px;
       background:
         radial-gradient(circle at 0% 0%,rgba(56,189,248,.10),transparent 38%),
         radial-gradient(circle at 100% 0%,rgba(245,158,11,.10),transparent 34%),
@@ -266,11 +264,11 @@
     @media(max-width:760px){
       .filterFields{grid-template-columns:1fr}
     }
-    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:10px}
     @media(max-width:820px){.kpis{grid-template-columns:1fr 1fr}}
-    .kpi{border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(2,6,23,.30);padding:8px 10px}
+    .kpi{border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(2,6,23,.30);padding:7px 9px}
     .kpi .k{color:var(--muted);font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
-    .kpi .v{font-size:20px;font-weight:1000;margin-top:2px;letter-spacing:-.04em}
+    .kpi .v{font-size:18px;font-weight:1000;margin-top:2px;letter-spacing:-.04em}
     .toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
     .toolbarLeft,.toolbarRight{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .miniBtn{min-height:34px;padding:0 10px;border-radius:12px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.055);color:var(--text);font-weight:950;cursor:pointer}
@@ -308,9 +306,11 @@
         rgba(2,6,23,.40);
       box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 18px rgba(0,0,0,.20);
       cursor:pointer;
-      display:grid;
-      place-items:center;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
       margin:0 auto;
+      position:relative;
       transition:transform .15s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease;
       vertical-align:middle;
     }
@@ -325,12 +325,11 @@
       box-shadow:0 12px 24px rgba(245,158,11,.20);
     }
     .prettyCheck:checked::after{
-      content:"";
-      width:6px;
-      height:11px;
-      border:solid #07111f;
-      border-width:0 2px 2px 0;
-      transform:rotate(45deg) translate(-1px,-1px);
+      content:"✓";
+      color:#07111f;
+      font-size:15px;
+      font-weight:1000;
+      line-height:1;
     }
     .prettyCheck:focus-visible{
       outline:none;
@@ -343,45 +342,44 @@
     .previewBox h3{margin:0 0 8px;font-size:16px}
     .previewBox p{margin:0 0 10px;color:var(--muted);font-weight:750}
     .previewBox .mailSubject{color:#f8fafc;font-weight:950;margin-bottom:8px}
-    .footerGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-    @media(max-width:900px){.footerGrid{grid-template-columns:1fr}}
-    .roadmap{display:grid;gap:8px}
-    .roadmapItem{display:flex;gap:9px;align-items:flex-start;color:var(--muted);font-size:13px;font-weight:800;line-height:1.35}
-    .roadmapItem .num{flex:0 0 auto;width:24px;height:24px;border-radius:9px;background:rgba(56,189,248,.13);border:1px solid rgba(56,189,248,.24);color:#bae6fd;display:flex;align-items:center;justify-content:center;font-weight:1000;font-size:11px}
     .modalBackdrop{position:fixed;inset:0;background:rgba(2,6,23,.72);display:none;align-items:center;justify-content:center;padding:18px;z-index:10000;backdrop-filter:blur(10px)}
     .modalBackdrop.is-open{display:flex}
-    .modal{width:min(620px,100%);border:1px solid rgba(148,163,184,.22);border-radius:24px;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(8,15,28,.96));box-shadow:0 30px 90px rgba(0,0,0,.48);padding:18px}
+    .modal{width:min(860px,100%);max-height:90vh;overflow:auto;border:1px solid rgba(148,163,184,.22);border-radius:24px;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(8,15,28,.96));box-shadow:0 30px 90px rgba(0,0,0,.48);padding:18px}
     .modal h2{margin:0 0 8px;font-size:24px;letter-spacing:-.04em}
     .modal p{margin:0 0 12px;color:var(--muted);line-height:1.45;font-weight:760}
+    .modalBody{display:grid;gap:12px}
+    .modalNote{border:1px solid rgba(245,158,11,.24);border-radius:16px;background:rgba(245,158,11,.10);color:#fde68a;padding:11px 12px;font-weight:850;line-height:1.4}
+    .campaignStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .campaignStat{border:1px solid rgba(148,163,184,.16);border-radius:15px;background:rgba(2,6,23,.30);padding:10px}
+    .campaignStat b{display:block;font-size:20px;color:#f8fafc;letter-spacing:-.04em}
+    .campaignStat span{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+    .messagePreview{white-space:pre-wrap;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(2,6,23,.34);padding:12px;color:#dbeafe;line-height:1.45;font-weight:760}
+    @media(max-width:760px){.campaignStats{grid-template-columns:1fr}}
     .modalActions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:14px}
   </style>
 </head>
 <body>
 <div class="wrap">
   <header class="topbar">
-    <div class="brand">
-      <div class="logo"></div>
-      <div class="title">
-        <div class="eyebrow">Action promo</div>
-        <h1>Campagne produit</h1>
-        <p>Cible rapidement les clients qui ont déjà acheté une référence, prépare ton message et verrouille la sélection avant le futur branchement email.</p>
+    <div class="campaignHead">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="title">
+          <div class="eyebrow">Action promo</div>
+          <h1>Campagne produit</h1>
+          <p>Cible les clients qui ont déjà acheté une référence, verrouille ta sélection, puis prépare le message étape par étape.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn" href="index.html">Portail</a>
+        <button class="btn gold" id="openStatusBtn" type="button">Envoi verrouillé</button>
       </div>
     </div>
-    <div class="actions">
-      <a class="btn" href="index.html">Portail</a>
-      <button class="btn gold" id="openStatusBtn" type="button">Envoi verrouillé</button>
-    </div>
-  </header>
 
-  <div class="notice">
-    Lecture Supabase active : le ciblage clients est réel. L'envoi email reste volontairement verrouillé, aucune pièce jointe n'est transférée et aucune donnée Supabase n'est modifiée.
-  </div>
-
-  <main class="grid">
-    <section class="card filterBanner">
+    <div class="filterBanner">
       <div class="cardTitle">
         <h2>Ciblage</h2>
-        <span class="chip"><span class="dot blue"></span>Supabase réel</span>
+        <span class="chip"><span class="dot blue"></span>Lecture réelle</span>
       </div>
 
       <div class="filterFields">
@@ -431,8 +429,8 @@
         <span><b>Lecture seule</b> : recherche par référence ou désignation dans les ventes réelles, sans modifier la base.</span>
         <span>Recommandé : CA validé importé pour cibler sur les ventes confirmées.</span>
       </div>
-    </section>
-  </main>
+    </div>
+  </header>
 
   <section class="card" style="margin-top:14px">
     <div class="cardTitle">
@@ -454,7 +452,8 @@
         <button class="miniBtn" id="onlyEmailBtn" type="button">Garder clients avec email</button>
       </div>
       <div class="toolbarRight">
-        <span class="chip"><span class="dot blue"></span>Les clients sans email restent visibles mais exclus de l'envoi.</span>
+        <button class="btn gold" id="validateTargetsBtn" type="button">Valider les clients cibles</button>
+        <button class="miniBtn" id="resetBtn" type="button">Réinitialiser</button>
       </div>
     </div>
 
@@ -480,72 +479,15 @@
     </div>
   </section>
 
-  <section class="footerGrid">
-    <div class="card">
-      <div class="cardTitle">
-        <h2>Message</h2>
-        <span class="chip"><span class="dot"></span>Brouillon</span>
-      </div>
-      <div class="field">
-        <label for="subjectInput">Objet</label>
-        <input id="subjectInput" value="Promotion spéciale sur votre produit habituel" />
-      </div>
-      <div class="field">
-        <label for="messageInput">Corps du message</label>
-        <textarea id="messageInput">Bonjour,
-
-Nous avons actuellement une offre intéressante sur un produit que vous utilisez déjà.
-
-Je me permets de vous transmettre l'information afin que vous puissiez en profiter si besoin.
-
-Je reste disponible si vous souhaitez que je vous chiffre une quantité.
-
-Bien cordialement,</textarea>
-        <div class="help">Variables futures possibles : nom client, référence produit, dernier achat, commercial, lien document.</div>
-      </div>
-      <div class="field">
-        <label for="docInput">Document promo</label>
-        <input id="docInput" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" />
-        <div class="help">Prototype uniquement : le fichier n'est pas envoyé et n'est pas stocké.</div>
-      </div>
-      <button class="btn gold" id="prepareBtn" type="button">Préparer l'envoi</button>
-    </div>
-
-    <div class="card">
-      <div class="cardTitle">
-        <h2>Aperçu campagne</h2>
-        <span class="chip"><span class="dot green"></span>Envoi verrouillé</span>
-      </div>
-      <div class="previewBox" id="mailPreview">
-        <h3>Aperçu non généré</h3>
-        <p>Sélectionne les clients, ajuste le message, puis clique sur Préparer l'envoi.</p>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
-        <button class="btn green" id="fakeSendBtn" type="button" disabled>Simuler l'envoi</button>
-        <button class="btn danger" id="resetBtn" type="button">Réinitialiser</button>
-      </div>
-    </div>
-  </section>
-
-  <section class="card" style="margin-top:14px">
-    <div class="cardTitle">
-      <h2>Branchements restants</h2>
-      <span class="chip"><span class="dot"></span>Roadmap</span>
-    </div>
-    <div class="roadmap">
-      <div class="roadmapItem"><span class="num">1</span><span>Renseigner les emails clients dans les fiches quand la colonne Supabase est prête.</span></div>
-      <div class="roadmapItem"><span class="num">2</span><span>Ajouter le consentement / opposition commerciale et exclure automatiquement les clients bloqués.</span></div>
-      <div class="roadmapItem"><span class="num">3</span><span>Connecter l'envoi individuel via Resend ou Microsoft Graph avec Reply-To commercial.</span></div>
-      <div class="roadmapItem"><span class="num">4</span><span>Historiser chaque campagne : produit, fichier, clients, date, statut et erreurs.</span></div>
-    </div>
-  </section>
 </div>
 
 <div class="modalBackdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal">
     <h2 id="modalTitle">Module préparatoire</h2>
-    <p id="modalText">Aucun envoi réel n'est branché pour le moment.</p>
-    <div class="modalActions">
+    <div class="modalBody" id="modalBody">
+      <p id="modalText">Aucun envoi réel n'est branché pour le moment.</p>
+    </div>
+    <div class="modalActions" id="modalActions">
       <button class="btn primary" id="closeModalBtn" type="button">Compris</button>
     </div>
   </div>
@@ -576,6 +518,19 @@ let clientEmailIndexPromise = null;
 let suggestionTimer = null;
 let activeSuggestionIndex = -1;
 let visibleSuggestions = [];
+let campaignDraft = {
+  subject: "Promotion spéciale sur votre produit habituel",
+  message: `Bonjour,
+
+Nous avons actuellement une offre intéressante sur un produit que vous utilisez déjà.
+
+Je me permets de vous transmettre l'information afin que vous puissiez en profiter si besoin.
+
+Je reste disponible si vous souhaitez que je vous chiffre une quantité.
+
+Bien cordialement,`,
+  documentName: "Aucun document sélectionné"
+};
 
 const normalize = value => String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const compact = value => normalize(value).replace(/[^a-z0-9]/g, "");
@@ -590,10 +545,23 @@ function escapeHtml(value){
   return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
-function showModal(title, text){
+function closeModal(){
+  $("modalBackdrop").classList.remove("is-open");
+}
+
+function setModalContent(title, bodyHtml, actionsHtml, bindEvents){
   $("modalTitle").textContent = title;
-  $("modalText").textContent = text;
+  $("modalBody").innerHTML = bodyHtml;
+  $("modalActions").innerHTML = actionsHtml || '<button class="btn primary" id="closeModalBtn" type="button">Compris</button>';
+  if ($("closeModalBtn")) $("closeModalBtn").addEventListener("click", closeModal);
+  if (typeof bindEvents === "function") bindEvents();
   $("modalBackdrop").classList.add("is-open");
+}
+
+function showModal(title, text){
+  const paragraph = document.createElement("p");
+  paragraph.textContent = text;
+  setModalContent(title, paragraph.outerHTML, '<button class="btn primary" id="closeModalBtn" type="button">Compris</button>');
 }
 
 function setLoading(isLoading, text = ""){
@@ -1209,7 +1177,11 @@ function updateKpis(){
   $("targetStatus").textContent = found ? `${found.toLocaleString("fr-FR")} client(s) chargé(s)` : "Aucun ciblage lancé";
 }
 
-function prepareMailPreview(){
+function getSelectedTargets(){
+  return targets.filter(row => row.selected);
+}
+
+function openMessageModal(){
   const selectedTargets = targets.filter(row => row.selected);
   if (!selectedTargets.length){
     showModal("Sélection vide", "Aucun client n'est sélectionné pour cette campagne.");
@@ -1217,18 +1189,106 @@ function prepareMailPreview(){
   }
   const selectedWithEmail = selectedTargets.filter(row => row.email);
   const product = $("productRef").value.trim() || "produit sélectionné";
-  const subject = $("subjectInput").value.trim() || "Promotion produit";
-  const doc = $("docInput").files && $("docInput").files[0] ? $("docInput").files[0].name : "Aucun document sélectionné";
+  setModalContent(
+    "Préparer le message",
+    `
+      <div class="modalNote">Étape 1/3 : tu ajustes le message. Aucun email ne part à cette étape.</div>
+      <div class="campaignStats">
+        <div class="campaignStat"><b>${selectedTargets.length.toLocaleString("fr-FR")}</b><span>Clients sélectionnés</span></div>
+        <div class="campaignStat"><b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b><span>Emails disponibles</span></div>
+        <div class="campaignStat"><b>${escapeHtml(product)}</b><span>Produit ciblé</span></div>
+      </div>
+      <div class="field">
+        <label for="modalSubject">Objet du mail</label>
+        <input id="modalSubject" value="${escapeHtml(campaignDraft.subject)}" />
+      </div>
+      <div class="field">
+        <label for="modalMessage">Corps du message</label>
+        <textarea id="modalMessage">${escapeHtml(campaignDraft.message)}</textarea>
+        <div class="help">L'envoi réel sera confirmé uniquement à la dernière étape.</div>
+      </div>
+      <div class="field">
+        <label for="modalDoc">Document promo</label>
+        <input id="modalDoc" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" />
+        <div class="help">Document sélectionné : <b id="modalDocName">${escapeHtml(campaignDraft.documentName)}</b></div>
+      </div>
+    `,
+    `
+      <button class="btn" id="closeModalBtn" type="button">Annuler</button>
+      <button class="btn gold" id="openPreviewModalBtn" type="button">Valider le message</button>
+    `,
+    () => {
+      $("modalDoc").addEventListener("change", () => {
+        campaignDraft.documentName = $("modalDoc").files && $("modalDoc").files[0]
+          ? $("modalDoc").files[0].name
+          : "Aucun document sélectionné";
+        $("modalDocName").textContent = campaignDraft.documentName;
+      });
+      $("openPreviewModalBtn").addEventListener("click", () => {
+        campaignDraft.subject = $("modalSubject").value.trim() || "Promotion produit";
+        campaignDraft.message = $("modalMessage").value.trim() || campaignDraft.message;
+        openPreviewModal();
+      });
+    }
+  );
+}
+
+function openPreviewModal(){
+  const selectedTargets = getSelectedTargets();
+  if (!selectedTargets.length){
+    showModal("Sélection vide", "Aucun client n'est sélectionné pour cette campagne.");
+    return;
+  }
+  const selectedWithEmail = selectedTargets.filter(row => row.email);
+  const product = $("productRef").value.trim() || "produit sélectionné";
   const first = selectedTargets[0];
-  $("mailPreview").innerHTML = `
-    <h3>Campagne préparée</h3>
-    <div class="mailSubject">Objet : ${escapeHtml(subject)}</div>
-    <p><b>${selectedTargets.length.toLocaleString("fr-FR")}</b> client(s) sélectionné(s) pour la référence <b>${escapeHtml(product)}</b>.</p>
-    <p><b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b> email(s) envoyable(s) aujourd'hui. Les autres resteront à enrichir dans les fiches clients.</p>
-    <p>Premier client cible : <b>${escapeHtml(first.client)}</b> - compte ${escapeHtml(first.account)}</p>
-    <p>Document : ${escapeHtml(doc)}</p>
-    <p>Statut : envoi réel désactivé. Prochain branchement possible via Resend ou Outlook Graph.</p>`;
-  $("fakeSendBtn").disabled = selectedWithEmail.length === 0;
+  setModalContent(
+    "Aperçu de la campagne",
+    `
+      <div class="modalNote">Étape 2/3 : vérifie l'aperçu. L'envoi ne partira qu'après la dernière confirmation.</div>
+      <div class="campaignStats">
+        <div class="campaignStat"><b>${selectedTargets.length.toLocaleString("fr-FR")}</b><span>Clients sélectionnés</span></div>
+        <div class="campaignStat"><b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b><span>Emails envoyables</span></div>
+        <div class="campaignStat"><b>${eur.format(selectedTargets.reduce((sum,row) => sum + row.revenue, 0))}</b><span>CA cible</span></div>
+      </div>
+      <p><b>Produit :</b> ${escapeHtml(product)}</p>
+      <p><b>Premier client cible :</b> ${escapeHtml(first.client)} - compte ${escapeHtml(first.account)}</p>
+      <p><b>Objet :</b> ${escapeHtml(campaignDraft.subject)}</p>
+      <div class="messagePreview">${escapeHtml(campaignDraft.message)}</div>
+      <p><b>Document :</b> ${escapeHtml(campaignDraft.documentName)}</p>
+    `,
+    `
+      <button class="btn" id="backToMessageBtn" type="button">Modifier</button>
+      <button class="btn green" id="openSendConfirmBtn" type="button">Préparer l'envoi</button>
+    `,
+    () => {
+      $("backToMessageBtn").addEventListener("click", openMessageModal);
+      $("openSendConfirmBtn").addEventListener("click", openSendConfirmModal);
+    }
+  );
+}
+
+function openSendConfirmModal(){
+  const selectedTargets = getSelectedTargets();
+  const selectedWithEmail = selectedTargets.filter(row => row.email);
+  setModalContent(
+    "Confirmer l'envoi",
+    `
+      <div class="modalNote">Étape 3/3 : dernière validation. Aujourd'hui, l'envoi réel est encore verrouillé tant que le connecteur email n'est pas branché.</div>
+      <p>Tu es prêt à envoyer cette campagne à <b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b> client(s) avec email renseigné.</p>
+      <p>Quand le branchement email sera activé, cette action enverra un email individuel à chaque client, sans afficher les autres destinataires.</p>
+    `,
+    `
+      <button class="btn" id="backToPreviewBtn" type="button">Retour aperçu</button>
+      <button class="btn green" id="confirmCampaignBtn" type="button">Envoyer la campagne</button>
+    `,
+    () => {
+      $("backToPreviewBtn").addEventListener("click", openPreviewModal);
+      $("confirmCampaignBtn").addEventListener("click", () => {
+        showModal("Campagne prête", "Le parcours est validé. Aucun email réel n'a été envoyé pour le moment : le connecteur email reste à brancher avant activation.");
+      });
+    }
+  );
 }
 
 $("previewBtn").addEventListener("click", loadTargets);
@@ -1278,17 +1338,15 @@ $("onlyEmailBtn").addEventListener("click", () => {
   targets.forEach(row => row.selected = true);
   renderTargets();
 });
-$("prepareBtn").addEventListener("click", prepareMailPreview);
-$("fakeSendBtn").addEventListener("click", () => showModal("Envoi non branché", "Le ciblage est réel, mais aucun email réel n'est envoyé. Il faudra brancher Resend ou Outlook Graph avant activation."));
+$("validateTargetsBtn").addEventListener("click", openMessageModal);
 $("resetBtn").addEventListener("click", () => {
   targets = [];
   renderTargets();
-  $("mailPreview").innerHTML = '<h3>Aperçu non généré</h3><p>Sélectionne les clients, ajuste le message, puis clique sur Préparer l\'envoi.</p>';
-  $("fakeSendBtn").disabled = true;
 });
 $("openStatusBtn").addEventListener("click", () => showModal("Lecture seule active", "Le ciblage lit Supabase en temps réel, mais aucun email n'est envoyé et aucune donnée n'est modifiée."));
-$("closeModalBtn").addEventListener("click", () => $("modalBackdrop").classList.remove("is-open"));
-$("modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") $("modalBackdrop").classList.remove("is-open"); });
+$("closeModalBtn").addEventListener("click", closeModal);
+$("modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") closeModal(); });
+document.addEventListener("keydown", event => { if (event.key === "Escape") closeModal(); });
 renderTargets();
 </script>
 </body>

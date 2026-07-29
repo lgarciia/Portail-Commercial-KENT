@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Import tarifs Industrie</title>
   <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -1421,7 +1422,11 @@
         return;
       }
 
-      if (!confirm(`Importer ${importRows.length} reference(s) pour ${type.label} ?`)) {
+      const confirmed = await kentConfirm(
+        `Importer ${importRows.length} référence(s) pour ${type.label} ?\n\nCette action synchronise les produits industrie puis remplace les tarifs de la plaque cible. Les clients, visites et historiques ne sont pas modifiés.`,
+        { title: "Confirmer l'import tarif", tone: "warning", confirmText: "Importer" }
+      );
+      if (!confirmed) {
         return;
       }
 

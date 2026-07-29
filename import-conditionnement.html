@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Import conditionnement - KENT</title>
   <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -536,7 +537,11 @@
         return;
       }
 
-      if (!confirm(`Remplacer toute la table conditionnement par ${state.importRows.length} reference(s) ?`)) {
+      const confirmed = await kentConfirm(
+        `Remplacer toute la table conditionnement par ${state.importRows.length} référence(s) ?\n\nLes anciennes lignes de conditionnement seront remplacées. Les clients, visites, tarifs et produits ne sont pas modifiés.`,
+        { title: "Confirmer l'import conditionnement", tone: "warning", confirmText: "Remplacer" }
+      );
+      if (!confirmed) {
         return;
       }
 
