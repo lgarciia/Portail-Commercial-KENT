@@ -38,6 +38,9 @@
     }
     .wrap{max-width:1540px;margin:0 auto}
     .topbar{
+      position:relative;
+      z-index:120;
+      overflow:visible;
       display:flex;
       flex-direction:column;
       align-items:stretch;
@@ -153,7 +156,7 @@
     .help{margin-top:6px;color:var(--muted);font-size:12px;line-height:1.35;font-weight:700}
     .filterBanner{
       position:relative;
-      z-index:40;
+      z-index:140;
       overflow:visible;
       padding:13px;
       border:1px solid rgba(148,163,184,.16);
@@ -172,14 +175,14 @@
     }
     .filterBanner .field{margin-bottom:0}
     .filterBanner .btn{min-height:44px;padding:0 18px}
-    .suggestField{position:relative;z-index:80}
-    .suggestField:focus-within{z-index:3000}
+    .suggestField{position:relative;z-index:160}
+    .suggestField:focus-within{z-index:12000}
     .suggestPanel{
       position:absolute;
       left:0;
       right:0;
       top:calc(100% + 8px);
-      z-index:4000;
+      z-index:13000;
       display:none;
       max-height:310px;
       overflow:auto;
