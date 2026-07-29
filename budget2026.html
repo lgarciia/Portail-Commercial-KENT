@@ -893,7 +893,10 @@ async function importProjectionXlsx(file){
       return;
     }
 
-    const replace = await kentConfirm(`Projection détectée : ${imported.length} clients.\n\nValider = Remplacer le budget\nAnnuler = Ajouter au budget`, { title: "Importer la projection", confirmText: "Remplacer" });
+    const replace = await kentConfirm(
+      `Projection détectée : ${imported.length} clients.\n\nTu peux remplacer le budget en cours par cette projection, ou annuler pour l'ajouter à la liste existante sans supprimer les clients déjà présents.`,
+      { title: "Confirmer l'import", confirmText: "Remplacer", cancelText: "Ajouter" }
+    );
     if (replace){
       state.clients = imported;
     }else{
@@ -906,6 +909,12 @@ async function importProjectionXlsx(file){
 
     save();
     renderAll();
+    await kentAlert(
+      replace
+        ? `Import terminé : ${imported.length} client(s) ont remplacé le budget en cours.`
+        : `Import terminé : la projection a été ajoutée au budget en cours.`,
+      { title: "Import réussi", tone: "success" }
+    );
   }catch(e){
     console.error(e);
     await kentAlert("Import impossible (XLSX invalide).", { title: "Import projection", tone: "danger" });

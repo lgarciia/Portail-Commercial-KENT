@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fiche Client Industrie - Supabase</title>
   <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -1845,7 +1846,11 @@
 
     async function deleteClientAccount(accountId) {
       if (!accountId) return;
-      if (!window.confirm("Supprimer ce compte secondaire ?")) return;
+      const confirmed = await kentConfirm(
+        "Supprimer ce compte secondaire ?\n\nCette action retire uniquement ce numéro secondaire. Le client, ses visites et son historique restent conservés.",
+        { title: "Supprimer le compte", tone: "danger", confirmText: "Supprimer" }
+      );
+      if (!confirmed) return;
 
       try {
         const { error } = await supabaseClient
@@ -4276,7 +4281,11 @@
     }
 
     async function deleteVisit(visiteId) {
-      if (!window.confirm("Supprimer cette visite ?")) return;
+      const confirmed = await kentConfirm(
+        "Supprimer cette visite ?\n\nLes lignes produits associées à cette visite seront supprimées avec elle. Cette action ne touche pas au client.",
+        { title: "Supprimer la visite", tone: "danger", confirmText: "Supprimer" }
+      );
+      if (!confirmed) return;
 
       try {
         setStatus("Suppression de la visite...", "info");
