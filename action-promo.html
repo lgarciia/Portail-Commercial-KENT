@@ -502,6 +502,8 @@ const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PAGE_SIZE = 1000;
+const QUICK_RESULT_LIMIT = 80;
+const CACHE_TTL_MS = 2 * 60 * 1000;
 const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
 const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
 const SOURCES = [
@@ -514,11 +516,11 @@ let targets = [];
 let currentUser = null;
 let productCatalog = [];
 let productCatalogKey = "";
-let productCatalogPromise = null;
-let clientEmailIndex = new Map();
-let clientEmailIndexKey = "";
-let clientEmailIndexPromise = null;
+let productSuggestionCache = new Map();
+let salesProductsCache = new Map();
+let targetRowsCache = new Map();
 let suggestionTimer = null;
+let productSuggestionSeq = 0;
 let activeSuggestionIndex = -1;
 let visibleSuggestions = [];
 let campaignDraft = {
@@ -546,6 +548,89 @@ const toNumber = value => {
 
 function escapeHtml(value){
   return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+
+function getCached(map, key){
+  const cached = map.get(key);
+  if (!cached) return null;
+  if (Date.now() - cached.at > CACHE_TTL_MS) {
+    map.delete(key);
+    return null;
+  }
+  return cached.value;
+}
+
+function setCached(map, key, value){
+  map.set(key, { at:Date.now(), value });
+  return value;
+}
+
+function sanitizePostgrestSearchValue(value){
+  return String(value ?? "")
+    .replace(/[,%()[\]{}"']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildSearchTerms(value){
+  const raw = String(value ?? "").trim();
+  const normalized = normalize(raw);
+  const compacted = compact(raw);
+  const candidates = [
+    raw,
+    normalized,
+    compacted,
+    ...raw.split(/\s+/).filter(part => part.length >= 3),
+    ...normalized.split(/\s+/).filter(part => part.length >= 3)
+  ];
+  if (compacted.length >= 5) candidates.push(compacted.slice(0, 5));
+
+  const seen = new Set();
+  return candidates
+    .map(sanitizePostgrestSearchValue)
+    .filter(term => term.length >= 2)
+    .filter(term => {
+      const key = normalize(term);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 8);
+}
+
+function applyTextSearch(query, columns, value){
+  if (!Array.isArray(columns) || !columns.length) return query;
+  const terms = buildSearchTerms(value);
+  if (!terms.length) return query;
+  const clauses = [];
+  terms.forEach(term => {
+    columns.forEach(column => {
+      clauses.push(`${column}.ilike.%${term}%`);
+    });
+  });
+  return query.or(clauses.join(","));
+}
+
+function applyQueryOptions(table, query, options = {}){
+  query = applyCommercialScope(table, query);
+  if (options.search) {
+    query = applyTextSearch(query, options.search.columns || [], options.search.value);
+  }
+  if (options.eq) {
+    [].concat(options.eq).forEach(item => { query = query.eq(item.column, item.value); });
+  }
+  if (options.gte) {
+    [].concat(options.gte).forEach(item => { query = query.gte(item.column, item.value); });
+  }
+  if (options.lte) {
+    [].concat(options.lte).forEach(item => { query = query.lte(item.column, item.value); });
+  }
+  if (options.in) {
+    query = query.in(options.in.column, options.in.values);
+  }
+  const orders = Array.isArray(options.order) ? options.order : (options.order ? [options.order] : []);
+  orders.forEach(order => { query = query.order(order.column, { ascending: order.ascending ?? true }); });
+  return query;
 }
 
 function closeModal(){
@@ -586,22 +671,9 @@ function applyCommercialScope(table, query){
 async function fetchPaged(table, select, options = {}){
   const all = [];
   for (let from = 0; ; from += PAGE_SIZE){
-    let query = supabaseClient.from(table).select(select).range(from, from + PAGE_SIZE - 1);
-    query = applyCommercialScope(table, query);
-    if (options.eq) {
-      [].concat(options.eq).forEach(item => { query = query.eq(item.column, item.value); });
-    }
-    if (options.gte) {
-      [].concat(options.gte).forEach(item => { query = query.gte(item.column, item.value); });
-    }
-    if (options.lte) {
-      [].concat(options.lte).forEach(item => { query = query.lte(item.column, item.value); });
-    }
-    if (options.in) {
-      query = query.in(options.in.column, options.in.values);
-    }
-    const orders = Array.isArray(options.order) ? options.order : (options.order ? [options.order] : []);
-    orders.forEach(order => { query = query.order(order.column, { ascending: order.ascending ?? true }); });
+    let query = supabaseClient.from(table).select(select);
+    query = applyQueryOptions(table, query, options);
+    query = query.range(from, from + PAGE_SIZE - 1);
     const { data, error } = await query;
     if (error) throw new Error(`${table}: ${error.message}`);
     const batch = data || [];
@@ -609,6 +681,15 @@ async function fetchPaged(table, select, options = {}){
     if (batch.length < PAGE_SIZE) break;
   }
   return all;
+}
+
+async function fetchLimited(table, select, options = {}){
+  let query = supabaseClient.from(table).select(select);
+  query = applyQueryOptions(table, query, options);
+  query = query.limit(options.limit || QUICK_RESULT_LIMIT);
+  const { data, error } = await query;
+  if (error) throw new Error(`${table}: ${error.message}`);
+  return data || [];
 }
 
 async function fetchInChunks(table, select, column, values, options = {}){
@@ -636,6 +717,16 @@ async function fetchClientRows(table, ids = null){
   const run = select => ids && ids.length
     ? fetchInChunks(table, select, "id", ids, { order:{ column:"nom", ascending:true } })
     : fetchPaged(table, select, { order:{ column:"nom", ascending:true } });
+  try {
+    return await run("id,nom,numero_compte,email");
+  } catch (error) {
+    if (!isMissingEmailColumnError(error)) throw error;
+    return run("id,nom,numero_compte");
+  }
+}
+
+async function fetchClientRowsByColumn(table, column, values){
+  const run = select => fetchInChunks(table, select, column, values, { order:{ column:"nom", ascending:true } });
   try {
     return await run("id,nom,numero_compte,email");
   } catch (error) {
@@ -675,29 +766,26 @@ function findClientEmail(row, index){
   return "";
 }
 
-async function loadClientEmailIndex(){
-  const key = currentCatalogKey();
-  if (clientEmailIndexKey === key && clientEmailIndex.size) return clientEmailIndex;
-  if (clientEmailIndexPromise && clientEmailIndexKey === key) return clientEmailIndexPromise;
-
-  clientEmailIndexKey = key;
-  clientEmailIndexPromise = (async () => {
-    const index = new Map();
-    const rowsBySource = await Promise.all(SOURCES.map(async source => {
-      if (!activityAllowed(source.label)) return [];
-      const clients = await fetchClientRows(source.tables.clients);
-      return clients.map(client => ({ source, client }));
-    }));
-    rowsBySource.flat().forEach(({ source, client }) => addClientEmailToIndex(index, source, client));
-    clientEmailIndex = index;
-    clientEmailIndexPromise = null;
-    return clientEmailIndex;
-  })().catch(error => {
-    clientEmailIndexPromise = null;
-    console.warn("Emails clients indisponibles:", error?.message || error);
-    return new Map();
+async function loadClientEmailIndexForRealRows(rows){
+  const index = new Map();
+  const rowsByActivity = new Map();
+  (rows || []).forEach(row => {
+    const activity = inferActivityFromReal(row);
+    if (!activityAllowed(activity)) return;
+    const key = normalize(activity);
+    if (!rowsByActivity.has(key)) rowsByActivity.set(key, []);
+    rowsByActivity.get(key).push(row);
   });
-  return clientEmailIndexPromise;
+
+  await Promise.all(SOURCES.map(async source => {
+    const rowsForSource = rowsByActivity.get(normalize(source.label)) || [];
+    const accounts = [...new Set(rowsForSource.map(row => String(row.client_code || "").trim()).filter(Boolean))];
+    if (!accounts.length) return;
+    const clients = await fetchClientRowsByColumn(source.tables.clients, "numero_compte", accounts);
+    clients.forEach(client => addClientEmailToIndex(index, source, client));
+  }));
+
+  return index;
 }
 
 function suggestionLabel(row){
@@ -736,46 +824,51 @@ function mergeCatalogItems(items){
   return [...map.values()].sort((a,b) => a.label.localeCompare(b.label, "fr", { numeric:true, sensitivity:"base" }));
 }
 
-async function loadValidatedCatalog(){
-  const rows = await fetchPaged("v_reel_lignes_actives", "reference,designation,entite_key,entite_libelle,source_file", {
-    order:[{ column:"reference", ascending:true }]
+async function loadValidatedCatalogMatches(term){
+  if ($("sourceSelect").value === "sales") return [];
+  const rows = await fetchLimited("v_reel_lignes_actives", "reference,designation,entite_key,entite_libelle,source_file", {
+    search:{ columns:["reference", "designation"], value:term },
+    order:[{ column:"reference", ascending:true }],
+    limit:QUICK_RESULT_LIMIT
   });
   return rows
     .map(row => productCatalogItem(row.reference, row.designation, inferActivityFromReal(row), "CA validé"))
     .filter(row => activityAllowed(row.activity));
 }
 
-async function loadSalesCatalogForSource(source){
+async function loadSalesCatalogMatchesForSource(source, term){
   if (!activityAllowed(source.label)) return [];
-  const rows = await fetchPaged(source.tables.produits, "reference_produit,nom", {
-    order:{ column:"nom", ascending:true }
+  const rows = await fetchLimited(source.tables.produits, "reference_produit,nom", {
+    search:{ columns:["reference_produit", "nom"], value:term },
+    order:{ column:"nom", ascending:true },
+    limit:QUICK_RESULT_LIMIT
   });
   return rows.map(row => productCatalogItem(row.reference_produit, row.nom, source.label, "Ventes saisies"));
 }
 
-async function loadProductCatalog(){
-  const key = currentCatalogKey();
-  if (productCatalogKey === key && productCatalog.length) return productCatalog;
-  if (productCatalogPromise && productCatalogKey === key) return productCatalogPromise;
+async function loadProductSuggestions(term){
+  const key = `${currentCatalogKey()}::suggest::${compact(term)}`;
+  const cached = getCached(productSuggestionCache, key);
+  if (cached) return cached;
 
-  productCatalogKey = key;
-  productCatalogPromise = (async () => {
-    const sourceMode = $("sourceSelect").value;
-    const blocks = [];
-    if (sourceMode === "validated" || sourceMode === "both") blocks.push(loadValidatedCatalog());
-    if (sourceMode === "sales" || sourceMode === "both") {
-      blocks.push(Promise.all(SOURCES.map(loadSalesCatalogForSource)).then(rows => rows.flat()));
-    }
-    const loaded = (await Promise.all(blocks)).flat();
-    productCatalog = mergeCatalogItems(loaded);
-    productCatalogPromise = null;
-    return productCatalog;
-  })().catch(error => {
-    productCatalogPromise = null;
-    console.warn("Suggestions produits indisponibles:", error?.message || error);
-    return [];
-  });
-  return productCatalogPromise;
+  const scopeKey = currentCatalogKey();
+  if (productCatalogKey !== scopeKey) {
+    productCatalog = [];
+    productCatalogKey = scopeKey;
+  }
+
+  const sourceMode = $("sourceSelect").value;
+  const blocks = [];
+  if (sourceMode === "validated" || sourceMode === "both") {
+    blocks.push(loadValidatedCatalogMatches(term));
+  }
+  if (sourceMode === "sales" || sourceMode === "both") {
+    blocks.push(Promise.all(SOURCES.map(source => loadSalesCatalogMatchesForSource(source, term))).then(rows => rows.flat()));
+  }
+
+  const loaded = (await Promise.all(blocks)).flat();
+  productCatalog = mergeCatalogItems([...productCatalog, ...loaded]);
+  return setCached(productSuggestionCache, key, findProductSuggestions(term));
 }
 
 function scoreSuggestion(item, term){
@@ -863,11 +956,23 @@ function refreshProductSuggestions(){
       hideProductSuggestions();
       return;
     }
-    renderProductSuggestions([], "Recherche de suggestions...");
-    await loadProductCatalog();
-    const suggestions = findProductSuggestions(value);
-    renderProductSuggestions(suggestions, suggestions.length ? "" : "Aucune suggestion trouvée.");
-  }, 180);
+    const requestId = ++productSuggestionSeq;
+    const quickSuggestions = findProductSuggestions(value);
+    if (quickSuggestions.length) {
+      renderProductSuggestions(quickSuggestions, "");
+    } else {
+      renderProductSuggestions([], "Recherche de suggestions...");
+    }
+    try {
+      const suggestions = await loadProductSuggestions(value);
+      if (requestId !== productSuggestionSeq) return;
+      renderProductSuggestions(suggestions, suggestions.length ? "" : "Aucune suggestion trouvée.");
+    } catch (error) {
+      console.warn("Suggestions produits indisponibles:", error?.message || error);
+      if (requestId !== productSuggestionSeq) return;
+      renderProductSuggestions(quickSuggestions, quickSuggestions.length ? "" : "Suggestions indisponibles pour le moment.");
+    }
+  }, 60);
 }
 
 function moveSuggestion(delta){
@@ -879,11 +984,20 @@ function moveSuggestion(delta){
 function resetProductCatalog(){
   productCatalog = [];
   productCatalogKey = "";
-  productCatalogPromise = null;
-  clientEmailIndex = new Map();
-  clientEmailIndexKey = "";
-  clientEmailIndexPromise = null;
+  productSuggestionCache = new Map();
+  salesProductsCache = new Map();
+  targetRowsCache = new Map();
   hideProductSuggestions();
+}
+
+function warmInitialSuggestions(){
+  window.setTimeout(() => {
+    const value = $("productRef").value;
+    if (normalize(value).length < 2 && compact(value).length < 2) return;
+    loadProductSuggestions(value).catch(error => {
+      console.warn("Prechargement suggestions indisponible:", error?.message || error);
+    });
+  }, 250);
 }
 
 function normalizeVisitType(value){
@@ -1018,6 +1132,7 @@ function aggregateRows(rows){
 async function loadValidatedRows(term){
   const cutoff = periodCutoff();
   const options = {
+    search:{ columns:["reference", "designation"], value:term },
     order:[{ column:"annee", ascending:false }, { column:"mois", ascending:false }]
   };
   if (cutoff) options.gte = { column:"annee", value:cutoff.getFullYear() };
@@ -1026,7 +1141,7 @@ async function loadValidatedRows(term){
     "id,commercial_user_id,commercial_identifier,commercial_name,entite_key,entite_libelle,annee,mois,client_code,client_nom,montant,quantite,reference,designation,date_piece,source_file",
     options
   );
-  const emailIndex = await loadClientEmailIndex();
+  const emailIndex = await loadClientEmailIndexForRealRows(rows);
   return rows
     .filter(row => productMatches(row, term))
     .filter(isInPeriod)
@@ -1051,9 +1166,15 @@ async function loadValidatedRows(term){
 
 async function loadSalesRowsForSource(source, term){
   if (!activityAllowed(source.label)) return [];
-  const products = await fetchPaged(source.tables.produits, "id,nom,reference_produit", {
-    order:{ column:"nom", ascending:true }
-  });
+  const productCacheKey = `${currentCatalogKey()}::sales-products::${source.key}::${compact(term)}`;
+  let products = getCached(salesProductsCache, productCacheKey);
+  if (!products) {
+    products = await fetchPaged(source.tables.produits, "id,nom,reference_produit", {
+      search:{ columns:["reference_produit", "nom"], value:term },
+      order:{ column:"nom", ascending:true }
+    });
+    products = setCached(salesProductsCache, productCacheKey, products);
+  }
   const matchingProducts = products.filter(product => productMatches(product, term));
   if (!matchingProducts.length) return [];
 
@@ -1105,9 +1226,22 @@ async function loadSalesRows(term){
   return rowsBySource.flat();
 }
 
+async function loadTargetRows(term){
+  const cacheKey = `${currentCatalogKey()}::targets::${$("periodSelect").value}::${compact(term)}`;
+  const cached = getCached(targetRowsCache, cacheKey);
+  if (cached) return cached;
+
+  const sourceMode = $("sourceSelect").value;
+  const blocks = [];
+  if (sourceMode === "validated" || sourceMode === "both") blocks.push(loadValidatedRows(term));
+  if (sourceMode === "sales" || sourceMode === "both") blocks.push(loadSalesRows(term));
+  const rows = (await Promise.all(blocks)).flat();
+  return setCached(targetRowsCache, cacheKey, rows);
+}
+
 async function loadTargets(){
-  const term = normalize($("productRef").value);
-  if (!term){
+  const term = $("productRef").value.trim();
+  if (!normalize(term)){
     showModal("Référence obligatoire", "Renseigne une référence ou un morceau de désignation produit pour lancer le ciblage.");
     return;
   }
@@ -1117,11 +1251,7 @@ async function loadTargets(){
     currentUser = window.KentCommercialScope && typeof window.KentCommercialScope.load === "function"
       ? await window.KentCommercialScope.load()
       : null;
-    const sourceMode = $("sourceSelect").value;
-    const blocks = [];
-    if (sourceMode === "validated" || sourceMode === "both") blocks.push(loadValidatedRows(term));
-    if (sourceMode === "sales" || sourceMode === "both") blocks.push(loadSalesRows(term));
-    const rows = (await Promise.all(blocks)).flat();
+    const rows = await loadTargetRows(term);
     targets = aggregateRows(rows);
     renderTargets();
     $("targetDot").className = "dot green";
@@ -1351,6 +1481,7 @@ $("closeModalBtn").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") closeModal(); });
 document.addEventListener("keydown", event => { if (event.key === "Escape") closeModal(); });
 renderTargets();
+warmInitialSuggestions();
 </script>
 </body>
 </html>
