@@ -152,9 +152,9 @@
       yellow: "Jaune",
       green: "Vert",
       blue: "Bleu",
-      other: "Non defini"
+      other: "Non défini"
     };
-    return map[normalizeColor(color)] || "Non defini";
+    return map[normalizeColor(color)] || "Non défini";
   }
 
   function getAssetUrl(relativePath) {
@@ -213,19 +213,19 @@
     if (normalizeNumber(item.yellows)) parts.push(formatNumber(item.yellows) + "J");
     if (normalizeNumber(item.greens)) parts.push(formatNumber(item.greens) + "V");
     if (normalizeNumber(item.blues)) parts.push(formatNumber(item.blues) + "B");
-    return parts.join(" / ") || "Sans priorite";
+    return parts.join(" / ") || "Sans priorité";
   }
 
   function buildExecutivePoints(stats) {
     var points = [];
 
     if (!stats.nbVisites) {
-      return ["Aucune visite exploitable n'a ete remontee pour cette date."];
+      return ["Aucune visite exploitable n'a été remontée pour cette date."];
     }
 
     points.push(
       formatNumber(stats.nbVisites) +
-        " visite(s) realisee(s) aupres de " +
+        " visite(s) réalisée(s) auprès de " +
         formatNumber(stats.nbClients) +
         " client(s) pour " +
         formatNumber(stats.nbLignes) +
@@ -784,7 +784,7 @@
       container.innerHTML =
         '<div class="empty-state">' +
         (currentLoadedDate
-          ? "Aucune visite trouvee pour cette date."
+          ? "Aucune visite trouvée pour cette date."
           : 'Choisis une date puis clique sur "Charger les visites".') +
         "</div>";
       return;
@@ -862,7 +862,7 @@
     lines.push("Date : " + formatDateLong(inputs.reportDate));
     lines.push("Commercial : " + inputs.commercialName);
     lines.push("");
-    lines.push("Synthese :");
+    lines.push("Synthèse :");
     lines.push("- Visites : " + formatNumber(reportStats.nbVisites));
     lines.push("- Visites avec vente : " + formatNumber(reportStats.nbVisitesAvecVente));
     lines.push("- Visites sans vente : " + formatNumber(reportStats.nbVisitesSansVente));
@@ -1166,7 +1166,7 @@
             );
           })
           .join("")
-      : '<tr><td colspan="6">Aucune visite chargee pour cette date.</td></tr>';
+      : '<tr><td colspan="6">Aucune visite chargée pour cette date.</td></tr>';
     var notesHtml = groupedClients
       .filter(function (client) {
         return client.notes && client.notes.length;
@@ -1251,7 +1251,7 @@
       '<div id="copyStatus" class="copy-status"></div>' +
       "</div></header>" +
       '<section class="section">' +
-      '<div class="section-title">Synthese du jour</div>' +
+      '<div class="section-title">Synthèse du jour</div>' +
       '<table class="summary-table"><tbody>' +
       "<tr><th>Nombre de visites</th><td>" + escapeHtml(formatNumber(reportStats.nbVisites)) + "</td></tr>" +
       "<tr><th>Visites avec vente</th><td>" + escapeHtml(formatNumber(reportStats.nbVisitesAvecVente)) + "</td></tr>" +
@@ -1291,10 +1291,10 @@
       "var copyButton = document.getElementById('copyReportButton');" +
       "var copyStatus = document.getElementById('copyStatus');" +
       "copyButton.addEventListener('click', async function () {" +
-      "try { await navigator.clipboard.writeText(reportText); copyStatus.textContent = 'Rapport copie dans le presse-papiers.'; }" +
+      "try { await navigator.clipboard.writeText(reportText); copyStatus.textContent = 'Rapport copié dans le presse-papiers.'; }" +
       "catch (error) {" +
       "var area = document.createElement('textarea'); area.value = reportText; document.body.appendChild(area); area.select();" +
-      "document.execCommand('copy'); document.body.removeChild(area); copyStatus.textContent = 'Rapport copie dans le presse-papiers.'; }" +
+      "document.execCommand('copy'); document.body.removeChild(area); copyStatus.textContent = 'Rapport copié dans le presse-papiers.'; }" +
       "});" +
       "</script>" +
       "</body></html>"
@@ -1377,7 +1377,7 @@
 
   function buildPdfClientBlocks() {
     if (!groupedClients.length) {
-      return '<div class="pdf-callout">Aucune visite trouvee pour cette date.</div>';
+      return '<div class="pdf-callout">Aucune visite trouvée pour cette date.</div>';
     }
 
     return groupedClients
@@ -1517,7 +1517,7 @@
             );
           })
           .join("")
-      : '<tr><td colspan="6">Aucune visite trouvee pour cette date.</td></tr>';
+      : '<tr><td colspan="6">Aucune visite trouvée pour cette date.</td></tr>';
 
     var notesHtml = groupedClients
       .filter(function (client) {
@@ -1564,7 +1564,7 @@
       escapeHtml(formatNumber(reportStats.nbVisites)) +
       "</div>" +
       "</div>" +
-      '<div class="pdf-section"><div class="pdf-section-title">Synthese du jour</div><table class="pdf-table"><tbody>' +
+      '<div class="pdf-section"><div class="pdf-section-title">Synthèse du jour</div><table class="pdf-table"><tbody>' +
       buildPdfMetricRows() +
       "</tbody></table>" +
       (inputs.globalComment
@@ -1580,7 +1580,7 @@
       (notesHtml
         ? '<div class="pdf-section"><div class="pdf-section-title">Notes terrain</div>' + notesHtml + "</div>"
         : "") +
-      '<div class="pdf-footer">Document KENT genere automatiquement depuis le portail commercial.</div>' +
+      '<div class="pdf-footer">Document KENT généré automatiquement depuis le portail commercial.</div>' +
       "</div>"
     );
   }
@@ -1596,7 +1596,7 @@
       ".loading strong{display:block;font-size:18px;margin-bottom:10px;}" +
       ".loading span{color:#475569;line-height:1.6;}" +
       "</style></head><body>" +
-      '<div class="loading"><strong>Chargement du rapport...</strong><span>Preparation de la visualisation KENT en cours.</span></div>' +
+      '<div class="loading"><strong>Chargement du rapport...</strong><span>Préparation de la visualisation KENT en cours.</span></div>' +
       "</body></html>"
     );
   }
@@ -1669,7 +1669,7 @@
   async function visualiserRapport() {
     var previewWindow = window.open("", "_blank", "width=1480,height=960");
     if (!previewWindow) {
-      alert("Impossible d'ouvrir la fenetre de visualisation. Verifie le bloqueur de pop-up.");
+      alert("Impossible d'ouvrir la fenêtre de visualisation. Vérifie le bloqueur de pop-up.");
       return;
     }
 
@@ -1687,7 +1687,7 @@
     previewWindow.document.write(buildPreviewWindowHtml());
     previewWindow.document.close();
 
-    setStatus("Apercu du rapport ouvert dans une nouvelle fenetre.");
+    setStatus("Aperçu du rapport ouvert dans une nouvelle fenêtre.");
   }
 
   async function exporterPDF() {
@@ -1725,11 +1725,11 @@
         .save();
 
       pdfContainer.style.display = "none";
-      setStatus("PDF genere avec succes.");
+      setStatus("PDF généré avec succès.");
     } catch (error) {
       console.error("Erreur export PDF:", error);
       document.getElementById("pdfReport").style.display = "none";
-      setStatus("Erreur pendant la generation du PDF.");
+      setStatus("Erreur pendant la génération du PDF.");
       alert("Impossible de générer le PDF.");
     }
   }

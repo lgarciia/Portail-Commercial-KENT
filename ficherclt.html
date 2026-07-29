@@ -771,11 +771,11 @@
         <div class="quick-reco-panel" id="quickRecoPanel">
           <div class="quick-reco-copy">
             <div class="quick-reco-eyebrow">Recommande rapide</div>
-            <strong>Selectionne les produits a reprendre</strong>
-            <p>Coche un produit ou saisis une quantite, puis prepare la commande dans la fenetre de visite existante.</p>
+            <strong>Sélectionne les produits à reprendre</strong>
+            <p>Coche un produit ou saisis une quantité, puis prépare la commande dans la fenêtre de visite existante.</p>
           </div>
           <div class="quick-reco-actions">
-            <div class="quick-reco-summary" id="quickRecoSummary">0 produit selectionne</div>
+            <div class="quick-reco-summary" id="quickRecoSummary">0 produit sélectionné</div>
             <button class="btn btn-info btn-sm" id="prepareQuickRecoBtn" type="button" disabled>Preparer la commande</button>
             <button class="btn btn-secondary btn-sm" id="clearQuickRecoBtn" type="button" disabled>Vider</button>
           </div>
@@ -919,7 +919,7 @@
         </div>
 
         <div class="modal-actions">
-          <div class="helper-inline">Les informations sont enregistrees directement dans la base clients.</div>
+          <div class="helper-inline">Les informations sont enregistrées directement dans la base clients.</div>
           <div class="actions-inline">
             <button class="btn btn-secondary" id="cancelClientBtn" type="button">Annuler</button>
             <button class="btn btn-primary" id="saveClientBtn" type="submit">Enregistrer client</button>
@@ -971,13 +971,13 @@
       <div class="modal-header">
         <div>
           <h3 id="accountChoiceTitle">Choisir le compte client</h3>
-          <p id="accountChoiceSubtitle">Selectionne le numero de compte a afficher dans le document.</p>
+          <p id="accountChoiceSubtitle">Sélectionne le numéro de compte à afficher dans le document.</p>
         </div>
         <button class="close-btn" id="closeAccountChoiceBtn" type="button">&times;</button>
       </div>
       <div class="account-choice-list" id="accountChoiceList"></div>
       <div class="modal-actions">
-        <div class="helper-inline">Le choix sera enregistre dans l'historique du document genere.</div>
+        <div class="helper-inline">Le choix sera enregistré dans l'historique du document généré.</div>
         <button class="btn btn-secondary" id="cancelAccountChoiceBtn" type="button">Annuler</button>
       </div>
     </div>
@@ -1029,7 +1029,7 @@
     const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
     const VISIT_TYPE_LABELS = {
       vente: "Vente",
-      commande_telephone: "Commande telephone",
+      commande_telephone: "Commande téléphone",
       passage_sans_vente: "Passage sans vente",
       client_ferme: "Client ferme"
     };
@@ -1272,7 +1272,7 @@
 
     function formatClientNumberHint(lastNumeroCompte) {
       const raw = String(lastNumeroCompte ?? "").trim();
-      if (!raw) return "Aucun numero client trouve pour le moment (exemple conseille: 0001).";
+      if (!raw) return "Aucun numéro client trouvé pour le moment (exemple conseille: 0001).";
       const parsed = parseClientNumberValue(raw);
       if (!parsed) return `Dernier numero ajoute en base: ${raw} | Prochain conseille: manuel`;
       const next = String(parsed.numericValue + 1).padStart(parsed.width, "0");
@@ -1666,14 +1666,14 @@
       if (!dom.clientAccountsList) return;
       if (!client) {
         dom.clientAccountsHint.textContent = "Selectionne un client pour voir ses comptes.";
-        dom.clientAccountsList.innerHTML = '<div class="account-row"><div class="account-row-main"><strong>Aucun client selectionne</strong><span>Les comptes apparaitront ici.</span></div></div>';
+        dom.clientAccountsList.innerHTML = '<div class="account-row"><div class="account-row-main"><strong>Aucun client sélectionné</strong><span>Les comptes apparaitront ici.</span></div></div>';
         return;
       }
 
       const accounts = getClientDocumentAccounts(client);
       const secondaryCount = getClientAccountsForClient(client.id).length;
       dom.clientAccountsHint.textContent = secondaryCount
-        ? `${secondaryCount} compte(s) secondaire(s) enregistre(s).`
+        ? `${secondaryCount} compte(s) secondaire(s) enregistré(s).`
         : "Le compte principal sera utilise par defaut.";
 
       if (!accounts.length) {
@@ -1684,16 +1684,16 @@
       dom.clientAccountsList.innerHTML = accounts.map(account => {
         const isDefault = Boolean(account.is_default);
         const actions = account.is_primary
-          ? `${isDefault ? '<span class="mini-badge">Defaut</span>' : `<button class="btn btn-secondary btn-sm" type="button" data-action="account-default-primary" data-client-id="${escapeHtml(client.id)}">Defaut</button>`}`
+          ? `${isDefault ? '<span class="mini-badge">Défaut</span>' : `<button class="btn btn-secondary btn-sm" type="button" data-action="account-default-primary" data-client-id="${escapeHtml(client.id)}">Défaut</button>`}`
           : `
-              ${isDefault ? '<span class="mini-badge">Defaut</span>' : `<button class="btn btn-secondary btn-sm" type="button" data-action="account-default" data-account-id="${escapeHtml(account.id)}" data-client-id="${escapeHtml(client.id)}">Defaut</button>`}
+              ${isDefault ? '<span class="mini-badge">Défaut</span>' : `<button class="btn btn-secondary btn-sm" type="button" data-action="account-default" data-account-id="${escapeHtml(account.id)}" data-client-id="${escapeHtml(client.id)}">Défaut</button>`}
               <button class="btn btn-danger btn-sm" type="button" data-action="account-delete" data-account-id="${escapeHtml(account.id)}">Suppr.</button>
             `;
         return `
           <div class="account-row ${isDefault ? "is-default" : ""}">
             <div class="account-row-main">
               <strong>${escapeHtml(account.numero_compte || "-")}</strong>
-              <span>${escapeHtml(account.libelle || (account.is_primary ? "Compte principal" : "Sans libelle"))}</span>
+              <span>${escapeHtml(account.libelle || (account.is_primary ? "Compte principal" : "Sans libellé"))}</span>
             </div>
             <div class="account-row-actions">${actions}</div>
           </div>
@@ -1782,12 +1782,12 @@
 
         closeClientAccountModal();
         await reloadClientComptes({ silent: true });
-        setStatus("Compte client enregistre.", "success");
-        showToast("Compte client enregistre.", "success");
+        setStatus("Compte client enregistré.", "success");
+        showToast("Compte client enregistré.", "success");
       } catch (error) {
         console.error("Erreur saveClientAccount:", error);
         setStatus("Erreur lors de l'enregistrement du compte.", "error");
-        showToast("Impossible d'enregistrer le compte client. Verifie le SQL Supabase.", "error");
+        showToast("Impossible d'enregistrer le compte client. Vérifie le SQL Supabase.", "error");
       } finally {
         dom.saveClientAccountBtn.disabled = false;
       }
@@ -1801,7 +1801,7 @@
           .eq("client_id", String(clientId));
         if (error) throw error;
         await reloadClientComptes({ silent: true });
-        showToast("Compte principal defini par defaut.", "success");
+        showToast("Compte principal défini par défaut.", "success");
       } catch (error) {
         console.error("Erreur setPrimaryAccountAsDefault:", error);
         showToast("Impossible de definir le compte principal par defaut.", "error");
@@ -1823,7 +1823,7 @@
         if (error) throw error;
 
         await reloadClientComptes({ silent: true });
-        showToast("Compte defini par defaut.", "success");
+        showToast("Compte défini par défaut.", "success");
       } catch (error) {
         console.error("Erreur setClientAccountDefault:", error);
         showToast("Impossible de definir le compte par defaut.", "error");
@@ -1871,9 +1871,9 @@
         <button class="account-choice-item" type="button" data-account-choice-index="${index}">
           <div class="account-row-main">
             <strong>${escapeHtml(account.numero_compte || "-")}</strong>
-            <span>${escapeHtml(account.libelle || (account.is_primary ? "Compte principal" : "Sans libelle"))}</span>
+            <span>${escapeHtml(account.libelle || (account.is_primary ? "Compte principal" : "Sans libellé"))}</span>
           </div>
-          ${account.is_default ? '<span class="mini-badge">Defaut</span>' : ""}
+          ${account.is_default ? '<span class="mini-badge">Défaut</span>' : ""}
         </button>
       `).join("");
       dom.accountChoiceOverlay.classList.add("active");
@@ -2529,8 +2529,8 @@
       const items = getRecommendationCartItems();
       const totalQty = items.reduce((sum, item) => sum + Number(item.quantite || 0), 0);
       const label = items.length
-        ? `${items.length} produit(s) - ${totalQty.toLocaleString("fr-FR")} unite(s)`
-        : "0 produit selectionne";
+        ? `${items.length} produit(s) - ${totalQty.toLocaleString("fr-FR")} unité(s)`
+        : "0 produit sélectionné";
 
       dom.quickRecoSummary.textContent = label;
       dom.prepareQuickRecoBtn.disabled = !items.length;
@@ -2643,7 +2643,7 @@
     function renderTimelineCard(visite) {
       const visitType = resolveVisitType(visite.type_visite);
       const isPhoneOrder = isPhoneOrderVisitType(visitType);
-      const timelineLabel = isPhoneOrder ? "Commande telephone" : "Visite terrain";
+      const timelineLabel = isPhoneOrder ? "Commande téléphone" : "Visite terrain";
       const commandes = [...(visite.commandes || [])].sort((a, b) => {
         const produitA = getProduitDisplay(a.produit_id);
         const produitB = getProduitDisplay(b.produit_id);
@@ -2965,7 +2965,7 @@
       }
 
       dom.popupPricingHint.textContent = plaqueLabel === "—"
-        ? "Aucune plaque client detectee: tarif standard produit applique, puis modifiable a la main."
+        ? "Aucune plaque client détectée : tarif standard produit appliqué, puis modifiable à la main."
         : `Tarification active: plaque ${plaqueLabel}. Le prix remonte automatiquement et reste modifiable.`;
     }
 
@@ -3116,7 +3116,7 @@
 
       if (!isProductRowReadyForKeyboardAdd(row)) {
         if (hasProductRowKeyboardData(row)) {
-          showToast("Renseigne un produit reconnu avec quantite ou stock avant d'ajouter une ligne.", "warning");
+          showToast("Renseigne un produit reconnu avec quantité ou stock avant d'ajouter une ligne.", "warning");
         }
         return;
       }
@@ -3148,7 +3148,7 @@
       row.innerHTML = `
         <div class="field-group">
           <label>Produit</label>
-          <input type="text" class="produit-search-input" list="produitsDatalist" placeholder="Tape une reference ou un nom..." autocomplete="off" value="${escapeHtml(label)}" />
+          <input type="text" class="produit-search-input" list="produitsDatalist" placeholder="Tape une référence ou un nom..." autocomplete="off" value="${escapeHtml(label)}" />
           <input type="hidden" class="produit-id-input" value="${escapeHtml(produit?.id || "")}" />
           <input type="hidden" class="prix-unitaire-input" value="${escapeHtml(toPriceInputValue(initialPrice))}" />
           <div class="product-selected-hint">Choisis un produit actif ou deja utilise</div>
@@ -3289,15 +3289,15 @@
         if (!state.produits.length) {
           dom.popupVisitTypeHint.textContent = "Aucun produit visible: verifie les imports tarifs/produits ou les droits de lecture Supabase.";
         } else if (resolveVisitType(visitType) === VISIT_TYPE_PHONE_ORDER) {
-          dom.popupVisitTypeHint.textContent = "Commande telephone: saisie produits active, CA conserve, sans compter comme visite terrain.";
+          dom.popupVisitTypeHint.textContent = "Commande téléphone : saisie produits active, CA conserve, sans compter comme visite terrain.";
         } else if (resolveVisitType(visitType) === VISIT_TYPE_NO_SALE) {
-          dom.popupVisitTypeHint.textContent = "Passage sans vente: tu peux generer un devis sans enregistrer la visite.";
+          dom.popupVisitTypeHint.textContent = "Passage sans vente : tu peux générer un devis sans enregistrer la visite.";
         } else {
           dom.popupVisitTypeHint.textContent = "La note terrain est obligatoire pour toute visite.";
         }
       } else {
         if (!keepRows) dom.productsFormList.innerHTML = "";
-        dom.popupVisitTypeHint.textContent = "Client ferme: pas de devis ni de saisie produit. Note obligatoire pour enregistrer la visite.";
+        dom.popupVisitTypeHint.textContent = "Client fermé : pas de devis ni de saisie produit. Note obligatoire pour enregistrer la visite.";
       }
 
       updatePopupPricingHint();
@@ -3337,7 +3337,7 @@
         state.activeVisitId = null;
         dom.visitModalTitle.textContent = options.source === "recommendation" ? "Nouvelle commande" : "Nouvelle visite";
         dom.visitModalSubtitle.textContent = options.source === "recommendation"
-          ? "Produits precharges depuis la recommande rapide. Tu peux tout verifier, ajuster les quantites, prix et couleurs avant validation."
+          ? "Produits préchargés depuis la recommande rapide. Tu peux tout vérifier, ajuster les quantités, prix et couleurs avant validation."
           : "Saisie rapide terrain: note, produits, stock client et total calcule immediatement.";
         dom.saveVisitBtn.textContent = "Enregistrer";
         dom.popupClient.disabled = false;
@@ -3666,7 +3666,7 @@
         if (error) throw error;
       } catch (error) {
         console.warn("Lien BDC/devis vers visite impossible:", error.message || error);
-        showToast("Visite enregistree. Statut BDC/devis non relie a la synthese.", "warning");
+        showToast("Visite enregistrée. Statut BDC/devis non relié à la synthèse.", "warning");
       } finally {
         state.pendingDocumentLinkIds = [];
       }
@@ -3680,13 +3680,13 @@
       const note = dom.popupNote.value.trim();
       const canGenerateQuote = canGenerateQuoteForVisitType(typeVisite);
 
-      if (!clientId) return showToast("Selectionne un client avant de generer un devis.", "warning");
+      if (!clientId) return showToast("Sélectionne un client avant de générer un devis.", "warning");
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
-      if (!canGenerateQuote) return showToast("Le devis est disponible pour Vente, Commande telephone et Passage sans vente, pas pour Client ferme.", "warning");
+      if (!canGenerateQuote) return showToast("Le devis est disponible pour Vente, Commande téléphone et Passage sans vente, pas pour Client ferme.", "warning");
 
       const { lignes, invalidFilledRow } = collectCommandesForQuoteFromForm();
       if (invalidFilledRow) return showToast("Une ligne produit est renseignee mais le produit n'est pas reconnu.", "warning");
-      if (!lignes.length) return showToast("Ajoute au moins une ligne produit avec quantite pour generer le devis.", "warning");
+      if (!lignes.length) return showToast("Ajoute au moins une ligne produit avec quantité pour générer le devis.", "warning");
       if (!window.jspdf?.jsPDF) return showToast("Moteur PDF indisponible. Recharge la page puis reessaye.", "error");
 
       const client = getClientById(clientId);
@@ -3753,7 +3753,7 @@
           formatClientAccountLine(selectedAccount, client),
           client?.adresse ? `Adresse : ${client.adresse}` : "",
           client?.telephone ? `Telephone : ${client.telephone}` : "",
-          clientPlaque && clientPlaque !== "â€”" ? `Plaque tarif : ${clientPlaque}` : ""
+          clientPlaque && clientPlaque !== "—" ? `Plaque tarif : ${clientPlaque}` : ""
         ].filter(Boolean);
         doc.text(clientLines, marginLeft, 71);
 
@@ -3862,18 +3862,18 @@
           queuePendingDocumentLink(archivedDocumentId);
         } catch (archiveError) {
           console.warn("Archivage devis impossible:", archiveError);
-          showToast("Devis telecharge, mais archive Supabase non enregistree.", "warning");
+          showToast("Devis téléchargé, mais archive Supabase non enregistrée.", "warning");
         }
 
         const mailtoLink = buildQuoteMailtoLink(clientName, devisNumber);
         window.location.href = mailtoLink;
 
-        setStatus(`Devis genere : ${devisNumber}`, "success");
-        showToast(`Devis genere (${devisNumber}).`, "success");
+        setStatus(`Devis généré : ${devisNumber}`, "success");
+        showToast(`Devis généré (${devisNumber}).`, "success");
       } catch (error) {
-        console.error("Erreur generation devis:", error);
-        setStatus("Erreur lors de la generation du devis.", "error");
-        showToast("Impossible de generer le devis.", "error");
+        console.error("Erreur génération devis:", error);
+        setStatus("Erreur lors de la génération du devis.", "error");
+        showToast("Impossible de générer le devis.", "error");
       } finally {
         dom.generateQuoteBtn.disabled = false;
         dom.generateQuoteBtn.textContent = originalButtonLabel || "Generer un devis";
@@ -3885,12 +3885,12 @@
       const dateVisite = dom.popupDate.value || getTodayIsoLocal();
       const typeVisite = getPopupVisitType();
 
-      if (!clientId) return showToast("Selectionne un client avant de generer un BDC.", "warning");
+      if (!clientId) return showToast("Sélectionne un client avant de générer un BDC.", "warning");
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
 
       const { lignes, invalidFilledRow, missingConditionnements } = collectCommandesForBdcFromForm();
       if (invalidFilledRow) return showToast("Une ligne produit est renseignee mais le produit n'est pas reconnu.", "warning");
-      if (!lignes.length) return showToast("Ajoute au moins une ligne produit avec quantite pour generer le BDC.", "warning");
+      if (!lignes.length) return showToast("Ajoute au moins une ligne produit avec quantité pour générer le BDC.", "warning");
       if (!window.jspdf?.jsPDF) return showToast("Moteur PDF indisponible. Recharge la page puis reessaye.", "error");
 
       const client = getClientById(clientId);
@@ -4073,7 +4073,7 @@
           queuePendingDocumentLink(archivedDocumentId);
         } catch (archiveError) {
           console.warn("Archivage BDC impossible:", archiveError);
-          showToast("BDC telecharge, mais archive Supabase non enregistree.", "warning");
+          showToast("BDC téléchargé, mais archive Supabase non enregistrée.", "warning");
         }
 
         window.location.href = buildBdcMailtoLink(client, dateVisite, selectedAccount);
@@ -4081,13 +4081,13 @@
         if (missingConditionnements > 0) {
           showToast(`${missingConditionnements} ligne(s) sans conditionnement. PDF telecharge, mail ouvert.`, "warning");
         } else {
-          showToast("BDC telecharge et mail ouvert.", "success");
+          showToast("BDC téléchargé et mail ouvert.", "success");
         }
-        setStatus(`BDC genere : ${filename}`, "success");
+        setStatus(`BDC généré : ${filename}`, "success");
       } catch (error) {
-        console.error("Erreur generation BDC:", error);
-        setStatus("Erreur lors de la generation du BDC.", "error");
-        showToast("Impossible de generer le BDC.", "error");
+        console.error("Erreur génération BDC:", error);
+        setStatus("Erreur lors de la génération du BDC.", "error");
+        showToast("Impossible de générer le BDC.", "error");
       } finally {
         dom.generateBdcBtn.disabled = false;
         dom.generateBdcBtn.textContent = originalButtonLabel || "Generer un BDC";
@@ -4185,7 +4185,7 @@
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
       if (!note) return showToast("La note terrain est obligatoire pour enregistrer la visite.", "warning");
       if (invalidFilledRow) return showToast("Une ligne produit est renseignee mais le produit n'est pas reconnu.", "warning");
-      if (orderVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantite ou stock.", "warning");
+      if (orderVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantité ou stock.", "warning");
 
       const totalCommande = orderVisit
         ? commandes.reduce((sum, commande) => {
@@ -4226,7 +4226,7 @@
           await linkPendingDocumentsToVisit(visiteId);
 
           showToast(
-            usedFallback ? "Commande telephone mise a jour en mode compatibilite." : "Visite mise a jour avec succes.",
+            usedFallback ? "Commande téléphone mise a jour en mode compatibilite." : "Visite mise à jour avec succès.",
             usedFallback ? "info" : "success"
           );
         } else {
@@ -4251,7 +4251,7 @@
           await linkPendingDocumentsToVisit(visiteData.id);
 
           showToast(
-            usedFallback ? "Commande telephone enregistree en mode compatibilite." : "Visite enregistree avec succes.",
+            usedFallback ? "Commande téléphone enregistree en mode compatibilite." : "Visite enregistrée avec succès.",
             usedFallback ? "info" : "success"
           );
         }

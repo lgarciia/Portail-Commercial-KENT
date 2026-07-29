@@ -3,7 +3,7 @@
   <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Reporting entite</title>
+  <title>Reporting entité</title>
   <script src="./app-data-config.js"></script>
   <script src="./shared-ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -194,7 +194,7 @@
           <select class="select" id="yearSelect"></select>
           <select class="select" id="entitySelect"></select>
           <a class="btn" id="backBtn" href="reporting-selecteur.html">Selecteur</a>
-          <a class="btn primary" id="importBtn" href="import-reel-mensuel.html">Importer reel</a>
+          <a class="btn primary" id="importBtn" href="import-reel-mensuel.html">Importer réel</a>
         </div>
       </div>
     </section>
@@ -251,12 +251,12 @@
   ];
 
   const VIEWS = {
-    "activite-reelle": { label:"Activite reelle", kicker:"Activite", subtitle:"CA reel importe par client et par mois, sans fichier Excel local." },
-    "annuel-budget": { label:"Reporting annuel vs Budget", kicker:"Budget", subtitle:"Comparaison reel / budget actif Supabase, client par client." },
-    "evol-reporting": { label:"Evol Reporting", kicker:"Evolution", subtitle:"Evolution mensuelle reel / budget, avec acces semaine." },
-    "evol-analyse": { label:"Evol Analyse", kicker:"Analyse", subtitle:"Synthese mensuelle, commentaires et details clients." },
-    "reel-n1": { label:"Reel vs N-1", kicker:"Comparatif", subtitle:"Comparaison produits entre l'annee active et l'annee precedente." },
-    "evol-cumul": { label:"Evol Cumul", kicker:"Cumul", subtitle:"Somme automatique de toutes les entites actives Supabase." }
+    "activite-reelle": { label:"Activité réelle", kicker:"Activite", subtitle:"CA réel importé par client et par mois, sans fichier Excel local." },
+    "annuel-budget": { label:"Reporting annuel vs Budget", kicker:"Budget", subtitle:"Comparaison réel / budget actif Supabase, client par client." },
+    "evol-reporting": { label:"Evol Reporting", kicker:"Evolution", subtitle:"Évolution mensuelle réel / budget, avec accès semaine." },
+    "evol-analyse": { label:"Evol Analyse", kicker:"Analyse", subtitle:"Synthèse mensuelle, commentaires et détails clients." },
+    "reel-n1": { label:"Réel vs N-1", kicker:"Comparatif", subtitle:"Comparaison produits entre l'année active et l'année précédente." },
+    "evol-cumul": { label:"Evol Cumul", kicker:"Cumul", subtitle:"Somme automatique de toutes les entités actives Supabase." }
   };
   const VIEW_ORDER = ["activite-reelle", "annuel-budget", "evol-reporting", "evol-analyse", "reel-n1", "evol-cumul"];
 
@@ -519,9 +519,9 @@
   function renderStats(){
     if (view === "activite-reelle"){
       el.stats.innerHTML = `
-        <div class="stat"><div class="k">CA reel</div><div class="v">${fmtMoney(data.summary.totalReal)}</div></div>
+        <div class="stat"><div class="k">CA réel</div><div class="v">${fmtMoney(data.summary.totalReal)}</div></div>
         <div class="stat"><div class="k">Clients</div><div class="v">${fmtInt(data.clients.length)}</div></div>
-        <div class="stat"><div class="k">Lignes reel</div><div class="v">${fmtInt(data.realRows.length)}</div></div>
+        <div class="stat"><div class="k">Lignes réel</div><div class="v">${fmtInt(data.realRows.length)}</div></div>
         <div class="stat gold"><div class="k">Annee</div><div class="v">${fmtInt(year)}</div></div>
       `;
       return;
@@ -532,7 +532,7 @@
       const totalPrev = products.reduce((total, row) => total + row.prevCA, 0);
       const ecart = totalReal - totalPrev;
       el.stats.innerHTML = `
-        <div class="stat"><div class="k">CA reel</div><div class="v">${fmtMoney(totalReal)}</div></div>
+        <div class="stat"><div class="k">CA réel</div><div class="v">${fmtMoney(totalReal)}</div></div>
         <div class="stat gold"><div class="k">CA N-1</div><div class="v">${fmtMoney(totalPrev)}</div></div>
         <div class="stat ${ecart >= 0 ? "good" : "bad"}"><div class="k">Ecart</div><div class="v">${fmtMoney(ecart)}</div></div>
         <div class="stat"><div class="k">Produits</div><div class="v">${fmtInt(products.length)}</div></div>
@@ -543,7 +543,7 @@
     const countLabel = view === "evol-cumul" ? "Entites" : "Clients";
     const count = view === "evol-cumul" ? data.entities.length : data.clients.length;
     el.stats.innerHTML = `
-      <div class="stat"><div class="k">CA reel</div><div class="v">${fmtMoney(s.totalReal)}</div></div>
+      <div class="stat"><div class="k">CA réel</div><div class="v">${fmtMoney(s.totalReal)}</div></div>
       <div class="stat gold"><div class="k">Budget</div><div class="v">${fmtMoney(s.totalBudget)}</div></div>
       <div class="stat ${s.ecart >= 0 ? "good" : "bad"}"><div class="k">Ecart</div><div class="v">${fmtMoney(s.ecart)}</div></div>
       <div class="stat"><div class="k">${esc(countLabel)}</div><div class="v">${fmtInt(count)}</div></div>
@@ -551,7 +551,7 @@
   }
 
   function renderCurrentView(){
-    if (!data) return renderError(new Error("Aucune donnee chargee."));
+    if (!data) return renderError(new Error("Aucune donnée chargée."));
     updateHeader();
     renderStats();
     if (view === "activite-reelle") return renderActivity();
@@ -855,7 +855,7 @@
         real: totalReal,
         budget: totalBudget,
         ecart: totalEcart,
-        context: "Auto + toutes entites",
+        context: "Auto + toutes entités",
         insight,
         sideTitle: "Contribution a l'ecart",
         sideHtml: contributionHtml(lines)
@@ -863,10 +863,10 @@
       <div class="entityGrid">
         ${lines.map(entity => cumulEntityCardHtml(entity, lines)).join("")}
       </div>
-      <div class="insightBox">Clique sur une entite pour ouvrir le detail client, puis clique sur un client pour voir les produits.</div>
+      <div class="insightBox">Clique sur une entité pour ouvrir le détail client, puis clique sur un client pour voir les produits.</div>
     `;
 
-    openModal(`Analyse - ${month.label}`, `${year} - Cumul toutes entites - ${fmtMoney(totalReal)} de CA`, body);
+    openModal(`Analyse - ${month.label}`, `${year} - Cumul toutes entités - ${fmtMoney(totalReal)} de CA`, body);
     el.modalBody.querySelectorAll("[data-cumul-entity]").forEach(card => {
       card.addEventListener("click", () => {
         const entity = data.entities.find(item => item.key === card.dataset.cumulEntity);
@@ -890,7 +890,7 @@
       : "";
     const body = `
       ${monthAnalysisHtml({
-        title: "Analyse entite",
+        title: "Analyse entité",
         real: totalReal,
         budget: totalBudget,
         ecart: totalEcart,
@@ -982,7 +982,7 @@
 
   function contributionHtml(lines){
     const active = (lines || []).filter(row => row.real || row.budget);
-    if (!active.length) return `<div class="empty">Aucune entite active sur ce mois.</div>`;
+    if (!active.length) return `<div class="empty">Aucune entité active sur ce mois.</div>`;
     const sumAbsEcart = sumAbs(active.map(row => row.ecart));
     return `
       <div style="display:grid;gap:9px">
@@ -1233,7 +1233,7 @@
   function setLoading(){
     el.stats.innerHTML = `<div class="stat"><div class="k">Chargement</div><div class="v">...</div></div>`;
     el.table.innerHTML = "";
-    el.empty.textContent = "Chargement des donnees Supabase...";
+    el.empty.textContent = "Chargement des données Supabase...";
     el.empty.style.display = "block";
     el.tableWrap.style.display = "none";
   }
@@ -1332,10 +1332,10 @@
   }
   function buildMonthInsight(real, budget, ecart, driverLabel){
     if (!real && !budget) return "Aucune donnee sur ce mois : rien a analyser pour le moment.";
-    if (!budget && real) return `CA realise sans budget charge sur ce mois. Point principal a regarder : ${driverLabel || "client / entite principale"}.`;
+    if (!budget && real) return `CA réalisé sans budget chargé sur ce mois. Point principal à regarder : ${driverLabel || "client / entité principale"}.`;
     if (ecart > 0) return `Mois au-dessus du budget. L'ecart positif est principalement porte par ${driverLabel || "les meilleures lignes du mois"}.`;
     if (ecart < 0) return `Mois sous budget. Priorite : regarder ${driverLabel || "les clients les plus contributeurs"} et identifier les lignes a relancer.`;
-    return "Mois exactement aligne avec le budget : bon point de controle, a surveiller dans la duree.";
+    return "Mois exactement aligné avec le budget : bon point de contrôle, à surveiller dans la durée.";
   }
   function csvCell(value){
     const raw = String(value ?? "");

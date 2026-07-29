@@ -392,9 +392,9 @@
         </div>
         <div class="val" style="margin-top:10px">
           <select class="input mid" id="budgetEntitySelect">
-            <option value="">Entite...</option>
+            <option value="">Entité...</option>
           </select>
-          <button class="btn" id="newEntityBtn">Nouvelle entite</button>
+          <button class="btn" id="newEntityBtn">Nouvelle entité</button>
           <button class="btn compact" id="renameBudgetEntityBtn">Renommer</button>
           <button class="btn danger compact" id="deleteBudgetEntityBtn">Supprimer</button>
           <button class="btn green" id="validateBudgetBtn">Valider budget actif</button>
@@ -1162,21 +1162,21 @@ async function refreshBudgetSupabaseControls(){
 
     $("projectionSelect").innerHTML = projections.length
       ? projections.map(projection => `<option value="${escapeHtml(projection.id)}">${escapeHtml(projection.nom)} - ${Number(projection.total_annuel || 0).toLocaleString("fr-FR")} EUR</option>`).join("")
-      : '<option value="">Aucune projection enregistree</option>';
+      : '<option value="">Aucune projection enregistrée</option>';
 
-    setBudgetSupabaseHint(`${projections.length} projection(s) enregistree(s) - ${entities.length} entite(s) disponible(s).`);
+    setBudgetSupabaseHint(`${projections.length} projection(s) enregistrée(s) - ${entities.length} entité(s) disponible(s).`);
   }catch(error){
     console.warn("Budget Supabase controls unavailable", error);
     budgetEntities = [];
-    $("projectionSelect").innerHTML = '<option value="">Supabase non pret</option>';
-    $("budgetEntitySelect").innerHTML = '<option value="">Supabase non pret</option>';
-    setBudgetSupabaseHint("Supabase budget non pret. Lance le SQL budget_system avant d'utiliser ces boutons.");
+    $("projectionSelect").innerHTML = '<option value="">Supabase non prêt</option>';
+    $("budgetEntitySelect").innerHTML = '<option value="">Supabase non prêt</option>';
+    setBudgetSupabaseHint("Supabase budget non prêt. Lance le SQL budget_system avant d'utiliser ces boutons.");
   }
 }
 
 async function loadSelectedProjection(){
   const projectionId = $("projectionSelect").value;
-  if (!projectionId) return await kentAlert("Selectionne une projection.", { title: "Projection manquante", tone: "warning" });
+  if (!projectionId) return await kentAlert("Sélectionne une projection.", { title: "Projection manquante", tone: "warning" });
   try{
     const { projection, lines } = await window.BudgetSupabase.getProjection(projectionId);
     applyRowsToBudgetState(lines, projection.id);
@@ -1209,7 +1209,7 @@ function selectedBudgetEntity(){
 async function renameBudgetEntity(){
   const entity = selectedBudgetEntity();
   if (!entity) {
-    await kentAlert("Selectionne une entite avant de la renommer.", { title: "Entite manquante", tone: "warning" });
+    await kentAlert("Sélectionne une entité avant de la renommer.", { title: "Entité manquante", tone: "warning" });
     return;
   }
   const nextLabel = await kentPrompt("Nouveau nom de l'entite :", entity.libelle, { title: "Renommer l'entite" });
@@ -1224,7 +1224,7 @@ async function renameBudgetEntity(){
     const updated = await window.BudgetSupabase.renameEntity(entity.id, nextLabel.trim());
     await refreshBudgetSupabaseControls();
     $("budgetEntitySelect").value = updated.id;
-    await kentAlert("Entite renommee.", { title: "Renommage termine", tone: "success" });
+    await kentAlert("Entité renommée.", { title: "Renommage terminé", tone: "success" });
   }catch(error){
     console.error("Rename entity failed", error);
     await kentAlert(error?.message || "Impossible de renommer cette entite.", { title: "Erreur entite", tone: "danger" });
@@ -1234,7 +1234,7 @@ async function renameBudgetEntity(){
 async function deactivateBudgetEntity(){
   const entity = selectedBudgetEntity();
   if (!entity) {
-    await kentAlert("Selectionne une entite avant de la supprimer.", { title: "Entite manquante", tone: "warning" });
+    await kentAlert("Sélectionne une entité avant de la supprimer.", { title: "Entité manquante", tone: "warning" });
     return;
   }
   let linkedBudgets = [];
@@ -1245,13 +1245,13 @@ async function deactivateBudgetEntity(){
   }
 
   const firstConfirm = await kentConfirm(
-    `Supprimer "${entity.libelle}" de la liste des entites ?\n\nPar securite, l'entite sera seulement masquee. Aucun budget, aucune ligne budget et aucune vente ne seront supprimes.`,
+    `Supprimer "${entity.libelle}" de la liste des entités ?\n\nPar sécurité, l'entité sera seulement masquée. Aucun budget, aucune ligne budget et aucune vente ne seront supprimés.`,
     { title: "Supprimer l'entite", tone: "warning", confirmText: "Continuer" }
   );
   if (!firstConfirm) return;
 
   const budgetMessage = linkedBudgets.length
-    ? `${linkedBudgets.length} budget(s) restent conserves pour cette entite. Ils ne seront plus visibles dans les listes actives, mais les donnees restent en base.`
+    ? `${linkedBudgets.length} budget(s) restent conservés pour cette entité. Ils ne seront plus visibles dans les listes actives, mais les données restent en base.`
     : "Aucun budget lie n'a ete trouve pour cette entite.";
   const secondConfirm = await kentConfirm(
     `${budgetMessage}\n\nConfirmer le masquage de "${entity.libelle}" ?`,
@@ -1259,13 +1259,13 @@ async function deactivateBudgetEntity(){
   );
   if (!secondConfirm) return;
 
-  const typed = await kentPrompt(`Derniere securite : tape SUPPRIMER pour masquer "${entity.libelle}".`, "", { title: "Confirmation finale" });
+  const typed = await kentPrompt(`Dernière sécurité : tape SUPPRIMER pour masquer "${entity.libelle}".`, "", { title: "Confirmation finale" });
   if (String(typed || "").trim().toUpperCase() !== "SUPPRIMER") return;
 
   try{
     await window.BudgetSupabase.deactivateEntity(entity.id);
     await refreshBudgetSupabaseControls();
-    await kentAlert("Entite masquee. Les donnees historiques sont conservees.", { title: "Entite supprimee de la liste", tone: "success" });
+    await kentAlert("Entité masquée. Les données historiques sont conservées.", { title: "Entité supprimée de la liste", tone: "success" });
   }catch(error){
     console.error("Deactivate entity failed", error);
     await kentAlert(error?.message || "Impossible de supprimer cette entite.", { title: "Erreur entite", tone: "danger" });
@@ -1275,11 +1275,11 @@ async function deactivateBudgetEntity(){
 async function validateCurrentBudget(){
   if (!state.clients.length) return await kentAlert("Aucun client dans le budget.", { title: "Budget vide", tone: "warning" });
   const entityId = $("budgetEntitySelect").value;
-  if (!entityId) return await kentAlert("Selectionne une entite.", { title: "Entit\u00e9 manquante", tone: "warning" });
+  if (!entityId) return await kentAlert("Sélectionne une entité.", { title: "Entit\u00e9 manquante", tone: "warning" });
 
-  const entityLabel = $("budgetEntitySelect").selectedOptions[0]?.textContent || "Entite";
+  const entityLabel = $("budgetEntitySelect").selectedOptions[0]?.textContent || "Entité";
   const defaultName = `Budget ${entityLabel} ${APP_YEAR}`;
-  const name = await kentPrompt("Nom du budget valide :", defaultName, { title: "Valider le budget" });
+  const name = await kentPrompt("Nom du budget validé :", defaultName, { title: "Valider le budget" });
   if (!name || !name.trim()) return;
 
   if (!await kentConfirm(`Valider ce budget actif pour ${entityLabel} ${APP_YEAR} ?\n\nSi un budget actif existe deja, je te proposerai de le remplacer sans le supprimer.`, { title: "Valider le budget actif", confirmText: "Valider" })) return;
@@ -1294,7 +1294,7 @@ async function validateCurrentBudget(){
       meta: { origin: "budget2026", sourceProjectionId: currentProjectionId || null }
     });
     await refreshBudgetSupabaseControls();
-    await kentAlert(`Budget valide : ${saved.nom}`, { title: "Budget valid\u00e9", tone: "success" });
+    await kentAlert(`Budget validé : ${saved.nom}`, { title: "Budget valid\u00e9", tone: "success" });
   }catch(error){
     if (error?.code === "ACTIVE_BUDGET_EXISTS") {
       const activeName = error.activeBudget?.nom || "budget actif actuel";

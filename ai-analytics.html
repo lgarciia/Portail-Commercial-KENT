@@ -483,7 +483,7 @@
 
     <footer class="composer-dock">
       <div class="composer-inner">
-        <div class="status" id="statusBox">Pret.</div>
+        <div class="status" id="statusBox">Prêt.</div>
 
         <div class="composer" role="group" aria-label="Saisie Analyse Co">
           <button class="icon-btn" id="resetSeenQuestionsBtn" type="button" title="Reafficher les suggestions">+</button>
@@ -754,7 +754,7 @@
 
         const data = await res.json();
         if (!res.ok || !data?.ok) {
-          const msg = data?.message || "Requete impossible.";
+          const msg = data?.message || "Requête impossible.";
           const code = data?.errorCode ? ` [${data.errorCode}]` : "";
           throw new Error(msg + code);
         }

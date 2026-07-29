@@ -578,7 +578,7 @@
     const colAmt = findCol(headerMap, realConfig.amountCandidates || ["montant", "ca"]);
     const colMonth = findCol(headerMap, realConfig.monthCandidates || ["mois2", "mois", "month"]);
     const colDate = findCol(headerMap, realConfig.dateCandidates || []);
-    const colYear = findCol(headerMap, realConfig.yearCandidates || ["annee", "annÃ©e", "year"]);
+    const colYear = findCol(headerMap, realConfig.yearCandidates || ["annee", "année", "year"]);
     const colRef = findCol(headerMap, realConfig.refCandidates || []);
     const colDes = findCol(headerMap, realConfig.desCandidates || []);
     const colQty = findCol(headerMap, realConfig.qtyCandidates || []);

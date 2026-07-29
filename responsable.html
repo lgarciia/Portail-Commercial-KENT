@@ -359,19 +359,19 @@
       </div>
       <div class="top-actions">
         <span class="btn ghost small" data-session-source>Session securisee</span>
-        <a class="btn small" href="requete-commerce.html?scope=equipe">Requete commerce</a>
-        <button class="btn small" type="button" data-open-team>Equipe</button>
+        <a class="btn small" href="requete-commerce.html?scope=equipe">Requête commerce</a>
+        <button class="btn small" type="button" data-open-team>Équipe</button>
         <button class="btn small" type="button" data-refresh-top>Synchroniser</button>
-        <a class="btn danger small" href="/deconnexion">Deconnexion</a>
+        <a class="btn danger small" href="/deconnexion">Déconnexion</a>
       </div>
     </section>
 
     <section class="hero">
       <div>
         <span class="badge">Espace Responsable</span>
-        <h1>Pilotage equipe commerciale</h1>
+        <h1>Pilotage équipe commerciale</h1>
         <p>
-          Vision responsable en lecture seule : CA saisi, budgets actifs, reel importe, documents BDC/devis
+          Vision responsable en lecture seule : CA saisi, budgets actifs, réel importé, documents BDC/devis
           et activite terrain pour les commerciaux rattaches.
         </p>
         <div class="notice" data-scope-message>Chargement du perimetre responsable...</div>
@@ -379,7 +379,7 @@
       <div class="controls">
         <div class="control-grid">
           <label class="field">
-            <span>Annee</span>
+            <span>Année</span>
             <select data-year></select>
           </label>
           <label class="field">
@@ -393,7 +393,7 @@
           <label class="field">
             <span>Commercial</span>
             <select data-commercial-filter>
-              <option value="">Toute l'equipe</option>
+              <option value="">Toute l'équipe</option>
             </select>
           </label>
         </div>
@@ -405,17 +405,17 @@
     </section>
 
     <section class="kpis" aria-label="Indicateurs responsable">
-      <article class="kpi"><span>CA jour equipe</span><strong data-stat="caJour">-</strong><small data-kpi-day>Jour selectionne</small></article>
-      <article class="kpi green"><span>CA mois equipe</span><strong data-stat="caMois">-</strong><small data-stat-sub="caMonthSplit">Auto + Industrie</small></article>
-      <article class="kpi"><span>Reel reporting a date</span><strong data-stat="reelReportingADate">-</strong><small>Depuis les imports reels actifs</small></article>
-      <article class="kpi gold"><span>Budget a date</span><strong data-stat="budgetADate">-</strong><small>Budgets actifs Supabase</small></article>
-      <article class="kpi" data-gap-card><span>Ecart a date</span><strong data-stat="ecartADate">-</strong><small data-stat-sub="gapRate">Reel vs budget</small></article>
+      <article class="kpi"><span>CA jour équipe</span><strong data-stat="caJour">-</strong><small data-kpi-day>Jour sélectionné</small></article>
+      <article class="kpi green"><span>CA mois équipe</span><strong data-stat="caMois">-</strong><small data-stat-sub="caMonthSplit">Auto + Industrie</small></article>
+      <article class="kpi"><span>Réel reporting à date</span><strong data-stat="reelReportingADate">-</strong><small>Depuis les imports réels actifs</small></article>
+      <article class="kpi gold"><span>Budget à date</span><strong data-stat="budgetADate">-</strong><small>Budgets actifs Supabase</small></article>
+      <article class="kpi" data-gap-card><span>Écart à date</span><strong data-stat="ecartADate">-</strong><small data-stat-sub="gapRate">Réel vs budget</small></article>
       <article class="kpi"><span>Documents transmis</span><strong data-stat="documentsEnCours">-</strong><small data-stat-sub="documentsSplit">BDC + devis</small></article>
     </section>
 
     <nav class="tabs" aria-label="Navigation responsable">
       <button class="tab active" type="button" data-tab="synthese">Synthese</button>
-      <button class="tab" type="button" data-tab="equipe">Equipe</button>
+      <button class="tab" type="button" data-tab="equipe">Équipe</button>
       <button class="tab" type="button" data-tab="ca">CA detaille</button>
       <button class="tab" type="button" data-tab="budgets">Budgets</button>
       <button class="tab" type="button" data-tab="ecarts">Ecarts</button>
@@ -429,7 +429,7 @@
           <div class="panel-head">
             <div>
               <h2>Commerciaux visibles</h2>
-              <div class="sub">Classement par CA du mois selectionne, avec budget et suivi documents.</div>
+              <div class="sub">Classement par CA du mois sélectionné, avec budget et suivi documents.</div>
             </div>
             <input class="search" type="search" placeholder="Rechercher un commercial..." data-search>
           </div>
@@ -469,13 +469,13 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>Equipe rattachee</h2>
+            <h2>Équipe rattachée</h2>
             <div class="sub">Tous les commerciaux visibles par ce responsable. Lecture seule, aucune modification depuis cet ecran.</div>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Commercial</th><th>Identifiant</th><th>Rattachement</th><th>Perimetre</th><th class="num">CA mois</th><th class="num">Budget a date</th><th class="num">Documents transmis</th><th>Derniere connexion</th></tr></thead>
+            <thead><tr><th>Commercial</th><th>Identifiant</th><th>Rattachement</th><th>Périmètre</th><th class="num">CA mois</th><th class="num">Budget à date</th><th class="num">Documents transmis</th><th>Dernière connexion</th></tr></thead>
             <tbody data-team-rows></tbody>
           </table>
         </div>
@@ -487,7 +487,7 @@
         <div class="panel-head">
           <div>
             <h2>CA detaille du mois</h2>
-            <div class="sub">Toutes les lignes vendues sur le mois selectionne, Auto et Industrie.</div>
+            <div class="sub">Toutes les lignes vendues sur le mois sélectionné, Auto et Industrie.</div>
           </div>
           <div class="toolbar">
             <select data-sector-filter>
@@ -516,7 +516,7 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>Budget cumule equipe</h2>
+            <h2>Budget cumulé équipe</h2>
             <div class="sub">Budget annuel actif, mois par mois, sur les commerciaux visibles.</div>
           </div>
         </div>
@@ -527,26 +527,26 @@
           <div class="panel-head"><div><h2>Budgets par commercial</h2><div class="sub">Budget annuel et budget a date.</div></div></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Commercial</th><th class="num">Reel a date</th><th class="num">Budget a date</th><th class="num">Ecart</th><th class="num">Budget annuel</th></tr></thead>
+              <thead><tr><th>Commercial</th><th class="num">Réel à date</th><th class="num">Budget à date</th><th class="num">Ecart</th><th class="num">Budget annuel</th></tr></thead>
               <tbody data-budget-commercials></tbody>
             </table>
           </div>
         </section>
         <section class="panel">
-          <div class="panel-head"><div><h2>Budgets par entite</h2><div class="sub">Consolidation des entites actives.</div></div></div>
+          <div class="panel-head"><div><h2>Budgets par entité</h2><div class="sub">Consolidation des entités actives.</div></div></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Entite</th><th class="num">A date</th><th class="num">Annuel</th><th class="num">Lignes</th></tr></thead>
+              <thead><tr><th>Entité</th><th class="num">À date</th><th class="num">Annuel</th><th class="num">Lignes</th></tr></thead>
               <tbody data-budget-entities></tbody>
             </table>
           </div>
         </section>
       </div>
       <section class="panel detail-panel" data-budget-commercial-detail>
-        <div class="empty">Clique sur un commercial, ou sur le cumul equipe, pour voir le detail mensuel budget vs reel.</div>
+        <div class="empty">Clique sur un commercial, ou sur le cumul équipe, pour voir le détail mensuel budget vs réel.</div>
       </section>
       <section class="panel detail-panel" data-budget-entity-detail>
-        <div class="empty">Clique sur une entite pour voir quels commerciaux construisent son budget.</div>
+        <div class="empty">Clique sur une entité pour voir quels commerciaux construisent son budget.</div>
       </section>
     </section>
 
@@ -554,19 +554,19 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>Ecarts reel importe vs budget</h2>
-            <div class="sub">Lecture a date : reel importe actif compare au budget actif Supabase.</div>
+            <h2>Ecarts réel importé vs budget</h2>
+            <div class="sub">Lecture a date : réel importé actif compare au budget actif Supabase.</div>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Commercial</th><th class="num">Reel a date</th><th class="num">Budget a date</th><th class="num">Ecart</th><th class="num">Atteinte</th><th class="num">CA saisi mois</th></tr></thead>
+            <thead><tr><th>Commercial</th><th class="num">Réel à date</th><th class="num">Budget à date</th><th class="num">Ecart</th><th class="num">Atteinte</th><th class="num">CA saisi mois</th></tr></thead>
             <tbody data-gap-rows></tbody>
           </table>
         </div>
       </section>
       <section class="panel detail-panel" data-gap-detail>
-        <div class="empty">Clique sur une ligne pour ouvrir le detail mensuel reel vs budget.</div>
+        <div class="empty">Clique sur une ligne pour ouvrir le détail mensuel réel vs budget.</div>
       </section>
     </section>
 
@@ -575,7 +575,7 @@
         <div class="panel-head">
           <div>
             <h2>BDC / Devis a suivre</h2>
-            <div class="sub">Documents generes sur l'annee selectionnee, visibles en temps reel.</div>
+            <div class="sub">Documents générés sur l'année sélectionnée, visibles en temps réel.</div>
           </div>
           <span class="chip chip-blue">Lecture seule</span>
         </div>
@@ -592,10 +592,10 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>CA du jour equipe</h2>
-            <div class="sub">Clique sur un commercial, puis sur un client, pour voir les lignes vendues du jour selectionne.</div>
+            <h2>CA du jour équipe</h2>
+            <div class="sub">Clique sur un commercial, puis sur un client, pour voir les lignes vendues du jour sélectionné.</div>
           </div>
-          <button class="btn small green" type="button" data-build-daily-report>Generer rapport journee</button>
+          <button class="btn small green" type="button" data-build-daily-report>Générer rapport journée</button>
         </div>
         <div class="daily-hero">
           <div class="daily-cards" data-day-commercials>
@@ -603,9 +603,9 @@
           </div>
           <div class="daily-drill">
             <div class="daily-client-zone">
-              <div class="sub" data-day-client-title>Clients du commercial selectionne</div>
+              <div class="sub" data-day-client-title>Clients du commercial sélectionné</div>
               <div class="compact-list" data-day-clients>
-                <div class="empty">Selectionne un commercial.</div>
+                <div class="empty">Sélectionne un commercial.</div>
               </div>
             </div>
           </div>
@@ -614,7 +614,7 @@
       <section class="panel report-panel" data-report-panel hidden>
         <div class="panel-head">
           <div>
-            <h2>Rapport journalier equipe</h2>
+            <h2>Rapport journalier équipe</h2>
             <div class="sub" data-report-subtitle></div>
           </div>
           <div class="toolbar">
@@ -628,12 +628,12 @@
         <div class="panel-head">
           <div>
             <h2>Activite mensuelle</h2>
-            <div class="sub">Visites terrain, commandes telephone et clients visites sur le mois selectionne.</div>
+            <div class="sub">Visites terrain, commandes téléphone et clients visités sur le mois sélectionné.</div>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Commercial</th><th>Rattachement</th><th class="num">Visites terrain</th><th class="num">Telephone</th><th class="num">Clients visites</th><th>Derniere connexion</th></tr></thead>
+            <thead><tr><th>Commercial</th><th>Rattachement</th><th class="num">Visites terrain</th><th class="num">Téléphone</th><th class="num">Clients visités</th><th>Dernière connexion</th></tr></thead>
             <tbody data-activity-rows></tbody>
           </table>
         </div>
@@ -644,7 +644,7 @@
   <div class="loading-overlay" data-loading-overlay aria-live="polite" aria-hidden="true">
     <div class="loading-box">
       <strong>Chargement en cours</strong>
-      <span>Synchronisation des ventes, budgets, reels importes et documents de l'equipe...</span>
+      <span>Synchronisation des ventes, budgets, réels importés et documents de l'équipe...</span>
       <div class="loading-bar" aria-hidden="true"><i></i></div>
     </div>
   </div>
@@ -839,7 +839,7 @@
         const scope = state.payload?.dataScope || {};
         const warnings = state.payload?.warnings || [];
         const warningText = warnings.length ? " A verifier : " + warnings.map(w => w.label).join(", ") + "." : "";
-        els.scopeMessage.textContent = (scope.title ? scope.title + " : " : "") + (scope.message || "Perimetre charge.") + warningText;
+        els.scopeMessage.textContent = (scope.title ? scope.title + " : " : "") + (scope.message || "Périmètre charge.") + warningText;
       }
 
       function renderStats(){
@@ -854,7 +854,7 @@
         document.querySelector('[data-stat-sub="caMonthSplit"]').textContent = "Auto " + money(stats.caAutoMois) + " - Industrie " + money(stats.caIndustrieMois);
         document.querySelector('[data-stat-sub="documentsSplit"]').textContent = `${integer(stats.bdcEnCours)} BDC - ${integer(stats.devisEnCours)} devis`;
         const rate = Number(stats.budgetADate || 0) ? (Number(stats.reelReportingADate || 0) / Number(stats.budgetADate || 0)) * 100 : null;
-        document.querySelector('[data-stat-sub="gapRate"]').textContent = rate === null ? "Budget a date a zero" : `${percent(rate)} d'atteinte`;
+        document.querySelector('[data-stat-sub="gapRate"]').textContent = rate === null ? "Budget à date à zéro" : `${percent(rate)} d'atteinte`;
         const gapCard = document.querySelector("[data-gap-card]");
         gapCard.classList.toggle("green", Number(stats.ecartADate || 0) >= 0);
         gapCard.classList.toggle("red", Number(stats.ecartADate || 0) < 0);
@@ -920,8 +920,8 @@
               '<div class="metric-grid">',
                 metricHtml("CA mois", money(metrics.caMois)),
                 metricHtml("Budget mois", money(budgetMonth)),
-                metricHtml("Reel a date", money(metrics.reelReportingADate)),
-                metricHtml("Budget a date", money(metrics.budgetADate)),
+                metricHtml("Réel à date", money(metrics.reelReportingADate)),
+                metricHtml("Budget à date", money(metrics.budgetADate)),
               '</div>',
               '<div class="commercial-foot">',
                 '<span class="chip ' + gapClass + '">' + money(metrics.ecartADate) + '</span>',
@@ -1042,7 +1042,7 @@
         const realMonthly = getRealMonthlyForCommercial(id);
         els.budgetCommercialDetail.innerHTML = buildMonthlyComparisonHtml({
           title: "Analyse budget - " + label,
-          subtitle: "Lecture mensuelle : reel importe actif vs budget actif Supabase.",
+          subtitle: "Lecture mensuelle : réel importé actif vs budget actif Supabase.",
           budgetMonthly,
           realMonthly
         });
@@ -1051,7 +1051,7 @@
       function renderBudgetEntityDetail(){
         const entityId = state.selectedBudgetEntityId;
         if (!entityId) {
-          els.budgetEntityDetail.innerHTML = '<div class="empty">Clique sur une entite pour voir quels commerciaux construisent son budget.</div>';
+          els.budgetEntityDetail.innerHTML = '<div class="empty">Clique sur une entité pour voir quels commerciaux construisent son budget.</div>';
           return;
         }
         const entity = (state.payload?.budgets?.entities || []).find(item => item.id === entityId);
@@ -1067,7 +1067,7 @@
         els.budgetEntityDetail.innerHTML = [
           '<div class="panel-head"><div><h2>Detail entite - ' + escapeHtml(entity.libelle) + '</h2><div class="sub">Repartition du budget par commercial pour cette entite.</div></div></div>',
           '<div class="detail-kpis">',
-            detailKpi("Budget a date", money(entity.toDate)),
+            detailKpi("Budget à date", money(entity.toDate)),
             detailKpi("Budget annuel", money(entity.total)),
             detailKpi("Commerciaux", integer(rows.length)),
             detailKpi("Lignes", integer(entity.lignes)),
@@ -1102,7 +1102,7 @@
       function renderGapDetail(){
         const id = state.selectedGapCommercialId;
         if (!id) {
-          els.gapDetail.innerHTML = '<div class="empty">Clique sur une ligne pour ouvrir le detail mensuel reel vs budget.</div>';
+          els.gapDetail.innerHTML = '<div class="empty">Clique sur une ligne pour ouvrir le détail mensuel réel vs budget.</div>';
           return;
         }
         els.gapDetail.innerHTML = buildMonthlyComparisonHtml({
@@ -1141,8 +1141,8 @@
         const groups = groupDailyByCommercial();
         if (!groups.length) {
           els.dayCommercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce perimetre.</div>';
-          els.dayClients.innerHTML = '<div class="empty">Aucun commercial selectionne.</div>';
-          els.dayClientTitle.textContent = "Clients du commercial selectionne";
+          els.dayClients.innerHTML = '<div class="empty">Aucun commercial sélectionné.</div>';
+          els.dayClientTitle.textContent = "Clients du commercial sélectionné";
           return;
         }
 
@@ -1238,7 +1238,7 @@
         }).join("");
         els.reportBody.innerHTML = [
           '<div class="detail-kpis">',
-            detailKpi("CA jour equipe", money(total)),
+            detailKpi("CA jour équipe", money(total)),
             detailKpi("Commerciaux vendeurs", integer(groups.length)),
             detailKpi("Clients", integer(new Set(rows.map(row => dailyClientKey(row))).size)),
             detailKpi("Lignes", integer(rows.length)),
@@ -1352,9 +1352,9 @@
           return;
         }
         popup.document.write([
-          '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rapport journalier equipe</title>',
+          '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rapport journalier équipe</title>',
           '<style>body{font-family:Arial,sans-serif;margin:24px;color:#111827}h1{margin:0 0 6px}h2,h3{margin:18px 0 8px}.muted{color:#6b7280}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #d1d5db;padding:7px;text-align:left;font-size:12px}th{background:#f3f4f6}.num{text-align:right}.chip{display:inline-block;border-radius:999px;border:1px solid #cbd5e1;padding:2px 7px}.detail-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.detail-kpi{border:1px solid #d1d5db;border-radius:10px;padding:10px}.detail-kpi span{display:block;color:#6b7280;font-size:10px;text-transform:uppercase}.detail-kpi strong{display:block;margin-top:4px;font-size:16px}.report-section{break-inside:avoid;margin-top:14px}</style>',
-          '</head><body><h1>Rapport journalier equipe</h1><div class="muted">' + escapeHtml(els.reportSubtitle.textContent || "") + '</div>',
+          '</head><body><h1>Rapport journalier équipe</h1><div class="muted">' + escapeHtml(els.reportSubtitle.textContent || "") + '</div>',
           els.reportBody.innerHTML,
           '<script>window.onload=function(){window.print();};<\/script></body></html>'
         ].join(""));
@@ -1422,9 +1422,9 @@
         return [
           '<div class="panel-head"><div><h2>' + escapeHtml(options.title) + '</h2><div class="sub">' + escapeHtml(options.subtitle) + '</div></div></div>',
           '<div class="detail-kpis">',
-            detailKpi("Reel a date", money(toDateReal)),
-            detailKpi("Budget a date", money(toDateBudget)),
-            detailKpi("Ecart a date", money(toDateReal - toDateBudget)),
+            detailKpi("Réel à date", money(toDateReal)),
+            detailKpi("Budget à date", money(toDateBudget)),
+            detailKpi("Écart à date", money(toDateReal - toDateBudget)),
             detailKpi("Budget annuel", money(totalBudget)),
           '</div>',
           '<div class="table-wrap"><table><thead><tr><th>Mois</th><th class="num">Reel</th><th class="num">Budget</th><th class="num">Ecart</th><th class="num">Atteinte</th></tr></thead><tbody>',

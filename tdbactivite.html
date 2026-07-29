@@ -1376,7 +1376,7 @@
       const kpis = [
         { title: "Clients visites terrain", value: clientIds.size, foot: "sur la periode filtree" },
         { title: "Nombre de lignes", value: lignesFiltered.length, foot: "lignes produits saisies" },
-        { title: "Quantite vendue", value: qty, foot: "total quantites commandees" },
+        { title: "Quantité vendue", value: qty, foot: "total quantités commandées" },
         { title: "Panier moyen", value: formatCurrency(panier), foot: "CA moyen par commande" },
         { title: "CA par client terrain", value: formatCurrency(clientIds.size ? ca / clientIds.size : 0), foot: "moyenne par client visite" },
         { title: "Taux transformation", value: `${tauxTransformation.toFixed(0)} %`, foot: `${visitsWithSale} visite(s) terrain avec vente` },
@@ -1497,7 +1497,7 @@
           action: ""
         },
         {
-          title: "Verifier les stocks bas",
+          title: "Vérifier les stocks bas",
           sub: "Clients avec stock faible observe en visite",
           badge: `${lowStockCount}`,
           badgeClass: "badge-danger",
@@ -1559,7 +1559,7 @@
       if (subtitleEl) subtitleEl.textContent = `Rappels ${reminderLabel} a traiter en priorite.`;
 
       if (!rows.length) {
-        body.innerHTML = `<div class="empty-state">Aucune ligne de rappel enregistree.</div>`;
+        body.innerHTML = `<div class="empty-state">Aucune ligne de rappel enregistrée.</div>`;
         return;
       }
 
@@ -1665,7 +1665,7 @@
       renderOpportunityList(context);
       renderProductsDetail(context);
 
-      setStatus(`Dashboard a jour - ${context.terrainVisitesFiltered.length} visite(s) terrain - ${context.phoneOrdersFiltered.length} commande(s) telephone - ${context.lignesFiltered.length} ligne(s) - ${clients.length} client(s) - ${produits.length} produit(s)`);
+      setStatus(`Dashboard à jour - ${context.terrainVisitesFiltered.length} visite(s) terrain - ${context.phoneOrdersFiltered.length} commande(s) téléphone - ${context.lignesFiltered.length} ligne(s) - ${clients.length} client(s) - ${produits.length} produit(s)`);
     }
 
     function applyFilters() {

@@ -716,7 +716,7 @@
         <div>
           <div class="eyebrow">Commerce global</div>
           <h1>Reporting Commerce Global</h1>
-          <p>Synthese du CA HT Auto + Industrie, calculee depuis les lignes vendues. Suis le jour par defaut, puis bascule en mois ou annee pour prendre du recul.</p>
+          <p>Synthèse du CA HT Auto + Industrie, calculée depuis les lignes vendues. Suis le jour par défaut, puis bascule en mois ou année pour prendre du recul.</p>
         </div>
         <div class="actions">
           <a class="btn" href="index.html">Portail</a>
@@ -732,7 +732,7 @@
             <div class="mode-switch" role="tablist" aria-label="Mode de reporting">
               <button class="mode-btn active" id="dayModeBtn" type="button">Jour</button>
               <button class="mode-btn" id="monthModeBtn" type="button">Mois</button>
-              <button class="mode-btn" id="yearModeBtn" type="button">Annee</button>
+              <button class="mode-btn" id="yearModeBtn" type="button">Année</button>
               <button class="mode-btn" id="budgetModeBtn" type="button">Budget</button>
             </div>
           </div>
@@ -745,7 +745,7 @@
             <input type="month" id="monthSelect">
           </div>
           <div class="field" id="yearField" hidden>
-            <label for="yearSelect">Annee analyse</label>
+            <label for="yearSelect">Année analysée</label>
             <input type="number" id="yearSelect" min="2020" max="2100" step="1">
           </div>
           <div class="field" id="sectorField">
@@ -764,7 +764,7 @@
             </div>
           </div>
         </div>
-        <div class="status" id="statusBar">Connexion a Supabase...</div>
+        <div class="status" id="statusBar">Connexion à Supabase...</div>
       </div>
     </header>
 
@@ -809,7 +809,7 @@
         <div class="panel-head">
           <div>
             <h2>Semaines du mois</h2>
-            <p>Semaines calendrier du lundi au dimanche, limitees au mois selectionne.</p>
+            <p>Semaines calendrier du lundi au dimanche, limitées au mois sélectionné.</p>
           </div>
           <div><span class="pill auto">Auto</span> <span class="pill indus">Industrie</span></div>
         </div>
@@ -925,7 +925,7 @@
     <section class="budget-view" id="budgetView" hidden>
       <section class="kpis">
         <div class="kpi total">
-          <span>Reel ajuste HT</span>
+          <span>Réel ajusté HT</span>
           <strong id="budgetKpiRealGlobal">0,00 EUR</strong>
           <small id="budgetKpiRealGlobalSub">Ventes + CA partenaires</small>
         </div>
@@ -950,7 +950,7 @@
           <small id="budgetKpiGlobalSub">Auto + Industrie</small>
         </div>
         <div class="kpi">
-          <span>Lignes annee</span>
+          <span>Lignes année</span>
           <strong id="budgetKpiLines">0</strong>
           <small id="budgetKpiClients">0 client(s)</small>
         </div>
@@ -963,10 +963,10 @@
             <p id="budgetAnalysisText">Chargement de la comparaison budget.</p>
           </div>
           <div class="legend">
-            <span class="legend-dot real-auto">Reel Auto</span>
+            <span class="legend-dot real-auto">Réel Auto</span>
             <span class="legend-dot partner">CA partenaires</span>
             <span class="legend-dot budget-auto">Budget Auto</span>
-            <span class="legend-dot real-indus">Reel Industrie</span>
+            <span class="legend-dot real-indus">Réel Industrie</span>
           </div>
         </div>
         <div class="budget-chart" id="budgetChart"></div>
@@ -977,7 +977,7 @@
         <div class="panel-head">
           <div>
             <h2>Lecture detaillee</h2>
-            <p>Le budget industrie est pris a 0 pour le moment. Le global compare donc le reel Auto + Industrie au budget Auto.</p>
+            <p>Le budget industrie est pris à 0 pour le moment. Le global compare donc le réel Auto + Industrie au budget Auto.</p>
           </div>
         </div>
         <div class="table-shell">
@@ -985,15 +985,15 @@
             <thead>
               <tr>
                 <th>Mois</th>
-                <th class="number">Reel Auto</th>
+                <th class="number">Réel Auto</th>
                 <th class="number">Budget Auto</th>
                 <th class="number">Ecart Auto ajuste</th>
-                <th class="number">Reel Industrie</th>
+                <th class="number">Réel Industrie</th>
                 <th class="number">Budget Industrie</th>
                 <th class="number">Ecart Industrie</th>
-                <th class="number">Reel Global</th>
+                <th class="number">Réel Global</th>
                 <th class="number">CA partenaires</th>
-                <th class="number">Reel ajuste</th>
+                <th class="number">Réel ajusté</th>
                 <th class="number">Budget Global</th>
                 <th class="number">Ecart ajuste</th>
               </tr>
@@ -1186,7 +1186,7 @@
       return visitType === "vente" || visitType === VISIT_TYPE_PHONE_ORDER || Number(visite?.total_commande || 0) > 0;
     }
     function getVisitTypeLabel(type) {
-      if (type === VISIT_TYPE_PHONE_ORDER) return "Commande telephone";
+      if (type === VISIT_TYPE_PHONE_ORDER) return "Commande téléphone";
       if (type === "vente") return "Visite terrain";
       if (type === "passage_sans_vente") return "Passage sans vente";
       if (type === "client_ferme") return "Client ferme";
@@ -1441,10 +1441,10 @@
       const summary = summarizeRows(rows);
       dom.dayClientsSubtitle.textContent = summary.clients
         ? `${formatNumber(summary.clients)} client(s) - ${formatNumber(summary.orders)} commande(s) - clique un client pour ouvrir le detail.`
-        : "Aucune vente trouvee sur la journee selectionnee.";
+        : "Aucune vente trouvée sur la journée sélectionnée.";
       dom.dayClientsList.innerHTML = clients.length
         ? clients.map(buildTopClientButton).join("")
-        : '<div class="empty">Aucun client avec CA sur cette journee.</div>';
+        : '<div class="empty">Aucun client avec CA sur cette journée.</div>';
       attachTopClientHandlers(rows, dom.dayClientsList);
     }
     function renderWeeks(rows) {
@@ -1560,7 +1560,7 @@
       const summary = summarizeRows(periodRows);
       const topClients = aggregateTopClients(periodRows, 5);
       dom.modalTitle.textContent = title || "Detail";
-      dom.modalSubtitle.textContent = period ? `${formatShortDate(period.startStr)} au ${formatShortDate(period.endStr)}` : "Aucune periode selectionnee.";
+      dom.modalSubtitle.textContent = period ? `${formatShortDate(period.startStr)} au ${formatShortDate(period.endStr)}` : "Aucune période sélectionnée.";
       dom.modalDetailGrid.innerHTML = `<div class="chip"><span>CA total</span><strong>${formatCurrency(summary.total)}</strong></div><div class="chip"><span>CA Auto</span><strong>${formatCurrency(summary.auto)}</strong></div><div class="chip"><span>CA Industrie</span><strong>${formatCurrency(summary.industrie)}</strong></div><div class="chip"><span>Clients</span><strong>${formatNumber(summary.clients)}</strong></div><div class="chip"><span>Commandes</span><strong>${formatNumber(summary.orders)}</strong></div><div class="chip"><span>Telephone</span><strong>${formatNumber(summary.phoneOrders)}</strong></div>`;
       dom.modalTopClientsList.innerHTML = topClients.length ? topClients.map(buildTopClientButton).join("") : '<div class="empty">Aucun client avec CA sur cette periode.</div>';
       attachTopClientHandlers(periodRows);
@@ -1618,7 +1618,7 @@
     }
     function renderYearAnalysis(rows, monthSummaries) {
       const summary = summarizeRows(rows);
-      if (!summary.lines) { dom.yearAnalysisText.textContent = "Aucune vente trouvee sur l'annee selectionnee pour le filtre choisi."; return; }
+      if (!summary.lines) { dom.yearAnalysisText.textContent = "Aucune vente trouvée sur l'année sélectionnée pour le filtre choisi."; return; }
       const bestMonth = monthSummaries.reduce((best, item) => item.summary.total > best.summary.total ? item : best, monthSummaries[0]);
       const activeMonths = monthSummaries.filter(item => item.summary.lines).length;
       const leader = summary.auto >= summary.industrie ? "Auto" : "Industrie";
@@ -1698,7 +1698,7 @@
       const cacheKey = budgetCacheKey(year);
       if (state.budgetCache.has(cacheKey)) return state.budgetCache.get(cacheKey);
       if (!window.ReportingDataUtils || !window.BudgetSupabase) {
-        const unavailable = emptyBudgetSnapshot(year, "Budget non disponible : bibliotheques Supabase budget non chargees.");
+        const unavailable = emptyBudgetSnapshot(year, "Budget non disponible : bibliothèques Supabase budget non chargées.");
         state.budgetCache.set(cacheKey, unavailable);
         return unavailable;
       }
@@ -1735,7 +1735,7 @@
       if (!snapshot.autoAvailable) {
         snapshot.status = "Budget auto non disponible. Verifie les budgets actifs Supabase PSA, Gueudet, Ford et Direct.";
       } else if (snapshot.autoFailed.length) {
-        snapshot.status = `Budget auto charge partiellement : ${snapshot.autoLoaded.join(", ")} OK. A verifier : ${snapshot.autoFailed.join(", ")}.`;
+        snapshot.status = `Budget auto charge partiellement : ${snapshot.autoLoaded.join(", ")} OK. À vérifier : ${snapshot.autoFailed.join(", ")}.`;
       } else {
         snapshot.status = `Budget auto charge : ${snapshot.autoLoaded.join(", ")}.`;
       }
@@ -1868,10 +1868,10 @@
       dom.budgetKpiAutoBudget.textContent = autoBudgetAvailable ? formatCurrency(autoBudgetAnnual) : "Budget non disponible";
       dom.budgetKpiAutoSub.textContent = autoBudgetAvailable ? `Budget annuel Auto - ${state.budget.autoLoaded.join(", ")}` : "PSA + Gueudet + Ford + Direct";
       setGapText(dom.budgetKpiAutoGap, autoGapToDate, autoBudgetAvailable);
-      dom.budgetKpiAutoRate.textContent = autoBudgetAvailable && autoBudgetToDate ? `Atteinte ajustee a date : ${formatNumber(autoRate.toFixed(1))}%` : "Atteinte auto non disponible";
+      dom.budgetKpiAutoRate.textContent = autoBudgetAvailable && autoBudgetToDate ? `Atteinte ajustée a date : ${formatNumber(autoRate.toFixed(1))}%` : "Atteinte auto non disponible";
       dom.budgetKpiIndusBudget.textContent = industryBudgetAvailable ? formatCurrency(budgetRows.reduce((sum, row) => sum + Number(row.industryBudget || 0), 0)) : "Budget non disponible";
       dom.budgetKpiGlobalBudget.textContent = globalBudgetAvailable ? formatCurrency(globalBudgetAnnual) : "Budget non disponible";
-      dom.budgetKpiGlobalSub.textContent = globalBudgetAvailable ? "Budget Auto + Industrie (Industrie a 0)" : "Budget global indisponible : budget auto manquant";
+      dom.budgetKpiGlobalSub.textContent = globalBudgetAvailable ? "Budget Auto + Industrie (Industrie à 0)" : "Budget global indisponible : budget auto manquant";
       dom.budgetKpiLines.textContent = formatNumber(summary.lines);
       dom.budgetKpiClients.textContent = `${formatNumber(summary.clients)} client(s) - ${formatNumber(summary.orders)} commande(s)`;
     }
@@ -1888,10 +1888,10 @@
         const autoGap = autoGapAvailable ? row.adjustedAuto - row.autoBudget : 0;
         return `<article class="budget-month" title="${escapeHtml(row.period.label)} - Reel global ${formatCurrency(row.realGlobal)}">
           <div class="budget-bars">
-            <div class="budget-bar real-auto" style="height:${heightFor(row.realAuto)}%" title="Reel Auto ${formatCurrency(row.realAuto)}"></div>
+            <div class="budget-bar real-auto" style="height:${heightFor(row.realAuto)}%" title="Réel Auto ${formatCurrency(row.realAuto)}"></div>
             <div class="budget-bar partner" style="height:${heightFor(row.partnerAdjustment)}%" title="CA partenaires ${formatCurrency(row.partnerAdjustment)}"></div>
             <div class="budget-bar budget-auto" style="height:${row.autoBudgetAvailable ? heightFor(row.autoBudget) : 0}%" title="Budget Auto ${row.autoBudgetAvailable ? formatCurrency(row.autoBudget) : "non disponible"}"></div>
-            <div class="budget-bar real-indus" style="height:${heightFor(row.realIndustry)}%" title="Reel Industrie ${formatCurrency(row.realIndustry)}"></div>
+            <div class="budget-bar real-indus" style="height:${heightFor(row.realIndustry)}%" title="Réel Industrie ${formatCurrency(row.realIndustry)}"></div>
           </div>
           <span class="budget-month-name">${escapeHtml(row.period.label)}</span>
           <span class="budget-month-value">${formatCurrency(row.adjustedGlobal)}</span>
@@ -1935,17 +1935,17 @@
       const autoGap = adjustedAutoToDate - autoBudgetToDate;
       const comparisonLabel = year === new Date().getFullYear() ? `a date (${MONTH_LABELS[monthCount - 1] || "mois courant"})` : "sur l'annee complete";
       if (!summary.lines && !autoBudgetAvailable) {
-        dom.budgetAnalysisText.textContent = "Aucun reel charge et budget auto non disponible pour cette annee.";
+        dom.budgetAnalysisText.textContent = "Aucun réel chargé et budget auto non disponible pour cette année.";
       } else if (!autoBudgetAvailable) {
-        dom.budgetAnalysisText.textContent = `Le reel global ${year} est de ${formatCurrency(summary.total)}, mais le budget auto n'est pas disponible.`;
+        dom.budgetAnalysisText.textContent = `Le réel global ${year} est de ${formatCurrency(summary.total)}, mais le budget auto n'est pas disponible.`;
       } else {
-        dom.budgetAnalysisText.textContent = `Auto ${comparisonLabel} : ventes ${formatCurrency(autoRealToDate)} + partenaires ${formatCurrency(partnerAdjustmentToDate)} = ${formatCurrency(adjustedAutoToDate)} vs budget ${formatCurrency(autoBudgetToDate)}, soit un ecart ajuste de ${autoGap >= 0 ? "+" : ""}${formatCurrency(autoGap)}. Le reel global ajuste Auto + Industrie est de ${formatCurrency(adjustedGlobalAnnual)}.`;
+        dom.budgetAnalysisText.textContent = `Auto ${comparisonLabel} : ventes ${formatCurrency(autoRealToDate)} + partenaires ${formatCurrency(partnerAdjustmentToDate)} = ${formatCurrency(adjustedAutoToDate)} vs budget ${formatCurrency(autoBudgetToDate)}, soit un écart ajusté de ${autoGap >= 0 ? "+" : ""}${formatCurrency(autoGap)}. Le réel global ajuste Auto + Industrie est de ${formatCurrency(adjustedGlobalAnnual)}.`;
       }
 
       const statusParts = [budget.status || "Budget auto non disponible."];
-      statusParts.push("Budget industrie actuellement a 0 EUR : la colonne est prete pour un futur budget industrie.");
+      statusParts.push("Budget industrie actuellement à 0 EUR : la colonne est prête pour un futur budget industrie.");
       if (state.budgetAdjustmentError) {
-        statusParts.push(`CA partenaires non charge : ${state.budgetAdjustmentError}. Lance le SQL fourni si ce n'est pas encore fait.`);
+        statusParts.push(`CA partenaires non chargé : ${state.budgetAdjustmentError}. Lance le SQL fourni si ce n'est pas encore fait.`);
       } else {
         statusParts.push("CA partenaires sauvegarde dans une table separee, hors ventes.");
       }
@@ -1966,7 +1966,7 @@
     }
     function renderAnalysis(rows) {
       const summary = summarizeRows(rows);
-      if (!summary.lines) { dom.analysisText.textContent = "Aucune vente trouvee sur le mois selectionne pour le filtre choisi."; return; }
+      if (!summary.lines) { dom.analysisText.textContent = "Aucune vente trouvée sur le mois sélectionné pour le filtre choisi."; return; }
       const bestWeek = state.weeks.map(week => ({ week, summary: summarizeRows(rowsForWeek(rows, week)) })).sort((a, b) => b.summary.total - a.summary.total)[0];
       const topClient = aggregateTopClients(rows, 1)[0];
       const leader = summary.auto >= summary.industrie ? "Auto" : "Industrie";
@@ -2024,7 +2024,7 @@
         renderBudgetView(rows);
         const summary = summarizeRows(rows);
         const partnerTotal = getBudgetAdjustmentsTotal();
-        setStatus(`Vue budget a jour - reel ajuste ${formatCurrency(summary.total + partnerTotal)} HT - ventes ${formatCurrency(summary.total)} - partenaires ${formatCurrency(partnerTotal)} - budget auto ${state.budget?.autoAvailable ? "charge" : "non disponible"} - budget industrie a 0.`);
+        setStatus(`Vue budget à jour - réel ajusté ${formatCurrency(summary.total + partnerTotal)} HT - ventes ${formatCurrency(summary.total)} - partenaires ${formatCurrency(partnerTotal)} - budget auto ${state.budget?.autoAvailable ? "chargé" : "non disponible"} - budget industrie à 0.`);
         return;
       }
       renderKpis(rows);
@@ -2045,7 +2045,7 @@
         state.selectedWeekIndex = 0;
         state.selectedMonthIndex = null;
         closeWeekModal();
-        setStatus(isDayMode ? "Chargement du jour Auto + Industrie..." : isBudgetMode ? "Chargement du reel et du budget Auto..." : isYearMode ? "Chargement de l'annee Auto + Industrie..." : "Chargement des ventes Auto + Industrie...");
+        setStatus(isDayMode ? "Chargement du jour Auto + Industrie..." : isBudgetMode ? "Chargement du réel et du budget Auto..." : isYearMode ? "Chargement de l'année Auto + Industrie..." : "Chargement des ventes Auto + Industrie...");
         const salesPromise = Promise.allSettled(SOURCES.map(source => loadSourceRows(source, periodBounds)));
         const budgetPromise = isBudgetMode
           ? loadBudgetSnapshot(periodBounds.year).catch(error => {

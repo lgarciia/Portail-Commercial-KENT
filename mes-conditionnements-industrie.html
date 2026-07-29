@@ -86,7 +86,7 @@
         <div>
           <div class="kicker">Bon de commande</div>
           <h1>Mes conditionnements Industrie</h1>
-          <p>Controle les correspondances Industrie Ref 5, Code Produit, famille, grains et emballage utilisees pour les futurs bons de commande Industrie.</p>
+          <p>Contrôle les correspondances Industrie Ref 5, Code Produit, famille, grains et emballage utilisées pour les futurs bons de commande Industrie.</p>
         </div>
         <div class="status-pill">
           <span class="status-dot"></span>
@@ -122,9 +122,9 @@
       <div class="table-head">
         <div>
           <h2>Table industrie_conditionnements_produits</h2>
-          <div class="muted" id="tableMeta">Chargement des donnees...</div>
+          <div class="muted" id="tableMeta">Chargement des données...</div>
         </div>
-        <div class="status-bar" id="statusBar">Connexion a Supabase...</div>
+        <div class="status-bar" id="statusBar">Connexion à Supabase...</div>
       </div>
       <div class="table-wrapper">
         <table>
@@ -146,7 +146,7 @@
           <tbody id="tableBody">
             <tr>
               <td colspan="11">
-                <div class="empty-state">Chargement des donnees...</div>
+                <div class="empty-state">Chargement des données...</div>
               </td>
             </tr>
           </tbody>
@@ -283,7 +283,7 @@
 
     async function loadData() {
       setStatus("Lecture des conditionnements Industrie...");
-      dom.tableBody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Chargement des donnees...</div></td></tr>';
+      dom.tableBody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Chargement des données...</div></td></tr>';
 
       try {
         state.rows = await fetchAllRows();

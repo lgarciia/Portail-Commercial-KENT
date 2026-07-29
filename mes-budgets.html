@@ -124,7 +124,7 @@
         <div class="logo"></div>
         <div class="title">
           <b>Mes budgets</b>
-          <span>Budgets valides, actifs et inactifs par entite et par annee.</span>
+          <span>Budgets validés, actifs et inactifs par entité et par année.</span>
         </div>
       </div>
       <div class="actions">
@@ -137,18 +137,18 @@
     <div class="card">
       <div class="filters">
         <div class="field">
-          <label for="yearSelect">Annee</label>
+          <label for="yearSelect">Année</label>
           <select class="input" id="yearSelect"></select>
         </div>
         <div class="field">
-          <label for="entityFilter">Entite</label>
+          <label for="entityFilter">Entité</label>
           <select class="input" id="entityFilter"></select>
         </div>
         <button class="btn" id="refreshBtn" type="button">Actualiser</button>
-        <button class="btn gold" id="newEntityBtn" type="button">Nouvelle entite</button>
+        <button class="btn gold" id="newEntityBtn" type="button">Nouvelle entité</button>
         <div class="entityActions" aria-label="Gestion entites">
-          <button class="btn" id="renameEntityBtn" type="button">Renommer entite</button>
-          <button class="btn red" id="deleteEntityBtn" type="button">Supprimer entite</button>
+          <button class="btn" id="renameEntityBtn" type="button">Renommer entité</button>
+          <button class="btn red" id="deleteEntityBtn" type="button">Supprimer entité</button>
         </div>
       </div>
       <div class="kpis">
@@ -165,8 +165,8 @@
           <thead>
             <tr>
               <th>Nom</th>
-              <th>Entite</th>
-              <th>Annee</th>
+              <th>Entité</th>
+              <th>Année</th>
               <th>Statut</th>
               <th class="right">Total</th>
               <th class="right">Lignes</th>
@@ -183,13 +183,13 @@
       <div class="detailHead">
         <div>
           <h2 id="detailTitle">Visualisation budget</h2>
-          <div class="muted" id="detailMeta">Selectionne un budget pour voir le detail.</div>
+          <div class="muted" id="detailMeta">Sélectionne un budget pour voir le détail.</div>
         </div>
       </div>
       <div class="tableWrap">
         <table>
           <thead id="detailHead"></thead>
-          <tbody id="detailRows"><tr><td class="empty">Aucun budget selectionne.</td></tr></tbody>
+          <tbody id="detailRows"><tr><td class="empty">Aucun budget sélectionné.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -343,9 +343,9 @@
       try{
         await window.BudgetSupabase.deleteBudget(id);
         $("detailTitle").textContent = "Visualisation budget";
-        $("detailMeta").textContent = "Selectionne un budget pour voir le detail.";
+        $("detailMeta").textContent = "Sélectionne un budget pour voir le détail.";
         $("detailHead").innerHTML = "";
-        $("detailRows").innerHTML = '<tr><td class="empty">Aucun budget selectionne.</td></tr>';
+        $("detailRows").innerHTML = '<tr><td class="empty">Aucun budget sélectionné.</td></tr>';
         await refreshData();
         await kentAlert("Budget supprimé.", { title: "Suppression terminée", tone: "success" });
       }catch(error){
@@ -473,9 +473,9 @@
         $("entityFilter").value = "all";
         await refreshData();
         $("detailTitle").textContent = "Visualisation budget";
-        $("detailMeta").textContent = "Selectionne un budget pour voir le detail.";
+        $("detailMeta").textContent = "Sélectionne un budget pour voir le détail.";
         $("detailHead").innerHTML = "";
-        $("detailRows").innerHTML = '<tr><td class="empty">Aucun budget selectionne.</td></tr>';
+        $("detailRows").innerHTML = '<tr><td class="empty">Aucun budget sélectionné.</td></tr>';
         await kentAlert("Entite masquee. Les donnees historiques sont conservees.", { title: "Entite supprimee de la liste", tone: "success" });
       }catch(error){
         console.error("Deactivate entity failed", error);

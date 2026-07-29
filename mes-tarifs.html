@@ -526,10 +526,10 @@
     <section class="glass table-card">
       <div class="table-head">
         <div class="table-title">
-          <h2 id="currentTariffTitle">Aucun tarif selectionne</h2>
+          <h2 id="currentTariffTitle">Aucun tarif sélectionné</h2>
           <div class="muted" id="currentTariffMeta">Selection automatique du premier tarif disponible.</div>
         </div>
-        <div class="status-bar" id="statusBar">Connexion a Supabase...</div>
+        <div class="status-bar" id="statusBar">Connexion à Supabase...</div>
       </div>
       <div class="table-wrapper">
         <table>
@@ -542,7 +542,7 @@
           <tbody id="tariffTableBody">
             <tr>
               <td colspan="2">
-                <div class="empty-state">Chargement des donnees...</div>
+                <div class="empty-state">Chargement des données...</div>
               </td>
             </tr>
           </tbody>
@@ -857,7 +857,7 @@
 
     function renderTable() {
       const activePlaque = getActivePlaque();
-      dom.currentTariffTitle.textContent = activePlaque?.nom || "Aucun tarif selectionne";
+      dom.currentTariffTitle.textContent = activePlaque?.nom || "Aucun tarif sélectionné";
       const activeMeta = getTariffMeta(state.activePlaqueId);
       dom.currentTariffMeta.textContent = activePlaque?.id
         ? `Dernier import: ${formatLastImport(activeMeta)} - plaque_id: ${activePlaque.id}`
@@ -937,7 +937,7 @@
       attachEvents();
 
       renderTableLoading("Chargement des donnees Supabase...");
-      setStatus("Connexion a Supabase...");
+      setStatus("Connexion à Supabase...");
 
       try {
         const [plaques, produits, tarifs] = await Promise.all([
