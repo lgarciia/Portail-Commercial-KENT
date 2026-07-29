@@ -271,6 +271,7 @@
     .kpi .v{font-size:18px;font-weight:1000;margin-top:2px;letter-spacing:-.04em}
     .toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
     .toolbarLeft,.toolbarRight{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .targetActions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:12px}
     .miniBtn{min-height:34px;padding:0 10px;border-radius:12px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.055);color:var(--text);font-weight:950;cursor:pointer}
     .miniBtn:hover{background:rgba(255,255,255,.10)}
     .tableWrap{overflow:auto;border-radius:18px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.32);max-height:460px}
@@ -348,7 +349,7 @@
     .modal h2{margin:0 0 8px;font-size:24px;letter-spacing:-.04em}
     .modal p{margin:0 0 12px;color:var(--muted);line-height:1.45;font-weight:760}
     .modalBody{display:grid;gap:12px}
-    .modalNote{border:1px solid rgba(245,158,11,.24);border-radius:16px;background:rgba(245,158,11,.10);color:#fde68a;padding:11px 12px;font-weight:850;line-height:1.4}
+    .modalNote{border:1px solid rgba(245,158,11,.24);border-radius:16px;background:rgba(245,158,11,.10);color:#fde68a;padding:9px 11px;font-size:12px;font-weight:650;line-height:1.4}
     .campaignStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
     .campaignStat{border:1px solid rgba(148,163,184,.16);border-radius:15px;background:rgba(2,6,23,.30);padding:10px}
     .campaignStat b{display:block;font-size:20px;color:#f8fafc;letter-spacing:-.04em}
@@ -452,7 +453,6 @@
         <button class="miniBtn" id="onlyEmailBtn" type="button">Garder clients avec email</button>
       </div>
       <div class="toolbarRight">
-        <button class="btn gold" id="validateTargetsBtn" type="button">Valider les clients cibles</button>
         <button class="miniBtn" id="resetBtn" type="button">Réinitialiser</button>
       </div>
     </div>
@@ -476,6 +476,9 @@
           <tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une prévisualisation pour afficher les clients ciblés.</td></tr>
         </tbody>
       </table>
+    </div>
+    <div class="targetActions">
+      <button class="btn green" id="validateTargetsBtn" type="button">Valider les clients cibles</button>
     </div>
   </section>
 
