@@ -265,7 +265,8 @@ async function buildSalesBlock(commercialIds, period) {
   );
   const rows = sourceResults.flatMap((item) => item.rows);
   const visits = sourceResults.flatMap((item) => item.visits);
-  return summarizeSalesRows(rows, visits, period);
+  const clients = sourceResults.flatMap((item) => item.clients || []);
+  return summarizeSalesRows(rows, visits, period, clients);
 }
 
 async function loadSalesSource(source, commercialIds, period) {
@@ -292,8 +293,15 @@ async function loadSalesSource(source, commercialIds, period) {
       : Promise.resolve([])
   ]);
   const visits = mergeRowsById([...visitsByCommercial, ...visitsByClient]);
+  const scopedClients = ownedClients.map((client) => ({
+    id: client.id,
+    secteur: source.secteur,
+    commercialUserId: normalizeText(client.commercial_user_id),
+    nom: client.nom || "",
+    numeroCompte: client.numero_compte || ""
+  })).filter((client) => allowedCommercialIds.has(client.commercialUserId));
 
-  if (!visits.length) return { rows: [], visits: [] };
+  if (!visits.length) return { rows: [], visits: [], clients: scopedClients };
 
   const visitIds = visits.map((visit) => visit.id).filter(Boolean);
   const clientIds = unique([
@@ -357,16 +365,18 @@ async function loadSalesSource(source, commercialIds, period) {
     };
   }).filter((row) => row?.commercialUserId);
 
-  return { rows, visits: enrichedVisits };
+  return { rows, visits: enrichedVisits, clients: scopedClients };
 }
 
 function resolveSaleOwnerId(visit, client) {
   return normalizeText(visit?.commercial_user_id) || normalizeText(client?.commercial_user_id);
 }
 
-function summarizeSalesRows(rows, visits, period) {
+function summarizeSalesRows(rows, visits, period, clients = []) {
   const byCommercial = new Map();
   const topClientsMonth = new Map();
+  const clientKeysTotal = new Set();
+  const saleKeysYear = new Set();
   let totals = {
     day: 0,
     week: 0,
@@ -377,7 +387,10 @@ function summarizeSalesRows(rows, visits, period) {
     monthIndustrie: 0,
     visitsMonth: 0,
     phoneMonth: 0,
-    clientsMonth: 0
+    clientsMonth: 0,
+    clientsTotal: 0,
+    ventesAnnee: 0,
+    lignesAnnee: 0
   };
 
   const dayRows = [];
@@ -385,9 +398,22 @@ function summarizeSalesRows(rows, visits, period) {
   const monthRows = [];
   const yearRows = [];
 
+  for (const client of clients) {
+    if (!client.commercialUserId) continue;
+    const commercial = ensureSalesCommercial(byCommercial, client.commercialUserId);
+    const key = `${client.secteur}:${client.id || client.numeroCompte || client.nom}`;
+    commercial.clientsTotalSet.add(key);
+    clientKeysTotal.add(key);
+  }
+
   for (const row of rows) {
     const monthIndex = getIsoMonthIndex(row.date);
     const commercial = ensureSalesCommercial(byCommercial, row.commercialUserId);
+    const saleKey = `${row.source}:${row.visitId || row.id}`;
+    commercial.salesYearSet.add(saleKey);
+    saleKeysYear.add(saleKey);
+    commercial.linesYear += 1;
+    totals.lignesAnnee += 1;
     commercial.year += row.montant;
     totals.year += row.montant;
     yearRows.push(row);
@@ -457,7 +483,9 @@ function summarizeSalesRows(rows, visits, period) {
     ...totals,
     visitsMonth: visitKeysMonth.size,
     phoneMonth: phoneVisitKeysMonth.size,
-    clientsMonth: clientKeysMonth.size
+    clientsMonth: clientKeysMonth.size,
+    clientsTotal: clientKeysTotal.size,
+    ventesAnnee: saleKeysYear.size
   });
 
   const byCommercialObject = Object.fromEntries(
@@ -472,7 +500,10 @@ function summarizeSalesRows(rows, visits, period) {
       visitsMonth: value.visitsMonth,
       phoneMonth: value.phoneMonth,
       terrainMonth: value.terrainMonth,
-      clientsMonth: value.clientsMonthSet.size
+      clientsMonth: value.clientsMonthSet.size,
+      clientsTotal: value.clientsTotalSet.size,
+      ventesAnnee: value.salesYearSet.size,
+      lignesAnnee: value.linesYear
     }])
   );
 
@@ -504,7 +535,10 @@ function ensureSalesCommercial(map, commercialUserId) {
       visitsMonth: 0,
       phoneMonth: 0,
       terrainMonth: 0,
-      clientsMonthSet: new Set()
+      clientsMonthSet: new Set(),
+      clientsTotalSet: new Set(),
+      salesYearSet: new Set(),
+      linesYear: 0
     });
   }
   return map.get(key);
@@ -535,6 +569,14 @@ async function buildBudgetBlock(commercialIds, period) {
 
   const entityById = new Map(entities.map((entity) => [String(entity.id), entity]));
   const budgetById = new Map(budgets.map((budget) => [String(budget.id), budget]));
+  const byCommercial = {};
+  for (const budget of budgets) {
+    const commercialId = budget.commercial_user_id || "";
+    if (!commercialId) continue;
+    if (!byCommercial[commercialId]) byCommercial[commercialId] = emptyBudgetCommercial();
+    byCommercial[commercialId].activeBudgets += 1;
+    if (budget.entite_id) byCommercial[commercialId].entityIds.add(String(budget.entite_id));
+  }
   const rows = lines.map((line) => {
     const budget = budgetById.get(String(line.budget_id));
     const entity = entityById.get(String(budget?.entite_id));
@@ -555,7 +597,6 @@ async function buildBudgetBlock(commercialIds, period) {
     };
   });
 
-  const byCommercial = {};
   const byEntity = {};
   const monthlyTotals = emptyMonthlyArray();
   let totalYear = 0;
@@ -566,6 +607,7 @@ async function buildBudgetBlock(commercialIds, period) {
     byCommercial[row.commercialUserId].year += row.total;
     byCommercial[row.commercialUserId].toDate += row.toDate;
     byCommercial[row.commercialUserId].lines += 1;
+    if (row.entiteId) byCommercial[row.commercialUserId].entityIds.add(String(row.entiteId));
     row.monthly.forEach((value, index) => {
       byCommercial[row.commercialUserId].monthly[index] += value;
     });
@@ -613,10 +655,17 @@ async function buildBudgetBlock(commercialIds, period) {
 
 async function buildRealBlock(commercialIds, period) {
   if (!commercialIds.length) return emptyRealBlock();
-  const rows = await fetchByCommercialChunks("v_reel_lignes_actives", "id,commercial_user_id,commercial_identifier,commercial_name,entite_id,entite_key,entite_libelle,annee,mois,client_code,client_nom,montant,quantite,reference,designation,date_piece", commercialIds, {
-    annee: `eq.${period.year}`,
-    order: "mois.asc,client_nom.asc"
-  });
+  const [rows, imports] = await Promise.all([
+    fetchByCommercialChunks("v_reel_lignes_actives", "id,commercial_user_id,commercial_identifier,commercial_name,entite_id,entite_key,entite_libelle,annee,mois,client_code,client_nom,montant,quantite,reference,designation,date_piece", commercialIds, {
+      annee: `eq.${period.year}`,
+      order: "mois.asc,client_nom.asc"
+    }),
+    fetchByCommercialChunks("reel_imports", "id,commercial_user_id,entite_id,annee,mois,statut,total_mois,nb_lignes", commercialIds, {
+      annee: `eq.${period.year}`,
+      statut: "eq.active",
+      order: "mois.asc"
+    })
+  ]);
 
   const byCommercial = {};
   const byEntity = {};
@@ -624,6 +673,18 @@ async function buildRealBlock(commercialIds, period) {
   const monthlyRows = [];
   let totalYear = 0;
   let totalToDate = 0;
+
+  for (const importRow of imports) {
+    const commercialId = importRow.commercial_user_id || "";
+    if (!commercialId) continue;
+    if (!byCommercial[commercialId]) byCommercial[commercialId] = emptyRealCommercial();
+    const month = clampNumber(importRow.mois, 1, 12, 1);
+    byCommercial[commercialId].imports += 1;
+    byCommercial[commercialId].importMonthsSet.add(month);
+    byCommercial[commercialId].lastImportMonth = Math.max(byCommercial[commercialId].lastImportMonth || 0, month);
+    byCommercial[commercialId].importedLines += Number(importRow.nb_lignes || 0);
+    byCommercial[commercialId].importedAmount += toNumber(importRow.total_mois);
+  }
 
   for (const row of rows) {
     const amount = toNumber(row.montant);
@@ -662,6 +723,9 @@ async function buildRealBlock(commercialIds, period) {
     byCommercial[id].year = roundMoney(byCommercial[id].year);
     byCommercial[id].toDate = roundMoney(byCommercial[id].toDate);
     byCommercial[id].monthly = byCommercial[id].monthly.map(roundMoney);
+    byCommercial[id].importedAmount = roundMoney(byCommercial[id].importedAmount);
+    byCommercial[id].importedMonths = Array.from(byCommercial[id].importMonthsSet).sort((a, b) => a - b);
+    delete byCommercial[id].importMonthsSet;
   });
 
   const entitiesRows = Object.values(byEntity).map((entity) => ({
@@ -753,14 +817,25 @@ function enrichCommercial(commercial, blocks) {
       commandesTelephoneMois: sales.phoneMonth || 0,
       terrainMois: sales.terrainMonth || 0,
       clientsMois: sales.clientsMonth || 0,
+      clientsTotal: sales.clientsTotal || 0,
+      ventesAnnee: sales.ventesAnnee || 0,
+      lignesAnnee: sales.lignesAnnee || 0,
       budgetAnnuel: roundMoney(budget.year),
       budgetADate: roundMoney(budget.toDate),
       budgetMensuel: Array.isArray(budget.monthly) ? budget.monthly.map(roundMoney) : emptyMonthlyArray(),
+      budgetsActifs: budget.activeBudgets || 0,
+      entitesBudgetees: budget.entitiesCount || 0,
+      lignesBudget: budget.lines || 0,
       reelReportingAnnee: roundMoney(real.year),
       reelReportingADate: roundMoney(real.toDate),
+      reelDernierMois: real.lastImportMonth || 0,
+      reelImportsActifs: real.imports || 0,
+      reelMoisImportes: Array.isArray(real.importedMonths) ? real.importedMonths : [],
+      reelLignesImportees: real.importedLines || 0,
       ecartADate: roundMoney(real.toDate - budget.toDate),
       tauxAtteinteADate: budget.toDate ? roundMoney((real.toDate / budget.toDate) * 100) : null,
       documentsEnCours: docs.enCours || 0,
+      documentsSansStatut: docs.sansStatut || 0,
       bdcEnCours: docs.bdcEnCours || 0,
       devisEnCours: docs.devisEnCours || 0,
       documentsTotal: docs.total || 0,
@@ -1105,14 +1180,25 @@ function emptyMetrics() {
     commandesTelephoneMois: 0,
     terrainMois: 0,
     clientsMois: 0,
+    clientsTotal: 0,
+    ventesAnnee: 0,
+    lignesAnnee: 0,
     budgetAnnuel: 0,
     budgetADate: 0,
     budgetMensuel: emptyMonthlyArray(),
+    budgetsActifs: 0,
+    entitesBudgetees: 0,
+    lignesBudget: 0,
     reelReportingAnnee: 0,
     reelReportingADate: 0,
+    reelDernierMois: 0,
+    reelImportsActifs: 0,
+    reelMoisImportes: [],
+    reelLignesImportees: 0,
     ecartADate: 0,
     tauxAtteinteADate: null,
     documentsEnCours: 0,
+    documentsSansStatut: 0,
     bdcEnCours: 0,
     devisEnCours: 0,
     documentsTotal: 0,
@@ -1132,24 +1218,27 @@ function emptySalesCommercialObject() {
     visitsMonth: 0,
     phoneMonth: 0,
     terrainMonth: 0,
-    clientsMonth: 0
+    clientsMonth: 0,
+    clientsTotal: 0,
+    ventesAnnee: 0,
+    lignesAnnee: 0
   };
 }
 
 function emptyBudgetCommercial() {
-  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray() };
+  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray(), activeBudgets: 0, entityIds: new Set() };
 }
 
 function emptyBudgetCommercialObject() {
-  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray() };
+  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray(), activeBudgets: 0, entitiesCount: 0 };
 }
 
 function emptyRealCommercial() {
-  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray() };
+  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray(), imports: 0, importMonthsSet: new Set(), lastImportMonth: 0, importedLines: 0, importedAmount: 0 };
 }
 
 function emptyRealCommercialObject() {
-  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray() };
+  return { year: 0, toDate: 0, lines: 0, monthly: emptyMonthlyArray(), imports: 0, importedMonths: [], lastImportMonth: 0, importedLines: 0, importedAmount: 0 };
 }
 
 function emptyDocumentCommercial() {
@@ -1161,12 +1250,14 @@ function normalizeBudgetCommercials(byCommercial) {
     byCommercial[id].year = roundMoney(byCommercial[id].year);
     byCommercial[id].toDate = roundMoney(byCommercial[id].toDate);
     byCommercial[id].monthly = byCommercial[id].monthly.map(roundMoney);
+    byCommercial[id].entitiesCount = byCommercial[id].entityIds ? byCommercial[id].entityIds.size : 0;
+    delete byCommercial[id].entityIds;
   });
 }
 
 function emptySalesBlock() {
   return {
-    totals: { day: 0, week: 0, month: 0, year: 0, monthly: emptyMonthlyArray(), monthAuto: 0, monthIndustrie: 0, visitsMonth: 0, phoneMonth: 0, clientsMonth: 0 },
+    totals: { day: 0, week: 0, month: 0, year: 0, monthly: emptyMonthlyArray(), monthAuto: 0, monthIndustrie: 0, visitsMonth: 0, phoneMonth: 0, clientsMonth: 0, clientsTotal: 0, ventesAnnee: 0, lignesAnnee: 0 },
     byCommercial: {},
     dailyRows: [],
     weeklyRows: [],

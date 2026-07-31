@@ -260,6 +260,71 @@
     .performance-card span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
     .performance-card strong{display:block;margin-top:8px;font-size:18px}
     .performance-card b{display:block;margin-top:6px;font-size:24px;letter-spacing:-.04em}
+    .control-shell{
+      border:1px solid var(--line);border-radius:28px;padding:18px;
+      background:linear-gradient(135deg, rgba(15,23,42,.84), rgba(4,12,24,.78));
+      box-shadow:var(--shadow);
+    }
+    .control-head{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+      border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:13px;margin-bottom:12px;
+    }
+    .control-head h2{margin:7px 0 6px;font-size:clamp(30px,3vw,42px);letter-spacing:-.055em;line-height:1}
+    .control-head p{font-size:14px;max-width:760px}
+    .control-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 14px}
+    .control-kpi{
+      border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.045);
+      padding:12px 13px;min-width:0;
+    }
+    .control-kpi span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .control-kpi strong{display:block;margin-top:6px;font-size:24px;letter-spacing:-.04em}
+    .control-kpi.good{border-color:rgba(34,197,94,.24);background:rgba(34,197,94,.07)}
+    .control-kpi.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08)}
+    .control-kpi.danger{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.08)}
+    .control-panel{
+      border:1px solid var(--line);border-radius:24px;background:rgba(3,7,18,.24);padding:12px;
+    }
+    .control-table{display:grid;gap:7px}
+    .control-row{
+      border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.045);
+      display:grid;grid-template-columns:minmax(180px,1.25fr) minmax(150px,.95fr) repeat(5,minmax(86px,.58fr)) minmax(116px,.7fr) minmax(120px,.74fr) 38px;
+      gap:8px;align-items:center;padding:9px 10px;min-width:0;
+    }
+    .control-row.header{
+      background:rgba(255,255,255,.03);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950;
+    }
+    .control-row button{
+      width:31px;height:31px;border-radius:11px;border:1px solid var(--line);
+      background:rgba(255,255,255,.075);color:#fff;font-weight:1000;
+    }
+    .control-main strong,.control-cell strong{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .control-main span,.control-cell span{display:block;margin-top:2px;color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .control-status{
+      display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 9px;
+      border-radius:999px;border:1px solid var(--line);font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.04em;
+    }
+    .control-status.good{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.30);color:#bbf7d0}
+    .control-status.warn{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.32);color:#fde68a}
+    .control-status.danger{background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.32);color:#fecaca}
+    .control-detail{
+      margin:0 0 5px 16px;border-left:2px solid rgba(56,189,248,.28);padding:8px 0 8px 12px;display:grid;gap:10px;
+    }
+    .control-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+    .control-detail-card{
+      border:1px solid rgba(255,255,255,.10);border-radius:15px;background:rgba(255,255,255,.035);
+      padding:10px;min-width:0;
+    }
+    .control-detail-card span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:950}
+    .control-detail-card strong{display:block;margin-top:5px;font-size:15px}
+    .control-detail-card .sub{margin-top:4px;color:var(--muted);font-size:11px;line-height:1.35}
+    .control-issues{display:flex;gap:7px;flex-wrap:wrap}
+    .control-issue{
+      border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.045);
+      color:rgba(255,255,255,.78);padding:6px 9px;font-size:11px;font-weight:900;
+    }
+    .control-issue.good{border-color:rgba(34,197,94,.26);color:#bbf7d0;background:rgba(34,197,94,.08)}
+    .control-issue.warn{border-color:rgba(245,158,11,.28);color:#fde68a;background:rgba(245,158,11,.08)}
+    .control-issue.danger{border-color:rgba(239,68,68,.28);color:#fecaca;background:rgba(239,68,68,.08)}
     .layout{
       display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
@@ -384,6 +449,11 @@
       .layout,.overview-grid,.security-grid{grid-template-columns:1fr}
       .manager-grid{grid-template-columns:1fr}
       .finance-summary,.performance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .control-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .control-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .control-row{grid-template-columns:minmax(170px,1.1fr) repeat(4,minmax(92px,.7fr)) 34px;overflow:hidden}
+      .control-row.header div:nth-child(2),.control-row.header div:nth-child(7),.control-row.header div:nth-child(8),.control-row.header div:nth-child(9),
+      .control-row > div:nth-child(2),.control-row > div:nth-child(7),.control-row > div:nth-child(8),.control-row > div:nth-child(9){display:none}
       .finance-row{grid-template-columns:minmax(180px,1.1fr) repeat(4,minmax(100px,.7fr)) 34px}
       .finance-chart{overflow-x:auto}
     }
@@ -394,6 +464,8 @@
       .role-grid,.health-grid{grid-template-columns:1fr}
       .finance-head{flex-direction:column}
       .finance-summary,.performance-grid{grid-template-columns:1fr}
+      .control-summary,.control-detail-grid{grid-template-columns:1fr}
+      .control-row{grid-template-columns:1fr}
       .finance-month-popup-row{grid-template-columns:1fr}
       .finance-row,.finance-seller{grid-template-columns:1fr}
       .form-grid{grid-template-columns:1fr}
@@ -456,6 +528,7 @@
       <button class="admin-tab" type="button" data-admin-tab="finance">Finance</button>
       <button class="admin-tab" type="button" data-admin-tab="imports">Mes imports</button>
       <button class="admin-tab" type="button" data-admin-tab="budgets-global">Les budgets</button>
+      <button class="admin-tab" type="button" data-admin-tab="data-control">Contr&ocirc;le donn&eacute;es</button>
     </nav>
 
     <section class="admin-view active" data-admin-view="pilotage">
@@ -553,6 +626,35 @@
         <div class="empty">
           Vue en attente. Elle pourra recevoir plus tard la consolidation des budgets par commercial,
           responsable, entit&eacute; et groupe, sans modifier la logique actuelle des commerciaux.
+        </div>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="data-control">
+      <section class="control-shell">
+        <div class="control-head">
+          <div>
+            <span class="badge">Qualit&eacute; donn&eacute;es</span>
+            <h2>Contr&ocirc;le donn&eacute;es</h2>
+            <p>
+              Lecture seule par commercial : clients, ventes, budgets actifs, r&eacute;els import&eacute;s,
+              documents et derni&egrave;re activit&eacute;. Clique une ligne pour voir le diagnostic.
+            </p>
+          </div>
+          <div class="top-actions">
+            <span class="btn ghost small" data-control-period>Ann&eacute;e en cours</span>
+            <button class="btn green" type="button" data-control-refresh>Synchroniser</button>
+          </div>
+        </div>
+
+        <div class="control-summary" data-control-summary>
+          <article class="control-kpi"><span>Chargement</span><strong>-</strong></article>
+        </div>
+
+        <div class="control-panel">
+          <div class="control-table" data-control-body>
+            <div class="empty">Ouvre la vue Contr&ocirc;le donn&eacute;es pour lancer l'analyse.</div>
+          </div>
         </div>
       </section>
     </section>
@@ -850,6 +952,8 @@
         activeView: "pilotage",
         financeView: "day",
         financePayload: null,
+        controlPayload: null,
+        controlExpandedCommercial: "",
         financeSettings: [],
         financeSettingsReady: false,
         financeSettingsWarning: "",
@@ -882,6 +986,10 @@
         financePills: Array.from(document.querySelectorAll("[data-finance-view]")),
         financeSummary: document.querySelector("[data-finance-summary]"),
         financeBody: document.querySelector("[data-finance-body]"),
+        controlRefresh: document.querySelector("[data-control-refresh]"),
+        controlPeriod: document.querySelector("[data-control-period]"),
+        controlSummary: document.querySelector("[data-control-summary]"),
+        controlBody: document.querySelector("[data-control-body]"),
         formTitle: document.querySelector("[data-form-title]"),
         search: document.querySelector("[data-search]"),
         toast: document.querySelector("[data-toast]"),
@@ -944,6 +1052,7 @@
           els.relationForm.scrollIntoView({ behavior: "smooth", block: "start" });
         });
         els.financeRefresh.addEventListener("click", loadFinanceData);
+        if (els.controlRefresh) els.controlRefresh.addEventListener("click", loadDataControl);
         els.financeDay.addEventListener("change", function(){
           syncFinanceMonthFromDate();
           loadFinanceData();
@@ -982,6 +1091,15 @@
           state.expandedFinanceManager = state.expandedFinanceManager === id ? "" : id;
           renderFinance();
         });
+        if (els.controlBody) {
+          els.controlBody.addEventListener("click", function(event){
+            const button = event.target.closest("[data-control-commercial]");
+            if (!button) return;
+            const id = button.dataset.controlCommercial || "";
+            state.controlExpandedCommercial = state.controlExpandedCommercial === id ? "" : id;
+            renderDataControl();
+          });
+        }
         els.search.addEventListener("input", function(){
           state.search = els.search.value.trim().toLowerCase();
           renderUsers();
@@ -1073,6 +1191,7 @@
         renderHiddenUsers();
         renderAuditLog();
         if (state.financePayload) renderFinance();
+        if (state.controlPayload) renderDataControl();
       }
 
       async function submitUserForm(event){
@@ -1323,7 +1442,7 @@
 
       function setAdminView(view){
         state.activeView = view || "pilotage";
-        els.wrap.classList.toggle("finance-mode", ["finance", "imports", "budgets-global"].includes(state.activeView));
+        els.wrap.classList.toggle("finance-mode", ["finance", "imports", "budgets-global", "data-control"].includes(state.activeView));
         els.tabs.forEach(function(tab){
           tab.classList.toggle("active", tab.dataset.adminTab === state.activeView);
         });
@@ -1332,6 +1451,9 @@
         });
         if (state.activeView === "finance" && !state.financePayload) {
           loadFinanceData();
+        }
+        if (state.activeView === "data-control" && !state.controlPayload) {
+          loadDataControl();
         }
       }
 
@@ -1357,6 +1479,31 @@
           els.financeSummary.innerHTML = '<article class="finance-kpi negative"><span>Erreur</span><strong>Indisponible</strong></article>';
           els.financeBody.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Finance indisponible.") + '</div>';
           showToast(error.message || "Finance indisponible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      async function loadDataControl(){
+        const day = todayInputValue();
+        const parts = parseIsoParts(day);
+        if (els.controlPeriod) els.controlPeriod.textContent = "Ann\u00e9e " + parts.year;
+        setLoading(true, "Contr\u00f4le donn\u00e9es", "Lecture des commerciaux, ventes, budgets, r\u00e9els et documents.");
+        try{
+          const payload = await fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day));
+          state.controlPayload = payload;
+          state.controlExpandedCommercial = "";
+          renderDataControl();
+          showToast("Contr\u00f4le donn\u00e9es synchronis\u00e9.");
+        }catch(error){
+          state.controlPayload = null;
+          if (els.controlSummary) {
+            els.controlSummary.innerHTML = '<article class="control-kpi danger"><span>Erreur</span><strong>Indisponible</strong></article>';
+          }
+          if (els.controlBody) {
+            els.controlBody.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Contr\u00f4le indisponible.") + '</div>';
+          }
+          showToast(error.message || "Contr\u00f4le indisponible.", true);
         }finally{
           setLoading(false);
         }
@@ -2078,6 +2225,199 @@
         return roundClientMoney((values || []).slice(0, limit).reduce(function(sum, value){
           return sum + Number(value || 0);
         }, 0));
+      }
+
+      function renderDataControl(){
+        if (!state.controlPayload) {
+          if (els.controlSummary) els.controlSummary.innerHTML = '<article class="control-kpi"><span>Contr&ocirc;le</span><strong>-</strong></article>';
+          if (els.controlBody) els.controlBody.innerHTML = '<div class="empty">Aucune donn&eacute;e charg&eacute;e.</div>';
+          return;
+        }
+
+        const model = buildDataControlModel();
+        if (els.controlPeriod) els.controlPeriod.textContent = "Ann\u00e9e " + model.year;
+        els.controlSummary.innerHTML = [
+          renderControlKpi("Commerciaux", model.rows.length, ""),
+          renderControlKpi("OK", model.counts.good, "good"),
+          renderControlKpi("A contr\u00f4ler", model.counts.warn, "warn"),
+          renderControlKpi("Bloquants", model.counts.danger, "danger")
+        ].join("");
+
+        if (!model.rows.length) {
+          els.controlBody.innerHTML = '<div class="empty">Aucun commercial actif dans le p&eacute;rim&egrave;tre admin.</div>';
+          return;
+        }
+
+        els.controlBody.innerHTML = [
+          '<div class="control-row header">',
+            '<div>Commercial</div>',
+            '<div>Responsable</div>',
+            '<div>Clients</div>',
+            '<div>Ventes</div>',
+            '<div>Budget</div>',
+            '<div>R&eacute;el</div>',
+            '<div>Docs</div>',
+            '<div>Activit&eacute;</div>',
+            '<div>Statut</div>',
+            '<div></div>',
+          '</div>',
+          model.rows.map(renderControlRow).join("")
+        ].join("");
+      }
+
+      function buildDataControlModel(){
+        const payload = state.controlPayload || {};
+        const period = payload.period || {};
+        const year = Number(period.year || new Date().getFullYear());
+        const rows = (payload.commercials || [])
+          .map(function(commercial){
+            const diagnostic = buildCommercialDiagnostic(commercial);
+            return { commercial, diagnostic };
+          })
+          .sort(function(a, b){
+            return controlSeverityRank(b.diagnostic.level) - controlSeverityRank(a.diagnostic.level)
+              || String(a.commercial.displayName || "").localeCompare(String(b.commercial.displayName || ""), "fr");
+          });
+        return {
+          year,
+          rows,
+          counts: {
+            good: rows.filter(function(row){ return row.diagnostic.level === "good"; }).length,
+            warn: rows.filter(function(row){ return row.diagnostic.level === "warn"; }).length,
+            danger: rows.filter(function(row){ return row.diagnostic.level === "danger"; }).length
+          }
+        };
+      }
+
+      function buildCommercialDiagnostic(commercial){
+        const metrics = commercial.metrics || {};
+        const issues = [];
+        const hasPrincipal = commercial.relationType === "principal" && commercial.responsableId;
+        const hasBusinessData = Number(metrics.caAnnee || 0) > 0 || Number(metrics.reelReportingAnnee || 0) > 0 || Number(metrics.clientsTotal || 0) > 0;
+
+        if (!hasPrincipal) issues.push({ level: "danger", text: "Aucun responsable principal actif." });
+        if (Number(metrics.clientsTotal || 0) <= 0) issues.push({ level: "warn", text: "Aucun client rattach\u00e9 au commercial." });
+        if (Number(metrics.budgetAnnuel || 0) <= 0) {
+          issues.push({
+            level: hasBusinessData ? "danger" : "warn",
+            text: hasBusinessData ? "Donn\u00e9es commerciales sans budget actif." : "Aucun budget actif pour l'ann\u00e9e en cours."
+          });
+        }
+        if (Number(metrics.reelImportsActifs || 0) <= 0) issues.push({ level: "warn", text: "Aucun r\u00e9el import\u00e9 sur l'ann\u00e9e." });
+        if (Number(metrics.ventesAnnee || 0) <= 0 && Number(metrics.clientsTotal || 0) > 0) {
+          issues.push({ level: "warn", text: "Aucune vente saisie sur l'ann\u00e9e." });
+        }
+        if (Number(metrics.documentsSansStatut || 0) > 0) {
+          issues.push({ level: "warn", text: metrics.documentsSansStatut + " document(s) sans statut." });
+        }
+        if (!commercial.lastLoginAt) issues.push({ level: "warn", text: "Jamais connect\u00e9." });
+
+        const level = issues.some(function(issue){ return issue.level === "danger"; })
+          ? "danger"
+          : issues.length
+            ? "warn"
+            : "good";
+
+        return {
+          level,
+          label: level === "good" ? "OK" : level === "danger" ? "Bloquant" : "A contr\u00f4ler",
+          issues
+        };
+      }
+
+      function renderControlKpi(label, value, tone){
+        return [
+          '<article class="control-kpi ' + escapeHtml(tone || '') + '">',
+            '<span>' + escapeHtml(label) + '</span>',
+            '<strong>' + escapeHtml(formatInteger(value)) + '</strong>',
+          '</article>'
+        ].join("");
+      }
+
+      function renderControlRow(row){
+        const commercial = row.commercial || {};
+        const metrics = commercial.metrics || {};
+        const diagnostic = row.diagnostic || { level: "warn", label: "A contr\u00f4ler", issues: [] };
+        const opened = state.controlExpandedCommercial === commercial.id;
+        return [
+          '<div class="control-row">',
+            '<div class="control-main"><strong>' + escapeHtml(commercial.displayName || "-") + '</strong><span>' + escapeHtml(commercial.identifier || "-") + '</span></div>',
+            '<div class="control-cell"><strong>' + escapeHtml(controlManagerName(commercial)) + '</strong><span>' + escapeHtml(commercial.relationLabel || "Non rattache") + '</span></div>',
+            '<div class="control-cell"><strong>' + formatInteger(metrics.clientsTotal || 0) + '</strong><span>clients</span></div>',
+            '<div class="control-cell"><strong>' + formatInteger(metrics.ventesAnnee || 0) + '</strong><span>' + formatInteger(metrics.lignesAnnee || 0) + ' lignes</span></div>',
+            '<div class="control-cell"><strong>' + escapeHtml(formatEuro(metrics.budgetAnnuel || 0)) + '</strong><span>' + formatInteger(metrics.entitesBudgetees || 0) + ' entite(s)</span></div>',
+            '<div class="control-cell"><strong>' + escapeHtml(controlRealLabel(metrics)) + '</strong><span>' + formatInteger(metrics.reelImportsActifs || 0) + ' import(s)</span></div>',
+            '<div class="control-cell"><strong>' + formatInteger(metrics.documentsSansStatut || 0) + '</strong><span>sans statut</span></div>',
+            '<div class="control-cell"><strong>' + escapeHtml(formatDate(commercial.lastLoginAt)) + '</strong><span>connexion</span></div>',
+            '<div><span class="control-status ' + escapeHtml(diagnostic.level) + '">' + escapeHtml(diagnostic.label) + '</span></div>',
+            '<button type="button" data-control-commercial="' + escapeHtml(commercial.id || '') + '">' + (opened ? '-' : '+') + '</button>',
+          '</div>',
+          opened ? renderControlDetail(commercial, diagnostic) : ''
+        ].join("");
+      }
+
+      function renderControlDetail(commercial, diagnostic){
+        const metrics = commercial.metrics || {};
+        const issues = diagnostic.issues && diagnostic.issues.length
+          ? diagnostic.issues
+          : [{ level: "good", text: "Aucun point bloquant d\u00e9tect\u00e9 sur ce commercial." }];
+        return [
+          '<div class="control-detail">',
+            '<div class="control-detail-grid">',
+              renderControlDetailCard("Rattachement", controlManagerName(commercial), commercial.relationLabel || "Non rattache"),
+              renderControlDetailCard("Portefeuille", formatInteger(metrics.clientsTotal || 0) + " client(s)", formatInteger(metrics.clientsMois || 0) + " client(s) travaill\u00e9s ce mois"),
+              renderControlDetailCard("Ventes saisies", formatEuro(metrics.caAnnee || 0), formatInteger(metrics.ventesAnnee || 0) + " vente(s), " + formatInteger(metrics.terrainMois || 0) + " visite(s) terrain ce mois"),
+              renderControlDetailCard("Budget actif", formatEuro(metrics.budgetAnnuel || 0), formatInteger(metrics.budgetsActifs || 0) + " budget(s), " + formatInteger(metrics.lignesBudget || 0) + " ligne(s)"),
+              renderControlDetailCard("R\u00e9el import\u00e9", controlRealLabel(metrics), formatEuro(metrics.reelReportingAnnee || 0) + " sur l'ann\u00e9e"),
+              renderControlDetailCard("Documents", formatInteger(metrics.documentsTotal || 0) + " document(s)", formatInteger(metrics.documentsSansStatut || 0) + " sans statut, " + formatInteger(metrics.documentsEnCours || 0) + " transmis"),
+            '</div>',
+            '<div class="control-issues">',
+              issues.map(function(issue){
+                return '<span class="control-issue ' + escapeHtml(issue.level || 'warn') + '">' + escapeHtml(issue.text || '') + '</span>';
+              }).join(""),
+            '</div>',
+          '</div>'
+        ].join("");
+      }
+
+      function renderControlDetailCard(label, value, help){
+        return [
+          '<article class="control-detail-card">',
+            '<span>' + escapeHtml(label) + '</span>',
+            '<strong>' + escapeHtml(value) + '</strong>',
+            '<div class="sub">' + escapeHtml(help || "") + '</div>',
+          '</article>'
+        ].join("");
+      }
+
+      function controlManagerName(commercial){
+        if (commercial && commercial.responsableId) {
+          const manager = findStateUser(commercial.responsableId);
+          if (manager) return manager.displayName || manager.identifier || "Responsable";
+        }
+        const responsables = Array.isArray(commercial && commercial.responsables) ? commercial.responsables : [];
+        if (responsables.length) {
+          return responsables.map(function(item){ return item.displayName || item.identifier || "Responsable"; }).join(", ");
+        }
+        return "Sans responsable";
+      }
+
+      function controlRealLabel(metrics){
+        const month = Number(metrics && metrics.reelDernierMois || 0);
+        return month > 0 ? monthShortLabel(month - 1) : "-";
+      }
+
+      function controlSeverityRank(level){
+        if (level === "danger") return 3;
+        if (level === "warn") return 2;
+        return 1;
+      }
+
+      function formatInteger(value){
+        return new Intl.NumberFormat("fr-FR", {
+          maximumFractionDigits: 0,
+          minimumFractionDigits: 0
+        }).format(Math.round(Number(value || 0)));
       }
 
       function roundClientMoney(value){
