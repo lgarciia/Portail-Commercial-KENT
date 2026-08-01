@@ -194,7 +194,6 @@
           <select class="select" id="yearSelect"></select>
           <select class="select" id="entitySelect"></select>
           <a class="btn" id="backBtn" href="reporting-selecteur.html">Selecteur</a>
-          <a class="btn primary" id="importBtn" href="import-reel-mensuel.html">Importer réel</a>
         </div>
       </div>
     </section>
@@ -490,7 +489,7 @@
     el.subtitle.textContent = lite ? "" : `${meta.subtitle} Annee active : ${year}.`;
     document.title = el.title.textContent;
     el.backBtn.href = `reporting-selecteur.html?view=${encodeURIComponent(view)}&entity=${encodeURIComponent(entityKey)}&year=${encodeURIComponent(year)}`;
-    el.importBtn.href = `import-reel-mensuel.html?year=${encodeURIComponent(year)}`;
+    if (el.importBtn) el.importBtn.href = `import-reel-mensuel.html?year=${encodeURIComponent(year)}`;
     el.entitySelect.style.display = view === "evol-cumul" ? "none" : "";
   }
 

@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Espace Admin</title>
   <script src="./shared-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./reel-supabase.js"></script>
   <link rel="stylesheet" href="./shared-theme.css">
   <style>
     :root{
@@ -381,6 +383,57 @@
     .budget-chip.wait{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.32);color:#fde68a}
     .budget-chip.valid{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.34);color:#bbf7d0}
     .budget-chip.open{background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.32);color:#bae6fd}
+    .import-admin-shell{
+      border:1px solid var(--line);border-radius:28px;padding:18px;
+      background:linear-gradient(135deg, rgba(8,47,73,.34), rgba(3,7,18,.82));
+      box-shadow:var(--shadow);
+    }
+    .import-admin-head{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+      border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:13px;margin-bottom:12px;
+    }
+    .import-admin-head h2{margin:8px 0 6px;font-size:clamp(30px,3vw,42px);letter-spacing:-.055em;line-height:1}
+    .import-admin-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap;justify-content:flex-end}
+    .import-admin-grid{display:grid;grid-template-columns:minmax(360px,.9fr) minmax(560px,1.35fr);gap:12px;align-items:start}
+    .import-card{
+      border:1px solid var(--line);border-radius:22px;background:rgba(3,7,18,.25);
+      padding:13px;min-width:0;
+    }
+    .import-card h3{margin:0 0 5px;font-size:17px}
+    .import-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+    .import-form-grid .full{grid-column:1/-1}
+    .import-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .import-file{
+      min-height:44px;padding:9px 11px;border:1px dashed rgba(56,189,248,.30);
+      border-radius:15px;background:rgba(56,189,248,.06);color:var(--text);width:100%;
+    }
+    .import-preview{
+      margin-top:12px;border:1px solid rgba(255,255,255,.10);border-radius:18px;
+      background:rgba(255,255,255,.035);padding:12px;
+    }
+    .import-preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .import-preview-head strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .import-mini-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+    .import-mini-kpi{border:1px solid rgba(255,255,255,.09);border-radius:15px;background:rgba(255,255,255,.035);padding:9px;min-width:0}
+    .import-mini-kpi span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .import-mini-kpi strong{display:block;margin-top:5px;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .import-history{display:grid;gap:7px;margin-top:10px}
+    .import-history-row{
+      display:grid;grid-template-columns:minmax(145px,1fr) 76px 78px minmax(92px,.7fr) minmax(110px,.75fr) 88px;
+      gap:8px;align-items:center;border:1px solid rgba(255,255,255,.10);
+      border-radius:15px;background:rgba(255,255,255,.035);padding:9px 10px;min-width:0;
+    }
+    .import-history-row.header{
+      background:rgba(255,255,255,.028);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950;
+    }
+    .import-history-row strong,.import-history-row span{
+      display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .import-history-row span{color:var(--muted);font-size:11px;margin-top:2px}
+    .import-note{
+      border:1px solid rgba(245,158,11,.25);border-radius:16px;background:rgba(245,158,11,.08);
+      color:#fde68a;padding:10px 12px;font-size:12px;line-height:1.45;font-weight:850;margin-top:10px;
+    }
     .layout{
       display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
@@ -516,6 +569,9 @@
       .budget-admin-commercial-head .budget-admin-cell:nth-child(5){display:none}
       .budget-admin-row{grid-template-columns:minmax(190px,1.2fr) repeat(4,minmax(95px,.7fr));overflow:hidden}
       .budget-admin-row > div:nth-child(7),.budget-admin-row > div:nth-child(8){grid-column:auto}
+      .import-admin-grid{grid-template-columns:1fr}
+      .import-history-row{grid-template-columns:minmax(150px,1fr) repeat(4,minmax(78px,.65fr))}
+      .import-history-row > div:nth-child(6){grid-column:auto}
       .finance-chart{overflow-x:auto}
     }
     @media(max-width:780px){
@@ -530,6 +586,8 @@
       .budget-admin-head{flex-direction:column}
       .budget-admin-summary{grid-template-columns:1fr}
       .budget-admin-commercial-head,.budget-admin-row{grid-template-columns:1fr}
+      .import-admin-head{flex-direction:column}
+      .import-form-grid,.import-mini-kpis,.import-history-row{grid-template-columns:1fr}
       .finance-month-popup-row{grid-template-columns:1fr}
       .finance-row,.finance-seller{grid-template-columns:1fr}
       .form-grid{grid-template-columns:1fr}
@@ -665,16 +723,79 @@
     </section>
 
     <section class="admin-view" data-admin-view="imports">
-      <section class="panel">
-        <div class="panel-head">
+      <section class="import-admin-shell">
+        <div class="import-admin-head">
           <div>
+            <span class="badge">Imports admin</span>
             <h2>Mes imports</h2>
-            <div class="sub">Espace r&eacute;serv&eacute; aux futurs imports r&eacute;els centralis&eacute;s.</div>
+            <p>
+              Import r&eacute;el mensuel centralis&eacute; : choisis un commercial, une entit&eacute;, un mois,
+              puis charge le fichier Excel. L'ancien import actif du m&ecirc;me mois passe seulement en inactif.
+            </p>
+          </div>
+          <div class="import-admin-controls">
+            <button class="btn green" type="button" data-admin-import-refresh>Synchroniser</button>
           </div>
         </div>
-        <div class="empty">
-          Rien &agrave; importer ici pour le moment. Cette vue servira plus tard &agrave; centraliser les imports r&eacute;els
-          admin, avec contr&ocirc;le, historique et validation avant envoi dans Supabase.
+
+        <div class="import-admin-grid">
+          <article class="import-card">
+            <h3>Nouvel import r&eacute;el</h3>
+            <p>Version simple et s&eacute;curis&eacute;e : un fichier, un commercial, une entit&eacute;, un mois.</p>
+            <div class="import-form-grid">
+              <div class="field full">
+                <label>Commercial</label>
+                <select data-admin-import-commercial></select>
+              </div>
+              <div class="field">
+                <label>Entit&eacute;</label>
+                <select data-admin-import-entity></select>
+              </div>
+              <div class="field">
+                <label>Ann&eacute;e</label>
+                <select data-admin-import-year></select>
+              </div>
+              <div class="field">
+                <label>Mois import&eacute;</label>
+                <select data-admin-import-month></select>
+              </div>
+              <div class="field full">
+                <label>Fichier Excel</label>
+                <input class="import-file" type="file" accept=".xlsx,.xls" data-admin-import-file>
+              </div>
+            </div>
+            <div class="import-actions">
+              <button class="btn small" type="button" data-admin-import-template>Mod&egrave;le</button>
+              <button class="btn small primary" type="button" data-admin-import-preview>Pr&eacute;visualiser</button>
+              <button class="btn small green" type="button" data-admin-import-save disabled>Importer</button>
+            </div>
+            <div class="import-note">
+              Aucun import n'est supprim&eacute; automatiquement. Si un mois existe d&eacute;j&agrave;, le nouvel import devient actif
+              et l'ancien reste conserv&eacute; en inactif.
+            </div>
+            <div class="import-preview" data-admin-import-preview-box>
+              <div class="import-preview-head">
+                <strong>Aucun fichier pr&eacute;visualis&eacute;</strong>
+                <span class="budget-chip open">En attente</span>
+              </div>
+              <p>Choisis un fichier Excel puis lance la pr&eacute;visualisation.</p>
+            </div>
+          </article>
+
+          <article class="import-card">
+            <div class="panel-head" style="margin-bottom:8px">
+              <div>
+                <h3>Historique du commercial</h3>
+                <p>Imports actifs et inactifs du commercial s&eacute;lectionn&eacute;.</p>
+              </div>
+            </div>
+            <div class="import-mini-kpis" data-admin-import-summary>
+              <article class="import-mini-kpi"><span>Chargement</span><strong>-</strong></article>
+            </div>
+            <div class="import-history" data-admin-import-history>
+              <div class="empty">Ouvre la vue Mes imports pour charger l'historique.</div>
+            </div>
+          </article>
         </div>
       </section>
     </section>
@@ -1062,6 +1183,14 @@
         adminBudgetYear: String(new Date().getFullYear()),
         adminBudgetFilter: "all",
         expandedBudgetCommercial: "",
+        adminImportPayload: null,
+        adminImportYear: String(new Date().getFullYear()),
+        adminImportMonth: Math.max(1, new Date().getMonth()),
+        adminImportCommercialId: "",
+        adminImportEntityId: "",
+        adminImportFile: null,
+        adminImportParsed: null,
+        adminImportSheetName: "",
         auditLog: [],
         pendingConfirm: null
       };
@@ -1100,6 +1229,18 @@
         adminBudgetNote: document.querySelector("[data-admin-budget-note]"),
         adminBudgetSummary: document.querySelector("[data-admin-budget-summary]"),
         adminBudgetBody: document.querySelector("[data-admin-budget-body]"),
+        adminImportRefresh: document.querySelector("[data-admin-import-refresh]"),
+        adminImportCommercial: document.querySelector("[data-admin-import-commercial]"),
+        adminImportEntity: document.querySelector("[data-admin-import-entity]"),
+        adminImportYear: document.querySelector("[data-admin-import-year]"),
+        adminImportMonth: document.querySelector("[data-admin-import-month]"),
+        adminImportFile: document.querySelector("[data-admin-import-file]"),
+        adminImportTemplate: document.querySelector("[data-admin-import-template]"),
+        adminImportPreview: document.querySelector("[data-admin-import-preview]"),
+        adminImportSave: document.querySelector("[data-admin-import-save]"),
+        adminImportPreviewBox: document.querySelector("[data-admin-import-preview-box]"),
+        adminImportSummary: document.querySelector("[data-admin-import-summary]"),
+        adminImportHistory: document.querySelector("[data-admin-import-history]"),
         formTitle: document.querySelector("[data-form-title]"),
         search: document.querySelector("[data-search]"),
         toast: document.querySelector("[data-toast]"),
@@ -1139,6 +1280,7 @@
         if (els.financeDay) els.financeDay.value = todayInputValue();
         populateFinanceMonths();
         populateAdminBudgetYears();
+        populateAdminImportControls();
         syncFinanceMonthFromDate();
         bindEvents();
         loadSession();
@@ -1185,6 +1327,43 @@
         if (els.adminBudgetBody) {
           els.adminBudgetBody.addEventListener("click", handleAdminBudgetClick);
         }
+        if (els.adminImportRefresh) els.adminImportRefresh.addEventListener("click", loadAdminImports);
+        if (els.adminImportCommercial) {
+          els.adminImportCommercial.addEventListener("change", function(){
+            state.adminImportCommercialId = els.adminImportCommercial.value || "";
+            state.adminImportEntityId = "";
+            resetAdminImportPreview();
+            loadAdminImports();
+          });
+        }
+        if (els.adminImportEntity) {
+          els.adminImportEntity.addEventListener("change", function(){
+            state.adminImportEntityId = els.adminImportEntity.value || "";
+            resetAdminImportPreview();
+            loadAdminImports({ keepEntities: true });
+          });
+        }
+        if (els.adminImportYear) {
+          els.adminImportYear.addEventListener("change", function(){
+            state.adminImportYear = els.adminImportYear.value || String(new Date().getFullYear());
+            resetAdminImportPreview();
+            loadAdminImports({ keepEntities: true });
+          });
+        }
+        if (els.adminImportMonth) {
+          els.adminImportMonth.addEventListener("change", function(){
+            state.adminImportMonth = Number(els.adminImportMonth.value || 0);
+            resetAdminImportPreview();
+            loadAdminImports({ keepEntities: true });
+          });
+        }
+        if (els.adminImportFile) {
+          els.adminImportFile.addEventListener("change", resetAdminImportPreview);
+        }
+        if (els.adminImportTemplate) els.adminImportTemplate.addEventListener("click", downloadAdminImportTemplate);
+        if (els.adminImportPreview) els.adminImportPreview.addEventListener("click", previewAdminImportFile);
+        if (els.adminImportSave) els.adminImportSave.addEventListener("click", saveAdminImport);
+        if (els.adminImportHistory) els.adminImportHistory.addEventListener("click", handleAdminImportHistoryClick);
         els.financeDay.addEventListener("change", function(){
           syncFinanceMonthFromDate();
           loadFinanceData();
@@ -1325,6 +1504,7 @@
         if (state.financePayload) renderFinance();
         if (state.controlPayload) renderDataControl();
         if (state.adminBudgetPayload) renderAdminBudgets();
+        if (state.adminImportPayload) renderAdminImports();
       }
 
       async function submitUserForm(event){
@@ -1591,6 +1771,9 @@
         if (state.activeView === "budgets-global" && !state.adminBudgetPayload) {
           loadAdminBudgets();
         }
+        if (state.activeView === "imports" && !state.adminImportPayload) {
+          loadAdminImports();
+        }
       }
 
       async function loadFinanceData(){
@@ -1679,6 +1862,410 @@
         }finally{
           setLoading(false);
         }
+      }
+
+      function populateAdminImportControls(){
+        if (els.adminImportYear) {
+          const current = new Date().getFullYear();
+          const years = Array.from(new Set([current - 1, current, current + 1, current + 2]));
+          els.adminImportYear.innerHTML = years.map(function(year){
+            return '<option value="' + year + '">' + year + '</option>';
+          }).join("");
+          els.adminImportYear.value = state.adminImportYear;
+        }
+        if (els.adminImportMonth) {
+          els.adminImportMonth.innerHTML = Array.from({ length: 12 }, function(_, index){
+            return '<option value="' + (index + 1) + '">' + escapeHtml(monthLongLabel(index)) + '</option>';
+          }).join("");
+          els.adminImportMonth.value = String(state.adminImportMonth || 1);
+        }
+      }
+
+      async function loadAdminImports(options){
+        if (!els.adminImportHistory) return;
+        const opts = options || {};
+        if (els.adminImportYear) state.adminImportYear = els.adminImportYear.value || state.adminImportYear;
+        if (els.adminImportMonth) state.adminImportMonth = Number(els.adminImportMonth.value || state.adminImportMonth || 1);
+        if (els.adminImportCommercial) state.adminImportCommercialId = els.adminImportCommercial.value || state.adminImportCommercialId || "";
+        if (els.adminImportEntity) state.adminImportEntityId = els.adminImportEntity.value || state.adminImportEntityId || "";
+
+        setLoading(true, "Imports reels", "Lecture des commerciaux, entites et imports mensuels.");
+        try{
+          const params = new URLSearchParams();
+          params.set("year", state.adminImportYear);
+          params.set("month", String(state.adminImportMonth || 1));
+          if (state.adminImportCommercialId) params.set("commercialId", state.adminImportCommercialId);
+          if (state.adminImportEntityId) params.set("entiteId", state.adminImportEntityId);
+          const payload = await fetchJson("/api/admin-reel-imports?" + params.toString());
+          state.adminImportPayload = payload;
+          state.adminImportCommercialId = payload.selectedCommercialId || state.adminImportCommercialId || "";
+          if (!opts.keepEntities && Array.isArray(payload.entities) && payload.entities.length && !state.adminImportEntityId) {
+            state.adminImportEntityId = payload.entities[0].id;
+          }
+          renderAdminImports();
+          showToast("Imports reels synchronises.");
+        }catch(error){
+          state.adminImportPayload = null;
+          if (els.adminImportSummary) {
+            els.adminImportSummary.innerHTML = '<article class="import-mini-kpi"><span>Erreur</span><strong>Indisponible</strong></article>';
+          }
+          els.adminImportHistory.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Imports indisponibles.") + '</div>';
+          showToast(error.message || "Imports indisponibles.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      function renderAdminImports(){
+        const payload = state.adminImportPayload || {};
+        renderAdminImportCommercials(payload.commercials || []);
+        renderAdminImportEntities(payload.entities || []);
+        renderAdminImportSummary(payload.summary || {});
+        renderAdminImportHistory(payload.imports || []);
+      }
+
+      function renderAdminImportCommercials(commercials){
+        if (!els.adminImportCommercial) return;
+        if (!commercials.length) {
+          els.adminImportCommercial.innerHTML = '<option value="">Aucun commercial actif</option>';
+          return;
+        }
+        els.adminImportCommercial.innerHTML = commercials.map(function(commercial){
+          const label = (commercial.displayName || commercial.identifier || "Commercial") + (commercial.hidden ? " - masque" : "");
+          return '<option value="' + escapeHtml(commercial.id) + '">' + escapeHtml(label) + '</option>';
+        }).join("");
+        const exists = commercials.some(function(commercial){ return commercial.id === state.adminImportCommercialId; });
+        state.adminImportCommercialId = exists ? state.adminImportCommercialId : commercials[0].id;
+        els.adminImportCommercial.value = state.adminImportCommercialId;
+      }
+
+      function renderAdminImportEntities(entities){
+        if (!els.adminImportEntity) return;
+        if (!entities.length) {
+          els.adminImportEntity.innerHTML = '<option value="">Aucune entite</option>';
+          state.adminImportEntityId = "";
+          return;
+        }
+        els.adminImportEntity.innerHTML = entities.map(function(entity){
+          return '<option value="' + escapeHtml(entity.id) + '">' + escapeHtml(entity.label || entity.key || "Entite") + '</option>';
+        }).join("");
+        const exists = entities.some(function(entity){ return entity.id === state.adminImportEntityId; });
+        state.adminImportEntityId = exists ? state.adminImportEntityId : entities[0].id;
+        els.adminImportEntity.value = state.adminImportEntityId;
+      }
+
+      function renderAdminImportSummary(summary){
+        if (!els.adminImportSummary) return;
+        const data = summary || {};
+        els.adminImportSummary.innerHTML = [
+          renderImportMiniKpi("Imports", formatInteger(data.totalImports || 0)),
+          renderImportMiniKpi("Actifs", formatInteger(data.activeImports || 0)),
+          renderImportMiniKpi("Total actif", formatEuro(data.activeAmount || 0)),
+          renderImportMiniKpi("Lignes", formatInteger(data.activeLines || 0))
+        ].join("");
+      }
+
+      function renderImportMiniKpi(label, value){
+        return '<article class="import-mini-kpi"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></article>';
+      }
+
+      function renderAdminImportHistory(imports){
+        if (!els.adminImportHistory) return;
+        if (!imports.length) {
+          els.adminImportHistory.innerHTML = '<div class="empty">Aucun import reel trouve pour ce commercial, cette annee et ce mois.</div>';
+          return;
+        }
+        els.adminImportHistory.innerHTML = [
+          '<div class="import-history-row header">',
+            '<div>Entite</div><div>Mois</div><div>Statut</div><div>Total</div><div>Lignes</div><div>Action</div>',
+          '</div>',
+          imports.map(function(row){
+            const active = row.status === "active";
+            return [
+              '<div class="import-history-row">',
+                '<div><strong>' + escapeHtml(row.entityLabel || "-") + '</strong><span>' + escapeHtml(row.sourceFile || row.name || "-") + '</span></div>',
+                '<div><strong>' + escapeHtml(row.monthLabel || "-") + '</strong><span>' + escapeHtml(row.year || "-") + '</span></div>',
+                '<div><span class="budget-chip ' + (active ? 'valid' : 'open') + '">' + (active ? 'Actif' : 'Inactif') + '</span></div>',
+                '<div><strong>' + escapeHtml(formatEuro(row.total || 0)) + '</strong></div>',
+                '<div><strong>' + formatInteger(row.lineCount || 0) + '</strong><span>' + escapeHtml(formatDate(row.createdAt)) + '</span></div>',
+                '<div>' + (active ? '<span class="budget-chip valid">Utilise</span>' : '<button class="btn small green" type="button" data-admin-import-action="activate" data-import-id="' + escapeHtml(row.id) + '">Activer</button>') + '</div>',
+              '</div>'
+            ].join("");
+          }).join("")
+        ].join("");
+      }
+
+      function resetAdminImportPreview(){
+        state.adminImportFile = null;
+        state.adminImportParsed = null;
+        state.adminImportSheetName = "";
+        if (els.adminImportSave) els.adminImportSave.disabled = true;
+        if (els.adminImportPreviewBox) {
+          els.adminImportPreviewBox.innerHTML = [
+            '<div class="import-preview-head">',
+              '<strong>Aucun fichier previsualise</strong>',
+              '<span class="budget-chip open">En attente</span>',
+            '</div>',
+            '<p>Choisis un fichier Excel puis lance la previsualisation.</p>'
+          ].join("");
+        }
+      }
+
+      async function previewAdminImportFile(){
+        const entity = selectedAdminImportEntity();
+        const file = els.adminImportFile?.files?.[0] || null;
+        if (!window.XLSX || !window.ReelSupabase?.parseRows) {
+          showToast("Lecteur Excel indisponible. Recharge la page.", true);
+          return;
+        }
+        if (!selectedAdminImportCommercial()) {
+          showToast("Selectionne un commercial.", true);
+          return;
+        }
+        if (!entity) {
+          showToast("Selectionne une entite.", true);
+          return;
+        }
+        if (!file) {
+          showToast("Selectionne un fichier Excel.", true);
+          return;
+        }
+        setLoading(true, "Previsualisation import", "Lecture du fichier Excel avant envoi dans Supabase.");
+        try{
+          const buffer = await file.arrayBuffer();
+          const workbook = XLSX.read(buffer, { type: "array" });
+          state.adminImportSheetName = pickAdminImportSheet(workbook);
+          const ws = workbook.Sheets[state.adminImportSheetName];
+          const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+          const parsed = window.ReelSupabase.parseRows(rows, {
+            entityKey: entity.key,
+            month: Number(els.adminImportMonth.value || 1)
+          });
+          state.adminImportFile = file;
+          state.adminImportParsed = parsed;
+          if (els.adminImportSave) els.adminImportSave.disabled = !parsed.lines.length;
+          renderAdminImportPreview(parsed, file.name, entity);
+        }catch(error){
+          console.error("Preview admin reel import failed", error);
+          resetAdminImportPreview();
+          showToast(error.message || "Previsualisation impossible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      function renderAdminImportPreview(parsed, fileName, entity){
+        if (!els.adminImportPreviewBox) return;
+        const skipped = parsed.skipped || {};
+        els.adminImportPreviewBox.innerHTML = [
+          '<div class="import-preview-head">',
+            '<strong>' + escapeHtml(fileName || "Fichier Excel") + '</strong>',
+            '<span class="budget-chip ' + (parsed.lines.length ? 'valid' : 'open') + '">' + (parsed.lines.length ? 'Pret' : 'Vide') + '</span>',
+          '</div>',
+          '<div class="import-mini-kpis">',
+            renderImportMiniKpi("Commercial", selectedAdminImportCommercial()?.displayName || "-"),
+            renderImportMiniKpi("Entite", entity.label || entity.key || "-"),
+            renderImportMiniKpi("Total", formatEuro(parsed.total || 0)),
+            renderImportMiniKpi("Lignes", formatInteger(parsed.lines.length || 0)),
+          '</div>',
+          '<p style="margin-top:10px">Ignorees : ' + formatInteger(skipped.empty || 0) + ' vide(s), ' + formatInteger(skipped.noAmount || 0) + ' sans montant.</p>'
+        ].join("");
+      }
+
+      async function saveAdminImport(){
+        const commercial = selectedAdminImportCommercial();
+        const entity = selectedAdminImportEntity();
+        const file = state.adminImportFile || els.adminImportFile?.files?.[0] || null;
+        const parsed = state.adminImportParsed;
+        if (!commercial || !entity || !file || !parsed?.lines?.length) {
+          showToast("Previsualise un fichier complet avant import.", true);
+          return;
+        }
+        const year = Number(els.adminImportYear.value || new Date().getFullYear());
+        const month = Number(els.adminImportMonth.value || 1);
+        const activeSameMonth = (state.adminImportPayload?.imports || []).filter(function(row){
+          return row.status === "active" && row.entityId === entity.id && Number(row.year) === year && Number(row.month) === month;
+        });
+        const message = activeSameMonth.length
+          ? "Un import actif existe deja pour ce commercial, cette entite et ce mois. Le nouvel import deviendra actif et l'ancien restera conserve en inactif. Confirmer ?"
+          : "Importer " + formatInteger(parsed.lines.length) + " ligne(s) pour " + commercial.displayName + " / " + entity.label + " ?";
+        openConfirm("Importer le reel mensuel", message, async function(){
+          setLoading(true, "Import reel", "Enregistrement Supabase pour " + commercial.displayName + ".");
+          try{
+            const payload = await fetchJson("/api/admin-reel-imports", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "saveImport",
+                commercialId: commercial.id,
+                entiteId: entity.id,
+                year,
+                month,
+                sourceFile: file.name,
+                sheetName: state.adminImportSheetName,
+                parsed: compactAdminImportParsed(parsed)
+              })
+            });
+            showToast((payload && payload.message) || "Import reel enregistre.");
+            if (els.adminImportFile) els.adminImportFile.value = "";
+            resetAdminImportPreview();
+            await loadAdminImports({ keepEntities: true });
+          }catch(error){
+            showToast(error.message || "Import impossible.", true);
+          }finally{
+            setLoading(false);
+          }
+        });
+      }
+
+      function handleAdminImportHistoryClick(event){
+        const button = event.target.closest("[data-admin-import-action]");
+        if (!button) return;
+        const action = button.dataset.adminImportAction;
+        if (action === "activate") {
+          activateAdminImport(button.dataset.importId || "");
+        }
+      }
+
+      async function activateAdminImport(importId){
+        if (!importId) return;
+        openConfirm(
+          "Activer cet import",
+          "Cet import deviendra actif pour son mois. L'import actif actuel du meme mois passera en inactif, sans suppression.",
+          async function(){
+            setLoading(true, "Activation import", "Mise a jour du reel actif dans Supabase.");
+            try{
+              await fetchJson("/api/admin-reel-imports", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "activateImport", importId })
+              });
+              showToast("Import active.");
+              await loadAdminImports({ keepEntities: true });
+            }catch(error){
+              showToast(error.message || "Activation impossible.", true);
+            }finally{
+              setLoading(false);
+            }
+          }
+        );
+      }
+
+      function compactAdminImportParsed(parsed){
+        return {
+          total: Number(parsed?.total || 0),
+          columns: parsed?.columns || {},
+          skipped: parsed?.skipped || {},
+          lines: (parsed?.lines || []).map(function(line){
+            return {
+              ordre: line.ordre,
+              client_code: line.client_code || "",
+              client_nom: line.client_nom || "",
+              montant: Number(line.montant || 0),
+              mois_source: Number(line.mois_source || 0),
+              date_piece: line.date_piece || null,
+              reference: line.reference || null,
+              designation: line.designation || null,
+              quantite: Number(line.quantite || 0)
+            };
+          })
+        };
+      }
+
+      function selectedAdminImportCommercial(){
+        const id = els.adminImportCommercial?.value || state.adminImportCommercialId || "";
+        return (state.adminImportPayload?.commercials || []).find(function(commercial){ return commercial.id === id; }) || null;
+      }
+
+      function selectedAdminImportEntity(){
+        const id = els.adminImportEntity?.value || state.adminImportEntityId || "";
+        return (state.adminImportPayload?.entities || []).find(function(entity){ return entity.id === id; }) || null;
+      }
+
+      function pickAdminImportSheet(workbook){
+        const preferred = workbook.SheetNames.find(function(name){
+          const normalized = String(name || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+          return normalized.includes("modele import reel")
+            || normalized.includes("import reel")
+            || normalized.includes("donnees")
+            || normalized.includes("data");
+        });
+        if (preferred) return preferred;
+        let bestName = workbook.SheetNames[0];
+        let bestScore = -1;
+        workbook.SheetNames.forEach(function(sheetName){
+          const ref = workbook.Sheets[sheetName]?.["!ref"];
+          if (!ref) return;
+          const range = XLSX.utils.decode_range(ref);
+          const score = (range.e.r - range.s.r + 1) * (range.e.c - range.s.c + 1);
+          if (score > bestScore) {
+            bestScore = score;
+            bestName = sheetName;
+          }
+        });
+        return bestName;
+      }
+
+      function downloadAdminImportTemplate(){
+        const entity = selectedAdminImportEntity();
+        if (!window.XLSX || !window.ReelSupabase?.configForEntity) {
+          showToast("Modele indisponible. Recharge la page.", true);
+          return;
+        }
+        if (!entity) {
+          showToast("Selectionne une entite avant de telecharger le modele.", true);
+          return;
+        }
+        const config = window.ReelSupabase.configForEntity(entity.key);
+        const first = function(values, fallback){ return Array.isArray(values) && values.length ? values[0] : fallback; };
+        const year = Number(els.adminImportYear?.value || new Date().getFullYear());
+        const month = Number(els.adminImportMonth?.value || 1);
+        const headers = [
+          first(config.clientCodeCandidates, "code livre"),
+          first(config.clientNameCandidates, "nom client"),
+          first(config.amountCandidates, "ca total"),
+          first(config.dateCandidates, "date commande"),
+          first(config.refCandidates, "reference"),
+          first(config.desCandidates, "designation"),
+          first(config.qtyCandidates, "quantite"),
+          first(config.monthCandidates, "mois2")
+        ];
+        const rows = [
+          headers,
+          ["10001", "Client test A", 1250, year + "-" + String(month).padStart(2, "0") + "-10", "REF-001", "Produit test A", 2, monthLongLabel(month - 1)],
+          ["10002", "Client test B", 340.5, year + "-" + String(month).padStart(2, "0") + "-18", "REF-002", "Produit test B", 1, monthLongLabel(month - 1)]
+        ];
+        const help = [
+          ["Champ", "Obligatoire", "Remarque"],
+          ["Code client", "Oui", "Identifiant client livre ou interne."],
+          ["Nom client", "Oui", "Nom affiche dans les reportings."],
+          ["Montant", "Oui", "CA reel de la ligne."],
+          ["Date commande", "Non", "Utile pour les vues semaine."],
+          ["Reference", "Non", "Utile pour les requetes produit."],
+          ["Designation", "Non", "Utile pour les requetes produit."],
+          ["Quantite", "Non", "Utile pour les quantites."],
+          ["Mois", "Non", "Le mois choisi dans l'ecran reste prioritaire."]
+        ];
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws["!cols"] = headers.map(function(header){ return { wch: Math.max(14, String(header).length + 4) }; });
+        const helpSheet = XLSX.utils.aoa_to_sheet(help);
+        helpSheet["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 62 }];
+        XLSX.utils.book_append_sheet(wb, ws, "Modele import reel");
+        XLSX.utils.book_append_sheet(wb, helpSheet, "A lire");
+        XLSX.writeFile(wb, "modele_import_reel_admin_" + safeFileName(entity.key || entity.label) + "_" + year + ".xlsx");
+      }
+
+      function safeFileName(value){
+        return String(value || "entite")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "entite";
       }
 
       function renderAdminBudgets(){
