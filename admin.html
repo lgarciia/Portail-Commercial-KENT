@@ -420,7 +420,7 @@
     .import-mini-kpi strong{display:block;margin-top:5px;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .import-history{display:grid;gap:7px;margin-top:10px}
     .import-history-row{
-      display:grid;grid-template-columns:minmax(145px,1fr) 76px 78px minmax(92px,.7fr) minmax(110px,.75fr) 88px;
+      display:grid;grid-template-columns:minmax(145px,1fr) 76px 78px minmax(92px,.7fr) minmax(110px,.75fr) minmax(160px,.85fr);
       gap:8px;align-items:center;border:1px solid rgba(255,255,255,.10);
       border-radius:15px;background:rgba(255,255,255,.035);padding:9px 10px;min-width:0;
     }
@@ -432,6 +432,7 @@
     }
     .import-history-row span:not(.budget-chip){color:var(--muted);font-size:11px;margin-top:2px}
     .import-history-row .budget-chip{margin:0 auto}
+    .import-history-actions{display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
     .import-note{
       border:1px solid rgba(245,158,11,.25);border-radius:16px;background:rgba(245,158,11,.08);
       color:#fde68a;padding:10px 12px;font-size:12px;line-height:1.45;font-weight:850;margin-top:10px;
@@ -1990,7 +1991,10 @@
                 '<div><span class="budget-chip ' + (active ? 'valid' : 'open') + '">' + (active ? 'Actif' : 'Inactif') + '</span></div>',
                 '<div><strong>' + escapeHtml(formatEuro(row.total || 0)) + '</strong></div>',
                 '<div><strong>' + formatInteger(row.lineCount || 0) + '</strong><span>' + escapeHtml(formatDate(row.createdAt)) + '</span></div>',
-                '<div>' + (active ? '<span class="budget-chip valid">Utilise</span>' : '<button class="btn small green" type="button" data-admin-import-action="activate" data-import-id="' + escapeHtml(row.id) + '">Activer</button>') + '</div>',
+                '<div class="import-history-actions">' + (active
+                  ? '<span class="budget-chip valid">Utilise</span>'
+                  : '<button class="btn small green" type="button" data-admin-import-action="activate" data-import-id="' + escapeHtml(row.id) + '">Activer</button><button class="btn small danger" type="button" data-admin-import-action="delete" data-import-id="' + escapeHtml(row.id) + '">Supprimer</button>'
+                ) + '</div>',
               '</div>'
             ].join("");
           }).join("")
@@ -2127,6 +2131,9 @@
         if (action === "activate") {
           activateAdminImport(button.dataset.importId || "");
         }
+        if (action === "delete") {
+          requestDeleteAdminImport(button.dataset.importId || "");
+        }
       }
 
       async function activateAdminImport(importId){
@@ -2151,6 +2158,66 @@
             }
           }
         );
+      }
+
+      function requestDeleteAdminImport(importId){
+        if (!importId) return;
+        const row = (state.adminImportPayload?.imports || []).find(function(item){ return item.id === importId; });
+        if (!row) {
+          showToast("Import introuvable.", true);
+          return;
+        }
+        if (row.status === "active") {
+          showToast("Suppression refusee : cet import est actif.", true);
+          return;
+        }
+        const detail = [
+          row.entityLabel || "Entite",
+          row.monthLabel || "Mois",
+          row.year || "",
+          "-",
+          formatEuro(row.total || 0),
+          "-",
+          formatInteger(row.lineCount || 0) + " ligne(s)"
+        ].filter(Boolean).join(" ");
+        openConfirm(
+          "Supprimer cet import inactif ?",
+          "Cet import est inactif, il n'alimente plus les reportings. La suppression retirera uniquement cet import et ses lignes reelles. Clients, ventes, budgets, BDC et devis ne seront pas touches. " + detail,
+          function(){
+            setTimeout(function(){
+              openConfirm(
+                "Confirmation definitive",
+                "Derniere verification : cette action est definitive. Confirmer la suppression de cet import inactif ?",
+                function(){ return deleteAdminImport(importId, row); }
+              );
+            }, 0);
+          }
+        );
+      }
+
+      async function deleteAdminImport(importId, row){
+        setLoading(true, "Suppression import", "Suppression definitive de l'import inactif et de ses lignes associees.");
+        try{
+          const payload = await fetchJson("/api/admin-reel-imports", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "deleteImport",
+              importId,
+              confirmToken: "SUPPRIMER_IMPORT_INACTIF"
+            })
+          });
+          addAudit(
+            "Import reel supprime",
+            (row?.entityLabel || "Entite") + " " + (row?.monthLabel || "") + " " + (row?.year || "") + " - " + (payload.deletedLines || 0) + " ligne(s)"
+          );
+          showToast(payload.message || "Import inactif supprime.");
+          await loadAdminImports({ keepEntities: true });
+        }catch(error){
+          showToast(error.message || "Suppression impossible.", true);
+        }finally{
+          setLoading(false);
+        }
       }
 
       function compactAdminImportParsed(parsed){

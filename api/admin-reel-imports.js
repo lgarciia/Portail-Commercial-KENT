@@ -128,6 +128,7 @@ async function handleAction(body, session) {
   const action = normalizeText(body?.action);
   if (action === "saveImport") return saveImport(body, session);
   if (action === "activateImport") return activateImport(body, session);
+  if (action === "deleteImport") return deleteInactiveImport(body, session);
   throw badRequest("Action import inconnue.");
 }
 
@@ -234,6 +235,42 @@ async function activateImport(body) {
   return {
     ok: true,
     replacedCount: replaced.filter((row) => row.id !== importId).length
+  };
+}
+
+async function deleteInactiveImport(body, session) {
+  const importId = normalizeUuid(body?.importId || body?.id);
+  const confirmToken = normalizeText(body?.confirmToken).toUpperCase();
+  if (!importId) throw badRequest("Import introuvable.");
+  if (confirmToken !== "SUPPRIMER_IMPORT_INACTIF") {
+    throw badRequest("Confirmation de suppression manquante.");
+  }
+
+  const importRow = await getImportById(importId);
+  if (!importRow) throw badRequest("Import introuvable.");
+  if (importRow.statut === "active") {
+    throw badRequest("Suppression refusee : un import actif ne peut pas etre supprime.");
+  }
+
+  const deletedBy = normalizeText(session?.name || session?.userId || "Admin");
+  const lineCount = Number(importRow.nb_lignes || 0);
+
+  await supabaseAdminFetch(`/rest/v1/reel_lignes?import_id=eq.${encodeURIComponent(importId)}`, {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" }
+  });
+
+  await supabaseAdminFetch(`/rest/v1/reel_imports?id=eq.${encodeURIComponent(importId)}&statut=neq.active`, {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" }
+  });
+
+  return {
+    ok: true,
+    deletedImportId: importId,
+    deletedLines: lineCount,
+    deletedBy,
+    message: `Import inactif supprime : ${lineCount} ligne(s) retiree(s).`
   };
 }
 
