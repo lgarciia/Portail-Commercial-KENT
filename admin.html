@@ -325,6 +325,62 @@
     .control-issue.good{border-color:rgba(34,197,94,.26);color:#bbf7d0;background:rgba(34,197,94,.08)}
     .control-issue.warn{border-color:rgba(245,158,11,.28);color:#fde68a;background:rgba(245,158,11,.08)}
     .control-issue.danger{border-color:rgba(239,68,68,.28);color:#fecaca;background:rgba(239,68,68,.08)}
+    .budget-admin-shell{
+      border:1px solid var(--line);border-radius:28px;padding:18px;
+      background:linear-gradient(135deg, rgba(30,27,75,.70), rgba(3,7,18,.80));
+      box-shadow:var(--shadow);
+    }
+    .budget-admin-head{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+      border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:13px;margin-bottom:12px;
+    }
+    .budget-admin-head h2{margin:8px 0 6px;font-size:clamp(30px,3vw,42px);letter-spacing:-.055em;line-height:1}
+    .budget-admin-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap;justify-content:flex-end}
+    .budget-admin-controls .field{min-width:170px}
+    .budget-admin-note{
+      display:none;margin:0 0 12px;border:1px solid rgba(56,189,248,.22);background:rgba(14,165,233,.08);
+      border-radius:18px;padding:12px 14px;color:#dbeafe;font-size:13px;line-height:1.45;font-weight:850;
+    }
+    .budget-admin-note.show{display:block}
+    .budget-admin-note b{color:#fff}
+    .budget-admin-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:10px 0 14px}
+    .budget-admin-kpi{border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.045);padding:12px 13px}
+    .budget-admin-kpi span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .budget-admin-kpi strong{display:block;margin-top:6px;font-size:24px;letter-spacing:-.04em}
+    .budget-admin-kpi.good{border-color:rgba(34,197,94,.24);background:rgba(34,197,94,.07)}
+    .budget-admin-kpi.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08)}
+    .budget-admin-panel{border:1px solid var(--line);border-radius:24px;background:rgba(3,7,18,.24);padding:12px}
+    .budget-admin-table{display:grid;gap:8px}
+    .budget-admin-commercial{
+      border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.045);overflow:hidden;
+    }
+    .budget-admin-commercial-head{
+      display:grid;grid-template-columns:minmax(220px,1.2fr) repeat(4,minmax(110px,.7fr)) 38px;
+      gap:8px;align-items:center;padding:11px 12px;
+    }
+    .budget-admin-commercial-head button{
+      width:32px;height:32px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.075);color:#fff;font-weight:1000;
+    }
+    .budget-admin-name strong,.budget-admin-cell strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .budget-admin-name span,.budget-admin-cell span{display:block;margin-top:2px;color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .budget-admin-list{display:grid;gap:6px;border-top:1px solid rgba(255,255,255,.08);padding:9px 10px}
+    .budget-admin-row{
+      display:grid;grid-template-columns:minmax(190px,1.2fr) minmax(120px,.7fr) 70px 84px 126px minmax(98px,.55fr) minmax(122px,.65fr) minmax(146px,.8fr);
+      gap:8px;align-items:center;border:1px solid rgba(255,255,255,.10);border-radius:15px;background:rgba(255,255,255,.035);padding:9px;
+    }
+    .budget-admin-row.header{
+      background:rgba(255,255,255,.028);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:950;
+    }
+    .budget-admin-row-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+    .budget-chip{
+      display:inline-flex;align-items:center;justify-content:center;min-height:27px;padding:0 8px;border-radius:999px;
+      border:1px solid var(--line);font-size:10px;font-weight:1000;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;
+    }
+    .budget-chip.active{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.30);color:#bbf7d0}
+    .budget-chip.inactive{background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.28);color:#cbd5e1}
+    .budget-chip.wait{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.32);color:#fde68a}
+    .budget-chip.valid{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.34);color:#bbf7d0}
+    .budget-chip.open{background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.32);color:#bae6fd}
     .layout{
       display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
@@ -455,6 +511,11 @@
       .control-row.header div:nth-child(2),.control-row.header div:nth-child(7),.control-row.header div:nth-child(8),.control-row.header div:nth-child(9),
       .control-row > div:nth-child(2),.control-row > div:nth-child(7),.control-row > div:nth-child(8),.control-row > div:nth-child(9){display:none}
       .finance-row{grid-template-columns:minmax(180px,1.1fr) repeat(4,minmax(100px,.7fr)) 34px}
+      .budget-admin-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .budget-admin-commercial-head{grid-template-columns:minmax(190px,1.2fr) repeat(3,minmax(100px,.7fr)) 34px}
+      .budget-admin-commercial-head .budget-admin-cell:nth-child(5){display:none}
+      .budget-admin-row{grid-template-columns:minmax(190px,1.2fr) repeat(4,minmax(95px,.7fr));overflow:hidden}
+      .budget-admin-row > div:nth-child(7),.budget-admin-row > div:nth-child(8){grid-column:auto}
       .finance-chart{overflow-x:auto}
     }
     @media(max-width:780px){
@@ -466,6 +527,9 @@
       .finance-summary,.performance-grid{grid-template-columns:1fr}
       .control-summary,.control-detail-grid{grid-template-columns:1fr}
       .control-row{grid-template-columns:1fr}
+      .budget-admin-head{flex-direction:column}
+      .budget-admin-summary{grid-template-columns:1fr}
+      .budget-admin-commercial-head,.budget-admin-row{grid-template-columns:1fr}
       .finance-month-popup-row{grid-template-columns:1fr}
       .finance-row,.finance-seller{grid-template-columns:1fr}
       .form-grid{grid-template-columns:1fr}
@@ -616,16 +680,51 @@
     </section>
 
     <section class="admin-view" data-admin-view="budgets-global">
-      <section class="panel">
-        <div class="panel-head">
+      <section class="budget-admin-shell">
+        <div class="budget-admin-head">
           <div>
-            <h2>Les budgets</h2>
-            <div class="sub">Espace r&eacute;serv&eacute; &agrave; la lecture ou future gestion des budgets commerciaux.</div>
+            <span class="badge">Validation budgets</span>
+            <h2>Les budgets commerciaux</h2>
+            <p>
+              Validation admin par commercial, entit&eacute; et ann&eacute;e. Aucun montant n'est modifi&eacute; ici :
+              l'admin verrouille ou d&eacute;verrouille uniquement le budget valid&eacute; par le commercial.
+            </p>
+          </div>
+          <div class="budget-admin-controls">
+            <button class="btn ghost small" type="button" data-admin-budget-help>?</button>
+            <div class="field">
+              <label>Ann&eacute;e</label>
+              <select data-admin-budget-year></select>
+            </div>
+            <div class="field">
+              <label>Statut</label>
+              <select data-admin-budget-filter>
+                <option value="all">Tous les budgets</option>
+                <option value="to_validate">&Agrave; valider admin</option>
+                <option value="validated">Valid&eacute;s admin</option>
+                <option value="devalidated">D&eacute;valid&eacute;s admin</option>
+                <option value="active">Budgets actifs</option>
+                <option value="inactive">Budgets inactifs</option>
+              </select>
+            </div>
+            <button class="btn green" type="button" data-admin-budget-refresh>Synchroniser</button>
           </div>
         </div>
-        <div class="empty">
-          Vue en attente. Elle pourra recevoir plus tard la consolidation des budgets par commercial,
-          responsable, entit&eacute; et groupe, sans modifier la logique actuelle des commerciaux.
+
+        <div class="budget-admin-note" data-admin-budget-note>
+          <b>Process simple :</b> le commercial construit une projection, valide son budget actif, puis il appara&icirc;t ici en statut
+          <b>A valider admin</b>. L'admin le valide pour le verrouiller. Si un budget doit &ecirc;tre refait, l'admin le d&eacute;valide d'abord ;
+          le commercial peut ensuite d&eacute;sactiver ou supprimer l'ancien budget avant d'en valider un nouveau sur la m&ecirc;me entit&eacute; et la m&ecirc;me ann&eacute;e.
+        </div>
+
+        <div class="budget-admin-summary" data-admin-budget-summary>
+          <article class="budget-admin-kpi"><span>Chargement</span><strong>-</strong></article>
+        </div>
+
+        <div class="budget-admin-panel">
+          <div class="budget-admin-table" data-admin-budget-body>
+            <div class="empty">Ouvre la vue Les budgets pour charger les validations admin.</div>
+          </div>
         </div>
       </section>
     </section>
@@ -959,6 +1058,10 @@
         financeSettingsWarning: "",
         expandedFinanceManager: "",
         selectedAnnualMonth: 0,
+        adminBudgetPayload: null,
+        adminBudgetYear: String(new Date().getFullYear()),
+        adminBudgetFilter: "all",
+        expandedBudgetCommercial: "",
         auditLog: [],
         pendingConfirm: null
       };
@@ -990,6 +1093,13 @@
         controlPeriod: document.querySelector("[data-control-period]"),
         controlSummary: document.querySelector("[data-control-summary]"),
         controlBody: document.querySelector("[data-control-body]"),
+        adminBudgetYear: document.querySelector("[data-admin-budget-year]"),
+        adminBudgetFilter: document.querySelector("[data-admin-budget-filter]"),
+        adminBudgetRefresh: document.querySelector("[data-admin-budget-refresh]"),
+        adminBudgetHelp: document.querySelector("[data-admin-budget-help]"),
+        adminBudgetNote: document.querySelector("[data-admin-budget-note]"),
+        adminBudgetSummary: document.querySelector("[data-admin-budget-summary]"),
+        adminBudgetBody: document.querySelector("[data-admin-budget-body]"),
         formTitle: document.querySelector("[data-form-title]"),
         search: document.querySelector("[data-search]"),
         toast: document.querySelector("[data-toast]"),
@@ -1028,6 +1138,7 @@
       function init(){
         if (els.financeDay) els.financeDay.value = todayInputValue();
         populateFinanceMonths();
+        populateAdminBudgetYears();
         syncFinanceMonthFromDate();
         bindEvents();
         loadSession();
@@ -1053,6 +1164,27 @@
         });
         els.financeRefresh.addEventListener("click", loadFinanceData);
         if (els.controlRefresh) els.controlRefresh.addEventListener("click", loadDataControl);
+        if (els.adminBudgetRefresh) els.adminBudgetRefresh.addEventListener("click", loadAdminBudgets);
+        if (els.adminBudgetYear) {
+          els.adminBudgetYear.addEventListener("change", function(){
+            state.adminBudgetYear = els.adminBudgetYear.value || "all";
+            loadAdminBudgets();
+          });
+        }
+        if (els.adminBudgetFilter) {
+          els.adminBudgetFilter.addEventListener("change", function(){
+            state.adminBudgetFilter = els.adminBudgetFilter.value || "all";
+            renderAdminBudgets();
+          });
+        }
+        if (els.adminBudgetHelp) {
+          els.adminBudgetHelp.addEventListener("click", function(){
+            els.adminBudgetNote.classList.toggle("show");
+          });
+        }
+        if (els.adminBudgetBody) {
+          els.adminBudgetBody.addEventListener("click", handleAdminBudgetClick);
+        }
         els.financeDay.addEventListener("change", function(){
           syncFinanceMonthFromDate();
           loadFinanceData();
@@ -1192,6 +1324,7 @@
         renderAuditLog();
         if (state.financePayload) renderFinance();
         if (state.controlPayload) renderDataControl();
+        if (state.adminBudgetPayload) renderAdminBudgets();
       }
 
       async function submitUserForm(event){
@@ -1455,6 +1588,9 @@
         if (state.activeView === "data-control" && !state.controlPayload) {
           loadDataControl();
         }
+        if (state.activeView === "budgets-global" && !state.adminBudgetPayload) {
+          loadAdminBudgets();
+        }
       }
 
       async function loadFinanceData(){
@@ -1507,6 +1643,249 @@
         }finally{
           setLoading(false);
         }
+      }
+
+      function populateAdminBudgetYears(){
+        if (!els.adminBudgetYear) return;
+        const current = new Date().getFullYear();
+        const years = Array.from(new Set([current - 1, current, current + 1, current + 2]));
+        els.adminBudgetYear.innerHTML = [
+          '<option value="all">Toutes les ann\u00e9es</option>',
+          ...years.map(function(year){
+            return '<option value="' + year + '">' + year + '</option>';
+          })
+        ].join("");
+        els.adminBudgetYear.value = state.adminBudgetYear;
+      }
+
+      async function loadAdminBudgets(){
+        if (!els.adminBudgetBody) return;
+        const year = els.adminBudgetYear ? els.adminBudgetYear.value || "all" : state.adminBudgetYear;
+        state.adminBudgetYear = year;
+        setLoading(true, "Validation budgets", "Lecture des budgets commerciaux et des statuts admin.");
+        try{
+          const params = new URLSearchParams();
+          if (year && year !== "all") params.set("year", year);
+          const payload = await fetchJson("/api/admin-budgets" + (params.toString() ? "?" + params.toString() : ""));
+          state.adminBudgetPayload = payload;
+          state.expandedBudgetCommercial = "";
+          renderAdminBudgets();
+          showToast("Budgets commerciaux synchronis\u00e9s.");
+        }catch(error){
+          state.adminBudgetPayload = null;
+          els.adminBudgetSummary.innerHTML = '<article class="budget-admin-kpi warn"><span>Erreur</span><strong>Indisponible</strong></article>';
+          els.adminBudgetBody.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Budgets admin indisponibles.") + '</div>';
+          showToast(error.message || "Budgets admin indisponibles.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      function renderAdminBudgets(){
+        if (!els.adminBudgetBody) return;
+        const payload = state.adminBudgetPayload || {};
+        const budgets = Array.isArray(payload.budgets) ? payload.budgets : [];
+        const commercials = Array.isArray(payload.commercials) ? payload.commercials : [];
+        renderAdminBudgetSummary(payload.stats || budgetAdminStats(budgets, commercials));
+
+        const filtered = filterAdminBudgets(budgets);
+        const budgetByCommercial = new Map();
+        filtered.forEach(function(budget){
+          const key = budget.commercialId || "__unknown__";
+          if (!budgetByCommercial.has(key)) budgetByCommercial.set(key, []);
+          budgetByCommercial.get(key).push(budget);
+        });
+        const commercialRows = commercials.map(function(commercial){
+          return {
+            commercial,
+            rows: budgetByCommercial.get(commercial.id) || [],
+            allRows: budgets.filter(function(budget){ return budget.commercialId === commercial.id; })
+          };
+        }).filter(function(group){
+          return state.adminBudgetFilter === "all" || group.rows.length;
+        });
+
+        if (!commercialRows.length) {
+          els.adminBudgetBody.innerHTML = '<div class="empty">Aucun budget ne correspond a ce filtre.</div>';
+          return;
+        }
+
+        els.adminBudgetBody.innerHTML = commercialRows.map(renderAdminBudgetCommercial).join("");
+      }
+
+      function renderAdminBudgetSummary(stats){
+        if (!els.adminBudgetSummary) return;
+        const cards = [
+          { label: "Commerciaux", value: formatInteger(stats.commercials || 0) },
+          { label: "Budgets", value: formatInteger(stats.totalBudgets || 0) },
+          { label: "Actifs", value: formatInteger(stats.activeBudgets || 0) },
+          { label: "A valider", value: formatInteger(stats.toValidate || 0), tone: Number(stats.toValidate || 0) ? "warn" : "good" },
+          { label: "Total actif", value: formatEuro(stats.activeTotal || 0) }
+        ];
+        els.adminBudgetSummary.innerHTML = cards.map(function(card){
+          return [
+            '<article class="budget-admin-kpi ' + escapeHtml(card.tone || '') + '">',
+              '<span>' + escapeHtml(card.label) + '</span>',
+              '<strong>' + escapeHtml(card.value) + '</strong>',
+            '</article>'
+          ].join("");
+        }).join("");
+      }
+
+      function renderAdminBudgetCommercial(group){
+        const commercial = group.commercial || {};
+        const rows = group.rows || [];
+        const allRows = group.allRows || [];
+        const opened = state.expandedBudgetCommercial === commercial.id;
+        const activeTotal = rows
+          .filter(function(budget){ return budget.status === "active"; })
+          .reduce(function(sum, budget){ return sum + Number(budget.totalAnnual || 0); }, 0);
+        const toValidate = allRows.filter(function(budget){ return budget.validationAdmin === "non_valide"; }).length;
+        const validated = allRows.filter(function(budget){ return budget.validationAdmin === "valide"; }).length;
+        return [
+          '<article class="budget-admin-commercial">',
+            '<div class="budget-admin-commercial-head">',
+              '<div class="budget-admin-name"><strong>' + escapeHtml(commercial.displayName || "-") + '</strong><span>' + escapeHtml(commercial.identifier || "-") + '</span></div>',
+              '<div class="budget-admin-cell"><strong>' + formatInteger(rows.length) + '</strong><span>budget(s) filtre</span></div>',
+              '<div class="budget-admin-cell"><strong>' + formatEuro(activeTotal) + '</strong><span>total actif</span></div>',
+              '<div class="budget-admin-cell"><strong>' + formatInteger(toValidate) + '</strong><span>a valider</span></div>',
+              '<div class="budget-admin-cell"><strong>' + formatInteger(validated) + '</strong><span>valides admin</span></div>',
+              '<button type="button" data-admin-budget-commercial="' + escapeHtml(commercial.id || '') + '">' + (opened ? '-' : '+') + '</button>',
+            '</div>',
+            opened ? renderAdminBudgetList(rows) : '',
+          '</article>'
+        ].join("");
+      }
+
+      function renderAdminBudgetList(rows){
+        if (!rows.length) {
+          return '<div class="budget-admin-list"><div class="empty">Aucun budget dans ce filtre pour ce commercial.</div></div>';
+        }
+        return [
+          '<div class="budget-admin-list">',
+            '<div class="budget-admin-row header">',
+              '<div>Budget</div><div>Entite</div><div>Annee</div><div>Statut</div><div>Validation admin</div><div>Total</div><div>Date</div><div>Action admin</div>',
+            '</div>',
+            rows.map(renderAdminBudgetRow).join(""),
+          '</div>'
+        ].join("");
+      }
+
+      function renderAdminBudgetRow(budget){
+        return [
+          '<div class="budget-admin-row">',
+            '<div class="budget-admin-name"><strong>' + escapeHtml(budget.name || "Budget") + '</strong><span>' + escapeHtml(budget.validationAdminBy || "Commercial") + '</span></div>',
+            '<div class="budget-admin-cell"><strong>' + escapeHtml(budget.entityLabel || "-") + '</strong><span>' + escapeHtml(budget.entityKey || "") + '</span></div>',
+            '<div class="budget-admin-cell"><strong>' + escapeHtml(budget.year || "-") + '</strong><span>annee</span></div>',
+            '<div>' + budgetStateChip(budget.status) + '</div>',
+            '<div>' + budgetValidationChip(budget.validationAdmin) + '</div>',
+            '<div class="budget-admin-cell"><strong>' + formatEuro(budget.totalAnnual || 0) + '</strong><span>' + formatInteger(budget.lineCount || 0) + ' lignes</span></div>',
+            '<div class="budget-admin-cell"><strong>' + escapeHtml(formatDate(budget.validationAdminAt || budget.validatedAt || budget.createdAt)) + '</strong><span>maj</span></div>',
+            '<div class="budget-admin-row-actions">' + budgetAdminActionButton(budget) + '</div>',
+          '</div>'
+        ].join("");
+      }
+
+      function budgetAdminActionButton(budget){
+        if (budget.validationAdmin === "valide") {
+          return '<button class="btn danger small" type="button" data-admin-budget-action="devalidateBudget" data-admin-budget-id="' + escapeHtml(budget.id) + '">D&eacute;valider</button>';
+        }
+        if (budget.status !== "active") {
+          return '<span class="budget-chip inactive">Inactif</span>';
+        }
+        return '<button class="btn green small" type="button" data-admin-budget-action="validateBudget" data-admin-budget-id="' + escapeHtml(budget.id) + '">Valider</button>';
+      }
+
+      function budgetStateChip(status){
+        const active = status === "active";
+        return '<span class="budget-chip ' + (active ? 'active' : 'inactive') + '">' + (active ? "Actif" : "Inactif") + '</span>';
+      }
+
+      function budgetValidationChip(status){
+        if (status === "valide") return '<span class="budget-chip valid">Valid&eacute; admin</span>';
+        if (status === "devalide") return '<span class="budget-chip open">D&eacute;valid&eacute;</span>';
+        return '<span class="budget-chip wait">A valider</span>';
+      }
+
+      function filterAdminBudgets(budgets){
+        const filter = state.adminBudgetFilter || "all";
+        return (budgets || []).filter(function(budget){
+          if (filter === "to_validate") return budget.validationAdmin === "non_valide";
+          if (filter === "validated") return budget.validationAdmin === "valide";
+          if (filter === "devalidated") return budget.validationAdmin === "devalide";
+          if (filter === "active") return budget.status === "active";
+          if (filter === "inactive") return budget.status !== "active";
+          return true;
+        });
+      }
+
+      function budgetAdminStats(budgets, commercials){
+        const active = (budgets || []).filter(function(budget){ return budget.status === "active"; });
+        return {
+          commercials: (commercials || []).length,
+          totalBudgets: (budgets || []).length,
+          activeBudgets: active.length,
+          toValidate: (budgets || []).filter(function(budget){ return budget.validationAdmin === "non_valide"; }).length,
+          activeTotal: active.reduce(function(sum, budget){ return sum + Number(budget.totalAnnual || 0); }, 0)
+        };
+      }
+
+      function handleAdminBudgetClick(event){
+        const actionButton = event.target.closest("[data-admin-budget-action]");
+        if (actionButton) {
+          const budget = findAdminBudget(actionButton.dataset.adminBudgetId);
+          if (!budget) return;
+          const action = actionButton.dataset.adminBudgetAction;
+          confirmAdminBudgetAction(action, budget);
+          return;
+        }
+        const commercialButton = event.target.closest("[data-admin-budget-commercial]");
+        if (!commercialButton) return;
+        const id = commercialButton.dataset.adminBudgetCommercial || "";
+        state.expandedBudgetCommercial = state.expandedBudgetCommercial === id ? "" : id;
+        renderAdminBudgets();
+      }
+
+      function findAdminBudget(id){
+        const budgets = state.adminBudgetPayload?.budgets || [];
+        return budgets.find(function(budget){ return budget.id === id; }) || null;
+      }
+
+      function confirmAdminBudgetAction(action, budget){
+        const isValidate = action === "validateBudget";
+        const title = isValidate ? "Valider ce budget ?" : "D\u00e9valider ce budget ?";
+        const text = isValidate
+          ? budget.commercialName + " ne pourra plus modifier, d\u00e9sactiver ni supprimer ce budget tant qu'il restera valid\u00e9 admin. Aucun montant ne sera chang\u00e9."
+          : "Le commercial pourra de nouveau corriger ce budget, le d\u00e9sactiver ou le supprimer. Aucun montant ne sera supprim\u00e9 par cette action.";
+        openConfirm(title, text, function(){
+          return persistAdminBudgetAction(action, budget);
+        });
+      }
+
+      async function persistAdminBudgetAction(action, budget){
+        setLoading(true, action === "validateBudget" ? "Validation admin" : "D\u00e9validation admin", "Mise a jour du statut admin du budget.");
+        try{
+          const payload = await fetchJson("/api/admin-budgets" + adminBudgetQuerySuffix(), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action, budgetId: budget.id })
+          });
+          state.adminBudgetPayload = payload;
+          state.expandedBudgetCommercial = budget.commercialId || "";
+          renderAdminBudgets();
+          addAudit(action === "validateBudget" ? "Budget valid\u00e9 admin" : "Budget d\u00e9valid\u00e9 admin", (budget.name || "Budget") + " - " + (budget.commercialName || "Commercial"));
+          showToast(action === "validateBudget" ? "Budget verrouill\u00e9 par admin." : "Budget d\u00e9verrouill\u00e9.");
+        }catch(error){
+          showToast(error.message || "Action budget impossible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      function adminBudgetQuerySuffix(){
+        const year = els.adminBudgetYear ? els.adminBudgetYear.value || "all" : state.adminBudgetYear;
+        if (!year || year === "all") return "";
+        return "?year=" + encodeURIComponent(year);
       }
 
       function populateFinanceMonths(){

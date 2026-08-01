@@ -311,6 +311,20 @@
     padding:2px 6px;
     border-radius:8px;
   }
+  .budgetProcessNote{
+    display:none;
+    margin-top:10px;
+    border:1px solid rgba(56,189,248,.22);
+    background:rgba(14,165,233,.08);
+    border-radius:14px;
+    padding:10px 12px;
+    color:#dbeafe;
+    font-size:12px;
+    line-height:1.45;
+    font-weight:820;
+  }
+  .budgetProcessNote.show{display:block}
+  .budgetProcessNote b{color:#fff}
 
   /* Modal */
   .modal{
@@ -368,6 +382,7 @@
 
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <a class="btn compact" href="mes-budgets.html" data-year-link>Mes budgets</a>
+      <button class="btn compact" id="budgetProcessBtn" type="button" title="Process budget">?</button>
       <button class="btn compact" id="resetBtn">Réinitialiser</button>
       <button class="btn green compact" id="exportXlsxBtn" title="Exporter le budget en Excel" aria-label="Exporter le budget en Excel">
         <svg class="btnIcon" viewBox="0 0 24 24" aria-hidden="true">
@@ -400,6 +415,12 @@
           <button class="btn green" id="validateBudgetBtn">Valider budget actif</button>
         </div>
         <div class="footnote" id="budgetSupabaseHint" style="margin-top:10px">Excel sert &agrave; construire une projection. Le reporting lit ensuite le budget actif Supabase.</div>
+        <div class="budgetProcessNote" id="budgetProcessNote">
+          <b>Process budget :</b> tu charges ou construis une projection, tu ajustes les montants, puis tu valides le budget actif Supabase.
+          Il remonte ensuite c&ocirc;t&eacute; admin en statut <b>&Agrave; valider admin</b>. Tant que l'admin n'a pas valid&eacute;, tu peux corriger.
+          Une fois valid&eacute; admin, le budget est verrouill&eacute; : pour refaire un budget sur la m&ecirc;me entit&eacute; et la m&ecirc;me ann&eacute;e,
+          l'admin doit d'abord le d&eacute;valider, puis tu peux d&eacute;sactiver ou supprimer l'ancien budget avant d'en refaire un propre.
+        </div>
       </div>
       <div class="field">
         <div class="lab">Enveloppe globale</div>
@@ -1291,7 +1312,10 @@ async function validateCurrentBudget(){
   const name = await kentPrompt("Nom du budget validé :", defaultName, { title: "Valider le budget" });
   if (!name || !name.trim()) return;
 
-  if (!await kentConfirm(`Valider ce budget actif pour ${entityLabel} ${APP_YEAR} ?\n\nSi un budget actif existe deja, je te proposerai de le remplacer sans le supprimer.`, { title: "Valider le budget actif", confirmText: "Valider" })) return;
+  if (!await kentConfirm(
+    `Valider ce budget actif pour ${entityLabel} ${APP_YEAR} ?\n\nIl remontera c\u00f4t\u00e9 admin en attente de validation. Si un budget actif existe deja, je te proposerai de le remplacer sans le supprimer.`,
+    { title: "Valider le budget actif", confirmText: "Valider" }
+  )) return;
 
   try{
     const saved = await window.BudgetSupabase.validateBudget({
@@ -1303,8 +1327,12 @@ async function validateCurrentBudget(){
       meta: { origin: "budget2026", sourceProjectionId: currentProjectionId || null }
     });
     await refreshBudgetSupabaseControls();
-    await kentAlert(`Budget validé : ${saved.nom}`, { title: "Budget valid\u00e9", tone: "success" });
+    await kentAlert(`Budget valid\u00e9 : ${saved.nom}\n\nStatut admin : \u00e0 valider. L'admin pourra ensuite le verrouiller.`, { title: "Budget valid\u00e9", tone: "success" });
   }catch(error){
+    if (error?.code === "ADMIN_BUDGET_LOCKED") {
+      await kentAlert(error.message || "Budget verrouill\u00e9 par admin.", { title: "Budget verrouill\u00e9", tone: "warning" });
+      return;
+    }
     if (error?.code === "ACTIVE_BUDGET_EXISTS") {
       const activeName = error.activeBudget?.nom || "budget actif actuel";
       const replace = await kentConfirm(
@@ -1424,6 +1452,9 @@ $("newClientNumber").addEventListener("keydown", (e) => {
 
 $("addDemoBtn").addEventListener("click", addDemo);
 $("resetBtn").addEventListener("click", resetAll);
+if ($("budgetProcessBtn")) {
+  $("budgetProcessBtn").addEventListener("click", () => $("budgetProcessNote").classList.toggle("show"));
+}
 
 $("exportXlsxBtn").addEventListener("click", exportXLSX);
 $("refreshProjectionBtn").addEventListener("click", refreshBudgetSupabaseControls);

@@ -93,7 +93,7 @@
     .filters{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
     .field{display:flex;flex-direction:column;gap:6px}
     label{font-size:11px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.04em}
-    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+    .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:12px}
     .kpi{border:1px solid rgba(255,255,255,.10);background:rgba(2,6,23,.28);border-radius:16px;padding:12px}
     .kpi span{display:block;color:var(--muted);font-size:11px;font-weight:950;text-transform:uppercase}
     .kpi strong{display:block;margin-top:5px;font-size:19px}
@@ -110,6 +110,16 @@
     }
     .status.active{color:#bbf7d0;background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.35)}
     .status.inactive{color:#cbd5e1;background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.24)}
+    .status.admin-wait{color:#fde68a;background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.36)}
+    .status.admin-ok{color:#bbf7d0;background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.38)}
+    .status.admin-open{color:#bae6fd;background:rgba(56,189,248,.13);border-color:rgba(56,189,248,.34)}
+    .lockedInline{display:inline-flex;align-items:center;min-height:32px;color:#bbf7d0;font-size:12px;font-weight:950}
+    .budget-help{
+      display:none;margin-top:12px;border:1px solid rgba(56,189,248,.22);background:rgba(14,165,233,.08);
+      border-radius:16px;padding:12px 14px;color:#dbeafe;font-size:13px;line-height:1.45;font-weight:820;
+    }
+    .budget-help.show{display:block}
+    .budget-help b{color:#fff}
     .empty{padding:18px;color:var(--muted);font-weight:850}
     .detailHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
     .detailHead h2{margin:0;font-size:18px}
@@ -131,6 +141,7 @@
         <a class="btn" href="index.html">Portail</a>
         <a class="btn" href="accbudget.html" data-year-link>Espace budget</a>
         <a class="btn primary" href="budget2026.html" data-year-link>Budget annuel</a>
+        <button class="btn" id="budgetHelpBtn" type="button" title="Process budget">?</button>
       </div>
     </div>
 
@@ -151,10 +162,17 @@
           <button class="btn red" id="deleteEntityBtn" type="button">Supprimer entité</button>
         </div>
       </div>
+      <div class="budget-help" id="budgetHelpPanel">
+        <b>Process simple :</b> le commercial pr&eacute;pare une projection, valide un budget actif, puis il remonte ici et dans l'espace admin en statut
+        <b>&Agrave; valider admin</b>. Tant que l'admin n'a pas valid&eacute;, le budget reste corrigeable. Quand l'admin valide, le budget devient
+        verrouill&eacute; : lecture seule c&ocirc;t&eacute; commercial. Pour refaire un budget sur la m&ecirc;me entit&eacute; et la m&ecirc;me ann&eacute;e,
+        l'admin doit d'abord le d&eacute;valider, puis le commercial peut le d&eacute;sactiver ou le supprimer avant d'en valider un nouveau.
+      </div>
       <div class="kpis">
         <div class="kpi"><span>Budgets</span><strong id="kpiBudgets">-</strong></div>
         <div class="kpi"><span>Actifs</span><strong id="kpiActive">-</strong></div>
         <div class="kpi"><span>Total actifs</span><strong id="kpiActiveTotal">-</strong></div>
+        <div class="kpi"><span>Valid&eacute;s admin</span><strong id="kpiLocked">-</strong></div>
         <div class="kpi"><span>Entites</span><strong id="kpiEntities">-</strong></div>
       </div>
     </div>
@@ -168,13 +186,14 @@
               <th>Entité</th>
               <th>Année</th>
               <th>Statut</th>
+              <th>Validation admin</th>
               <th class="right">Total</th>
               <th class="right">Lignes</th>
               <th>Date validation</th>
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="budgetRows"><tr><td colspan="8" class="empty">Chargement...</td></tr></tbody>
+          <tbody id="budgetRows"><tr><td colspan="9" class="empty">Chargement...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -227,6 +246,27 @@
       return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("fr-FR");
     }
 
+    function adminValidationStatus(budget){
+      if (window.BudgetSupabase && typeof window.BudgetSupabase.adminValidationStatus === "function") {
+        return window.BudgetSupabase.adminValidationStatus(budget);
+      }
+      const status = String(budget?.validation_admin || "").trim().toLowerCase();
+      if (status === "valide") return "valide";
+      if (status === "devalide") return "devalide";
+      return "non_valide";
+    }
+
+    function isAdminLocked(budget){
+      return adminValidationStatus(budget) === "valide";
+    }
+
+    function adminValidationBadge(budget){
+      const status = adminValidationStatus(budget);
+      if (status === "valide") return '<span class="status admin-ok">Valid&eacute; admin</span>';
+      if (status === "devalide") return '<span class="status admin-open">D&eacute;valid&eacute; admin</span>';
+      return '<span class="status admin-wait">&Agrave; valider admin</span>';
+    }
+
     function renderEntityFilter(){
       const selected = $("entityFilter").value || "all";
       $("entityFilter").innerHTML = [
@@ -253,32 +293,40 @@
       const activeRows = rows.filter(row => row.statut === "active");
       $("kpiActive").textContent = String(activeRows.length);
       $("kpiActiveTotal").textContent = fmtCurrency(activeRows.reduce((sum, row) => sum + Number(row.total_annuel || 0), 0));
+      $("kpiLocked").textContent = String(rows.filter(isAdminLocked).length);
       $("kpiEntities").textContent = String(entities.length);
 
       if (!rows.length){
-        $("budgetRows").innerHTML = '<tr><td colspan="8" class="empty">Aucun budget trouve pour ce filtre.</td></tr>';
+        $("budgetRows").innerHTML = '<tr><td colspan="9" class="empty">Aucun budget trouve pour ce filtre.</td></tr>';
         return;
       }
 
       $("budgetRows").innerHTML = rows.map(budget => {
         const entity = entityById.get(String(budget.entite_id));
         const active = budget.statut === "active";
+        const locked = isAdminLocked(budget);
+        const actions = locked
+          ? '<span class="lockedInline">Verrouill&eacute; admin</span>'
+          : [
+              `<button class="btn small" type="button" data-action="edit" data-id="${escapeHtml(budget.id)}">Modifier</button>`,
+              active
+                ? `<button class="btn small red" type="button" data-action="inactive" data-id="${escapeHtml(budget.id)}">D&eacute;sactiver</button>`
+                : `<button class="btn small green" type="button" data-action="active" data-id="${escapeHtml(budget.id)}">Activer</button>`,
+              `<button class="btn small red" type="button" data-action="delete" data-id="${escapeHtml(budget.id)}">Supprimer</button>`
+            ].join("");
         return `
           <tr>
             <td>${escapeHtml(budget.nom)}</td>
             <td>${escapeHtml(entity?.libelle || "-")}</td>
             <td>${escapeHtml(budget.annee)}</td>
             <td><span class="status ${active ? "active" : "inactive"}">${active ? "Actif" : "Inactif"}</span></td>
+            <td>${adminValidationBadge(budget)}</td>
             <td class="right">${fmtCurrency(budget.total_annuel)}</td>
             <td class="right">${Number(budget.nb_lignes || 0).toLocaleString("fr-FR")}</td>
             <td>${fmtDate(budget.validated_at || budget.created_at)}</td>
             <td>
               <button class="btn small" type="button" data-action="view" data-id="${escapeHtml(budget.id)}">Voir</button>
-              ${active
-                ? `<button class="btn small red" type="button" data-action="inactive" data-id="${escapeHtml(budget.id)}">Desactiver</button>`
-                : `<button class="btn small" type="button" data-action="edit" data-id="${escapeHtml(budget.id)}">Modifier</button>
-                   <button class="btn small green" type="button" data-action="active" data-id="${escapeHtml(budget.id)}">Activer</button>`}
-              <button class="btn small red" type="button" data-action="delete" data-id="${escapeHtml(budget.id)}">Supprimer</button>
+              ${actions}
             </td>
           </tr>
         `;
@@ -294,7 +342,7 @@
         renderBudgets();
       }catch(error){
         console.error("Refresh budgets failed", error);
-        $("budgetRows").innerHTML = `<tr><td colspan="8" class="empty">Supabase budget non pret. Lance le SQL fourni avant d'utiliser cette page.</td></tr>`;
+        $("budgetRows").innerHTML = `<tr><td colspan="9" class="empty">Supabase budget non pret. Lance le SQL fourni avant d'utiliser cette page.</td></tr>`;
       }
     }
 
@@ -379,8 +427,11 @@
     async function editBudget(id){
       try{
         const { budget, lines } = await window.BudgetSupabase.getBudget(id);
-        if (budget.statut === "active") {
-          await kentAlert("Ce budget est actif. Desactive-le avant de le modifier.", { title: "Budget actif", tone: "warning" });
+        if (isAdminLocked(budget)) {
+          await kentAlert(
+            "Ce budget est valid\u00e9 par admin. Il est en lecture seule tant que l'admin ne l'a pas d\u00e9valid\u00e9.",
+            { title: "Budget verrouill\u00e9", tone: "warning" }
+          );
           return;
         }
         if (!await kentConfirm("Charger ce budget dans Budget annuel pour le modifier ?", { title: "Modifier ce budget", confirmText: "Charger" })) return;
@@ -493,6 +544,7 @@
     });
     $("entityFilter").addEventListener("change", renderBudgets);
     $("refreshBtn").addEventListener("click", refreshData);
+    $("budgetHelpBtn").addEventListener("click", () => $("budgetHelpPanel").classList.toggle("show"));
     $("newEntityBtn").addEventListener("click", createEntity);
     $("renameEntityBtn").addEventListener("click", renameSelectedEntity);
     $("deleteEntityBtn").addEventListener("click", deactivateSelectedEntity);

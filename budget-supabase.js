@@ -151,6 +151,31 @@
     return normalizeLines(rows).reduce((sum, line) => sum + toNumber(line.total), 0);
   }
 
+  function adminValidationStatus(budget){
+    const status = String(budget?.validation_admin || budget?.validationAdmin || "")
+      .trim()
+      .toLowerCase();
+    if (status === "valide") return "valide";
+    if (status === "devalide") return "devalide";
+    return "non_valide";
+  }
+
+  function isAdminValidatedBudget(budget){
+    return adminValidationStatus(budget) === "valide";
+  }
+
+  function lockedBudgetError(action){
+    const err = new Error(
+      `Budget valid\u00e9 par admin : impossible de ${action}. Demande une d\u00e9validation admin avant correction.`
+    );
+    err.code = "ADMIN_BUDGET_LOCKED";
+    return err;
+  }
+
+  function assertBudgetEditable(budget, action){
+    if (isAdminValidatedBudget(budget)) throw lockedBudgetError(action);
+  }
+
   function toBudgetData(lines){
     return {
       clients: normalizeLines(lines).map(line => ({
@@ -245,7 +270,12 @@
   }
 
   function deactivateEntity(id){
-    return updateEntity(id, { actif: false });
+    return listBudgetsForEntity(id).then(budgets => {
+      if ((budgets || []).some(isAdminValidatedBudget)) {
+        throw lockedBudgetError("masquer cette entit\u00e9 car un budget valid\u00e9 admin y est rattach\u00e9");
+      }
+      return updateEntity(id, { actif: false });
+    });
   }
 
   async function listBudgetsForEntity(entityId){
@@ -360,6 +390,9 @@
     if (!lines.length) throw new Error("Aucune ligne budget a valider.");
     const owner = await ownerContext();
     const active = await activeBudgetForEntityYear(entityId, annee);
+    if (active && isAdminValidatedBudget(active)) {
+      throw lockedBudgetError("remplacer ce budget actif");
+    }
     if (active && !replaceActive) {
       const err = new Error(`Un budget actif existe deja pour cette entite et ${annee}. Desactive-le avant d'en valider un autre.`);
       err.code = "ACTIVE_BUDGET_EXISTS";
@@ -459,6 +492,7 @@
   async function setBudgetStatus(id, status){
     const next = status === "active" ? "active" : "inactive";
     const { budget } = await getBudget(id);
+    assertBudgetEditable(budget, next === "active" ? "l'activer" : "le d\u00e9sactiver");
     if (next === "active") {
       const active = await activeBudgetForEntityYear(budget.entite_id, budget.annee);
       if (active && String(active.id) !== String(id)) {
@@ -484,6 +518,7 @@
 
   async function deleteBudget(id){
     const { budget } = await getBudget(id);
+    assertBudgetEditable(budget, "le supprimer");
     const { error: linesError } = await client()
       .from("budget_lignes")
       .delete()
@@ -570,6 +605,8 @@
     setBudgetStatus,
     deleteBudget,
     getActiveBudgetData,
-    getStorageScopeSuffix
+    getStorageScopeSuffix,
+    adminValidationStatus,
+    isAdminValidatedBudget
   };
 })();
