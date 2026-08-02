@@ -11,20 +11,20 @@
   <link rel="stylesheet" href="./shared-theme.css">
   <style>
     :root{
-      --bg:#080b14;
-      --panel:rgba(255,255,255,.066);
-      --panel-soft:rgba(255,255,255,.042);
-      --line:rgba(255,255,255,.13);
-      --line-strong:rgba(255,255,255,.22);
-      --text:rgba(255,255,255,.94);
-      --muted:rgba(255,255,255,.63);
-      --muted-2:rgba(255,255,255,.48);
+      --bg:#0d1422;
+      --panel:rgba(255,255,255,.092);
+      --panel-soft:rgba(255,255,255,.064);
+      --line:rgba(226,232,240,.18);
+      --line-strong:rgba(226,232,240,.30);
+      --text:rgba(248,250,252,.96);
+      --muted:rgba(226,232,240,.72);
+      --muted-2:rgba(203,213,225,.58);
       --purple:#8b5cf6;
       --blue:#38bdf8;
       --green:#22c55e;
       --amber:#f59e0b;
       --red:#ef4444;
-      --shadow:0 22px 60px rgba(0,0,0,.42);
+      --shadow:0 22px 60px rgba(2,6,23,.34);
     }
     *{box-sizing:border-box}
     body{
@@ -33,9 +33,9 @@
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
       color:var(--text);
       background:
-        radial-gradient(1000px 700px at 12% -10%, rgba(139,92,246,.25), transparent 58%),
-        radial-gradient(900px 620px at 96% 0%, rgba(56,189,248,.15), transparent 56%),
-        radial-gradient(850px 620px at 60% 110%, rgba(34,197,94,.10), transparent 58%),
+        radial-gradient(1000px 700px at 12% -10%, rgba(96,165,250,.22), transparent 58%),
+        radial-gradient(900px 620px at 96% 0%, rgba(45,212,191,.14), transparent 56%),
+        radial-gradient(850px 620px at 60% 110%, rgba(250,204,21,.08), transparent 58%),
         var(--bg);
     }
     button,input,select,textarea{font:inherit}
@@ -44,7 +44,7 @@
     .identity{
       margin-bottom:14px;
       border:1px solid var(--line);
-      background:linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.035));
+      background:linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.055));
       border-radius:22px;
       padding:12px 14px;
       display:flex;
@@ -78,7 +78,7 @@
     .btn.small{min-height:32px;border-radius:12px;padding:0 10px;font-size:12px}
     .hero{
       border:1px solid var(--line);
-      background:linear-gradient(135deg, rgba(30,27,75,.78), rgba(2,6,23,.76));
+      background:linear-gradient(135deg, rgba(30,64,175,.35), rgba(15,23,42,.72));
       border-radius:24px;padding:16px 18px;box-shadow:var(--shadow);
       display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:end;
     }
@@ -103,16 +103,36 @@
     .stat span{display:block;color:var(--muted-2);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
     .stat strong{display:block;margin-top:8px;font-size:26px;letter-spacing:-.035em}
     .admin-tabs{
-      margin-top:16px;border:1px solid var(--line);background:rgba(255,255,255,.045);
+      margin-top:16px;border:1px solid var(--line);background:rgba(226,232,240,.075);
       border-radius:20px;padding:7px;display:flex;gap:7px;overflow-x:auto;
     }
     .admin-tab{
-      border:0;min-height:38px;border-radius:14px;padding:0 13px;color:rgba(255,255,255,.70);
-      background:transparent;font-weight:950;white-space:nowrap;
+      border:1px solid transparent;min-height:38px;border-radius:14px;padding:0 13px;color:rgba(226,232,240,.78);
+      background:rgba(15,23,42,.34);font-weight:950;white-space:nowrap;
     }
-    .admin-tab.active{background:linear-gradient(135deg, #c4b5fd, #38bdf8);color:#08111f;box-shadow:0 12px 26px rgba(56,189,248,.18)}
+    .admin-tab.active{background:linear-gradient(135deg, #fde68a, #38bdf8);color:#08111f;box-shadow:0 12px 26px rgba(56,189,248,.18)}
     .admin-view{display:none;margin-top:16px}
     .admin-view.active{display:block}
+    .admin-section-tabs{
+      display:flex;gap:8px;align-items:center;overflow-x:auto;
+      border:1px solid rgba(226,232,240,.16);border-radius:18px;
+      background:rgba(15,23,42,.26);padding:7px;margin:0 0 14px;
+    }
+    .admin-section-tab{
+      min-height:34px;border-radius:999px;border:1px solid rgba(226,232,240,.14);
+      background:rgba(255,255,255,.055);color:rgba(226,232,240,.76);
+      padding:0 12px;font-weight:950;font-size:12px;white-space:nowrap;
+      display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    }
+    .admin-section-tab.active{
+      background:linear-gradient(135deg, rgba(56,189,248,.95), rgba(34,197,94,.78));
+      border-color:transparent;color:#07111f;box-shadow:0 12px 24px rgba(56,189,248,.13);
+    }
+    .admin-section-tab:disabled{opacity:.62;cursor:not-allowed}
+    .admin-section-tab em{
+      font-style:normal;font-size:9px;text-transform:uppercase;letter-spacing:.08em;
+      border:1px solid rgba(226,232,240,.18);border-radius:999px;padding:2px 6px;color:inherit;
+    }
     .overview-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:16px}
     .role-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
     .role-card,.health-card,.audit-row{
@@ -147,13 +167,13 @@
     .wrap.finance-mode{max-width:none;padding:18px 24px}
     .finance-mode .identity,.finance-mode .hero,.finance-mode .stats{display:none}
     .finance-mode .admin-tabs{
-      margin:0 0 12px auto;max-width:max-content;background:rgba(255,255,255,.035);
+      margin:0 0 14px;max-width:none;background:rgba(226,232,240,.075);
       border-radius:18px;padding:6px;
     }
     .finance-mode .admin-view{margin-top:0}
     .finance-shell{
       border:1px solid var(--line);border-radius:28px;padding:18px;
-      background:linear-gradient(135deg, rgba(8,47,73,.34), rgba(2,6,23,.76));
+      background:linear-gradient(135deg, rgba(14,116,144,.22), rgba(15,23,42,.72));
       box-shadow:var(--shadow);
     }
     .finance-head{
@@ -184,7 +204,7 @@
     .finance-kpi.positive{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.07)}
     .finance-kpi.negative{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.075)}
     .finance-panel{
-      border:1px solid var(--line);border-radius:24px;background:rgba(3,7,18,.24);padding:14px;
+      border:1px solid var(--line);border-radius:24px;background:rgba(15,23,42,.36);padding:14px;
     }
     .finance-table{display:grid;gap:8px}
     .finance-row{
@@ -264,7 +284,7 @@
     .performance-card b{display:block;margin-top:6px;font-size:24px;letter-spacing:-.04em}
     .control-shell{
       border:1px solid var(--line);border-radius:28px;padding:18px;
-      background:linear-gradient(135deg, rgba(15,23,42,.84), rgba(4,12,24,.78));
+      background:linear-gradient(135deg, rgba(30,64,175,.20), rgba(15,23,42,.74));
       box-shadow:var(--shadow);
     }
     .control-head{
@@ -284,7 +304,7 @@
     .control-kpi.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08)}
     .control-kpi.danger{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.08)}
     .control-panel{
-      border:1px solid var(--line);border-radius:24px;background:rgba(3,7,18,.24);padding:12px;
+      border:1px solid var(--line);border-radius:24px;background:rgba(15,23,42,.34);padding:12px;
     }
     .control-table{display:grid;gap:7px}
     .control-row{
@@ -329,7 +349,7 @@
     .control-issue.danger{border-color:rgba(239,68,68,.28);color:#fecaca;background:rgba(239,68,68,.08)}
     .budget-admin-shell{
       border:1px solid var(--line);border-radius:28px;padding:18px;
-      background:linear-gradient(135deg, rgba(30,27,75,.70), rgba(3,7,18,.80));
+      background:linear-gradient(135deg, rgba(67,56,202,.26), rgba(15,23,42,.74));
       box-shadow:var(--shadow);
     }
     .budget-admin-head{
@@ -351,7 +371,7 @@
     .budget-admin-kpi strong{display:block;margin-top:6px;font-size:24px;letter-spacing:-.04em}
     .budget-admin-kpi.good{border-color:rgba(34,197,94,.24);background:rgba(34,197,94,.07)}
     .budget-admin-kpi.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08)}
-    .budget-admin-panel{border:1px solid var(--line);border-radius:24px;background:rgba(3,7,18,.24);padding:12px}
+    .budget-admin-panel{border:1px solid var(--line);border-radius:24px;background:rgba(15,23,42,.34);padding:12px}
     .budget-admin-table{display:grid;gap:8px}
     .budget-admin-commercial{
       border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.045);overflow:hidden;
@@ -386,7 +406,7 @@
     .budget-chip.open{background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.32);color:#bae6fd}
     .import-admin-shell{
       border:1px solid var(--line);border-radius:28px;padding:18px;
-      background:linear-gradient(135deg, rgba(8,47,73,.34), rgba(3,7,18,.82));
+      background:linear-gradient(135deg, rgba(14,116,144,.22), rgba(15,23,42,.76));
       box-shadow:var(--shadow);
     }
     .import-admin-head{
@@ -397,7 +417,7 @@
     .import-admin-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap;justify-content:flex-end}
     .import-admin-grid{display:grid;grid-template-columns:minmax(360px,.9fr) minmax(560px,1.35fr);gap:12px;align-items:start}
     .import-card{
-      border:1px solid var(--line);border-radius:22px;background:rgba(3,7,18,.25);
+      border:1px solid var(--line);border-radius:22px;background:rgba(15,23,42,.38);
       padding:13px;min-width:0;
     }
     .import-card h3{margin:0 0 5px;font-size:17px}
@@ -441,7 +461,7 @@
       display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
     .panel{
-      border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.048);
+      border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.068);
       box-shadow:0 18px 46px rgba(0,0,0,.22);padding:18px;min-width:0;
     }
     .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
@@ -619,14 +639,14 @@
     <section class="hero">
       <div>
         <span class="badge">Administration</span>
-        <h1>Utilisateurs et rattachements</h1>
+        <h1>Console admin</h1>
         <p>
-          Cr&eacute;e et pilote les comptes admin, responsables et commerciaux. Les suppressions sont des masquages :
-          on conserve l'historique et on &eacute;vite les pertes de donn&eacute;es.
+          Pilote les utilisateurs, les &eacute;quipes, les donn&eacute;es, les budgets et la finance groupe
+          depuis un espace centralis&eacute;.
         </p>
         <div class="status-line">
-          Donn&eacute;es m&eacute;tier intactes : cette console ne rattache pas encore les ventes historiques.
-          L'affectation de l'existant &agrave; Guillaume Garcia sera trait&eacute;e dans une phase s&eacute;par&eacute;e.
+          Actions sensibles prot&eacute;g&eacute;es : les suppressions m&eacute;tier restent encadr&eacute;es et les donn&eacute;es existantes
+          ne sont pas supprim&eacute;es par cette r&eacute;organisation.
         </div>
         <div class="session-alert" data-session-alert>
           <span data-session-alert-text>Session non admin.</span>
@@ -646,14 +666,13 @@
     </section>
 
     <nav class="admin-tabs" aria-label="Navigation admin">
-      <button class="admin-tab active" type="button" data-admin-tab="pilotage">Pilotage</button>
+      <button class="admin-tab active" type="button" data-admin-tab="pilotage">Accueil</button>
       <button class="admin-tab" type="button" data-admin-tab="utilisateurs">Utilisateurs</button>
-      <button class="admin-tab" type="button" data-admin-tab="rattachements">Rattachements</button>
-      <button class="admin-tab" type="button" data-admin-tab="securite">S&eacute;curit&eacute;</button>
+      <button class="admin-tab" type="button" data-admin-tab="rattachements">&Eacute;quipe</button>
+      <button class="admin-tab" type="button" data-admin-tab="imports">Donn&eacute;es</button>
+      <button class="admin-tab" type="button" data-admin-tab="budgets-global">Budgets</button>
       <button class="admin-tab" type="button" data-admin-tab="finance">Finance</button>
-      <button class="admin-tab" type="button" data-admin-tab="imports">Mes imports</button>
-      <button class="admin-tab" type="button" data-admin-tab="budgets-global">Les budgets</button>
-      <button class="admin-tab" type="button" data-admin-tab="data-control">Contr&ocirc;le donn&eacute;es</button>
+      <button class="admin-tab" type="button" data-admin-tab="securite">S&eacute;curit&eacute;</button>
     </nav>
 
     <section class="admin-view active" data-admin-view="pilotage">
@@ -729,8 +748,8 @@
       <section class="import-admin-shell">
         <div class="import-admin-head">
           <div>
-            <span class="badge">Imports admin</span>
-            <h2>Mes imports</h2>
+            <span class="badge">Donn&eacute;es admin</span>
+            <h2>Centre de donn&eacute;es</h2>
             <p>
               Import r&eacute;el mensuel centralis&eacute; : choisis un commercial, une entit&eacute;, un mois,
               puis charge le fichier Excel. L'ancien import actif du m&ecirc;me mois passe seulement en inactif.
@@ -739,6 +758,14 @@
           <div class="import-admin-controls">
             <button class="btn green" type="button" data-admin-import-refresh>Synchroniser</button>
           </div>
+        </div>
+
+        <div class="admin-section-tabs" aria-label="Navigation donn&eacute;es admin">
+          <button class="admin-section-tab active" type="button" data-admin-subtab="imports">Imports r&eacute;els</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="data-control">Contr&ocirc;le donn&eacute;es</button>
+          <button class="admin-section-tab" type="button" disabled>Tarifs <em>Bient&ocirc;t</em></button>
+          <button class="admin-section-tab" type="button" disabled>Conditionnements <em>Bient&ocirc;t</em></button>
+          <button class="admin-section-tab" type="button" disabled>R&eacute;f&eacute;rentiels <em>Bient&ocirc;t</em></button>
         </div>
 
         <div class="import-admin-grid">
@@ -796,7 +823,7 @@
               <article class="import-mini-kpi"><span>Chargement</span><strong>-</strong></article>
             </div>
             <div class="import-history" data-admin-import-history>
-              <div class="empty">Ouvre la vue Mes imports pour charger l'historique.</div>
+              <div class="empty">Ouvre la vue Donn&eacute;es pour charger l'historique.</div>
             </div>
           </article>
         </div>
@@ -808,7 +835,7 @@
         <div class="budget-admin-head">
           <div>
             <span class="badge">Validation budgets</span>
-            <h2>Les budgets commerciaux</h2>
+            <h2>Budgets commerciaux</h2>
             <p>
               Validation admin par commercial, entit&eacute; et ann&eacute;e. Aucun montant n'est modifi&eacute; ici :
               l'admin verrouille ou d&eacute;verrouille uniquement le budget valid&eacute; par le commercial.
@@ -847,7 +874,7 @@
 
         <div class="budget-admin-panel">
           <div class="budget-admin-table" data-admin-budget-body>
-            <div class="empty">Ouvre la vue Les budgets pour charger les validations admin.</div>
+            <div class="empty">Ouvre la vue Budgets pour charger les validations admin.</div>
           </div>
         </div>
       </section>
@@ -855,6 +882,13 @@
 
     <section class="admin-view" data-admin-view="data-control">
       <section class="control-shell">
+        <div class="admin-section-tabs" aria-label="Navigation donn&eacute;es admin">
+          <button class="admin-section-tab" type="button" data-admin-subtab="imports">Imports r&eacute;els</button>
+          <button class="admin-section-tab active" type="button" data-admin-subtab="data-control">Contr&ocirc;le donn&eacute;es</button>
+          <button class="admin-section-tab" type="button" disabled>Tarifs <em>Bient&ocirc;t</em></button>
+          <button class="admin-section-tab" type="button" disabled>Conditionnements <em>Bient&ocirc;t</em></button>
+          <button class="admin-section-tab" type="button" disabled>R&eacute;f&eacute;rentiels <em>Bient&ocirc;t</em></button>
+        </div>
         <div class="control-head">
           <div>
             <span class="badge">Qualit&eacute; donn&eacute;es</span>
@@ -876,7 +910,7 @@
 
         <div class="control-panel">
           <div class="control-table" data-control-body>
-            <div class="empty">Ouvre la vue Contr&ocirc;le donn&eacute;es pour lancer l'analyse.</div>
+            <div class="empty">Ouvre Donn&eacute;es &gt; Contr&ocirc;le donn&eacute;es pour lancer l'analyse.</div>
           </div>
         </div>
       </section>
@@ -1208,6 +1242,7 @@
         usersBody: document.querySelector("[data-users-body]"),
         relationsList: document.querySelector("[data-relations-list]"),
         tabs: Array.from(document.querySelectorAll("[data-admin-tab]")),
+        subtabs: Array.from(document.querySelectorAll("[data-admin-subtab]")),
         views: Array.from(document.querySelectorAll("[data-admin-view]")),
         roleCards: document.querySelector("[data-role-cards]"),
         healthCards: document.querySelector("[data-health-cards]"),
@@ -1296,6 +1331,11 @@
         els.tabs.forEach(function(button){
           button.addEventListener("click", function(){
             setAdminView(button.dataset.adminTab);
+          });
+        });
+        els.subtabs.forEach(function(button){
+          button.addEventListener("click", function(){
+            setAdminView(button.dataset.adminSubtab);
           });
         });
         document.querySelector("[data-open-user-create]").addEventListener("click", function(){
@@ -1759,8 +1799,12 @@
       function setAdminView(view){
         state.activeView = view || "pilotage";
         els.wrap.classList.toggle("finance-mode", ["finance", "imports", "budgets-global", "data-control"].includes(state.activeView));
+        const primaryView = state.activeView === "data-control" ? "imports" : state.activeView;
         els.tabs.forEach(function(tab){
-          tab.classList.toggle("active", tab.dataset.adminTab === state.activeView);
+          tab.classList.toggle("active", tab.dataset.adminTab === primaryView);
+        });
+        els.subtabs.forEach(function(tab){
+          tab.classList.toggle("active", tab.dataset.adminSubtab === state.activeView);
         });
         els.views.forEach(function(panel){
           panel.classList.toggle("active", panel.dataset.adminView === state.activeView);
