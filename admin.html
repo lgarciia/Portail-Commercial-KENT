@@ -110,7 +110,12 @@
       border:1px solid transparent;min-height:38px;border-radius:14px;padding:0 13px;color:rgba(226,232,240,.78);
       background:rgba(15,23,42,.34);font-weight:950;white-space:nowrap;
     }
-    .admin-tab.active{background:linear-gradient(135deg, #fde68a, #38bdf8);color:#08111f;box-shadow:0 12px 26px rgba(56,189,248,.18)}
+    .admin-tab.active{
+      background:rgba(248,250,252,.15);
+      border-color:rgba(248,250,252,.34);
+      color:#fff;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 10px 24px rgba(2,6,23,.18);
+    }
     .admin-view{display:none;margin-top:16px}
     .admin-view.active{display:block}
     .admin-section-tabs{
@@ -125,8 +130,10 @@
       display:inline-flex;align-items:center;justify-content:center;gap:7px;
     }
     .admin-section-tab.active{
-      background:linear-gradient(135deg, rgba(56,189,248,.95), rgba(34,197,94,.78));
-      border-color:transparent;color:#07111f;box-shadow:0 12px 24px rgba(56,189,248,.13);
+      background:rgba(248,250,252,.14);
+      border-color:rgba(248,250,252,.34);
+      color:#fff;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 10px 22px rgba(2,6,23,.16);
     }
     .admin-section-tab:disabled{opacity:.62;cursor:not-allowed}
     .admin-section-tab em{
@@ -192,7 +199,12 @@
       color:rgba(255,255,255,.70);font-weight:1000;min-height:38px;padding:0 13px;white-space:nowrap;
       display:inline-flex;align-items:center;justify-content:center;text-decoration:none;
     }
-    .finance-pill.active{background:linear-gradient(135deg,#38bdf8,#22c55e);color:#06111f;border-color:transparent}
+    .finance-pill.active{
+      background:rgba(248,250,252,.14);
+      border-color:rgba(248,250,252,.34);
+      color:#fff;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 10px 22px rgba(2,6,23,.16);
+    }
     .finance-summary{
       display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 14px;
     }
