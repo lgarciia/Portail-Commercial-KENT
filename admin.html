@@ -109,15 +109,43 @@
     .admin-tab{
       border:1px solid transparent;min-height:38px;border-radius:14px;padding:0 13px;color:rgba(226,232,240,.78);
       background:rgba(15,23,42,.34);font-weight:950;white-space:nowrap;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .16s ease,border-color .16s ease,transform .16s ease,color .16s ease;
     }
+    .admin-tab:hover{background:rgba(248,250,252,.11);border-color:rgba(248,250,252,.18);transform:translateY(-1px)}
     .admin-tab.active{
       background:rgba(248,250,252,.15);
       border-color:rgba(248,250,252,.34);
       color:#fff;
       box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 10px 24px rgba(2,6,23,.18);
     }
+    .tab-icon{
+      position:relative;width:15px;height:15px;border:1px solid rgba(226,232,240,.38);
+      border-radius:5px;flex:0 0 auto;opacity:.82;
+    }
+    .tab-icon::after{
+      content:"";position:absolute;inset:4px;border-radius:999px;background:rgba(226,232,240,.72);
+    }
+    .tab-icon.users{border-radius:999px}
+    .tab-icon.users::after{inset:3px 5px 6px;border-radius:999px 999px 5px 5px;box-shadow:0 6px 0 -2px rgba(226,232,240,.72)}
+    .tab-icon.team::after{width:4px;height:4px;inset:auto;top:3px;left:3px;box-shadow:6px 0 0 rgba(226,232,240,.72),3px 6px 0 rgba(226,232,240,.72)}
+    .tab-icon.data::after{inset:auto;width:9px;height:2px;left:2px;top:3px;box-shadow:0 4px 0 rgba(226,232,240,.72),0 8px 0 rgba(226,232,240,.72);border-radius:999px}
+    .tab-icon.budget::after{inset:auto;width:8px;height:8px;left:3px;top:3px;border-radius:2px;background:transparent;border:1px solid rgba(226,232,240,.72)}
+    .tab-icon.finance::after{inset:auto;width:2px;height:9px;left:3px;bottom:2px;border-radius:999px;box-shadow:4px -3px 0 rgba(226,232,240,.72),8px -6px 0 rgba(226,232,240,.72)}
+    .tab-icon.security{border-radius:999px 999px 6px 6px}
+    .tab-icon.security::after{inset:auto;width:6px;height:5px;left:4px;bottom:3px;border-radius:2px;background:rgba(226,232,240,.72)}
+    .admin-breadcrumb{
+      margin:10px 3px 0;display:flex;align-items:center;gap:8px;color:var(--muted);
+      font-size:12px;font-weight:900;letter-spacing:.02em;
+    }
+    .admin-breadcrumb span{display:inline-flex;align-items:center;gap:8px}
+    .admin-breadcrumb span:not(:last-child)::after{content:"/";color:rgba(226,232,240,.36)}
+    .admin-breadcrumb span:last-child{color:#fff}
     .admin-view{display:none;margin-top:16px}
-    .admin-view.active{display:block}
+    .admin-view.active{display:block;animation:viewIn .18s ease both}
+    @keyframes viewIn{
+      from{opacity:0;transform:translateY(5px)}
+      to{opacity:1;transform:translateY(0)}
+    }
     .admin-section-tabs{
       display:flex;gap:8px;align-items:center;overflow-x:auto;
       border:1px solid rgba(226,232,240,.16);border-radius:18px;
@@ -127,8 +155,9 @@
       min-height:34px;border-radius:999px;border:1px solid rgba(226,232,240,.14);
       background:rgba(255,255,255,.055);color:rgba(226,232,240,.76);
       padding:0 12px;font-weight:950;font-size:12px;white-space:nowrap;
-      display:inline-flex;align-items:center;justify-content:center;gap:7px;
+      display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:background .16s ease,border-color .16s ease,transform .16s ease,color .16s ease;
     }
+    .admin-section-tab:hover:not(:disabled){background:rgba(248,250,252,.10);border-color:rgba(248,250,252,.18);transform:translateY(-1px)}
     .admin-section-tab.active{
       background:rgba(248,250,252,.14);
       border-color:rgba(248,250,252,.34);
@@ -143,8 +172,8 @@
     .overview-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:16px}
     .role-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
     .role-card,.health-card,.audit-row{
-      border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.028));
-      padding:14px;min-width:0;
+      border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg, rgba(255,255,255,.076), rgba(255,255,255,.038));
+      padding:14px;min-width:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
     }
     .role-card span,.health-card span,.audit-row span{display:block;color:var(--muted);font-size:12px;line-height:1.35}
     .role-card strong,.health-card strong{display:block;margin:8px 0 4px;font-size:28px;letter-spacing:-.04em}
@@ -198,7 +227,9 @@
       border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.055);
       color:rgba(255,255,255,.70);font-weight:1000;min-height:38px;padding:0 13px;white-space:nowrap;
       display:inline-flex;align-items:center;justify-content:center;text-decoration:none;
+      transition:background .16s ease,border-color .16s ease,transform .16s ease,color .16s ease;
     }
+    .finance-pill:hover{background:rgba(248,250,252,.10);border-color:rgba(248,250,252,.18);transform:translateY(-1px)}
     .finance-pill.active{
       background:rgba(248,250,252,.14);
       border-color:rgba(248,250,252,.34);
@@ -209,7 +240,8 @@
       display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 14px;
     }
     .finance-kpi{
-      border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.045);padding:14px;
+      border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.064);padding:14px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
     }
     .finance-kpi span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
     .finance-kpi strong{display:block;margin-top:7px;font-size:25px;letter-spacing:-.04em}
@@ -378,7 +410,7 @@
     .budget-admin-note.show{display:block}
     .budget-admin-note b{color:#fff}
     .budget-admin-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:10px 0 14px}
-    .budget-admin-kpi{border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.045);padding:12px 13px}
+    .budget-admin-kpi{border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.064);padding:12px 13px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
     .budget-admin-kpi span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
     .budget-admin-kpi strong{display:block;margin-top:6px;font-size:24px;letter-spacing:-.04em}
     .budget-admin-kpi.good{border-color:rgba(34,197,94,.24);background:rgba(34,197,94,.07)}
@@ -473,8 +505,8 @@
       display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
     .panel{
-      border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.068);
-      box-shadow:0 18px 46px rgba(0,0,0,.22);padding:18px;min-width:0;
+      border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.074);
+      box-shadow:0 18px 46px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.06);padding:18px;min-width:0;
     }
     .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
     .panel h2{margin:0;font-size:22px;letter-spacing:-.03em}
@@ -678,14 +710,17 @@
     </section>
 
     <nav class="admin-tabs" aria-label="Navigation admin">
-      <button class="admin-tab active" type="button" data-admin-tab="pilotage">Accueil</button>
-      <button class="admin-tab" type="button" data-admin-tab="utilisateurs">Utilisateurs</button>
-      <button class="admin-tab" type="button" data-admin-tab="rattachements">&Eacute;quipe</button>
-      <button class="admin-tab" type="button" data-admin-tab="imports">Donn&eacute;es</button>
-      <button class="admin-tab" type="button" data-admin-tab="budgets-global">Budgets</button>
-      <button class="admin-tab" type="button" data-admin-tab="finance">Finance</button>
-      <button class="admin-tab" type="button" data-admin-tab="securite">S&eacute;curit&eacute;</button>
+      <button class="admin-tab active" type="button" data-admin-tab="pilotage"><span class="tab-icon home" aria-hidden="true"></span><span>Accueil</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="utilisateurs"><span class="tab-icon users" aria-hidden="true"></span><span>Utilisateurs</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="rattachements"><span class="tab-icon team" aria-hidden="true"></span><span>&Eacute;quipe</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="imports"><span class="tab-icon data" aria-hidden="true"></span><span>Donn&eacute;es</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="budgets-global"><span class="tab-icon budget" aria-hidden="true"></span><span>Budgets</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="finance"><span class="tab-icon finance" aria-hidden="true"></span><span>Finance</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="securite"><span class="tab-icon security" aria-hidden="true"></span><span>S&eacute;curit&eacute;</span></button>
     </nav>
+    <div class="admin-breadcrumb" data-admin-breadcrumb aria-label="Position admin">
+      <span>Admin</span><span>Accueil</span>
+    </div>
 
     <section class="admin-view active" data-admin-view="pilotage">
       <div class="overview-grid">
@@ -1255,6 +1290,7 @@
         relationsList: document.querySelector("[data-relations-list]"),
         tabs: Array.from(document.querySelectorAll("[data-admin-tab]")),
         subtabs: Array.from(document.querySelectorAll("[data-admin-subtab]")),
+        breadcrumb: document.querySelector("[data-admin-breadcrumb]"),
         views: Array.from(document.querySelectorAll("[data-admin-view]")),
         roleCards: document.querySelector("[data-role-cards]"),
         healthCards: document.querySelector("[data-health-cards]"),
@@ -1821,6 +1857,7 @@
         els.views.forEach(function(panel){
           panel.classList.toggle("active", panel.dataset.adminView === state.activeView);
         });
+        updateAdminBreadcrumb();
         if (state.activeView === "finance" && !state.financePayload) {
           loadFinanceData();
         }
@@ -1833,6 +1870,24 @@
         if (state.activeView === "imports" && !state.adminImportPayload) {
           loadAdminImports();
         }
+      }
+
+      function updateAdminBreadcrumb(){
+        if (!els.breadcrumb) return;
+        const labels = {
+          pilotage: ["Admin", "Accueil"],
+          utilisateurs: ["Admin", "Utilisateurs"],
+          rattachements: ["Admin", "\u00c9quipe"],
+          imports: ["Admin", "Donn\u00e9es", "Imports r\u00e9els"],
+          "data-control": ["Admin", "Donn\u00e9es", "Contr\u00f4le donn\u00e9es"],
+          "budgets-global": ["Admin", "Budgets"],
+          finance: ["Admin", "Finance"],
+          securite: ["Admin", "S\u00e9curit\u00e9"]
+        };
+        const parts = labels[state.activeView] || labels.pilotage;
+        els.breadcrumb.innerHTML = parts.map(function(part){
+          return "<span>" + escapeHtml(part) + "</span>";
+        }).join("");
       }
 
       async function loadFinanceData(){

@@ -23,7 +23,14 @@ const NEXT_STAGE = {
 const stageByKey = new Map(STAGES.map(stage => [stage.key, stage]));
 const eur = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 const numberFmt = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
-const state = { prospects: [], actions: [], plaques: [], currentProspectId: "", pendingConfirm: null };
+const state = {
+  prospects: [],
+  actions: [],
+  plaques: [],
+  currentProspectId: "",
+  pendingConfirm: null,
+  stageTouched: false
+};
 const dom = {};
 
 function $(id) { return document.getElementById(id); }
@@ -244,6 +251,7 @@ function getProspectById(id) {
 }
 function resetProspectModal() {
   state.currentProspectId = "";
+  state.stageTouched = false;
   dom.prospectIdInput.value = "";
   dom.prospectModalTitle.textContent = "Nouveau prospect";
   dom.prospectModalSubtitle.textContent = "Renseigne la piste industrie puis fais avancer le dossier étape par étape.";
@@ -294,6 +302,7 @@ function openProspectModal(prospect = null) {
     renderHistory(prospect.id);
     renderConversionPanel(prospect);
   }
+  state.stageTouched = false;
   dom.prospectModalOverlay.classList.add("active");
   setTimeout(() => dom.companyInput.focus(), 40);
 }
@@ -323,6 +332,8 @@ function prospectPayloadFromForm() {
   const email = normalizeEmail(dom.emailInput.value);
   const existing = getProspectById(dom.prospectIdInput.value);
   const preservedConverted = existing?.statut === "converti_client" || existing?.client_id;
+  const selectedStage = dom.stageInput.value || "prospect_identifie";
+  const currentStage = existing?.statut || selectedStage;
   if (!dom.companyInput.value.trim()) throw new Error("Renseigne le nom de l'entreprise.");
   if (!isValidEmail(email)) throw new Error("Renseigne un email valide.");
   return {
@@ -333,7 +344,7 @@ function prospectPayloadFromForm() {
     adresse: dom.addressInput.value.trim() || null,
     secteur_activite: dom.sectorInput.value.trim() || null,
     source_prospect: dom.sourceInput.value.trim() || null,
-    statut: preservedConverted ? "converti_client" : (dom.stageInput.value || "prospect_identifie"),
+    statut: preservedConverted ? "converti_client" : (existing && !state.stageTouched ? currentStage : selectedStage),
     priorite: dom.priorityInput.value || "normale",
     prochain_contact: dom.nextContactInput.value || null,
     potentiel_ca: toNumber(dom.potentialInput.value),
@@ -546,6 +557,7 @@ function attachEvents() {
   dom.cancelProspectBtn.addEventListener("click", closeProspectModal);
   dom.prospectModalOverlay.addEventListener("click", event => { if (event.target === dom.prospectModalOverlay) closeProspectModal(); });
   dom.prospectForm.addEventListener("submit", saveProspect);
+  dom.stageInput.addEventListener("change", () => { state.stageTouched = true; });
   dom.actionForm.addEventListener("submit", saveAction);
   dom.archiveProspectBtn.addEventListener("click", archiveCurrentProspect);
   dom.convertBtn.addEventListener("click", convertCurrentProspect);
