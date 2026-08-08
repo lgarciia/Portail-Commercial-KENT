@@ -118,21 +118,12 @@
       color:#fff;
       box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 10px 24px rgba(2,6,23,.18);
     }
-    .tab-icon{
-      position:relative;width:15px;height:15px;border:1px solid rgba(226,232,240,.38);
-      border-radius:5px;flex:0 0 auto;opacity:.82;
+    .admin-tab-ico{
+      width:15px;height:15px;flex:0 0 15px;color:currentColor;opacity:.74;
+      display:block;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;overflow:visible;
     }
-    .tab-icon::after{
-      content:"";position:absolute;inset:4px;border-radius:999px;background:rgba(226,232,240,.72);
-    }
-    .tab-icon.users{border-radius:999px}
-    .tab-icon.users::after{inset:3px 5px 6px;border-radius:999px 999px 5px 5px;box-shadow:0 6px 0 -2px rgba(226,232,240,.72)}
-    .tab-icon.team::after{width:4px;height:4px;inset:auto;top:3px;left:3px;box-shadow:6px 0 0 rgba(226,232,240,.72),3px 6px 0 rgba(226,232,240,.72)}
-    .tab-icon.data::after{inset:auto;width:9px;height:2px;left:2px;top:3px;box-shadow:0 4px 0 rgba(226,232,240,.72),0 8px 0 rgba(226,232,240,.72);border-radius:999px}
-    .tab-icon.budget::after{inset:auto;width:8px;height:8px;left:3px;top:3px;border-radius:2px;background:transparent;border:1px solid rgba(226,232,240,.72)}
-    .tab-icon.finance::after{inset:auto;width:2px;height:9px;left:3px;bottom:2px;border-radius:999px;box-shadow:4px -3px 0 rgba(226,232,240,.72),8px -6px 0 rgba(226,232,240,.72)}
-    .tab-icon.security{border-radius:999px 999px 6px 6px}
-    .tab-icon.security::after{inset:auto;width:6px;height:5px;left:4px;bottom:3px;border-radius:2px;background:rgba(226,232,240,.72)}
+    .admin-tab-ico *{fill:none !important;stroke:currentColor !important}
+    .admin-tab.active .admin-tab-ico{opacity:.95}
     .admin-breadcrumb{
       margin:10px 3px 0;display:flex;align-items:center;gap:8px;color:var(--muted);
       font-size:12px;font-weight:900;letter-spacing:.02em;
@@ -710,13 +701,13 @@
     </section>
 
     <nav class="admin-tabs" aria-label="Navigation admin">
-      <button class="admin-tab active" type="button" data-admin-tab="pilotage"><span class="tab-icon home" aria-hidden="true"></span><span>Accueil</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="utilisateurs"><span class="tab-icon users" aria-hidden="true"></span><span>Utilisateurs</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="rattachements"><span class="tab-icon team" aria-hidden="true"></span><span>&Eacute;quipe</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="imports"><span class="tab-icon data" aria-hidden="true"></span><span>Donn&eacute;es</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="budgets-global"><span class="tab-icon budget" aria-hidden="true"></span><span>Budgets</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="finance"><span class="tab-icon finance" aria-hidden="true"></span><span>Finance</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="securite"><span class="tab-icon security" aria-hidden="true"></span><span>S&eacute;curit&eacute;</span></button>
+      <button class="admin-tab active" type="button" data-admin-tab="pilotage"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V19h11v-8.5"/></svg><span>Accueil</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="utilisateurs"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19c1.2-3.2 3.4-4.8 6.5-4.8s5.3 1.6 6.5 4.8"/></svg><span>Utilisateurs</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="rattachements"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.6"/><circle cx="16" cy="8" r="2.6"/><circle cx="12" cy="16" r="2.6"/><path d="M9.8 9.8 11 13.6m3.2-3.8L13 13.6"/></svg><span>&Eacute;quipe</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="imports"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12"/><path d="M6 12h12"/><path d="M6 17h12"/></svg><span>Donn&eacute;es</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="budgets-global"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M8 10h8M8 14h5"/></svg><span>Budgets</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="finance"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18V11"/><path d="M12 18V6"/><path d="M18 18v-9"/><path d="M4 18h16"/></svg><span>Finance</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="securite"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="10" width="12" height="9" rx="2"/><path d="M9 10V8a3 3 0 0 1 6 0v2"/></svg><span>S&eacute;curit&eacute;</span></button>
     </nav>
     <div class="admin-breadcrumb" data-admin-breadcrumb aria-label="Position admin">
       <span>Admin</span><span>Accueil</span>
