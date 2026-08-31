@@ -181,6 +181,42 @@
       border-radius:999px;padding:6px 8px;background:rgba(3,7,18,.20);font-size:12px;
     }
     .commercial-pill button{min-height:24px;padding:0 7px;border-radius:999px;font-size:11px}
+    .sector-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+    .sector-card{
+      border:1px solid var(--line);border-radius:20px;background:var(--panel-soft);
+      padding:14px;display:grid;gap:11px;min-width:0;
+    }
+    .sector-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .sector-title{display:flex;align-items:center;gap:9px;min-width:0}
+    .sector-dot{width:13px;height:13px;border-radius:999px;background:#0f766e;box-shadow:0 0 0 4px rgba(15,118,110,.12);flex:0 0 auto}
+    .sector-title-copy{display:block;min-width:0}
+    .sector-title-copy strong{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sector-title-copy span{display:block;margin-top:2px;color:var(--muted);font-size:12px}
+    .sector-meta{display:flex;gap:7px;flex-wrap:wrap}
+    .sector-departments{display:flex;gap:6px;flex-wrap:wrap}
+    .sector-department{
+      display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 8px;
+      border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.05);
+      color:var(--muted);font-size:11px;font-weight:950;
+    }
+    .sector-description{color:var(--muted);font-size:12px;line-height:1.4}
+    .sector-actions{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+    .sector-chip{
+      display:inline-flex;align-items:center;gap:7px;min-height:28px;padding:0 9px;border-radius:999px;
+      border:1px solid var(--line);background:rgba(255,255,255,.055);color:var(--muted);font-size:11px;font-weight:950;white-space:nowrap;
+    }
+    .sector-chip .sector-dot{width:9px;height:9px;box-shadow:none}
+    .department-picker{
+      max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:16px;
+      background:rgba(255,255,255,.04);padding:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px;
+    }
+    .department-option{
+      display:flex;align-items:center;gap:8px;min-height:34px;border:1px solid transparent;border-radius:12px;
+      padding:7px 8px;color:var(--muted);font-size:12px;font-weight:850;
+    }
+    .department-option:hover{border-color:var(--line);background:rgba(255,255,255,.055)}
+    .department-option input{width:16px;height:16px;accent-color:#0f766e}
+    .user-sector-field[hidden]{display:none!important}
     .security-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.8fr);gap:16px}
     .audit-list{display:grid;gap:8px}
     .audit-row strong{display:block;font-size:13px;margin-bottom:3px}
@@ -525,7 +561,7 @@
     th,td{padding:10px 9px;border-bottom:1px solid rgba(255,255,255,.085);text-align:left;vertical-align:middle}
     th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:rgba(255,255,255,.035);position:sticky;top:0}
     td{font-size:13px;color:rgba(255,255,255,.86)}
-    th:nth-child(4),td:nth-child(4){max-width:135px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    th:nth-child(5),td:nth-child(5){max-width:135px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     tr:last-child td{border-bottom:none}
     .user-main{display:grid;gap:3px}
     .user-main strong{font-size:14px;color:#fff}
@@ -773,6 +809,7 @@
     .health-card,
     .audit-row,
     .manager-card,
+    .sector-card,
     .performance-card,
     .control-kpi,
     .budget-admin-kpi,
@@ -1006,10 +1043,31 @@
       color:#4338ca;
     }
     .commercial-pill,
+    .sector-chip,
+    .sector-department,
     .control-issue{
       border-color:var(--line);
       background:#eef3f8;
       color:#334155;
+    }
+    .sector-card{
+      background:#fff;
+      box-shadow:0 10px 24px rgba(15,23,42,.06);
+    }
+    .sector-title-copy span,
+    .sector-description{
+      color:var(--muted);
+    }
+    .department-picker{
+      border-color:#c7d2e2;
+      background:#f8fafc;
+    }
+    .department-option{
+      color:#334155;
+    }
+    .department-option:hover{
+      border-color:#cbd5e1;
+      background:#fff;
     }
     .budget-admin-list{
       border-top-color:var(--line);
@@ -1159,6 +1217,7 @@
       <button class="admin-tab active" type="button" data-admin-tab="pilotage"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V19h11v-8.5"/></svg><span>Accueil</span></button>
       <button class="admin-tab" type="button" data-admin-tab="utilisateurs"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19c1.2-3.2 3.4-4.8 6.5-4.8s5.3 1.6 6.5 4.8"/></svg><span>Utilisateurs</span></button>
       <button class="admin-tab" type="button" data-admin-tab="rattachements"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.6"/><circle cx="16" cy="8" r="2.6"/><circle cx="12" cy="16" r="2.6"/><path d="M9.8 9.8 11 13.6m3.2-3.8L13 13.6"/></svg><span>&Eacute;quipe</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="secteurs"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6.5 10 4l4 2 6-2.5v14L14 20l-4-2-6 2.5v-14Z"/><path d="M10 4v14"/><path d="M14 6v14"/></svg><span>Secteurs</span></button>
       <button class="admin-tab" type="button" data-admin-tab="imports"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12"/><path d="M6 12h12"/><path d="M6 17h12"/></svg><span>Import</span></button>
       <button class="admin-tab" type="button" data-admin-tab="budgets-global"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M8 10h8M8 14h5"/></svg><span>Budgets</span></button>
       <button class="admin-tab" type="button" data-admin-tab="finance"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18V11"/><path d="M12 18V6"/><path d="M18 18v-9"/><path d="M4 18h16"/></svg><span>Finance</span></button>
@@ -1439,6 +1498,10 @@
                 <option value="admin">Admin</option>
               </select>
             </div>
+            <div class="field user-sector-field" data-user-sector-field>
+              <label>Secteur commercial</label>
+              <select name="sectorId"></select>
+            </div>
             <div class="field">
               <label>Page d'accueil</label>
               <input name="homePath" placeholder="/, /admin.html, /responsable.html">
@@ -1470,6 +1533,7 @@
               <tr>
                 <th>Utilisateur</th>
                 <th>R&ocirc;le</th>
+                <th>Secteur</th>
                 <th>Statut</th>
                 <th>Page</th>
                 <th>Derni&egrave;re connexion</th>
@@ -1477,7 +1541,7 @@
               </tr>
             </thead>
             <tbody data-users-body>
-              <tr><td colspan="6">Chargement...</td></tr>
+              <tr><td colspan="7">Chargement...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1507,6 +1571,24 @@
         </div>
         <div class="relations-list" data-orphan-list>
           <div class="empty">Chargement...</div>
+        </div>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="secteurs">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Secteurs commerciaux</h2>
+            <div class="sub">Cr&eacute;e des zones commerciales compos&eacute;es d'un ou plusieurs d&eacute;partements, puis rattache-les aux commerciaux.</div>
+          </div>
+          <button class="btn small primary" type="button" data-open-sector-create>Cr&eacute;er un secteur</button>
+        </div>
+        <div class="status-line" data-sector-warning hidden>
+          Lance le SQL des secteurs commerciaux pour activer cette vue.
+        </div>
+        <div class="sector-board" data-sector-board>
+          <div class="empty">Chargement des secteurs...</div>
         </div>
       </section>
     </section>
@@ -1598,6 +1680,10 @@
             <option value="admin">Admin</option>
           </select>
         </div>
+        <div class="field user-sector-field" data-edit-sector-field>
+          <label>Secteur commercial</label>
+          <select name="sectorId"></select>
+        </div>
         <div class="field">
           <label>Page d'accueil</label>
           <input name="homePath" placeholder="/, /admin.html, /responsable.html">
@@ -1607,6 +1693,37 @@
       <div class="modal-actions">
         <button class="btn ghost" value="cancel" type="button" data-close-edit-user>Annuler</button>
         <button class="btn green" value="confirm" type="submit">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="sectorDialog" class="relation-dialog">
+    <form class="modal-body" id="sectorForm" autocomplete="off">
+      <h3 data-sector-form-title>Cr&eacute;er un secteur</h3>
+      <p>Un secteur peut contenir plusieurs d&eacute;partements. Il sera ensuite rattach&eacute; aux commerciaux.</p>
+      <input type="hidden" name="id">
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field">
+          <label>Nom du secteur</label>
+          <input name="name" required placeholder="Ex : Orne-Calvados">
+        </div>
+        <div class="field">
+          <label>Couleur carte</label>
+          <input name="color" type="color" value="#0F766E">
+        </div>
+        <div class="field full">
+          <label>Description</label>
+          <textarea name="description" placeholder="Optionnel : contexte, zone couverte, notes internes..."></textarea>
+        </div>
+        <div class="field full">
+          <label>D&eacute;partements du secteur</label>
+          <div class="department-picker" data-department-picker></div>
+        </div>
+      </div>
+      <div class="modal-error" data-sector-error></div>
+      <div class="modal-actions">
+        <button class="btn ghost" value="cancel" type="button" data-close-sector>Annuler</button>
+        <button class="btn green" value="confirm" type="submit">Enregistrer le secteur</button>
       </div>
     </form>
   </dialog>
@@ -1699,6 +1816,9 @@
         currentUser: null,
         users: [],
         relations: [],
+        sectors: [],
+        sectorsReady: false,
+        sectorsWarning: "",
         stats: {},
         filter: "active",
         search: "",
@@ -1743,6 +1863,8 @@
         healthCards: document.querySelector("[data-health-cards]"),
         managerBoard: document.querySelector("[data-manager-board]"),
         orphanList: document.querySelector("[data-orphan-list]"),
+        sectorBoard: document.querySelector("[data-sector-board]"),
+        sectorWarning: document.querySelector("[data-sector-warning]"),
         hiddenUsers: document.querySelector("[data-hidden-users]"),
         auditList: document.querySelector("[data-audit-list]"),
         financeDay: document.querySelector("[data-finance-day]"),
@@ -1787,6 +1909,13 @@
         editUserForm: document.getElementById("editUserForm"),
         editUserTarget: document.querySelector("[data-edit-user-target]"),
         editUserError: document.querySelector("[data-edit-user-error]"),
+        userSectorField: document.querySelector("[data-user-sector-field]"),
+        editUserSectorField: document.querySelector("[data-edit-sector-field]"),
+        sectorDialog: document.getElementById("sectorDialog"),
+        sectorForm: document.getElementById("sectorForm"),
+        sectorFormTitle: document.querySelector("[data-sector-form-title]"),
+        sectorError: document.querySelector("[data-sector-error]"),
+        departmentPicker: document.querySelector("[data-department-picker]"),
         relationDialog: document.getElementById("relationDialog"),
         confirmDialog: document.getElementById("confirmDialog"),
         confirmTitle: document.querySelector("[data-confirm-title]"),
@@ -1805,6 +1934,34 @@
         syncDialogText: document.querySelector("[data-sync-dialog-text]")
       };
 
+      const FR_DEPARTMENTS = [
+        ["01", "Ain"], ["02", "Aisne"], ["03", "Allier"], ["04", "Alpes-de-Haute-Provence"],
+        ["05", "Hautes-Alpes"], ["06", "Alpes-Maritimes"], ["07", "Ardeche"], ["08", "Ardennes"],
+        ["09", "Ariege"], ["10", "Aube"], ["11", "Aude"], ["12", "Aveyron"],
+        ["13", "Bouches-du-Rhone"], ["14", "Calvados"], ["15", "Cantal"], ["16", "Charente"],
+        ["17", "Charente-Maritime"], ["18", "Cher"], ["19", "Correze"], ["2A", "Corse-du-Sud"],
+        ["2B", "Haute-Corse"], ["21", "Cote-d'Or"], ["22", "Cotes-d'Armor"], ["23", "Creuse"],
+        ["24", "Dordogne"], ["25", "Doubs"], ["26", "Drome"], ["27", "Eure"],
+        ["28", "Eure-et-Loir"], ["29", "Finistere"], ["30", "Gard"], ["31", "Haute-Garonne"],
+        ["32", "Gers"], ["33", "Gironde"], ["34", "Herault"], ["35", "Ille-et-Vilaine"],
+        ["36", "Indre"], ["37", "Indre-et-Loire"], ["38", "Isere"], ["39", "Jura"],
+        ["40", "Landes"], ["41", "Loir-et-Cher"], ["42", "Loire"], ["43", "Haute-Loire"],
+        ["44", "Loire-Atlantique"], ["45", "Loiret"], ["46", "Lot"], ["47", "Lot-et-Garonne"],
+        ["48", "Lozere"], ["49", "Maine-et-Loire"], ["50", "Manche"], ["51", "Marne"],
+        ["52", "Haute-Marne"], ["53", "Mayenne"], ["54", "Meurthe-et-Moselle"], ["55", "Meuse"],
+        ["56", "Morbihan"], ["57", "Moselle"], ["58", "Nievre"], ["59", "Nord"],
+        ["60", "Oise"], ["61", "Orne"], ["62", "Pas-de-Calais"], ["63", "Puy-de-Dome"],
+        ["64", "Pyrenees-Atlantiques"], ["65", "Hautes-Pyrenees"], ["66", "Pyrenees-Orientales"], ["67", "Bas-Rhin"],
+        ["68", "Haut-Rhin"], ["69", "Rhone"], ["70", "Haute-Saone"], ["71", "Saone-et-Loire"],
+        ["72", "Sarthe"], ["73", "Savoie"], ["74", "Haute-Savoie"], ["75", "Paris"],
+        ["76", "Seine-Maritime"], ["77", "Seine-et-Marne"], ["78", "Yvelines"], ["79", "Deux-Sevres"],
+        ["80", "Somme"], ["81", "Tarn"], ["82", "Tarn-et-Garonne"], ["83", "Var"],
+        ["84", "Vaucluse"], ["85", "Vendee"], ["86", "Vienne"], ["87", "Haute-Vienne"],
+        ["88", "Vosges"], ["89", "Yonne"], ["90", "Territoire de Belfort"], ["91", "Essonne"],
+        ["92", "Hauts-de-Seine"], ["93", "Seine-Saint-Denis"], ["94", "Val-de-Marne"], ["95", "Val-d'Oise"],
+        ["971", "Guadeloupe"], ["972", "Martinique"], ["973", "Guyane"], ["974", "La Reunion"], ["976", "Mayotte"]
+      ];
+
       init();
 
       function init(){
@@ -1812,6 +1969,7 @@
         populateFinanceMonths();
         populateAdminBudgetYears();
         populateAdminImportControls();
+        renderDepartmentPicker();
         syncFinanceMonthFromDate();
         bindEvents();
         loadSession();
@@ -1842,6 +2000,26 @@
         document.querySelector("[data-open-relations-config]").addEventListener("click", function(){
           openRelationDialog();
         });
+        document.querySelector("[data-open-sector-create]").addEventListener("click", function(){
+          openSectorDialog();
+        });
+        if (els.sectorBoard) els.sectorBoard.addEventListener("click", handleSectorAction);
+        if (els.sectorForm) els.sectorForm.addEventListener("submit", submitSectorForm);
+        document.querySelector("[data-close-sector]").addEventListener("click", function(){
+          els.sectorForm.reset();
+          setModalError(els.sectorError, "");
+          els.sectorDialog.close();
+        });
+        if (els.userForm?.elements?.role) {
+          els.userForm.elements.role.addEventListener("change", function(){
+            syncUserSectorField(els.userForm, els.userSectorField);
+          });
+        }
+        if (els.editUserForm?.elements?.role) {
+          els.editUserForm.elements.role.addEventListener("change", function(){
+            syncUserSectorField(els.editUserForm, els.editUserSectorField);
+          });
+        }
         els.financeRefresh.addEventListener("click", loadFinanceData);
         if (els.financePdf) els.financePdf.addEventListener("click", printFinanceMonthlyPdf);
         if (els.controlRefresh) els.controlRefresh.addEventListener("click", loadDataControl);
@@ -2021,7 +2199,7 @@
           showToast("Console admin synchronisée.");
         }catch(error){
           showToast(error.message || "Chargement impossible.", true);
-          els.usersBody.innerHTML = '<tr><td colspan="6">' + escapeHtml(error.message || "Chargement impossible.") + '</td></tr>';
+          els.usersBody.innerHTML = '<tr><td colspan="7">' + escapeHtml(error.message || "Chargement impossible.") + '</td></tr>';
           els.relationsList.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Chargement impossible.") + '</div>';
         }finally{
           setLoading(false);
@@ -2032,11 +2210,16 @@
         state.currentUser = payload.currentUser || null;
         state.users = Array.isArray(payload.users) ? payload.users : [];
         state.relations = Array.isArray(payload.relations) ? payload.relations : [];
+        state.sectors = Array.isArray(payload.sectors) ? payload.sectors : [];
+        state.sectorsReady = payload.sectorsReady !== false;
+        state.sectorsWarning = payload.sectorsWarning || "";
         state.stats = payload.stats || {};
         renderStats();
+        renderSectorOptions();
         renderUsers();
         renderRelationOptions();
         renderRelations();
+        renderSectors();
         renderOverview();
         renderManagerBoard();
         renderHiddenUsers();
@@ -2071,6 +2254,7 @@
             displayName: data.displayName,
             role: data.role,
             homePath: data.homePath,
+            sectorId: data.sectorId,
             password: data.password
           });
           applyData(payload);
@@ -2107,7 +2291,8 @@
             identifier: data.identifier,
             displayName: data.displayName,
             role: data.role,
-            homePath: data.homePath
+            homePath: data.homePath,
+            sectorId: data.sectorId
           });
           applyData(payload);
           if (els.editUserDialog.open) els.editUserDialog.close();
@@ -2260,6 +2445,86 @@
               }
             }
           );
+        }
+      }
+
+      function handleSectorAction(event){
+        const button = event.target.closest("[data-sector-action]");
+        if (!button) return;
+        const sector = state.sectors.find(function(item){ return item.id === button.dataset.sectorId; });
+        if (!sector) return;
+
+        if (button.dataset.sectorAction === "edit") {
+          openSectorDialog(sector);
+          return;
+        }
+
+        if (button.dataset.sectorAction === "hide") {
+          const assigned = state.users.filter(function(user){
+            return user.role === "commercial" && user.active && !user.hidden && user.sectorId === sector.id;
+          }).length;
+          openConfirm(
+            "Masquer ce secteur ?",
+            sector.name + " sera masqué dans les sélecteurs. Aucun commercial, aucune vente et aucun budget ne seront supprimés. Commerciaux actuellement rattachés : " + assigned + ".",
+            function(){ return persistSectorAction("hideSector", sector); }
+          );
+          return;
+        }
+
+        if (button.dataset.sectorAction === "restore") {
+          openConfirm(
+            "Restaurer ce secteur ?",
+            sector.name + " redeviendra disponible dans les sélecteurs commerciaux.",
+            function(){ return persistSectorAction("restoreSector", sector); }
+          );
+        }
+      }
+
+      async function submitSectorForm(event){
+        event.preventDefault();
+        event.stopPropagation();
+        setModalError(els.sectorError, "");
+        const data = formDataObject(els.sectorForm);
+        const departments = selectedDepartmentCodes();
+        if (!departments.length) {
+          setModalError(els.sectorError, "Sélectionne au moins un département pour préparer la future carte France.");
+          return;
+        }
+        const editing = Boolean(data.id);
+        setLoading(true, editing ? "Modification secteur" : "Création secteur", "Mise à jour de la cartographie commerciale.");
+        try{
+          const payload = await postAdmin({
+            action: editing ? "updateSector" : "createSector",
+            id: data.id,
+            name: data.name,
+            color: data.color,
+            description: data.description,
+            departments
+          });
+          applyData(payload);
+          els.sectorDialog.close();
+          els.sectorForm.reset();
+          addAudit(editing ? "Secteur modifié" : "Secteur créé", data.name + " - " + departments.join(", "));
+          showToast(editing ? "Secteur modifié." : "Secteur créé.");
+        }catch(error){
+          setModalError(els.sectorError, error.message || "Enregistrement secteur impossible.");
+          showToast(error.message || "Enregistrement secteur impossible.", true);
+        }finally{
+          setLoading(false);
+        }
+      }
+
+      async function persistSectorAction(action, sector){
+        setLoading(true, action === "hideSector" ? "Masquage secteur" : "Restauration secteur", "Mise à jour du secteur commercial.");
+        try{
+          const payload = await postAdmin({ action, id: sector.id });
+          applyData(payload);
+          addAudit(action === "hideSector" ? "Secteur masqué" : "Secteur restauré", sector.name);
+          showToast(action === "hideSector" ? "Secteur masqué." : "Secteur restauré.");
+        }catch(error){
+          showToast(error.message || "Action secteur impossible.", true);
+        }finally{
+          setLoading(false);
         }
       }
 
@@ -4249,6 +4514,7 @@
         const orphanCommercials = commerciaux.filter(function(user){
           return !principalRelations.some(function(relation){ return relation.commercialUserId === user.id; });
         });
+        const commercialWithoutSector = commerciaux.filter(function(user){ return !user.sectorId; });
         const emptyManagers = responsables.filter(function(user){
           return !principalRelations.some(function(relation){ return relation.responsableUserId === user.id; });
         });
@@ -4266,6 +4532,12 @@
             value: emptyManagers.length,
             text: emptyManagers.length ? "Aucun commercial principal rattaché à certains responsables." : "Chaque responsable actif a au moins un rattachement principal.",
             level: emptyManagers.length ? "warn" : "good"
+          },
+          {
+            title: "Commerciaux sans secteur",
+            value: commercialWithoutSector.length,
+            text: commercialWithoutSector.length ? "Affecte un secteur pour préparer la future carte France." : "Chaque commercial actif a un secteur.",
+            level: commercialWithoutSector.length ? "warn" : "good"
           },
           {
             title: "Accès exceptionnels",
@@ -4412,13 +4684,122 @@
         });
       }
 
+      function renderSectors(){
+        if (!els.sectorBoard) return;
+        if (els.sectorWarning) {
+          els.sectorWarning.hidden = Boolean(state.sectorsReady);
+          els.sectorWarning.textContent = state.sectorsWarning || "Lance le SQL des secteurs commerciaux pour activer cette vue.";
+        }
+        if (!state.sectorsReady) {
+          els.sectorBoard.innerHTML = '<div class="empty">Secteurs commerciaux non initialises. Lance le SQL fourni avant de créer les zones.</div>';
+          return;
+        }
+
+        const sectors = state.sectors.slice().sort(function(a, b){
+          return Number(Boolean(b.active && !b.hidden)) - Number(Boolean(a.active && !a.hidden))
+            || String(a.name || "").localeCompare(String(b.name || ""), "fr");
+        });
+        if (!sectors.length) {
+          els.sectorBoard.innerHTML = '<div class="empty">Aucun secteur pour le moment. Crée ton premier secteur, par exemple Orne-Calvados.</div>';
+          return;
+        }
+        els.sectorBoard.innerHTML = sectors.map(renderSectorCard).join("");
+      }
+
+      function renderSectorCard(sector){
+        const visible = sector.active && !sector.hidden;
+        const assigned = state.users.filter(function(user){
+          return user.role === "commercial" && user.active && !user.hidden && user.sectorId === sector.id;
+        });
+        return [
+          '<article class="sector-card">',
+            '<div class="sector-card-head">',
+              '<div class="sector-title">',
+                '<span class="sector-dot" style="background:' + escapeHtml(sector.color || '#0F766E') + '"></span>',
+                '<span class="sector-title-copy">',
+                  '<strong>' + escapeHtml(sector.name || "Secteur") + '</strong>',
+                  '<span>' + formatInteger(assigned.length) + ' commercial(aux) rattaché(s)</span>',
+                '</span>',
+              '</div>',
+              '<span class="state-chip ' + (visible ? 'state-ok' : 'state-off') + '">' + (visible ? 'Actif' : 'Masqué') + '</span>',
+            '</div>',
+            '<div class="sector-departments">' + renderSectorDepartments(sector.departments) + '</div>',
+            sector.description ? '<div class="sector-description">' + escapeHtml(sector.description) + '</div>' : '',
+            '<div class="sector-actions">',
+              '<button class="btn ghost small" type="button" data-sector-action="edit" data-sector-id="' + escapeHtml(sector.id) + '">Modifier</button>',
+              visible
+                ? '<button class="btn danger small" type="button" data-sector-action="hide" data-sector-id="' + escapeHtml(sector.id) + '">Masquer</button>'
+                : '<button class="btn green small" type="button" data-sector-action="restore" data-sector-id="' + escapeHtml(sector.id) + '">Restaurer</button>',
+            '</div>',
+          '</article>'
+        ].join("");
+      }
+
+      function renderSectorDepartments(departments){
+        const list = Array.isArray(departments) ? departments : [];
+        if (!list.length) return '<span class="sector-department">Aucun département</span>';
+        const shown = list.slice(0, 8).map(function(code){
+          return '<span class="sector-department">' + escapeHtml(departmentLabel(code)) + '</span>';
+        });
+        if (list.length > shown.length) {
+          shown.push('<span class="sector-department">+' + (list.length - shown.length) + '</span>');
+        }
+        return shown.join("");
+      }
+
+      function renderSectorOptions(){
+        const selects = [
+          els.userForm?.elements?.sectorId,
+          els.editUserForm?.elements?.sectorId
+        ].filter(Boolean);
+        if (!selects.length) return;
+
+        const activeSectors = state.sectors
+          .filter(function(sector){ return sector.active && !sector.hidden; })
+          .sort(function(a, b){ return String(a.name || "").localeCompare(String(b.name || ""), "fr"); });
+        const html = state.sectorsReady
+          ? ['<option value="">Sans secteur</option>'].concat(activeSectors.map(function(sector){
+              const label = sector.name + (sector.departments?.length ? " - " + sector.departments.join(", ") : "");
+              return '<option value="' + escapeHtml(sector.id) + '">' + escapeHtml(label) + '</option>';
+            })).join("")
+          : '<option value="">SQL secteur à lancer</option>';
+
+        selects.forEach(function(select){
+          const current = select.value;
+          select.innerHTML = html;
+          select.disabled = !state.sectorsReady;
+          if (current && activeSectors.some(function(sector){ return sector.id === current; })) {
+            select.value = current;
+          }
+        });
+        syncUserSectorField(els.userForm, els.userSectorField);
+        syncUserSectorField(els.editUserForm, els.editUserSectorField);
+      }
+
+      function ensureSectorOption(select, user){
+        if (!select || !user?.sectorId) return;
+        if (Array.from(select.options).some(function(option){ return option.value === user.sectorId; })) return;
+        const option = document.createElement("option");
+        option.value = user.sectorId;
+        option.textContent = (user.sectorName || "Secteur masqué") + " - secteur masqué";
+        select.appendChild(option);
+      }
+
+      function syncUserSectorField(form, field){
+        if (!form || !field || !form.elements?.role || !form.elements?.sectorId) return;
+        const isCommercial = form.elements.role.value === "commercial";
+        field.hidden = !isCommercial;
+        form.elements.sectorId.disabled = !isCommercial || !state.sectorsReady;
+        if (!isCommercial) form.elements.sectorId.value = "";
+      }
+
       function renderUsers(){
         let users = state.users.slice();
         if (state.filter === "active") users = users.filter(function(user){ return user.active && !user.hidden; });
         if (state.filter === "hidden") users = users.filter(function(user){ return user.hidden || !user.active; });
         if (state.search) {
           users = users.filter(function(user){
-            return [user.displayName, user.identifier, user.role, user.homePath]
+            return [user.displayName, user.identifier, user.role, user.homePath, user.sectorName]
               .join(" ")
               .toLowerCase()
               .includes(state.search);
@@ -4426,7 +4807,7 @@
         }
 
         if (!users.length) {
-          els.usersBody.innerHTML = '<tr><td colspan="6">Aucun utilisateur dans cette vue.</td></tr>';
+          els.usersBody.innerHTML = '<tr><td colspan="7">Aucun utilisateur dans cette vue.</td></tr>';
           return;
         }
 
@@ -4439,6 +4820,7 @@
             '<tr>',
               '<td><span class="user-main"><strong>' + escapeHtml(user.displayName) + '</strong><span>' + escapeHtml(user.identifier) + '</span></span></td>',
               '<td><span class="role-chip role-' + escapeHtml(user.role) + '">' + escapeHtml(user.roleLabel) + '</span></td>',
+              '<td>' + renderUserSectorChip(user) + '</td>',
               '<td><span class="state-chip ' + (visible ? "state-ok" : "state-off") + '">' + (visible ? "Actif" : "Masque") + '</span></td>',
               '<td>' + escapeHtml(user.homePath || "-") + '</td>',
               '<td>' + escapeHtml(formatDate(user.lastLoginAt)) + '</td>',
@@ -4450,6 +4832,21 @@
             '</tr>'
           ].join("");
         }).join("");
+      }
+
+      function renderUserSectorChip(user){
+        if (user.role !== "commercial") {
+          return '<span class="sector-chip">Non concerné</span>';
+        }
+        if (!user.sectorId) {
+          return '<span class="sector-chip">Sans secteur</span>';
+        }
+        return [
+          '<span class="sector-chip">',
+            '<span class="sector-dot" style="background:' + escapeHtml(user.sectorColor || '#0F766E') + '"></span>',
+            '<span>' + escapeHtml(user.sectorName || "Secteur masqué") + '</span>',
+          '</span>'
+        ].join("");
       }
 
       function renderRelationOptions(){
@@ -4500,9 +4897,59 @@
         els.editUserForm.elements.displayName.value = user.displayName;
         els.editUserForm.elements.role.value = user.role;
         els.editUserForm.elements.homePath.value = user.homePath || "";
+        renderSectorOptions();
+        if (els.editUserForm.elements.sectorId) {
+          ensureSectorOption(els.editUserForm.elements.sectorId, user);
+          els.editUserForm.elements.sectorId.value = user.sectorId || "";
+        }
+        syncUserSectorField(els.editUserForm, els.editUserSectorField);
         els.editUserTarget.textContent = "Modification de " + user.displayName + " (" + user.identifier + ").";
         els.editUserDialog.showModal();
         els.editUserForm.elements.displayName.focus();
+      }
+
+      function openSectorDialog(sector){
+        if (!state.sectorsReady) {
+          showToast(state.sectorsWarning || "Lance le SQL des secteurs avant de créer une zone.", true);
+          return;
+        }
+        const editing = Boolean(sector && sector.id);
+        els.sectorForm.reset();
+        setModalError(els.sectorError, "");
+        els.sectorForm.elements.id.value = editing ? sector.id : "";
+        els.sectorForm.elements.name.value = editing ? sector.name || "" : "";
+        els.sectorForm.elements.color.value = editing ? sector.color || "#0F766E" : "#0F766E";
+        els.sectorForm.elements.description.value = editing ? sector.description || "" : "";
+        setDepartmentSelection(editing ? sector.departments || [] : []);
+        els.sectorFormTitle.textContent = editing ? "Modifier le secteur" : "Créer un secteur";
+        els.sectorDialog.showModal();
+        els.sectorForm.elements.name.focus();
+      }
+
+      function renderDepartmentPicker(){
+        if (!els.departmentPicker) return;
+        els.departmentPicker.innerHTML = FR_DEPARTMENTS.map(function(item){
+          return [
+            '<label class="department-option">',
+              '<input type="checkbox" value="' + escapeHtml(item[0]) + '">',
+              '<span>' + escapeHtml(item[0] + " - " + item[1]) + '</span>',
+            '</label>'
+          ].join("");
+        }).join("");
+      }
+
+      function setDepartmentSelection(departments){
+        if (!els.departmentPicker) return;
+        const selected = new Set((departments || []).map(function(code){ return String(code || "").toUpperCase(); }));
+        els.departmentPicker.querySelectorAll('input[type="checkbox"]').forEach(function(input){
+          input.checked = selected.has(String(input.value || "").toUpperCase());
+        });
+      }
+
+      function selectedDepartmentCodes(){
+        if (!els.departmentPicker) return [];
+        return Array.from(els.departmentPicker.querySelectorAll('input[type="checkbox"]:checked'))
+          .map(function(input){ return input.value; });
       }
 
       function openRelationDialog(options){
@@ -4527,6 +4974,8 @@
         els.formTitle.textContent = "Nouvel utilisateur";
         els.userForm.reset();
         els.userForm.elements.id.value = "";
+        renderSectorOptions();
+        syncUserSectorField(els.userForm, els.userSectorField);
       }
 
       function openConfirm(title, text, action){
@@ -4600,6 +5049,12 @@
 
       function optionHtml(user){
         return '<option value="' + user.id + '">' + escapeHtml(user.displayName + " - " + user.identifier) + '</option>';
+      }
+
+      function departmentLabel(code){
+        const normalized = String(code || "").toUpperCase();
+        const item = FR_DEPARTMENTS.find(function(department){ return department[0] === normalized; });
+        return item ? item[0] + " - " + item[1] : normalized;
       }
 
       function formatDate(value){
