@@ -69,6 +69,7 @@ const CAMPAIGN_CLIENT_SELECT = [
 const MONTH_KEYS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const MONTH_LABELS = ["Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"];
 const PAGE_SIZE = 1000;
+const CHUNK_CONCURRENCY = 6;
 const PARIS_TIMEZONE = "Europe/Paris";
 const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
 const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
@@ -117,6 +118,7 @@ export default async function handler(request, response) {
 
 async function buildDashboard(session, request) {
   const period = parsePeriod(request);
+  const mode = parseDashboardMode(request);
   const [users, relations] = await Promise.all([listUsers(), listRelations()]);
   const activeUsers = users.filter((user) => user.active && !user.hidden);
   const activeRelations = relations.filter((relation) => relation.active);
@@ -129,13 +131,26 @@ async function buildDashboard(session, request) {
 
   const commercialIds = visibleCommercials.map((item) => item.id).filter(Boolean);
   const warnings = [];
+  const includeMainData = mode !== "campaigns";
+  const includeDocuments = mode !== "finance" && mode !== "campaigns";
+  const includeCampaigns = mode === "full" || mode === "campaigns";
 
   const [salesBlock, budgetBlock, realBlock, documentsBlock, campaignsBlock] = await Promise.all([
-    safeBlock(() => buildSalesBlock(commercialIds, period), emptySalesBlock(), warnings, "ventes terrain"),
-    safeBlock(() => buildBudgetBlock(commercialIds, period), emptyBudgetBlock(), warnings, "budgets"),
-    safeBlock(() => buildRealBlock(commercialIds, period), emptyRealBlock(), warnings, "reel importe"),
-    safeBlock(() => buildDocumentsBlock(commercialIds, period), emptyDocumentsBlock(), warnings, "BDC / devis"),
-    safeBlock(() => buildCampaignsBlock(commercialIds, period), emptyCampaignsBlock(), warnings, "campagnes promo")
+    includeMainData
+      ? safeBlock(() => buildSalesBlock(commercialIds, period), emptySalesBlock(), warnings, "ventes terrain")
+      : Promise.resolve(emptySalesBlock()),
+    includeMainData
+      ? safeBlock(() => buildBudgetBlock(commercialIds, period), emptyBudgetBlock(), warnings, "budgets")
+      : Promise.resolve(emptyBudgetBlock()),
+    includeMainData
+      ? safeBlock(() => buildRealBlock(commercialIds, period), emptyRealBlock(), warnings, "reel importe")
+      : Promise.resolve(emptyRealBlock()),
+    includeDocuments
+      ? safeBlock(() => buildDocumentsBlock(commercialIds, period), emptyDocumentsBlock(), warnings, "BDC / devis")
+      : Promise.resolve(emptyDocumentsBlock()),
+    includeCampaigns
+      ? safeBlock(() => buildCampaignsBlock(commercialIds, period), emptyCampaignsBlock(), warnings, "campagnes promo")
+      : Promise.resolve(emptyCampaignsBlock())
   ]);
 
   const enrichedCommercials = visibleCommercials.map((commercial) => enrichCommercial(commercial, {
@@ -165,6 +180,7 @@ async function buildDashboard(session, request) {
       source: session.source || "",
       foundInSupabase: Boolean(currentPortalUser)
     },
+    mode,
     period,
     stats: {
       commerciaux: enrichedCommercials.length,
@@ -231,6 +247,15 @@ function parsePeriod(request) {
     toDateMonth: month,
     generatedAt: new Date().toISOString()
   };
+}
+
+function parseDashboardMode(request) {
+  const url = new URL(request.url, "http://localhost");
+  const mode = normalizeText(url.searchParams.get("mode")).toLowerCase();
+  if (mode === "finance") return "finance";
+  if (mode === "control") return "control";
+  if (mode === "campaigns") return "campaigns";
+  return "full";
 }
 
 function getParisParts(date) {
@@ -345,20 +370,12 @@ async function loadSalesSource(source, commercialIds, period) {
 
   if (!visits.length) return { rows: [], visits: [], clients: scopedClients };
 
-  const visitIds = visits.map((visit) => visit.id).filter(Boolean);
   const clientIds = unique([
     ...ownedClientIds,
     ...visits.map((visit) => visit.client_id).filter(Boolean)
   ]);
-  const [lines, clients] = await Promise.all([
-    fetchByChunks(source.lignes, "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire", "visite_id", visitIds, { order: "visite_id.asc,id.asc" }),
-    fetchByChunks(source.clients, clientSelect, "id", clientIds)
-  ]);
-
-  const productIds = unique(lines.map((line) => line.produit_id).filter(Boolean));
-  const products = await fetchByChunks(source.produits, "id,nom,reference_produit,prix_vente", "id", productIds);
+  const clients = await fetchByChunks(source.clients, clientSelect, "id", clientIds);
   const clientById = new Map([...ownedClients, ...clients].map((client) => [String(client.id), client]));
-  const productById = new Map(products.map((product) => [String(product.id), product]));
 
   const enrichedVisits = visits.map((visit) => {
     const client = clientById.get(String(visit.client_id));
@@ -377,17 +394,21 @@ async function loadSalesSource(source, commercialIds, period) {
       totalCommande: toNumber(visit.total_commande)
     };
   }).filter((visit) => allowedCommercialIds.has(visit.commercialUserId));
-  const visitById = new Map(enrichedVisits.map((visit) => [String(visit.id), visit]));
+  if (!enrichedVisits.length) return { rows: [], visits: [], clients: scopedClients };
 
-  const rows = lines.map((line) => {
+  const visitById = new Map(enrichedVisits.map((visit) => [String(visit.id), visit]));
+  const visitIds = enrichedVisits.map((visit) => visit.id).filter(Boolean);
+  const lines = await fetchByChunks(source.lignes, "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire", "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
+
+  const rowShells = lines.map((line) => {
     const visit = visitById.get(String(line.visite_id));
     if (!visit) return null;
-    const product = productById.get(String(line.produit_id));
     const quantity = toNumber(line.quantite);
     const unitPrice = toNumber(line.prix_unitaire);
     return {
       id: line.id,
       visitId: line.visite_id || "",
+      productId: line.produit_id || "",
       source: source.secteur,
       secteur: source.secteur,
       secteurLabel: source.label,
@@ -399,13 +420,28 @@ async function loadSalesSource(source, commercialIds, period) {
       typeVisite: visit.typeVisite,
       typeLabel: visit.isPhoneOrder ? "Commande telephone" : "Visite terrain",
       isPhoneOrder: visit.isPhoneOrder,
-      reference: product?.reference_produit || "",
-      designation: product?.nom || "Produit sans designation",
       quantite: quantity,
       prixUnitaire: unitPrice,
       montant: roundMoney(quantity * unitPrice)
     };
   }).filter((row) => row?.commercialUserId);
+
+  const detailProductIds = unique(rowShells
+    .filter((row) => sameMonth(row.date, period.year, period.month) || row.date === period.day || (row.date >= period.weekStart && row.date <= period.weekEnd))
+    .map((row) => row.productId)
+    .filter(Boolean));
+  const products = await fetchByChunks(source.produits, "id,nom,reference_produit,prix_vente", "id", detailProductIds);
+  const productById = new Map(products.map((product) => [String(product.id), product]));
+
+  const rows = rowShells.map((row) => {
+    const product = productById.get(String(row.productId));
+    return {
+      ...row,
+      reference: product?.reference_produit || "",
+      designation: product?.nom || "Produit sans designation",
+      productId: undefined
+    };
+  });
 
   return { rows, visits: enrichedVisits, clients: scopedClients };
 }
@@ -1084,29 +1120,39 @@ function resolveCurrentPortalUser(session, users) {
 
 async function fetchByCommercialChunks(table, select, commercialIds, params = {}, aliases = {}) {
   const chunks = chunkArray(unique(commercialIds), 35);
-  const results = [];
-  for (const chunk of chunks) {
-    const rows = await fetchPaged(table, select, {
+  const pages = await mapWithConcurrency(chunks, CHUNK_CONCURRENCY, (chunk) =>
+    fetchPaged(table, select, {
       ...params,
       commercial_user_id: inFilter(chunk)
-    }, aliases);
-    results.push(...rows);
-  }
-  return results;
+    }, aliases)
+  );
+  return pages.flat();
 }
 
 async function fetchByChunks(table, select, column, values, params = {}, aliases = {}) {
   const uniqueValues = unique(values).filter(Boolean);
   if (!uniqueValues.length) return [];
   const chunks = chunkArray(uniqueValues, 120);
-  const results = [];
-  for (const chunk of chunks) {
-    const rows = await fetchPaged(table, select, {
+  const pages = await mapWithConcurrency(chunks, CHUNK_CONCURRENCY, (chunk) =>
+    fetchPaged(table, select, {
       ...params,
       [column]: inFilter(chunk)
-    }, aliases);
-    results.push(...rows);
-  }
+    }, aliases)
+  );
+  return pages.flat();
+}
+
+async function mapWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(Math.max(1, limit), items.length);
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await worker(items[currentIndex], currentIndex);
+    }
+  }));
   return results;
 }
 

@@ -757,6 +757,7 @@
         selectedDayCommercialId: "",
         selectedDayClientKey: "",
         activeDocumentTab: "documents",
+        campaignsLoaded: false,
         campaignCommercialFilter: "",
         showDailyReport: false
       };
@@ -910,16 +911,21 @@
           const params = new URLSearchParams({
             year: els.year.value,
             month: els.month.value,
-            day: els.day.value
+            day: els.day.value,
+            mode: "control"
           });
           const payload = await fetchJson("/api/responsable-dashboard?" + params.toString());
           state.payload = payload || {};
+          state.campaignsLoaded = false;
           renderSession();
           renderScope();
           renderStats();
           hydrateCommercialOptions();
           normalizeSelections();
           renderAll();
+          if (state.activeDocumentTab === "campaigns") {
+            await ensureCampaignsLoaded();
+          }
           showToast("Vue responsable synchronisee.");
         }catch(error){
           showToast(error.message || "Chargement impossible.", true);
@@ -1259,6 +1265,10 @@
         if (state.campaignCommercialFilter) {
           rows = rows.filter(row => row.commercialUserId === state.campaignCommercialFilter);
         }
+        if (!state.campaignsLoaded) {
+          els.campaignRows.innerHTML = '<tr><td colspan="8"><div class="empty">Ouvre cet onglet pour charger les campagnes promo.</div></td></tr>';
+          return;
+        }
         if (!rows.length) {
           els.campaignRows.innerHTML = '<tr><td colspan="8"><div class="empty">Aucune campagne promo sur ce périmètre.</div></td></tr>';
           return;
@@ -1560,6 +1570,34 @@
         els.docPanels.forEach(node => {
           node.hidden = node.dataset.docPanel !== state.activeDocumentTab;
         });
+        if (state.activeDocumentTab === "campaigns") ensureCampaignsLoaded();
+      }
+
+      async function ensureCampaignsLoaded(force){
+        if (!force && state.campaignsLoaded) return;
+        els.campaignRows.innerHTML = '<tr><td colspan="8"><div class="empty">Chargement des campagnes promo...</div></td></tr>';
+        setLoading(true);
+        try{
+          const params = new URLSearchParams({
+            year: els.year.value,
+            month: els.month.value,
+            day: els.day.value,
+            mode: "campaigns"
+          });
+          const payload = await fetchJson("/api/responsable-dashboard?" + params.toString());
+          state.payload = {
+            ...(state.payload || {}),
+            campaigns: payload?.campaigns || {},
+            warnings: payload?.warnings || state.payload?.warnings || []
+          };
+          state.campaignsLoaded = true;
+          renderCampaignRows();
+        }catch(error){
+          showToast(error.message || "Chargement des campagnes impossible.", true);
+          els.campaignRows.innerHTML = '<tr><td colspan="8"><div class="empty">Campagnes promo indisponibles.</div></td></tr>';
+        }finally{
+          setLoading(false);
+        }
       }
 
       function getBudgetMonthlyForCommercial(commercialId){

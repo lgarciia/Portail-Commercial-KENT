@@ -1888,7 +1888,7 @@
         setLoading(true, "Synchronisation finance", "Chargement des ventes, budgets et rattachements responsables.");
         try{
           const [payload, settingsPayload] = await Promise.all([
-            fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day)),
+            fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day) + "&mode=finance"),
             fetchJson("/api/admin-finance-settings?year=" + parts.year)
           ]);
           state.financePayload = payload;
@@ -1914,7 +1914,7 @@
         if (els.controlPeriod) els.controlPeriod.textContent = "Ann\u00e9e " + parts.year;
         setLoading(true, "Contr\u00f4le donn\u00e9es", "Lecture des commerciaux, ventes, budgets, r\u00e9els et documents.");
         try{
-          const payload = await fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day));
+          const payload = await fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day) + "&mode=control");
           state.controlPayload = payload;
           state.controlExpandedCommercial = "";
           renderDataControl();

@@ -7,6 +7,7 @@ import {
 } from "./_auth.js";
 
 const PAGE_SIZE = 1000;
+const CHUNK_CONCURRENCY = 6;
 const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
 const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
 
@@ -279,29 +280,39 @@ async function loadSourceRows(source, commercialScope, commercialIds) {
 
 async function fetchByCommercialChunks(table, select, commercialIds, params = {}) {
   const chunks = chunkArray(unique(commercialIds), 35);
-  const results = [];
-  for (const chunk of chunks) {
-    const rows = await fetchPaged(table, select, {
+  const pages = await mapWithConcurrency(chunks, CHUNK_CONCURRENCY, (chunk) =>
+    fetchPaged(table, select, {
       ...params,
       commercial_user_id: inFilter(chunk)
-    });
-    results.push(...rows);
-  }
-  return results;
+    })
+  );
+  return pages.flat();
 }
 
 async function fetchByChunks(table, select, column, values, params = {}) {
   const uniqueValues = unique(values).filter(Boolean);
   if (!uniqueValues.length) return [];
   const chunks = chunkArray(uniqueValues, 100);
-  const results = [];
-  for (const chunk of chunks) {
-    const rows = await fetchPaged(table, select, {
+  const pages = await mapWithConcurrency(chunks, CHUNK_CONCURRENCY, (chunk) =>
+    fetchPaged(table, select, {
       ...params,
       [column]: inFilter(chunk)
-    });
-    results.push(...rows);
-  }
+    })
+  );
+  return pages.flat();
+}
+
+async function mapWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(Math.max(1, limit), items.length);
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await worker(items[currentIndex], currentIndex);
+    }
+  }));
   return results;
 }
 
