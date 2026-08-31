@@ -1,8 +1,11 @@
-(function () {
+(async function () {
   const root = document.querySelector(".wrap");
   if (!root) return;
 
   window.__PARAM_GUIDE_BOOTED__ = true;
+  root.style.visibility = "hidden";
+  if (!(await ensureAdminAccess())) return;
+  root.style.visibility = "";
 
   root.innerHTML = `
     <div class="navbar">
@@ -731,5 +734,27 @@
 
   function escAttr(str) {
     return esc(str).replace(/"/g, "&quot;");
+  }
+
+  async function ensureAdminAccess() {
+    try {
+      const response = await fetch("/api/session", { credentials: "same-origin" });
+      if (!response.ok) {
+        window.location.replace("/");
+        return false;
+      }
+      const payload = await response.json();
+      const role = String(payload && payload.user && payload.user.role || "").toLowerCase();
+      if (role === "admin") return true;
+      if (role === "responsable") {
+        window.location.replace("responsable.html");
+        return false;
+      }
+      window.location.replace("index.html");
+      return false;
+    } catch (error) {
+      window.location.replace("/");
+      return false;
+    }
   }
 })();

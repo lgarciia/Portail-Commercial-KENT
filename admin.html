@@ -109,7 +109,7 @@
     .admin-tab{
       border:1px solid transparent;min-height:38px;border-radius:14px;padding:0 13px;color:rgba(226,232,240,.78);
       background:rgba(15,23,42,.34);font-weight:950;white-space:nowrap;
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .16s ease,border-color .16s ease,transform .16s ease,color .16s ease;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:background .16s ease,border-color .16s ease,transform .16s ease,color .16s ease;
     }
     .admin-tab:hover{background:rgba(248,250,252,.11);border-color:rgba(248,250,252,.18);transform:translateY(-1px)}
     .admin-tab.active{
@@ -124,6 +124,7 @@
     }
     .admin-tab-ico *{fill:none !important;stroke:currentColor !important}
     .admin-tab.active .admin-tab-ico{opacity:.95}
+    .admin-link-tab{margin-left:auto}
     .admin-breadcrumb{
       margin:10px 3px 0;display:flex;align-items:center;gap:8px;color:var(--muted);
       font-size:12px;font-weight:900;letter-spacing:.02em;
@@ -708,6 +709,7 @@
       <button class="admin-tab" type="button" data-admin-tab="budgets-global"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M8 10h8M8 14h5"/></svg><span>Budgets</span></button>
       <button class="admin-tab" type="button" data-admin-tab="finance"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18V11"/><path d="M12 18V6"/><path d="M18 18v-9"/><path d="M4 18h16"/></svg><span>Finance</span></button>
       <button class="admin-tab" type="button" data-admin-tab="securite"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="10" width="12" height="9" rx="2"/><path d="M9 10V8a3 3 0 0 1 6 0v2"/></svg><span>S&eacute;curit&eacute;</span></button>
+      <a class="admin-tab admin-link-tab" href="parametrage.html" title="Ouvrir le param&eacute;trage technique"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2 2 0 0 1-2.83 2.83l-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6V20a2 2 0 0 1-4 0v-.08a1.8 1.8 0 0 0-1-.52a1.8 1.8 0 0 0-1.98.36l-.05.05a2 2 0 0 1-2.83-2.83l.05-.05A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-.6-1H4a2 2 0 0 1 0-4h.08a1.8 1.8 0 0 0 .52-1a1.8 1.8 0 0 0-.36-1.98l-.05-.05a2 2 0 0 1 2.83-2.83l.05.05A1.8 1.8 0 0 0 9 4.6a1.8 1.8 0 0 0 1-.6V4a2 2 0 0 1 4 0v.08a1.8 1.8 0 0 0 1 .52a1.8 1.8 0 0 0 1.98-.36l.05-.05a2 2 0 0 1 2.83 2.83l-.05.05A1.8 1.8 0 0 0 19.4 9c.22.35.43.68.6 1H20a2 2 0 0 1 0 4h-.08a1.8 1.8 0 0 0-.52 1Z"/></svg><span>Param&eacute;trage</span></a>
     </nav>
     <div class="admin-breadcrumb" data-admin-breadcrumb aria-label="Position admin">
       <span>Admin</span><span>Accueil</span>
