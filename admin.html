@@ -216,6 +216,37 @@
     }
     .department-option:hover{border-color:var(--line);background:rgba(255,255,255,.055)}
     .department-option input{width:16px;height:16px;accent-color:#0f766e}
+    .sector-field-label{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+    .sector-field-label span{color:var(--muted);font-size:12px;font-weight:800;text-transform:none;letter-spacing:0}
+    dialog.sector-dialog{width:min(980px,calc(100vw - 28px))}
+    .sector-dialog .modal-body{padding:22px}
+    .sector-dialog .form-grid{gap:12px}
+    .sector-departments-field .department-picker{
+      max-height:330px;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px;
+      align-items:start;scrollbar-color:rgba(15,118,110,.55) transparent;
+    }
+    .sector-departments-field .department-option{
+      position:relative;display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:10px;
+      min-height:48px;padding:9px 10px;border:1px solid rgba(148,163,184,.28);border-radius:14px;
+      background:rgba(15,23,42,.20);color:var(--text);font-size:12px;font-weight:900;
+      text-transform:none;letter-spacing:0;cursor:pointer;user-select:none;transition:.15s ease;
+    }
+    .sector-departments-field .department-option:hover{border-color:rgba(20,184,166,.45);background:rgba(20,184,166,.09);transform:translateY(-1px)}
+    .sector-departments-field .department-option:has(input:checked){border-color:rgba(20,184,166,.70);background:rgba(20,184,166,.14)}
+    .sector-departments-field .department-option input[type="checkbox"]{
+      appearance:none;-webkit-appearance:none;display:grid;place-content:center;width:22px;height:22px;min-height:22px;
+      margin:0;padding:0;border:2px solid rgba(148,163,184,.65);border-radius:7px;background:rgba(15,23,42,.42);
+      box-shadow:none;cursor:pointer;transition:.14s ease;
+    }
+    .sector-departments-field .department-option input[type="checkbox"]::before{
+      content:"";width:10px;height:6px;border-left:3px solid #fff;border-bottom:3px solid #fff;
+      transform:rotate(-45deg) scale(0);transform-origin:center;transition:transform .12s ease;
+    }
+    .sector-departments-field .department-option input[type="checkbox"]:checked{border-color:#0f766e;background:#0f766e}
+    .sector-departments-field .department-option input[type="checkbox"]:checked::before{transform:rotate(-45deg) scale(1)}
+    .department-copy{display:grid;gap:1px;min-width:0;line-height:1.12}
+    .department-copy strong{font-size:12px;color:var(--text);letter-spacing:.02em}
+    .department-copy em{font-style:normal;color:var(--muted);font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .user-sector-field[hidden]{display:none!important}
     .security-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.8fr);gap:16px}
     .audit-list{display:grid;gap:8px}
@@ -665,6 +696,7 @@
       .import-history-row{grid-template-columns:minmax(150px,1fr) repeat(4,minmax(78px,.65fr))}
       .import-history-row > div:nth-child(6){grid-column:auto}
       .finance-chart{overflow-x:auto}
+      .sector-departments-field .department-picker{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
     @media(max-width:780px){
       .wrap{padding:16px}
@@ -684,6 +716,8 @@
       .finance-row,.finance-seller{grid-template-columns:1fr}
       .form-grid{grid-template-columns:1fr}
       .search{max-width:none}
+      .sector-field-label{display:grid;gap:4px}
+      .sector-departments-field .department-picker{grid-template-columns:1fr;max-height:300px}
     }
 
     /* Admin light theme - visual layer only. Remove this block to restore the former dark admin skin. */
@@ -1069,6 +1103,35 @@
       border-color:#cbd5e1;
       background:#fff;
     }
+    .sector-departments-field .department-picker{
+      border-color:#cbd5e1;
+      background:#f8fafc;
+    }
+    .sector-departments-field .department-option{
+      border-color:#d8e1ec;
+      background:#fff;
+      color:#0f172a;
+      box-shadow:0 8px 18px rgba(15,23,42,.045);
+    }
+    .sector-departments-field .department-option:hover{
+      border-color:#5eead4;
+      background:#f0fdfa;
+    }
+    .sector-departments-field .department-option:has(input:checked){
+      border-color:#0f766e;
+      background:#ecfdf5;
+      box-shadow:0 10px 24px rgba(15,118,110,.12);
+    }
+    .sector-departments-field .department-option input[type="checkbox"]{
+      border-color:#b6c4d6;
+      background:#fff;
+    }
+    .sector-departments-field .department-option input[type="checkbox"]:checked{
+      border-color:#0f766e;
+      background:#0f766e;
+    }
+    .department-copy strong{color:#0f172a}
+    .department-copy em{color:#64748b}
     .budget-admin-list{
       border-top-color:var(--line);
     }
@@ -1697,7 +1760,7 @@
     </form>
   </dialog>
 
-  <dialog id="sectorDialog" class="relation-dialog">
+  <dialog id="sectorDialog" class="relation-dialog sector-dialog">
     <form class="modal-body" id="sectorForm" autocomplete="off">
       <h3 data-sector-form-title>Cr&eacute;er un secteur</h3>
       <p>Un secteur peut contenir plusieurs d&eacute;partements. Il sera ensuite rattach&eacute; aux commerciaux.</p>
@@ -1715,8 +1778,11 @@
           <label>Description</label>
           <textarea name="description" placeholder="Optionnel : contexte, zone couverte, notes internes..."></textarea>
         </div>
-        <div class="field full">
-          <label>D&eacute;partements du secteur</label>
+        <div class="field full sector-departments-field">
+          <div class="sector-field-label">
+            <label>D&eacute;partements du secteur</label>
+            <span>Coche un ou plusieurs d&eacute;partements.</span>
+          </div>
           <div class="department-picker" data-department-picker></div>
         </div>
       </div>
@@ -4932,7 +4998,10 @@
           return [
             '<label class="department-option">',
               '<input type="checkbox" value="' + escapeHtml(item[0]) + '">',
-              '<span>' + escapeHtml(item[0] + " - " + item[1]) + '</span>',
+              '<span class="department-copy">',
+                '<strong>' + escapeHtml(item[0]) + '</strong>',
+                '<em>' + escapeHtml(item[1]) + '</em>',
+              '</span>',
             '</label>'
           ].join("");
         }).join("");
