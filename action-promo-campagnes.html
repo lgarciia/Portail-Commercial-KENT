@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mes campagnes promo</title>
+  <script src="./shared-ui.js"></script>
+  <link rel="stylesheet" href="./shared-theme.css">
+  <style>
+    :root{
+      --bg:#06111f;
+      --panel:rgba(15,23,42,.86);
+      --line:rgba(148,163,184,.20);
+      --text:#e8f0ff;
+      --muted:#9fb1ca;
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --gold:#f59e0b;
+      --red:#ef4444;
+      --shadow:0 24px 70px rgba(0,0,0,.34);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:"Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 14% -4%, rgba(56,189,248,.16), transparent 34%),
+        radial-gradient(circle at 88% 4%, rgba(245,158,11,.14), transparent 36%),
+        linear-gradient(135deg,#06111f 0%,#081827 54%,#04101c 100%);
+      padding:18px;
+    }
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .wrap{max-width:1500px;margin:0 auto}
+    .topbar{
+      border:1px solid var(--line);
+      border-radius:26px;
+      background:linear-gradient(180deg,rgba(15,23,42,.91),rgba(8,15,28,.82));
+      box-shadow:var(--shadow);
+      padding:18px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .brand{display:flex;align-items:center;gap:13px;min-width:0}
+    .logo{width:44px;height:44px;border-radius:16px;background:linear-gradient(135deg,rgba(245,158,11,.95),rgba(56,189,248,.78));box-shadow:0 16px 34px rgba(245,158,11,.18)}
+    .title{min-width:0}
+    .eyebrow{display:inline-flex;padding:5px 10px;border-radius:999px;border:1px solid rgba(245,158,11,.34);color:#fde68a;background:rgba(245,158,11,.10);font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+    h1{margin:0;font-size:clamp(27px,3.5vw,48px);letter-spacing:-.05em;line-height:1}
+    p{margin:7px 0 0;color:var(--muted);font-size:14px;font-weight:760;line-height:1.45}
+    .actions{display:flex;gap:9px;flex-wrap:wrap}
+    .btn{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      min-height:40px;
+      padding:0 13px;
+      border-radius:14px;
+      font-weight:950;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      white-space:nowrap;
+      transition:.16s ease;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11)}
+    .btn.green{background:linear-gradient(135deg,#22c55e,#059669);border:none;box-shadow:0 14px 30px rgba(5,150,105,.20)}
+    .btn.gold{color:#07111f;background:linear-gradient(135deg,#fde68a,var(--gold));border:none;box-shadow:0 14px 30px rgba(245,158,11,.20)}
+    .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25);color:#fecaca}
+    .btn.small{min-height:32px;border-radius:11px;padding:0 10px;font-size:12px}
+    .panel{
+      margin-top:14px;
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:linear-gradient(180deg,rgba(15,23,42,.86),rgba(8,15,28,.78));
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+    .filters{display:grid;grid-template-columns:150px minmax(220px,340px) minmax(220px,1fr) auto;gap:10px;align-items:end}
+    .field{display:grid;gap:6px}
+    label{color:var(--muted);font-weight:950;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+    input,select{
+      width:100%;
+      min-height:40px;
+      border:1px solid rgba(148,163,184,.22);
+      border-radius:13px;
+      background:rgba(2,6,23,.44);
+      color:var(--text);
+      padding:9px 11px;
+      outline:none;
+      font-weight:850;
+    }
+    select option{background:#0f172a;color:#e8f0ff}
+    input:focus,select:focus{border-color:rgba(56,189,248,.58);box-shadow:0 0 0 4px rgba(56,189,248,.12)}
+    .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}
+    .kpi{border:1px solid rgba(148,163,184,.15);border-radius:16px;background:rgba(2,6,23,.30);padding:10px 12px}
+    .kpi span{display:block;color:var(--muted);font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.05em}
+    .kpi strong{display:block;margin-top:3px;font-size:22px;letter-spacing:-.04em}
+    .tableWrap{overflow:auto;border-radius:18px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.32);margin-top:12px}
+    table{width:100%;border-collapse:collapse;min-width:960px}
+    th,td{padding:10px 11px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;white-space:nowrap;vertical-align:middle}
+    th{position:sticky;top:0;background:rgba(8,15,28,.96);z-index:1;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+    td{font-weight:820;font-size:13px;color:#dbeafe}
+    tr:last-child td{border-bottom:0}
+    .right{text-align:right}
+    .rowTitle{display:grid;gap:2px;min-width:0}
+    .rowTitle strong{font-size:13px;color:#f8fafc;max-width:330px;overflow:hidden;text-overflow:ellipsis}
+    .rowTitle span{font-size:11px;color:var(--muted)}
+    .chip{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:3px 9px;border-radius:999px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.05);color:var(--muted);font-size:11px;font-weight:950}
+    .chip.green{color:#bbf7d0;background:rgba(34,197,94,.11);border-color:rgba(34,197,94,.25)}
+    .chip.gold{color:#fde68a;background:rgba(245,158,11,.11);border-color:rgba(245,158,11,.25)}
+    .empty{border:1px dashed rgba(148,163,184,.22);border-radius:18px;padding:20px;text-align:center;color:var(--muted);background:rgba(255,255,255,.025)}
+    .modalBackdrop{position:fixed;inset:0;background:rgba(2,6,23,.72);display:none;align-items:center;justify-content:center;padding:18px;z-index:10000;backdrop-filter:blur(10px)}
+    .modalBackdrop.is-open{display:flex}
+    .modal{width:min(980px,100%);max-height:90vh;overflow:auto;border:1px solid rgba(148,163,184,.22);border-radius:24px;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(8,15,28,.96));box-shadow:0 30px 90px rgba(0,0,0,.48);padding:18px}
+    .modal h2{margin:0 0 8px;font-size:24px;letter-spacing:-.04em}
+    .modal p{margin:0 0 12px}
+    .modalActions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .toast{position:fixed;right:22px;bottom:22px;z-index:11000;display:none;max-width:min(460px,calc(100vw - 44px));border:1px solid var(--line);border-radius:18px;padding:13px 15px;background:#0f172a;box-shadow:0 20px 60px rgba(0,0,0,.36);font-weight:850;color:#fff}
+    .toast.show{display:block}
+    .toast.error{border-color:rgba(239,68,68,.38);background:#2a1118;color:#fecaca}
+    @media(max-width:920px){
+      .filters{grid-template-columns:1fr 1fr}
+      .actions{width:100%}
+      .btn{flex:1}
+      .kpis{grid-template-columns:1fr}
+    }
+    @media(max-width:620px){.filters{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <div class="eyebrow">Action promo</div>
+        <h1>Mes campagnes promo</h1>
+        <p>Historique des campagnes marquées comme envoyées, avec la liste des clients ciblés.</p>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="index.html">Portail</a>
+      <a class="btn green" href="action-promo.html">Nouvelle campagne</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="filters">
+      <div class="field">
+        <label for="yearSelect">Année</label>
+        <select id="yearSelect"></select>
+      </div>
+      <div class="field" id="commercialField" hidden>
+        <label for="commercialSelect">Commercial</label>
+        <select id="commercialSelect"><option value="">Tous les commerciaux</option></select>
+      </div>
+      <div class="field">
+        <label for="searchInput">Recherche</label>
+        <input id="searchInput" placeholder="Produit, client, plaque..." autocomplete="off" />
+      </div>
+      <button class="btn gold" id="refreshBtn" type="button">Recharger</button>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><span>Campagnes</span><strong id="kpiCampaigns">-</strong></div>
+      <div class="kpi"><span>Clients ciblés</span><strong id="kpiClients">-</strong></div>
+      <div class="kpi"><span>CA cible</span><strong id="kpiRevenue">-</strong></div>
+    </div>
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Campagne</th>
+            <th>Commercial</th>
+            <th>Plaque</th>
+            <th>Périmètre</th>
+            <th class="right">Clients</th>
+            <th class="right">CA cible</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="campaignBody">
+          <tr><td colspan="8"><div class="empty">Chargement des campagnes...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<div class="modalBackdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <h2 id="modalTitle">Détail campagne</h2>
+    <div id="modalBody"></div>
+    <div class="modalActions" id="modalActions">
+      <button class="btn gold" id="closeModalBtn" type="button">Fermer</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
+const $ = id => document.getElementById(id);
+const state = {
+  payload:null,
+  campaigns:[],
+  clientsByCampaign:{},
+  search:"",
+  commercialId:""
+};
+
+init();
+
+function init(){
+  hydrateYears();
+  $("yearSelect").addEventListener("change", loadCampaigns);
+  $("commercialSelect").addEventListener("change", () => {
+    state.commercialId = $("commercialSelect").value;
+    renderRows();
+  });
+  $("searchInput").addEventListener("input", () => {
+    state.search = $("searchInput").value.trim().toLowerCase();
+    renderRows();
+  });
+  $("refreshBtn").addEventListener("click", loadCampaigns);
+  $("closeModalBtn").addEventListener("click", closeModal);
+  $("modalBackdrop").addEventListener("click", event => {
+    if (event.target.id === "modalBackdrop") closeModal();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeModal();
+  });
+  loadCampaigns();
+}
+
+function hydrateYears(){
+  const current = new Date().getFullYear();
+  $("yearSelect").innerHTML = "";
+  for (let year = current - 2; year <= current + 3; year += 1){
+    $("yearSelect").appendChild(new Option(String(year), String(year), year === current, year === current));
+  }
+}
+
+async function loadCampaigns(){
+  $("campaignBody").innerHTML = '<tr><td colspan="8"><div class="empty">Chargement des campagnes...</div></td></tr>';
+  try {
+    const params = new URLSearchParams({ year:$("yearSelect").value });
+    const payload = await api(`/api/action-promo-campaigns?${params.toString()}`);
+    state.payload = payload || {};
+    state.campaigns = Array.isArray(payload.campaigns) ? payload.campaigns : [];
+    state.clientsByCampaign = payload.clientsByCampaign || {};
+    hydrateCommercialFilter();
+    renderKpis();
+    renderRows();
+  } catch (error) {
+    state.campaigns = [];
+    state.clientsByCampaign = {};
+    renderKpis();
+    $("campaignBody").innerHTML = `<tr><td colspan="8"><div class="empty">${escapeHtml(error.message || "Campagnes indisponibles.")}</div></td></tr>`;
+    toast(error.message || "Chargement impossible.", true);
+  }
+}
+
+function hydrateCommercialFilter(){
+  const commercials = state.payload?.scope?.commercials || [];
+  const isTeamView = (state.payload?.scope?.role || "") === "responsable";
+  $("commercialField").hidden = !isTeamView || commercials.length <= 1;
+  $("commercialSelect").innerHTML = '<option value="">Tous les commerciaux</option>' + commercials.map(commercial => (
+    `<option value="${escapeHtml(commercial.id)}">${escapeHtml(commercial.displayName)}</option>`
+  )).join("");
+  if (state.commercialId && commercials.some(commercial => commercial.id === state.commercialId)) {
+    $("commercialSelect").value = state.commercialId;
+  } else {
+    state.commercialId = "";
+  }
+}
+
+function visibleCampaigns(){
+  const term = state.search;
+  return state.campaigns
+    .filter(campaign => !state.commercialId || campaign.commercialUserId === state.commercialId)
+    .filter(campaign => {
+      if (!term) return true;
+      const clients = state.clientsByCampaign[campaign.id] || [];
+      const haystack = [
+        campaign.productQuery,
+        campaign.plaqueFilterLabel,
+        campaign.commercialName,
+        campaign.commercialIdentifier,
+        ...clients.map(client => `${client.clientName} ${client.account} ${client.plaqueLabel}`)
+      ].join(" ").toLowerCase();
+      return haystack.includes(term);
+    });
+}
+
+function renderKpis(){
+  const rows = visibleCampaigns();
+  const clientCount = rows.reduce((sum, campaign) => sum + Number(campaign.clientCount || 0), 0);
+  const revenue = rows.reduce((sum, campaign) => sum + Number(campaign.totalCaCible || 0), 0);
+  $("kpiCampaigns").textContent = rows.length ? rows.length.toLocaleString("fr-FR") : "0";
+  $("kpiClients").textContent = clientCount.toLocaleString("fr-FR");
+  $("kpiRevenue").textContent = eur.format(revenue);
+}
+
+function renderRows(){
+  renderKpis();
+  const rows = visibleCampaigns();
+  if (!rows.length) {
+    $("campaignBody").innerHTML = '<tr><td colspan="8"><div class="empty">Aucune campagne promo sur ce périmètre.</div></td></tr>';
+    return;
+  }
+  const role = state.payload?.scope?.role || "commercial";
+  $("campaignBody").innerHTML = rows.map(campaign => `
+    <tr>
+      <td>${escapeHtml(formatDateTime(campaign.sentAt || campaign.createdAt))}</td>
+      <td><div class="rowTitle"><strong>${escapeHtml(campaign.productQuery || "Produit")}</strong><span>${escapeHtml(sourceLabel(campaign.sourceMode))} - ${escapeHtml(periodLabel(campaign.periodValue))}</span></div></td>
+      <td>${escapeHtml(campaign.commercialName || "Commercial")}</td>
+      <td><span class="chip gold">${escapeHtml(campaign.plaqueFilterLabel || "Toutes les plaques")}</span></td>
+      <td>${escapeHtml(scopeLabel(campaign.activityScope))}</td>
+      <td class="right">${Number(campaign.clientCount || 0).toLocaleString("fr-FR")}</td>
+      <td class="right">${eur.format(campaign.totalCaCible)}</td>
+      <td>
+        <button class="btn small" type="button" data-view="${escapeHtml(campaign.id)}">Voir clients</button>
+        ${role === "commercial" ? `<button class="btn small danger" type="button" data-delete="${escapeHtml(campaign.id)}">Supprimer</button>` : ""}
+      </td>
+    </tr>
+  `).join("");
+  document.querySelectorAll("[data-view]").forEach(button => {
+    button.addEventListener("click", () => openClients(button.dataset.view));
+  });
+  document.querySelectorAll("[data-delete]").forEach(button => {
+    button.addEventListener("click", () => confirmDelete(button.dataset.delete));
+  });
+}
+
+function openClients(id){
+  const campaign = state.campaigns.find(item => item.id === id);
+  const clients = state.clientsByCampaign[id] || [];
+  setModal(
+    campaign?.productQuery || "Détail campagne",
+    [
+      `<p><b>${clients.length.toLocaleString("fr-FR")}</b> client(s) ciblé(s) - ${escapeHtml(campaign?.plaqueFilterLabel || "Toutes les plaques")}.</p>`,
+      '<div class="tableWrap"><table><thead><tr><th>Client</th><th>Compte</th><th>Plaque</th><th>Email</th><th>Dernier achat</th><th class="right">Quantité</th><th class="right">CA cible</th></tr></thead><tbody>',
+      clients.length ? clients.map(client => `<tr><td>${escapeHtml(client.clientName)}</td><td>${escapeHtml(client.account || "-")}</td><td>${escapeHtml(client.plaqueLabel || "Sans plaque")}</td><td>${escapeHtml(client.email || "-")}</td><td>${escapeHtml(formatDate(client.lastPurchase))}</td><td class="right">${number(client.qty)}</td><td class="right">${eur.format(client.revenue)}</td></tr>`).join("") : '<tr><td colspan="7"><div class="empty">Aucun client historisé pour cette campagne.</div></td></tr>',
+      '</tbody></table></div>'
+    ].join(""),
+    '<button class="btn gold" id="closeModalBtn" type="button">Fermer</button>'
+  );
+}
+
+function confirmDelete(id){
+  const campaign = state.campaigns.find(item => item.id === id);
+  setModal(
+    "Supprimer la campagne",
+    `<p>Tu vas supprimer uniquement l'historique de la campagne <b>${escapeHtml(campaign?.productQuery || "")}</b>.</p><p>Les clients, ventes, BDC, devis et données Supabase existantes ne sont pas modifiés.</p>`,
+    `<button class="btn" id="closeModalBtn" type="button">Annuler</button>
+     <button class="btn danger" id="deleteCampaignBtn" type="button">Supprimer</button>`,
+    () => {
+      $("deleteCampaignBtn").addEventListener("click", async () => {
+        const button = $("deleteCampaignBtn");
+        button.disabled = true;
+        button.textContent = "Suppression...";
+        try {
+          await api("/api/action-promo-campaigns", {
+            method:"DELETE",
+            body:JSON.stringify({ campaignId:id })
+          });
+          closeModal();
+          toast("Campagne supprimée.");
+          await loadCampaigns();
+        } catch (error) {
+          button.disabled = false;
+          button.textContent = "Supprimer";
+          toast(error.message || "Suppression impossible.", true);
+        }
+      });
+    }
+  );
+}
+
+function setModal(title, body, actions, bindEvents){
+  $("modalTitle").textContent = title;
+  $("modalBody").innerHTML = body;
+  $("modalActions").innerHTML = actions || '<button class="btn gold" id="closeModalBtn" type="button">Fermer</button>';
+  if ($("closeModalBtn")) $("closeModalBtn").addEventListener("click", closeModal);
+  if (typeof bindEvents === "function") bindEvents();
+  $("modalBackdrop").classList.add("is-open");
+}
+
+function closeModal(){
+  $("modalBackdrop").classList.remove("is-open");
+}
+
+async function api(url, options = {}){
+  const response = await fetch(url, {
+    cache:"no-store",
+    credentials:"same-origin",
+    ...options,
+    headers:{
+      "Content-Type":"application/json",
+      ...(options.headers || {})
+    }
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "Erreur réseau.");
+  return payload;
+}
+
+function sourceLabel(value){
+  if (value === "sales") return "Ventes saisies";
+  if (value === "both") return "CA importé + ventes saisies";
+  return "CA validé importé";
+}
+
+function scopeLabel(value){
+  if (value === "auto") return "Automobile";
+  if (value === "industrie") return "Industrie";
+  return "Auto + Industrie";
+}
+
+function periodLabel(value){
+  if (value === "all") return "Depuis le début";
+  return `${value || 12} derniers mois`;
+}
+
+function formatDate(value){
+  if (!value) return "-";
+  const date = new Date(String(value).slice(0, 10) + "T00:00:00");
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("fr-FR");
+}
+
+function formatDateTime(value){
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("fr-FR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }).format(date);
+}
+
+function number(value){
+  return Number(value || 0).toLocaleString("fr-FR", { maximumFractionDigits:2 });
+}
+
+function toast(message, isError = false){
+  $("toast").textContent = message;
+  $("toast").classList.toggle("error", Boolean(isError));
+  $("toast").classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => $("toast").classList.remove("show"), 2800);
+}
+
+function escapeHtml(value){
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+</script>
+</body>
+</html>

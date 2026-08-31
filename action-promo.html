@@ -169,7 +169,7 @@
     .filterBanner .cardTitle{margin-bottom:10px}
     .filterFields{
       display:grid;
-      grid-template-columns:minmax(185px,.85fr) minmax(155px,.65fr) minmax(280px,1.35fr) minmax(165px,.75fr) minmax(130px,.55fr) auto;
+      grid-template-columns:minmax(170px,.8fr) minmax(145px,.62fr) minmax(160px,.7fr) minmax(260px,1.2fr) minmax(155px,.72fr) minmax(120px,.5fr) auto;
       gap:10px;
       align-items:end;
     }
@@ -278,7 +278,7 @@
     .miniBtn{min-height:34px;padding:0 10px;border-radius:12px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.055);color:var(--text);font-weight:950;cursor:pointer}
     .miniBtn:hover{background:rgba(255,255,255,.10)}
     .tableWrap{overflow:auto;border-radius:18px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.32);max-height:460px}
-    table{width:100%;border-collapse:collapse;min-width:900px}
+    table{width:100%;border-collapse:collapse;min-width:980px}
     th,td{padding:10px 11px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;white-space:nowrap}
     th{position:sticky;top:0;background:rgba(8,15,28,.96);z-index:1;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
     td{font-weight:820;font-size:13px;color:#dbeafe}
@@ -376,7 +376,7 @@
       </div>
       <div class="actions">
         <a class="btn" href="index.html">Portail</a>
-        <button class="btn gold" id="openStatusBtn" type="button">Envoi verrouillé</button>
+        <a class="btn gold" href="action-promo-campagnes.html">Mes campagnes</a>
       </div>
     </div>
 
@@ -402,6 +402,14 @@
             <option value="all">Auto + Industrie</option>
             <option value="auto">Automobile</option>
             <option value="industrie">Industrie</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="plaqueSelect">Plaque client</label>
+          <select id="plaqueSelect">
+            <option value="all">Toutes les plaques</option>
+            <option value="none">Sans plaque</option>
           </select>
         </div>
 
@@ -468,6 +476,7 @@
             <th>Client</th>
             <th>Compte</th>
             <th>Activité</th>
+            <th>Plaque</th>
             <th>Dernier achat</th>
             <th class="right">Quantité</th>
             <th class="right">CA cible</th>
@@ -476,7 +485,7 @@
           </tr>
         </thead>
         <tbody id="targetBody">
-          <tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une prévisualisation pour afficher les clients ciblés.</td></tr>
+          <tr><td colspan="10" style="color:var(--muted);padding:18px">Lance une prévisualisation pour afficher les clients ciblés.</td></tr>
         </tbody>
       </table>
     </div>
@@ -510,8 +519,8 @@ const CACHE_TTL_MS = 2 * 60 * 1000;
 const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
 const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
 const SOURCES = [
-  { key:"auto", label:"Auto", tables:{ clients:"clients", produits:"produits", visites:"visites", lignes:"visite_commandes" } },
-  { key:"industrie", label:"Industrie", tables:{ clients:"industrie_clients", produits:"industrie_produits", visites:"industrie_visites", lignes:"industrie_visite_commandes" } }
+  { key:"auto", label:"Auto", tables:{ clients:"clients", produits:"produits", visites:"visites", lignes:"visite_commandes", plaques:"plaques" } },
+  { key:"industrie", label:"Industrie", tables:{ clients:"industrie_clients", produits:"industrie_produits", visites:"industrie_visites", lignes:"industrie_visite_commandes", plaques:"industrie_plaques" } }
 ];
 const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR", maximumFractionDigits:0 });
 const $ = id => document.getElementById(id);
@@ -522,6 +531,8 @@ let productCatalogKey = "";
 let productSuggestionCache = new Map();
 let salesProductsCache = new Map();
 let targetRowsCache = new Map();
+let plaqueCatalog = [];
+let plaqueCatalogKey = "";
 let suggestionTimer = null;
 let productSuggestionSeq = 0;
 let activeSuggestionIndex = -1;
@@ -566,6 +577,92 @@ function getCached(map, key){
 function setCached(map, key, value){
   map.set(key, { at:Date.now(), value });
   return value;
+}
+
+function sourceAllowed(source){
+  return activityAllowed(source.label);
+}
+
+function currentPlaqueCatalogKey(){
+  return `${$("sourceSelect").value}::${$("activitySelect").value}`;
+}
+
+function plaqueKey(sourceKey, plaqueId){
+  const id = String(plaqueId || "").trim();
+  return id ? `${sourceKey}:${id}` : "";
+}
+
+function getPlaqueMeta(sourceKey, plaqueId){
+  const key = plaqueKey(sourceKey, plaqueId);
+  return plaqueCatalog.find(item => item.key === key) || null;
+}
+
+function buildClientInfo(source, client){
+  const plaqueId = String(client?.plaque_id || "").trim();
+  const plaque = getPlaqueMeta(source.key, plaqueId);
+  return {
+    email: normalizeEmail(client?.email),
+    clientId: String(client?.id || "").trim(),
+    plaqueId,
+    plaqueKey: plaque ? plaque.key : "",
+    plaqueLabel: plaque?.label || (plaqueId ? "Plaque inconnue" : "Sans plaque")
+  };
+}
+
+async function loadPlaqueCatalog(force = false){
+  const key = currentPlaqueCatalogKey();
+  if (!force && plaqueCatalogKey === key && plaqueCatalog.length) return plaqueCatalog;
+
+  const rows = await Promise.all(SOURCES.filter(sourceAllowed).map(async source => {
+    try {
+      const plaques = await fetchPaged(source.tables.plaques, "id,nom", { order:{ column:"nom", ascending:true } });
+      return plaques.map(plaque => ({
+        key: plaqueKey(source.key, plaque.id),
+        id: String(plaque.id || ""),
+        sourceKey: source.key,
+        activity: source.label,
+        label: plaque.nom || "Plaque"
+      }));
+    } catch (error) {
+      console.warn(`Plaques ${source.label} indisponibles:`, error?.message || error);
+      return [];
+    }
+  }));
+
+  plaqueCatalog = rows.flat().sort((a,b) => a.label.localeCompare(b.label, "fr", { sensitivity:"base" }));
+  plaqueCatalogKey = key;
+  renderPlaqueOptions();
+  return plaqueCatalog;
+}
+
+function renderPlaqueOptions(){
+  const select = $("plaqueSelect");
+  if (!select) return;
+  const previous = select.value || "all";
+  const options = [
+    '<option value="all">Toutes les plaques</option>',
+    '<option value="none">Sans plaque</option>',
+    ...plaqueCatalog.map(plaque => {
+      const suffix = $("activitySelect").value === "all" ? ` - ${plaque.activity}` : "";
+      return `<option value="${escapeHtml(plaque.key)}">${escapeHtml(plaque.label + suffix)}</option>`;
+    })
+  ];
+  select.innerHTML = options.join("");
+  select.value = Array.from(select.options).some(option => option.value === previous) ? previous : "all";
+}
+
+function getSelectedPlaqueLabel(){
+  const value = $("plaqueSelect").value || "all";
+  if (value === "all") return "Toutes les plaques";
+  if (value === "none") return "Sans plaque";
+  return plaqueCatalog.find(plaque => plaque.key === value)?.label || "Plaque sélectionnée";
+}
+
+function rowMatchesPlaqueFilter(row){
+  const selected = $("plaqueSelect").value || "all";
+  if (selected === "all") return true;
+  if (selected === "none") return !row.plaqueKey && !row.plaqueId;
+  return row.plaqueKey === selected;
 }
 
 function sanitizePostgrestSearchValue(value){
@@ -712,30 +809,50 @@ async function fetchInChunks(table, select, column, values, options = {}){
   return all;
 }
 
-function isMissingEmailColumnError(error){
-  return Boolean(error && /email/i.test(error.message || ""));
+function isOptionalClientColumnError(error){
+  return Boolean(error && /(email|plaque_id|schema cache)/i.test(error.message || ""));
 }
 
 async function fetchClientRows(table, ids = null){
   const run = select => ids && ids.length
     ? fetchInChunks(table, select, "id", ids, { order:{ column:"nom", ascending:true } })
     : fetchPaged(table, select, { order:{ column:"nom", ascending:true } });
-  try {
-    return await run("id,nom,numero_compte,email");
-  } catch (error) {
-    if (!isMissingEmailColumnError(error)) throw error;
-    return run("id,nom,numero_compte");
+  const selects = [
+    "id,nom,numero_compte,email,plaque_id",
+    "id,nom,numero_compte,plaque_id",
+    "id,nom,numero_compte,email",
+    "id,nom,numero_compte"
+  ];
+  let lastError = null;
+  for (const select of selects){
+    try {
+      return await run(select);
+    } catch (error) {
+      lastError = error;
+      if (!isOptionalClientColumnError(error)) throw error;
+    }
   }
+  throw lastError || new Error(`${table}: chargement clients impossible`);
 }
 
 async function fetchClientRowsByColumn(table, column, values){
   const run = select => fetchInChunks(table, select, column, values, { order:{ column:"nom", ascending:true } });
-  try {
-    return await run("id,nom,numero_compte,email");
-  } catch (error) {
-    if (!isMissingEmailColumnError(error)) throw error;
-    return run("id,nom,numero_compte");
+  const selects = [
+    "id,nom,numero_compte,email,plaque_id",
+    "id,nom,numero_compte,plaque_id",
+    "id,nom,numero_compte,email",
+    "id,nom,numero_compte"
+  ];
+  let lastError = null;
+  for (const select of selects){
+    try {
+      return await run(select);
+    } catch (error) {
+      lastError = error;
+      if (!isOptionalClientColumnError(error)) throw error;
+    }
   }
+  throw lastError || new Error(`${table}: chargement clients impossible`);
 }
 
 function currentCatalogKey(){
@@ -753,23 +870,28 @@ function emailLookupKeys(activity, account, client){
   return keys;
 }
 
-function addClientEmailToIndex(index, source, client){
-  const email = normalizeEmail(client?.email);
-  if (!email) return;
+function addClientInfoToIndex(index, source, client){
+  const info = buildClientInfo(source, client);
   emailLookupKeys(source.label, client?.numero_compte, client?.nom).forEach(key => {
-    if (!index.has(key)) index.set(key, email);
+    if (!index.has(key)) index.set(key, info);
   });
 }
 
-function findClientEmail(row, index){
+function findClientInfo(row, index){
   for (const key of emailLookupKeys(row?.activity, row?.account, row?.client)){
-    const email = index.get(key);
-    if (email) return email;
+    const info = index.get(key);
+    if (info) return info;
   }
-  return "";
+  return {
+    email:"",
+    clientId:"",
+    plaqueId:"",
+    plaqueKey:"",
+    plaqueLabel:"Sans plaque"
+  };
 }
 
-async function loadClientEmailIndexForRealRows(rows){
+async function loadClientInfoIndexForRealRows(rows){
   const index = new Map();
   const rowsByActivity = new Map();
   (rows || []).forEach(row => {
@@ -785,7 +907,7 @@ async function loadClientEmailIndexForRealRows(rows){
     const accounts = [...new Set(rowsForSource.map(row => String(row.client_code || "").trim()).filter(Boolean))];
     if (!accounts.length) return;
     const clients = await fetchClientRowsByColumn(source.tables.clients, "numero_compte", accounts);
-    clients.forEach(client => addClientEmailToIndex(index, source, client));
+    clients.forEach(client => addClientInfoToIndex(index, source, client));
   }));
 
   return index;
@@ -1083,7 +1205,7 @@ function activityAllowed(label){
 }
 
 function targetKey(row){
-  return `${normalize(row.activity)}::${normalize(row.account)}::${normalize(row.client)}`;
+  return `${normalize(row.activity)}::${normalize(row.account)}::${normalize(row.client)}::${normalize(row.plaqueKey || row.plaqueLabel)}`;
 }
 
 function aggregateRows(rows){
@@ -1099,6 +1221,11 @@ function aggregateRows(rows){
         client:row.client || "Client inconnu",
         account:row.account || "-",
         activity:row.activity || "-",
+        sector:row.sector || "",
+        clientId:row.clientId || "",
+        plaqueId:row.plaqueId || "",
+        plaqueKey:row.plaqueKey || "",
+        plaqueLabel:row.plaqueLabel || "Sans plaque",
         lastRaw:"",
         qty:0,
         revenue:0,
@@ -1110,6 +1237,11 @@ function aggregateRows(rows){
       });
     }
     const target = map.get(key);
+    if (!target.sector && row.sector) target.sector = row.sector;
+    if (!target.clientId && row.clientId) target.clientId = row.clientId;
+    if (!target.plaqueId && row.plaqueId) target.plaqueId = row.plaqueId;
+    if (!target.plaqueKey && row.plaqueKey) target.plaqueKey = row.plaqueKey;
+    if ((!target.plaqueLabel || target.plaqueLabel === "Sans plaque") && row.plaqueLabel) target.plaqueLabel = row.plaqueLabel;
     target.qty += toNumber(row.qty);
     target.revenue += toNumber(row.revenue);
     if (!target.email && row.email) target.email = normalizeEmail(row.email);
@@ -1129,6 +1261,7 @@ function aggregateRows(rows){
       designations:[...row.designations]
     }))
     .filter(row => row.revenue >= minCa)
+    .filter(rowMatchesPlaqueFilter)
     .sort((a,b) => (b.revenue - a.revenue) || String(a.client).localeCompare(String(b.client), "fr", { sensitivity:"base" }));
 }
 
@@ -1144,7 +1277,7 @@ async function loadValidatedRows(term){
     "id,commercial_user_id,commercial_identifier,commercial_name,entite_key,entite_libelle,annee,mois,client_code,client_nom,montant,quantite,reference,designation,date_piece,source_file",
     options
   );
-  const emailIndex = await loadClientEmailIndexForRealRows(rows);
+  const clientInfoIndex = await loadClientInfoIndexForRealRows(rows);
   return rows
     .filter(row => productMatches(row, term))
     .filter(isInPeriod)
@@ -1155,14 +1288,14 @@ async function loadValidatedRows(term){
         client:row.client_nom || "Client inconnu",
         account:row.client_code || "-",
         activity,
+        sector:normalize(activity).includes("industrie") ? "industrie" : "auto",
         date:rowDateValue(row),
         qty:toNumber(row.quantite),
         revenue:toNumber(row.montant),
         reference:row.reference || "",
         designation:row.designation || ""
       };
-      mapped.email = findClientEmail(mapped, emailIndex);
-      return mapped;
+      return { ...mapped, ...findClientInfo(mapped, clientInfoIndex) };
     })
     .filter(row => activityAllowed(row.activity));
 }
@@ -1207,16 +1340,22 @@ async function loadSalesRowsForSource(source, term){
       if (!visit) return null;
       const product = productById.get(String(line.produit_id));
       const client = clientById.get(String(visit.client_id));
+      const clientInfo = buildClientInfo(source, client);
       const qty = toNumber(line.quantite);
       return {
         source:"Vente saisie",
         client:client?.nom || "Client inconnu",
         account:client?.numero_compte || "-",
         activity:source.label,
+        sector:source.key,
+        clientId:clientInfo.clientId,
+        plaqueId:clientInfo.plaqueId,
+        plaqueKey:clientInfo.plaqueKey,
+        plaqueLabel:clientInfo.plaqueLabel,
         date:String(visit.date_visite || "").slice(0, 10),
         qty,
         revenue:qty * toNumber(line.prix_unitaire),
-        email:normalizeEmail(client?.email),
+        email:clientInfo.email,
         reference:product?.reference_produit || "",
         designation:product?.nom || ""
       };
@@ -1254,6 +1393,7 @@ async function loadTargets(){
     currentUser = window.KentCommercialScope && typeof window.KentCommercialScope.load === "function"
       ? await window.KentCommercialScope.load()
       : null;
+    await loadPlaqueCatalog();
     const rows = await loadTargetRows(term);
     targets = aggregateRows(rows);
     renderTargets();
@@ -1272,7 +1412,7 @@ async function loadTargets(){
 
 function renderTargets(){
   if (!targets.length){
-    $("targetBody").innerHTML = '<tr><td colspan="9" style="color:var(--muted);padding:18px">Lance une prévisualisation pour afficher les clients ciblés.</td></tr>';
+    $("targetBody").innerHTML = '<tr><td colspan="10" style="color:var(--muted);padding:18px">Lance une prévisualisation pour afficher les clients ciblés.</td></tr>';
     updateKpis();
     return;
   }
@@ -1284,6 +1424,7 @@ function renderTargets(){
         <td title="${escapeHtml(row.client)}">${escapeHtml(row.client)}</td>
         <td>${escapeHtml(row.account)}</td>
         <td><span class="sourcePill">${escapeHtml(row.activity)}</span></td>
+        <td>${escapeHtml(row.plaqueLabel || "Sans plaque")}</td>
         <td>${escapeHtml(row.last)}</td>
         <td class="right">${(Math.round(row.qty * 100) / 100).toLocaleString("fr-FR")}</td>
         <td class="right">${eur.format(row.revenue)}</td>
@@ -1315,6 +1456,54 @@ function updateKpis(){
 
 function getSelectedTargets(){
   return targets.filter(row => row.selected);
+}
+
+function buildCampaignPayload(){
+  return {
+    productQuery:$("productRef").value.trim(),
+    sourceMode:$("sourceSelect").value,
+    activityScope:$("activitySelect").value,
+    plaqueFilterKey:$("plaqueSelect").value || "all",
+    plaqueFilterLabel:getSelectedPlaqueLabel(),
+    periodValue:$("periodSelect").value,
+    minCa:$("minCa").value,
+    targets:getSelectedTargets().map(row => ({
+      clientId:row.clientId || "",
+      sector:row.sector || (normalize(row.activity).includes("industrie") ? "industrie" : "auto"),
+      client:row.client || "Client inconnu",
+      account:row.account || "",
+      activity:row.activity || "",
+      plaqueId:row.plaqueId || "",
+      plaqueLabel:row.plaqueLabel || "Sans plaque",
+      email:row.email || "",
+      revenue:row.revenue || 0,
+      qty:row.qty || 0,
+      lastRaw:row.lastRaw || "",
+      status:row.status || ""
+    }))
+  };
+}
+
+async function campaignApi(url, options = {}){
+  const response = await fetch(url, {
+    cache:"no-store",
+    credentials:"same-origin",
+    ...options,
+    headers:{
+      "Content-Type":"application/json",
+      ...(options.headers || {})
+    }
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "Campagne promo indisponible.");
+  return payload;
+}
+
+async function saveCampaignHistory(){
+  return campaignApi("/api/action-promo-campaigns", {
+    method:"POST",
+    body:JSON.stringify(buildCampaignPayload())
+  });
 }
 
 function openMessageModal(){
@@ -1410,18 +1599,34 @@ function openSendConfirmModal(){
   setModalContent(
     "Confirmer l'envoi",
     `
-      <div class="modalNote">Étape 3/3 : dernière validation. Aujourd'hui, l'envoi réel est encore verrouillé tant que le connecteur email n'est pas branché.</div>
-      <p>Tu es prêt à envoyer cette campagne à <b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b> client(s) avec email renseigné.</p>
-      <p>Quand le branchement email sera activé, cette action enverra un email individuel à chaque client, sans afficher les autres destinataires.</p>
+      <div class="modalNote">Étape 3/3 : dernière validation. Aucun email réel ne part pour le moment, mais la campagne sera historisée comme envoyée.</div>
+      <p>Tu vas marquer cette campagne comme envoyée pour <b>${selectedTargets.length.toLocaleString("fr-FR")}</b> client(s), dont <b>${selectedWithEmail.length.toLocaleString("fr-FR")}</b> avec email renseigné.</p>
+      <p>Quand le connecteur email sera activé, cette étape déclenchera un envoi individuel à chaque client, sans afficher les autres destinataires.</p>
     `,
     `
       <button class="btn" id="backToPreviewBtn" type="button">Retour aperçu</button>
-      <button class="btn green" id="confirmCampaignBtn" type="button">Envoyer la campagne</button>
+      <button class="btn green" id="confirmCampaignBtn" type="button">Marquer comme envoyée</button>
     `,
     () => {
       $("backToPreviewBtn").addEventListener("click", openPreviewModal);
-      $("confirmCampaignBtn").addEventListener("click", () => {
-        showModal("Campagne prête", "Le parcours est validé. Aucun email réel n'a été envoyé pour le moment : le connecteur email reste à brancher avant activation.");
+      $("confirmCampaignBtn").addEventListener("click", async () => {
+        const button = $("confirmCampaignBtn");
+        button.disabled = true;
+        button.textContent = "Historisation...";
+        try {
+          const saved = await saveCampaignHistory();
+          setModalContent(
+            "Campagne historisée",
+            `<p>La campagne promo est enregistrée dans ton historique avec <b>${Number(saved.clientCount || selectedTargets.length).toLocaleString("fr-FR")}</b> client(s) ciblé(s).</p>
+             <p>Aucun email réel n'a été envoyé tant que le connecteur email n'est pas branché.</p>`,
+            `<a class="btn gold" href="action-promo-campagnes.html">Voir mes campagnes</a>
+             <button class="btn primary" id="closeModalBtn" type="button">Rester ici</button>`
+          );
+        } catch (error) {
+          button.disabled = false;
+          button.textContent = "Marquer comme envoyée";
+          showModal("Historisation impossible", error.message || "Impossible d'enregistrer cette campagne pour le moment.");
+        }
       });
     }
   );
@@ -1454,11 +1659,31 @@ $("productRef").addEventListener("keydown", event => {
 });
 $("sourceSelect").addEventListener("change", () => {
   resetProductCatalog();
+  loadPlaqueCatalog(true)
+    .then(() => { if (targets.length) loadTargets(); })
+    .catch(error => console.warn("Chargement plaques indisponible:", error?.message || error));
   refreshProductSuggestions();
 });
 $("activitySelect").addEventListener("change", () => {
   resetProductCatalog();
+  loadPlaqueCatalog(true).then(() => {
+    if (targets.length) loadTargets();
+  }).catch(error => console.warn("Chargement plaques indisponible:", error?.message || error));
   refreshProductSuggestions();
+});
+$("plaqueSelect").addEventListener("change", async () => {
+  if (!targets.length) return;
+  const term = $("productRef").value.trim();
+  setLoading(true, "Filtre plaque en cours...");
+  try {
+    const rows = await loadTargetRows(term);
+    targets = aggregateRows(rows);
+    renderTargets();
+  } catch (error) {
+    showModal("Filtre plaque impossible", error.message || "Impossible d'appliquer le filtre plaque.");
+  } finally {
+    setLoading(false);
+  }
 });
 document.addEventListener("mousedown", event => {
   if (!event.target.closest(".suggestField")) hideProductSuggestions();
@@ -1479,12 +1704,21 @@ $("resetBtn").addEventListener("click", () => {
   targets = [];
   renderTargets();
 });
-$("openStatusBtn").addEventListener("click", () => showModal("Lecture seule active", "Le ciblage lit Supabase en temps réel, mais aucun email n'est envoyé et aucune donnée n'est modifiée."));
 $("closeModalBtn").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") closeModal(); });
 document.addEventListener("keydown", event => { if (event.key === "Escape") closeModal(); });
-renderTargets();
-warmInitialSuggestions();
+async function initActionPromo(){
+  renderTargets();
+  currentUser = window.KentCommercialScope && typeof window.KentCommercialScope.load === "function"
+    ? await window.KentCommercialScope.load()
+    : null;
+  await loadPlaqueCatalog(true);
+  warmInitialSuggestions();
+}
+initActionPromo().catch(error => {
+  console.warn("Initialisation action promo partielle:", error?.message || error);
+  warmInitialSuggestions();
+});
 </script>
 </body>
 </html>

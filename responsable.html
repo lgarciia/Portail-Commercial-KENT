@@ -159,6 +159,57 @@
     .tab.active{background:linear-gradient(135deg, #ffd86b, #f59e0b);color:#101827;box-shadow:0 12px 26px rgba(245,158,11,.20)}
     .view{display:none}
     .view.active{display:block}
+    .doc-tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:17px;
+      padding:6px;
+      background:rgba(3,7,18,.18);
+      width:max-content;
+      max-width:100%;
+    }
+    .doc-tab{
+      border:0;
+      min-height:34px;
+      border-radius:12px;
+      padding:0 12px;
+      color:rgba(255,255,255,.70);
+      background:transparent;
+      font-weight:950;
+      white-space:nowrap;
+    }
+    .doc-tab.active{background:rgba(255,255,255,.12);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+    .doc-panel[hidden]{display:none}
+    .campaign-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:12px}
+    .campaign-toolbar .field{min-width:230px}
+    .dialog-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:60;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(3,7,18,.58);
+      backdrop-filter:blur(8px);
+    }
+    .dialog-backdrop.show{display:flex}
+    .dialog{
+      width:min(1080px,calc(100vw - 36px));
+      max-height:88vh;
+      overflow:auto;
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:24px;
+      background:linear-gradient(135deg, rgba(15,23,42,.98), rgba(6,78,59,.88));
+      box-shadow:0 28px 90px rgba(0,0,0,.46);
+      padding:18px;
+    }
+    .dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+    .dialog-head h2{margin:0;font-size:22px;letter-spacing:-.035em}
+    .dialog-body{display:grid;gap:12px}
     .panel{
       border:1px solid var(--line);
       border-radius:24px;
@@ -574,16 +625,42 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>BDC / Devis a suivre</h2>
-            <div class="sub">Documents générés sur l'année sélectionnée, visibles en temps réel.</div>
+            <h2>Documents équipe</h2>
+            <div class="sub">BDC, devis et campagnes promo des commerciaux visibles. Vue responsable en lecture seule.</div>
           </div>
           <span class="chip chip-blue">Lecture seule</span>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Commercial</th><th>Type</th><th>Statut</th><th>Client</th><th>Compte</th><th>Fichier</th><th class="num">Montant HT</th></tr></thead>
-            <tbody data-document-rows></tbody>
-          </table>
+        <div class="doc-tabs" aria-label="Type de documents">
+          <button class="doc-tab active" type="button" data-doc-tab="documents">BDC / Devis</button>
+          <button class="doc-tab" type="button" data-doc-tab="campaigns">Campagnes promo</button>
+        </div>
+        <div class="doc-panel" data-doc-panel="documents">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Commercial</th><th>Type</th><th>Statut</th><th>Client</th><th>Compte</th><th>Fichier</th><th class="num">Montant HT</th></tr></thead>
+              <tbody data-document-rows></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="doc-panel" data-doc-panel="campaigns" hidden>
+          <div class="campaign-toolbar">
+            <div>
+              <strong>Historique campagnes promo</strong>
+              <div class="sub">Clique sur une campagne pour voir les clients ciblés.</div>
+            </div>
+            <div class="field">
+              <span>Commercial</span>
+              <select data-campaign-commercial-filter>
+                <option value="">Tous les commerciaux</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Commercial</th><th>Produit / référence</th><th>Plaque</th><th>Périmètre</th><th class="num">Clients</th><th class="num">CA cible</th><th>Action</th></tr></thead>
+              <tbody data-campaign-rows></tbody>
+            </table>
+          </div>
         </div>
       </section>
     </section>
@@ -649,6 +726,19 @@
     </div>
   </div>
 
+  <div class="dialog-backdrop" data-campaign-dialog aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="campaignDialogTitle">
+      <div class="dialog-head">
+        <div>
+          <h2 id="campaignDialogTitle" data-campaign-dialog-title>Campagne promo</h2>
+          <div class="sub" data-campaign-dialog-subtitle></div>
+        </div>
+        <button class="btn small" type="button" data-campaign-dialog-close>Fermer</button>
+      </div>
+      <div class="dialog-body" data-campaign-dialog-body></div>
+    </div>
+  </div>
+
   <div class="toast" data-toast></div>
 
   <script>
@@ -666,6 +756,8 @@
         selectedGapCommercialId: "",
         selectedDayCommercialId: "",
         selectedDayClientKey: "",
+        activeDocumentTab: "documents",
+        campaignCommercialFilter: "",
         showDailyReport: false
       };
 
@@ -700,6 +792,15 @@
         gapRows: document.querySelector("[data-gap-rows]"),
         gapDetail: document.querySelector("[data-gap-detail]"),
         documentRows: document.querySelector("[data-document-rows]"),
+        docTabs: document.querySelectorAll("[data-doc-tab]"),
+        docPanels: document.querySelectorAll("[data-doc-panel]"),
+        campaignCommercialFilter: document.querySelector("[data-campaign-commercial-filter]"),
+        campaignRows: document.querySelector("[data-campaign-rows]"),
+        campaignDialog: document.querySelector("[data-campaign-dialog]"),
+        campaignDialogTitle: document.querySelector("[data-campaign-dialog-title]"),
+        campaignDialogSubtitle: document.querySelector("[data-campaign-dialog-subtitle]"),
+        campaignDialogBody: document.querySelector("[data-campaign-dialog-body]"),
+        campaignDialogClose: document.querySelector("[data-campaign-dialog-close]"),
         activityRows: document.querySelector("[data-activity-rows]"),
         dayCommercials: document.querySelector("[data-day-commercials]"),
         dayClients: document.querySelector("[data-day-clients]"),
@@ -762,6 +863,22 @@
           state.typeFilter = els.typeFilter.value;
           renderSalesRows();
         });
+        els.docTabs.forEach(function(button){
+          button.addEventListener("click", function(){
+            setDocumentTab(button.dataset.docTab || "documents");
+          });
+        });
+        els.campaignCommercialFilter.addEventListener("change", function(){
+          state.campaignCommercialFilter = els.campaignCommercialFilter.value;
+          renderCampaignRows();
+        });
+        els.campaignDialogClose.addEventListener("click", closeCampaignDialog);
+        els.campaignDialog.addEventListener("click", function(event){
+          if (event.target === els.campaignDialog) closeCampaignDialog();
+        });
+        document.addEventListener("keydown", function(event){
+          if (event.key === "Escape") closeCampaignDialog();
+        });
         loadDashboard();
       }
 
@@ -822,6 +939,7 @@
         renderBudgetTables();
         renderGapRows();
         renderDocumentRows();
+        renderCampaignRows();
         renderActivityRows();
         renderDailyActivity();
         renderDailyReport();
@@ -862,14 +980,23 @@
 
       function hydrateCommercialOptions(){
         const previous = els.commercialFilter.value;
+        const previousCampaign = els.campaignCommercialFilter.value;
         const commercials = state.payload?.commercials || [];
         els.commercialFilter.innerHTML = '<option value="">Toute equipe</option>' + commercials
+          .map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.displayName || item.identifier)}</option>`)
+          .join("");
+        els.campaignCommercialFilter.innerHTML = '<option value="">Tous les commerciaux</option>' + commercials
           .map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.displayName || item.identifier)}</option>`)
           .join("");
         if (previous && commercials.some(item => item.id === previous)) {
           els.commercialFilter.value = previous;
         } else {
           state.commercialFilter = "";
+        }
+        if (previousCampaign && commercials.some(item => item.id === previousCampaign)) {
+          els.campaignCommercialFilter.value = previousCampaign;
+        } else {
+          state.campaignCommercialFilter = "";
         }
       }
 
@@ -878,6 +1005,7 @@
         if (state.selectedBudgetCommercialId && !ids.has(state.selectedBudgetCommercialId)) state.selectedBudgetCommercialId = "";
         if (state.selectedGapCommercialId && !ids.has(state.selectedGapCommercialId)) state.selectedGapCommercialId = "";
         if (state.selectedDayCommercialId && !ids.has(state.selectedDayCommercialId)) state.selectedDayCommercialId = "";
+        if (state.campaignCommercialFilter && !ids.has(state.campaignCommercialFilter)) state.campaignCommercialFilter = "";
         const entityIds = new Set((state.payload?.budgets?.entities || []).map(item => item.id));
         if (state.selectedBudgetEntityId && !entityIds.has(state.selectedBudgetEntityId)) state.selectedBudgetEntityId = "";
       }
@@ -1123,6 +1251,60 @@
         els.documentRows.innerHTML = rows.slice(0, 80).map(function(row){
           return `<tr><td>${escapeHtml(formatDateShort(row.dateDocument))}</td><td>${escapeHtml(commercialName(row.commercialUserId))}</td><td>${escapeHtml((row.typeDocument || "").toUpperCase())}</td><td>${statusBadge(row.statut)}</td><td>${escapeHtml(row.clientNom)}</td><td>${escapeHtml(row.numeroCompte || "-")}</td><td>${escapeHtml(row.nomFichier || "-")}</td><td class="num">${money(row.montantHt)}</td></tr>`;
         }).join("");
+      }
+
+      function renderCampaignRows(){
+        let rows = state.payload?.campaigns?.recent || [];
+        rows = filterCommercialRows(rows, "commercialUserId");
+        if (state.campaignCommercialFilter) {
+          rows = rows.filter(row => row.commercialUserId === state.campaignCommercialFilter);
+        }
+        if (!rows.length) {
+          els.campaignRows.innerHTML = '<tr><td colspan="8"><div class="empty">Aucune campagne promo sur ce périmètre.</div></td></tr>';
+          return;
+        }
+        els.campaignRows.innerHTML = rows.slice(0, 100).map(function(row){
+          return `<tr class="clickable-row" data-campaign-id="${escapeHtml(row.id)}"><td>${escapeHtml(formatDateTime(row.sentAt || row.createdAt))}</td><td><div class="row-title"><strong>${escapeHtml(row.productQuery || "Produit")}</strong><span>${escapeHtml(sourceLabel(row.sourceMode))} - ${escapeHtml(periodLabel(row.periodValue))}</span></div></td><td>${escapeHtml(commercialName(row.commercialUserId))}</td><td><span class="chip chip-principal">${escapeHtml(row.plaqueFilterLabel || "Toutes les plaques")}</span></td><td>${escapeHtml(scopeLabel(row.activityScope))}</td><td class="num">${integer(row.clientCount)}</td><td class="num">${money(row.totalCaCible)}</td><td><button class="btn small" type="button" data-campaign-detail="${escapeHtml(row.id)}">Voir clients</button></td></tr>`;
+        }).join("");
+        els.campaignRows.querySelectorAll("[data-campaign-id]").forEach(function(row){
+          row.addEventListener("click", function(event){
+            if (event.target.closest("button")) return;
+            openCampaignDialog(row.dataset.campaignId);
+          });
+        });
+        els.campaignRows.querySelectorAll("[data-campaign-detail]").forEach(function(button){
+          button.addEventListener("click", function(){
+            openCampaignDialog(button.dataset.campaignDetail);
+          });
+        });
+      }
+
+      function openCampaignDialog(campaignId){
+        const campaign = (state.payload?.campaigns?.rows || []).find(row => row.id === campaignId);
+        const clients = (state.payload?.campaigns?.clientsByCampaign || {})[campaignId] || [];
+        if (!campaign) return;
+        els.campaignDialogTitle.textContent = campaign.productQuery || "Campagne promo";
+        els.campaignDialogSubtitle.textContent = `${commercialName(campaign.commercialUserId)} - ${formatDateTime(campaign.sentAt || campaign.createdAt)} - ${campaign.plaqueFilterLabel || "Toutes les plaques"}`;
+        els.campaignDialogBody.innerHTML = [
+          '<div class="detail-kpis">',
+            detailKpi("Clients ciblés", integer(clients.length || campaign.clientCount)),
+            detailKpi("CA cible", money(campaign.totalCaCible)),
+            detailKpi("Périmètre", scopeLabel(campaign.activityScope)),
+            detailKpi("Source", sourceLabel(campaign.sourceMode)),
+          '</div>',
+          '<div class="table-wrap"><table><thead><tr><th>Client</th><th>Compte</th><th>Plaque</th><th>Email</th><th>Dernier achat</th><th class="num">Quantité</th><th class="num">CA cible</th></tr></thead><tbody>',
+          clients.length
+            ? clients.map(client => `<tr><td><div class="row-title"><strong>${escapeHtml(client.clientName)}</strong><span>${escapeHtml(sectorLabel(client.sector))}</span></div></td><td>${escapeHtml(client.account || "-")}</td><td>${escapeHtml(client.plaqueLabel || "Sans plaque")}</td><td>${escapeHtml(client.email || "-")}</td><td>${escapeHtml(formatDateShort(client.lastPurchase))}</td><td class="num">${number(client.qty)}</td><td class="num">${money(client.revenue)}</td></tr>`).join("")
+            : '<tr><td colspan="7"><div class="empty">Aucun client historisé pour cette campagne.</div></td></tr>',
+          '</tbody></table></div>'
+        ].join("");
+        els.campaignDialog.classList.add("show");
+        els.campaignDialog.setAttribute("aria-hidden", "false");
+      }
+
+      function closeCampaignDialog(){
+        els.campaignDialog.classList.remove("show");
+        els.campaignDialog.setAttribute("aria-hidden", "true");
       }
 
       function renderActivityRows(){
@@ -1372,6 +1554,14 @@
         document.querySelectorAll("[data-view]").forEach(node => node.classList.toggle("active", node.dataset.view === tab));
       }
 
+      function setDocumentTab(tab){
+        state.activeDocumentTab = tab === "campaigns" ? "campaigns" : "documents";
+        els.docTabs.forEach(node => node.classList.toggle("active", node.dataset.docTab === state.activeDocumentTab));
+        els.docPanels.forEach(node => {
+          node.hidden = node.dataset.docPanel !== state.activeDocumentTab;
+        });
+      }
+
       function getBudgetMonthlyForCommercial(commercialId){
         if (!commercialId) return normalizeMonthly(state.payload?.budgets?.totals?.monthly);
         const monthly = emptyMonthly();
@@ -1464,6 +1654,27 @@
         if (status === "nonValide") return '<span class="chip chip-red">Non valide</span>';
         if (status === "enCours") return '<span class="chip chip-principal">Transmis</span>';
         return '<span class="chip chip-none">Sans statut</span>';
+      }
+
+      function sourceLabel(value){
+        if (value === "sales") return "Ventes saisies";
+        if (value === "both") return "CA importé + ventes saisies";
+        return "CA validé importé";
+      }
+
+      function periodLabel(value){
+        if (value === "all") return "Depuis le début";
+        return (value || 12) + " derniers mois";
+      }
+
+      function scopeLabel(value){
+        if (value === "auto") return "Automobile";
+        if (value === "industrie") return "Industrie";
+        return "Auto + Industrie";
+      }
+
+      function sectorLabel(value){
+        return value === "industrie" ? "Industrie" : "Automobile";
       }
 
       async function fetchJson(url, options){

@@ -30,6 +30,42 @@ const RELATION_SELECT = [
   "updated_at"
 ].join(",");
 
+const CAMPAIGN_SELECT = [
+  "id",
+  "commercial_user_id",
+  "produit_recherche",
+  "source_mode",
+  "activity_scope",
+  "plaque_filter_key",
+  "plaque_filter_label",
+  "period_value",
+  "min_ca",
+  "nb_clients",
+  "total_ca_cible",
+  "statut",
+  "sent_at",
+  "created_at",
+  "updated_at"
+].join(",");
+
+const CAMPAIGN_CLIENT_SELECT = [
+  "id",
+  "campagne_id",
+  "commercial_user_id",
+  "client_id",
+  "secteur",
+  "client_nom",
+  "numero_compte",
+  "plaque_id",
+  "plaque_nom",
+  "email",
+  "ca_cible",
+  "quantite",
+  "dernier_achat",
+  "statut_email",
+  "created_at"
+].join(",");
+
 const MONTH_KEYS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const MONTH_LABELS = ["Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"];
 const PAGE_SIZE = 1000;
@@ -94,18 +130,20 @@ async function buildDashboard(session, request) {
   const commercialIds = visibleCommercials.map((item) => item.id).filter(Boolean);
   const warnings = [];
 
-  const [salesBlock, budgetBlock, realBlock, documentsBlock] = await Promise.all([
+  const [salesBlock, budgetBlock, realBlock, documentsBlock, campaignsBlock] = await Promise.all([
     safeBlock(() => buildSalesBlock(commercialIds, period), emptySalesBlock(), warnings, "ventes terrain"),
     safeBlock(() => buildBudgetBlock(commercialIds, period), emptyBudgetBlock(), warnings, "budgets"),
     safeBlock(() => buildRealBlock(commercialIds, period), emptyRealBlock(), warnings, "reel importe"),
-    safeBlock(() => buildDocumentsBlock(commercialIds, period), emptyDocumentsBlock(), warnings, "BDC / devis")
+    safeBlock(() => buildDocumentsBlock(commercialIds, period), emptyDocumentsBlock(), warnings, "BDC / devis"),
+    safeBlock(() => buildCampaignsBlock(commercialIds, period), emptyCampaignsBlock(), warnings, "campagnes promo")
   ]);
 
   const enrichedCommercials = visibleCommercials.map((commercial) => enrichCommercial(commercial, {
     salesBlock,
     budgetBlock,
     realBlock,
-    documentsBlock
+    documentsBlock,
+    campaignsBlock
   }));
 
   const principalRelations = enrichedCommercials.filter((item) => item.relationType === "principal");
@@ -147,6 +185,9 @@ async function buildDashboard(session, request) {
       documentsEnCours: documentsBlock.totals.enCours,
       bdcEnCours: documentsBlock.totals.bdcEnCours,
       devisEnCours: documentsBlock.totals.devisEnCours,
+      campagnesPromo: campaignsBlock.totals.total,
+      clientsCampagnesPromo: campaignsBlock.totals.clients,
+      caCibleCampagnesPromo: campaignsBlock.totals.caCible,
       visitesMois: salesBlock.totals.visitsMonth,
       commandesTelephoneMois: salesBlock.totals.phoneMonth,
       clientsMois: salesBlock.totals.clientsMonth
@@ -161,6 +202,7 @@ async function buildDashboard(session, request) {
     budgets: budgetBlock,
     real: realBlock,
     documents: documentsBlock,
+    campaigns: campaignsBlock,
     warnings,
     actions: {
       canEditSales: false,
@@ -797,11 +839,65 @@ async function buildDocumentsBlock(commercialIds, period) {
   };
 }
 
+async function buildCampaignsBlock(commercialIds, period) {
+  if (!commercialIds.length) return emptyCampaignsBlock();
+  const rows = await fetchByCommercialChunks("action_promo_campagnes", CAMPAIGN_SELECT, commercialIds, {
+    sent_at: `gte.${period.year}-01-01T00:00:00.000Z`,
+    sent_at_lte: `lt.${period.year + 1}-01-01T00:00:00.000Z`,
+    order: "sent_at.desc,created_at.desc"
+  }, { sent_at_lte: "sent_at" });
+
+  const campaignIds = unique(rows.map((row) => row.id).filter(Boolean));
+  const clients = campaignIds.length
+    ? await fetchByChunks("action_promo_campagne_clients", CAMPAIGN_CLIENT_SELECT, "campagne_id", campaignIds, {
+        order: "client_nom.asc"
+      })
+    : [];
+
+  const byCommercial = {};
+  const clientsByCampaign = {};
+  const normalizedRows = rows.map(normalizeCampaignRow);
+  const totals = { total: normalizedRows.length, clients: 0, caCible: 0 };
+
+  normalizedRows.forEach((campaign) => {
+    const commercialId = campaign.commercialUserId || "";
+    if (!byCommercial[commercialId]) byCommercial[commercialId] = emptyCampaignCommercial();
+    byCommercial[commercialId].total += 1;
+    byCommercial[commercialId].clients += Number(campaign.clientCount || 0);
+    byCommercial[commercialId].caCible += Number(campaign.totalCaCible || 0);
+    totals.clients += Number(campaign.clientCount || 0);
+    totals.caCible += Number(campaign.totalCaCible || 0);
+  });
+
+  clients.forEach((client) => {
+    const key = normalizeText(client.campagne_id);
+    if (!clientsByCampaign[key]) clientsByCampaign[key] = [];
+    clientsByCampaign[key].push(normalizeCampaignClientRow(client));
+  });
+
+  Object.keys(byCommercial).forEach((id) => {
+    byCommercial[id].caCible = roundMoney(byCommercial[id].caCible);
+  });
+
+  return {
+    totals: {
+      total: totals.total,
+      clients: totals.clients,
+      caCible: roundMoney(totals.caCible)
+    },
+    byCommercial,
+    clientsByCampaign,
+    recent: normalizedRows.slice(0, 80),
+    rows: normalizedRows.slice(0, 1000)
+  };
+}
+
 function enrichCommercial(commercial, blocks) {
   const sales = blocks.salesBlock.byCommercial[commercial.id] || emptySalesCommercialObject();
   const budget = blocks.budgetBlock.byCommercial[commercial.id] || emptyBudgetCommercialObject();
   const real = blocks.realBlock.byCommercial[commercial.id] || emptyRealCommercialObject();
   const docs = blocks.documentsBlock.byCommercial[commercial.id] || emptyDocumentCommercial();
+  const campaigns = blocks.campaignsBlock.byCommercial[commercial.id] || emptyCampaignCommercial();
   return {
     ...commercial,
     metrics: {
@@ -839,6 +935,9 @@ function enrichCommercial(commercial, blocks) {
       bdcEnCours: docs.bdcEnCours || 0,
       devisEnCours: docs.devisEnCours || 0,
       documentsTotal: docs.total || 0,
+      campagnesPromo: campaigns.total || 0,
+      clientsCampagnesPromo: campaigns.clients || 0,
+      caCibleCampagnesPromo: roundMoney(campaigns.caCible),
       status: "ready"
     }
   };
@@ -1078,6 +1177,46 @@ function normalizeDocumentRow(row) {
   };
 }
 
+function normalizeCampaignRow(row) {
+  return {
+    id: normalizeText(row.id),
+    commercialUserId: normalizeText(row.commercial_user_id),
+    productQuery: normalizeText(row.produit_recherche),
+    sourceMode: normalizeText(row.source_mode),
+    activityScope: normalizeText(row.activity_scope),
+    plaqueFilterKey: normalizeText(row.plaque_filter_key) || "all",
+    plaqueFilterLabel: normalizeText(row.plaque_filter_label) || "Toutes les plaques",
+    periodValue: normalizeText(row.period_value) || "12",
+    minCa: roundMoney(toNumber(row.min_ca)),
+    clientCount: Number(row.nb_clients || 0),
+    totalCaCible: roundMoney(toNumber(row.total_ca_cible)),
+    status: normalizeText(row.statut) || "envoyee",
+    sentAt: normalizeText(row.sent_at),
+    createdAt: normalizeText(row.created_at),
+    updatedAt: normalizeText(row.updated_at)
+  };
+}
+
+function normalizeCampaignClientRow(row) {
+  return {
+    id: normalizeText(row.id),
+    campaignId: normalizeText(row.campagne_id),
+    commercialUserId: normalizeText(row.commercial_user_id),
+    clientId: normalizeText(row.client_id),
+    sector: normalizeText(row.secteur),
+    clientName: normalizeText(row.client_nom) || "Client sans nom",
+    account: normalizeText(row.numero_compte),
+    plaqueId: normalizeText(row.plaque_id),
+    plaqueLabel: normalizeText(row.plaque_nom) || "Sans plaque",
+    email: normalizeText(row.email),
+    revenue: roundMoney(toNumber(row.ca_cible)),
+    qty: toNumber(row.quantite),
+    lastPurchase: normalizeText(row.dernier_achat),
+    emailStatus: normalizeText(row.statut_email),
+    createdAt: normalizeText(row.created_at)
+  };
+}
+
 function normalizeRealRow(row) {
   return {
     id: row.id,
@@ -1202,6 +1341,9 @@ function emptyMetrics() {
     bdcEnCours: 0,
     devisEnCours: 0,
     documentsTotal: 0,
+    campagnesPromo: 0,
+    clientsCampagnesPromo: 0,
+    caCibleCampagnesPromo: 0,
     status: "ready"
   };
 }
@@ -1243,6 +1385,10 @@ function emptyRealCommercialObject() {
 
 function emptyDocumentCommercial() {
   return { total: 0, sansStatut: 0, enCours: 0, valide: 0, nonValide: 0, bdcEnCours: 0, devisEnCours: 0 };
+}
+
+function emptyCampaignCommercial() {
+  return { total: 0, clients: 0, caCible: 0 };
 }
 
 function normalizeBudgetCommercials(byCommercial) {
@@ -1290,6 +1436,16 @@ function emptyDocumentsBlock() {
   return {
     totals: { total: 0, sansStatut: 0, enCours: 0, valide: 0, nonValide: 0, bdcEnCours: 0, devisEnCours: 0, montantEnCours: 0 },
     byCommercial: {},
+    recent: [],
+    rows: []
+  };
+}
+
+function emptyCampaignsBlock() {
+  return {
+    totals: { total: 0, clients: 0, caCible: 0 },
+    byCommercial: {},
+    clientsByCampaign: {},
     recent: [],
     rows: []
   };
