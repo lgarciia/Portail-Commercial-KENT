@@ -652,24 +652,25 @@
 
     /* Admin light theme - visual layer only. Remove this block to restore the former dark admin skin. */
     :root{
-      --bg:#f5f7fb;
+      --bg:#edf2f7;
       --panel:#ffffff;
-      --panel-soft:#f8fafc;
-      --line:#dbe4ef;
-      --line-strong:#c7d2e2;
-      --text:#111827;
-      --muted:#64748b;
-      --muted-2:#94a3b8;
+      --panel-soft:#f1f5f9;
+      --line:#c7d2e2;
+      --line-strong:#94a3b8;
+      --text:#0f172a;
+      --muted:#475569;
+      --muted-2:#64748b;
       --purple:#4f46e5;
       --blue:#2563eb;
       --green:#047857;
       --amber:#d97706;
       --red:#dc2626;
-      --shadow:0 18px 42px rgba(15,23,42,.08);
+      --shadow:0 18px 42px rgba(15,23,42,.11);
     }
     body{
       color:var(--text);
-      background:#f5f7fb;
+      background:
+        linear-gradient(180deg,#f8fafc 0%,#edf2f7 42%,#e8eef6 100%);
     }
     .wrap{padding:20px}
     .identity,
@@ -746,6 +747,8 @@
     }
     .hero{
       padding:18px 20px;
+      border-color:#b8c6d9;
+      background:#ffffff;
     }
     .badge{
       border-color:#d6bc64;
@@ -779,11 +782,13 @@
     .control-detail-card{
       border-color:var(--line);
       background:#fff;
-      box-shadow:none;
+      box-shadow:0 10px 24px rgba(15,23,42,.06);
     }
     .stat{
       min-height:78px;
       padding:12px 14px;
+      border-color:#b8c6d9;
+      background:#fbfdff;
     }
     .stat span,
     .finance-kpi span,
@@ -848,12 +853,12 @@
     .admin-tabs,
     .admin-section-tabs,
     .finance-nav{
-      border-color:var(--line);
-      background:#eef3f8;
+      border-color:#b8c6d9;
+      background:#e2eaf4;
     }
     .finance-mode .admin-tabs{
-      border-color:var(--line);
-      background:#eef3f8;
+      border-color:#b8c6d9;
+      background:#e2eaf4;
       box-shadow:none;
     }
     .finance-nav{
@@ -869,7 +874,11 @@
       background:#111827;
       border-color:#111827;
       color:#fff;
-      box-shadow:none;
+      box-shadow:0 8px 18px rgba(15,23,42,.18);
+    }
+    .admin-tab.active .admin-tab-ico,
+    .admin-section-tab.active .admin-tab-ico{
+      opacity:1;
     }
     .admin-tab-ico{opacity:.82}
     .finance-head,
@@ -898,8 +907,8 @@
     .budget-admin-row.header,
     .import-history-row.header,
     th{
-      background:#f8fafc;
-      color:#64748b;
+      background:#eaf0f7;
+      color:#334155;
     }
     .finance-row.total{
       background:#eff6ff;
@@ -917,8 +926,8 @@
     .finance-row button,
     .control-row button,
     .budget-admin-commercial-head button{
-      border-color:var(--line);
-      background:#f8fafc;
+      border-color:#b8c6d9;
+      background:#eef3f8;
       color:#0f172a;
     }
     .finance-detail,
@@ -999,7 +1008,7 @@
     .commercial-pill,
     .control-issue{
       border-color:var(--line);
-      background:#f8fafc;
+      background:#eef3f8;
       color:#334155;
     }
     .budget-admin-list{
@@ -1019,6 +1028,7 @@
     .table-wrap{
       border-color:var(--line);
       background:#fff;
+      box-shadow:0 10px 24px rgba(15,23,42,.05);
     }
     table{background:#fff}
     th,td{
@@ -1029,7 +1039,7 @@
     .field input,
     .field select,
     .field textarea{
-      border-color:#cbd5e1;
+      border-color:#aebdd0;
       background:#fff;
       color:#111827;
       box-shadow:0 1px 2px rgba(15,23,42,.03);
@@ -1051,8 +1061,8 @@
       color:#111827;
     }
     .empty{
-      border-color:#cbd5e1;
-      background:#f8fafc;
+      border-color:#b8c6d9;
+      background:#eef3f8;
     }
     dialog{
       border-color:var(--line-strong);
