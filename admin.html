@@ -955,8 +955,7 @@
             <div class="sub">Ajoute un compte. Les modifications se font ensuite dans une fen&ecirc;tre d&eacute;di&eacute;e.</div>
           </div>
           <div class="toolbar">
-            <button class="btn small primary" type="button" data-open-relation-create>Faire un rattachement</button>
-            <input class="search" type="search" placeholder="Rechercher..." data-search>
+            <button class="btn small primary" type="button" data-open-relation-create>Configurer un rattachement</button>
           </div>
         </div>
 
@@ -1153,7 +1152,7 @@
 
   <dialog id="relationDialog" class="relation-dialog">
     <form class="modal-body" id="relationForm" autocomplete="off">
-      <h3>Faire un rattachement</h3>
+      <h3>Configurer un rattachement</h3>
       <p>Associe un commercial à un responsable principal, ou donne une visibilité exceptionnelle.</p>
       <div class="form-grid" style="margin-top:14px">
         <div class="field">
@@ -1315,7 +1314,6 @@
         adminImportSummary: document.querySelector("[data-admin-import-summary]"),
         adminImportHistory: document.querySelector("[data-admin-import-history]"),
         formTitle: document.querySelector("[data-form-title]"),
-        search: document.querySelector("[data-search]"),
         toast: document.querySelector("[data-toast]"),
         sessionAlert: document.querySelector("[data-session-alert]"),
         sessionAlertText: document.querySelector("[data-session-alert-text]"),
@@ -1489,11 +1487,6 @@
             renderDataControl();
           });
         }
-        els.search.addEventListener("input", function(){
-          state.search = els.search.value.trim().toLowerCase();
-          renderUsers();
-        });
-
         document.querySelectorAll("[data-filter]").forEach(function(button){
           button.addEventListener("click", function(){
             state.filter = button.dataset.filter;
