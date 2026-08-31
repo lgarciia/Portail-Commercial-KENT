@@ -400,9 +400,42 @@
     lastHeaders = [];
   }
 
+  function sortKeyForColumn(col, colQ, colCA){
+    if (col === colQ) return "qty";
+    if (col === colCA) return "ca";
+    return `col:${encodeURIComponent(String(col))}`;
+  }
+
+  function columnFromSortKey(key, colCA, colQ){
+    if (key === "qty") return colQ;
+    if (key === "ca") return colCA;
+    if (key && key.startsWith("col:")) return decodeURIComponent(key.slice(4));
+    return colCA;
+  }
+
+  function isNumericSortKey(key){
+    return key === "qty" || key === "ca";
+  }
+
+  function compareSortValues(a, b, key, asc){
+    const base = isNumericSortKey(key)
+      ? toNumber(a) - toNumber(b)
+      : sortNumIfPossible(a ?? "", b ?? "");
+    return asc ? base : -base;
+  }
+
+  function compareSortFallback(a, b, colCA, colQ, groupCols){
+    const ca = toNumber(b[colCA]) - toNumber(a[colCA]);
+    if (ca) return ca;
+    const qty = toNumber(b[colQ]) - toNumber(a[colQ]);
+    if (qty) return qty;
+    const firstGroup = groupCols[0];
+    return firstGroup ? sortNumIfPossible(a[firstGroup] ?? "", b[firstGroup] ?? "") : 0;
+  }
+
   function renderTable(groupCols, colQ, colCA, result, totalQty, totalCA){
     const headers = [
-      ...groupCols.map(col => ({ label: col, col, right: false, kind: "text" })),
+      ...groupCols.map(col => ({ label: col, col, right: false, kind: "text", sortable: true, sortKey: sortKeyForColumn(col, colQ, colCA) })),
       { label: colQ, col: colQ, right: true, kind: "num", sortable: true, sortKey: "qty" },
       { label: colCA, col: colCA, right: true, kind: "eur", sortable: true, sortKey: "ca" }
     ];
@@ -413,7 +446,7 @@
         ${headers.map(header => {
           const cls = header.sortable ? "sortable" : "";
           const icon = header.sortable ? `<span class="sortIcon">${iconFor(header.sortKey)}</span>` : "";
-          return `<th class="${cls} ${header.right ? "right" : ""}" data-sort="${header.sortKey || ""}">${escapeHtml(header.label)}${icon}</th>`;
+          return `<th class="${cls} ${header.right ? "right" : ""}" data-sort="${escapeHtml(header.sortKey || "")}">${escapeHtml(header.label)}${icon}</th>`;
         }).join("")}
       </tr>
     `;
@@ -434,7 +467,8 @@
     $("kpiQty").textContent = numberFmt.format(Math.round(totalQty * 100) / 100);
     $("kpiCA").textContent = eur.format(totalCA);
 
-    $("thead").querySelectorAll("th[data-sort='qty'], th[data-sort='ca']").forEach(th => {
+    $("thead").querySelectorAll("th[data-sort]").forEach(th => {
+      if (!th.dataset.sort) return;
       th.onclick = () => toggleSort(th.dataset.sort, colCA, colQ, groupCols);
     });
   }
@@ -444,16 +478,13 @@
     if (sortKey === nextSortKey) sortAsc = !sortAsc;
     else {
       sortKey = nextSortKey;
-      sortAsc = false;
+      sortAsc = !isNumericSortKey(nextSortKey);
     }
-    const primaryCol = sortKey === "qty" ? colQ : colCA;
-    const secondaryCol = sortKey === "qty" ? colCA : colQ;
+    const primaryCol = columnFromSortKey(sortKey, colCA, colQ);
     const sorted = [...lastResult].sort((a,b) => {
-      const primary = sortAsc
-        ? toNumber(a[primaryCol]) - toNumber(b[primaryCol])
-        : toNumber(b[primaryCol]) - toNumber(a[primaryCol]);
+      const primary = compareSortValues(a[primaryCol], b[primaryCol], sortKey, sortAsc);
       if (primary !== 0) return primary;
-      return toNumber(b[secondaryCol]) - toNumber(a[secondaryCol]);
+      return compareSortFallback(a, b, colCA, colQ, groupCols);
     });
     const totalQty = sorted.reduce((sum,row) => sum + toNumber(row[colQ]), 0);
     const totalCA = sorted.reduce((sum,row) => sum + toNumber(row[colCA]), 0);
