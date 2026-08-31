@@ -125,13 +125,6 @@
     .admin-tab-ico *{fill:none !important;stroke:currentColor !important}
     .admin-tab.active .admin-tab-ico{opacity:.95}
     .admin-link-tab{margin-left:auto}
-    .admin-breadcrumb{
-      margin:10px 3px 0;display:flex;align-items:center;gap:8px;color:var(--muted);
-      font-size:12px;font-weight:900;letter-spacing:.02em;
-    }
-    .admin-breadcrumb span{display:inline-flex;align-items:center;gap:8px}
-    .admin-breadcrumb span:not(:last-child)::after{content:"/";color:rgba(226,232,240,.36)}
-    .admin-breadcrumb span:last-child{color:#fff}
     .admin-view{display:none;margin-top:16px}
     .admin-view.active{display:block;animation:viewIn .18s ease both}
     @keyframes viewIn{
@@ -496,6 +489,7 @@
     .layout{
       display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
+    .user-admin-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
     .panel{
       border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.074);
       box-shadow:0 18px 46px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.06);padding:18px;min-width:0;
@@ -562,6 +556,8 @@
       border:1px solid var(--line-strong);border-radius:24px;background:#0d1322;color:var(--text);
       box-shadow:0 34px 120px rgba(0,0,0,.62);width:min(520px,calc(100vw - 28px));padding:0;
     }
+    dialog.relation-dialog{width:min(760px,calc(100vw - 28px))}
+    dialog.info-dialog{width:min(480px,calc(100vw - 28px))}
     dialog::backdrop{background:rgba(0,0,0,.66);backdrop-filter:blur(6px)}
     .modal-body{padding:20px}
     .modal-body h3{margin:0 0 8px;font-size:22px}
@@ -666,8 +662,6 @@
         </span>
       </div>
       <div class="top-actions">
-        <span class="btn ghost small" data-session-source>Session s&eacute;curis&eacute;e</span>
-        <a class="btn small" href="responsable.html">Vue responsable</a>
         <a class="btn danger small" href="/deconnexion">D&eacute;connexion</a>
       </div>
     </section>
@@ -705,16 +699,12 @@
       <button class="admin-tab active" type="button" data-admin-tab="pilotage"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V19h11v-8.5"/></svg><span>Accueil</span></button>
       <button class="admin-tab" type="button" data-admin-tab="utilisateurs"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19c1.2-3.2 3.4-4.8 6.5-4.8s5.3 1.6 6.5 4.8"/></svg><span>Utilisateurs</span></button>
       <button class="admin-tab" type="button" data-admin-tab="rattachements"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.6"/><circle cx="16" cy="8" r="2.6"/><circle cx="12" cy="16" r="2.6"/><path d="M9.8 9.8 11 13.6m3.2-3.8L13 13.6"/></svg><span>&Eacute;quipe</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="imports"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12"/><path d="M6 12h12"/><path d="M6 17h12"/></svg><span>Donn&eacute;es</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="imports"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12"/><path d="M6 12h12"/><path d="M6 17h12"/></svg><span>Import</span></button>
       <button class="admin-tab" type="button" data-admin-tab="budgets-global"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M8 10h8M8 14h5"/></svg><span>Budgets</span></button>
       <button class="admin-tab" type="button" data-admin-tab="finance"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18V11"/><path d="M12 18V6"/><path d="M18 18v-9"/><path d="M4 18h16"/></svg><span>Finance</span></button>
       <button class="admin-tab" type="button" data-admin-tab="securite"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="10" width="12" height="9" rx="2"/><path d="M9 10V8a3 3 0 0 1 6 0v2"/></svg><span>S&eacute;curit&eacute;</span></button>
       <a class="admin-tab admin-link-tab" href="parametrage.html" title="Ouvrir le param&eacute;trage technique"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2 2 0 0 1-2.83 2.83l-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6V20a2 2 0 0 1-4 0v-.08a1.8 1.8 0 0 0-1-.52a1.8 1.8 0 0 0-1.98.36l-.05.05a2 2 0 0 1-2.83-2.83l.05-.05A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-.6-1H4a2 2 0 0 1 0-4h.08a1.8 1.8 0 0 0 .52-1a1.8 1.8 0 0 0-.36-1.98l-.05-.05a2 2 0 0 1 2.83-2.83l.05.05A1.8 1.8 0 0 0 9 4.6a1.8 1.8 0 0 0 1-.6V4a2 2 0 0 1 4 0v.08a1.8 1.8 0 0 0 1 .52a1.8 1.8 0 0 0 1.98-.36l.05-.05a2 2 0 0 1 2.83 2.83l-.05.05A1.8 1.8 0 0 0 19.4 9c.22.35.43.68.6 1H20a2 2 0 0 1 0 4h-.08a1.8 1.8 0 0 0-.52 1Z"/></svg><span>Param&eacute;trage</span></a>
     </nav>
-    <div class="admin-breadcrumb" data-admin-breadcrumb aria-label="Position admin">
-      <span>Admin</span><span>Accueil</span>
-    </div>
-
     <section class="admin-view active" data-admin-view="pilotage">
       <div class="overview-grid">
         <section class="panel">
@@ -788,8 +778,8 @@
       <section class="import-admin-shell">
         <div class="import-admin-head">
           <div>
-            <span class="badge">Donn&eacute;es admin</span>
-            <h2>Centre de donn&eacute;es</h2>
+            <span class="badge">Import admin</span>
+            <h2>Centre d'import</h2>
             <p>
               Import r&eacute;el mensuel centralis&eacute; : choisis un commercial, une entit&eacute;, un mois,
               puis charge le fichier Excel. L'ancien import actif du m&ecirc;me mois passe seulement en inactif.
@@ -863,7 +853,7 @@
               <article class="import-mini-kpi"><span>Chargement</span><strong>-</strong></article>
             </div>
             <div class="import-history" data-admin-import-history>
-              <div class="empty">Ouvre la vue Donn&eacute;es pour charger l'historique.</div>
+              <div class="empty">Ouvre la vue Import pour charger l'historique.</div>
             </div>
           </article>
         </div>
@@ -950,14 +940,14 @@
 
         <div class="control-panel">
           <div class="control-table" data-control-body>
-            <div class="empty">Ouvre Donn&eacute;es &gt; Contr&ocirc;le donn&eacute;es pour lancer l'analyse.</div>
+            <div class="empty">Ouvre Import &gt; Contr&ocirc;le donn&eacute;es pour lancer l'analyse.</div>
           </div>
         </div>
       </section>
     </section>
 
     <section class="admin-view" data-admin-view="utilisateurs">
-      <section class="layout">
+      <section class="user-admin-layout">
       <section class="panel" aria-label="Gestion utilisateurs">
         <div class="panel-head">
           <div>
@@ -965,6 +955,7 @@
             <div class="sub">Ajoute un compte. Les modifications se font ensuite dans une fen&ecirc;tre d&eacute;di&eacute;e.</div>
           </div>
           <div class="toolbar">
+            <button class="btn small primary" type="button" data-open-relation-create>Faire un rattachement</button>
             <input class="search" type="search" placeholder="Rechercher..." data-search>
           </div>
         </div>
@@ -1031,46 +1022,6 @@
           </table>
         </div>
       </section>
-
-      <aside class="panel" aria-label="Rattachements responsables">
-        <div class="panel-head">
-          <div>
-            <h2>Rattachements</h2>
-            <div class="sub">Un commercial a un responsable principal. Les exceptions donnent une visibilit&eacute; ponctuelle.</div>
-          </div>
-        </div>
-
-        <form id="relationForm" autocomplete="off">
-          <div class="form-grid">
-            <div class="field full">
-              <label>Responsable</label>
-              <select name="responsableUserId" required></select>
-            </div>
-            <div class="field full">
-              <label>Commercial</label>
-              <select name="commercialUserId" required></select>
-            </div>
-            <div class="field full">
-              <label>Type</label>
-              <select name="relationType">
-                <option value="principal">Responsable principal</option>
-                <option value="exceptionnel">Acc&egrave;s exceptionnel</option>
-              </select>
-            </div>
-            <div class="field full">
-              <label>Note interne</label>
-              <textarea name="note" placeholder="Optionnel : motif de l'exception, contexte..."></textarea>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn green" type="submit">Ajouter le rattachement</button>
-          </div>
-        </form>
-
-        <div class="relations-list" data-relations-list>
-          <div class="empty">Chargement des rattachements...</div>
-        </div>
-      </aside>
       </section>
     </section>
 
@@ -1200,6 +1151,41 @@
     </form>
   </dialog>
 
+  <dialog id="relationDialog" class="relation-dialog">
+    <form class="modal-body" id="relationForm" autocomplete="off">
+      <h3>Faire un rattachement</h3>
+      <p>Associe un commercial à un responsable principal, ou donne une visibilité exceptionnelle.</p>
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field">
+          <label>Responsable</label>
+          <select name="responsableUserId" required></select>
+        </div>
+        <div class="field">
+          <label>Commercial</label>
+          <select name="commercialUserId" required></select>
+        </div>
+        <div class="field full">
+          <label>Type</label>
+          <select name="relationType">
+            <option value="principal">Responsable principal</option>
+            <option value="exceptionnel">Acc&egrave;s exceptionnel</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label>Note interne</label>
+          <textarea name="note" placeholder="Optionnel : motif de l'exception, contexte..."></textarea>
+        </div>
+      </div>
+      <div class="relations-list" data-relations-list>
+        <div class="empty">Chargement des rattachements...</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" value="cancel" type="button" data-close-relation>Annuler</button>
+        <button class="btn green" value="confirm" type="submit">Valider le rattachement</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="confirmDialog">
     <div class="modal-body">
       <h3 data-confirm-title>Confirmation</h3>
@@ -1207,6 +1193,16 @@
       <div class="modal-actions">
         <button class="btn ghost" type="button" data-confirm-cancel>Annuler</button>
         <button class="btn danger" type="button" data-confirm-ok>Confirmer</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="infoDialog" class="info-dialog">
+    <div class="modal-body">
+      <h3 data-info-title>Action confirm&eacute;e</h3>
+      <p data-info-text>L'action a bien &eacute;t&eacute; enregistr&eacute;e.</p>
+      <div class="modal-actions">
+        <button class="btn green" type="button" data-info-ok>OK</button>
       </div>
     </div>
   </dialog>
@@ -1276,14 +1272,12 @@
         wrap: document.querySelector(".wrap"),
         name: document.querySelector("[data-session-name]"),
         role: document.querySelector("[data-session-role]"),
-        source: document.querySelector("[data-session-source]"),
         userForm: document.getElementById("userForm"),
         relationForm: document.getElementById("relationForm"),
         usersBody: document.querySelector("[data-users-body]"),
         relationsList: document.querySelector("[data-relations-list]"),
         tabs: Array.from(document.querySelectorAll("[data-admin-tab]")),
         subtabs: Array.from(document.querySelectorAll("[data-admin-subtab]")),
-        breadcrumb: document.querySelector("[data-admin-breadcrumb]"),
         views: Array.from(document.querySelectorAll("[data-admin-view]")),
         roleCards: document.querySelector("[data-role-cards]"),
         healthCards: document.querySelector("[data-health-cards]"),
@@ -1333,9 +1327,13 @@
         editUserForm: document.getElementById("editUserForm"),
         editUserTarget: document.querySelector("[data-edit-user-target]"),
         editUserError: document.querySelector("[data-edit-user-error]"),
+        relationDialog: document.getElementById("relationDialog"),
         confirmDialog: document.getElementById("confirmDialog"),
         confirmTitle: document.querySelector("[data-confirm-title]"),
         confirmText: document.querySelector("[data-confirm-text]"),
+        infoDialog: document.getElementById("infoDialog"),
+        infoTitle: document.querySelector("[data-info-title]"),
+        infoText: document.querySelector("[data-info-text]"),
         annualMonthDialog: document.getElementById("annualMonthDialog"),
         annualMonthTitle: document.querySelector("[data-annual-month-title]"),
         annualMonthBody: document.querySelector("[data-annual-month-body]"),
@@ -1345,12 +1343,6 @@
         syncDialog: document.getElementById("syncDialog"),
         syncDialogTitle: document.querySelector("[data-sync-dialog-title]"),
         syncDialogText: document.querySelector("[data-sync-dialog-text]")
-      };
-
-      const sourceLabels = {
-        supabase: "Source Supabase",
-        env: "Source Vercel",
-        legacy: "Accès historique"
       };
 
       init();
@@ -1384,9 +1376,11 @@
           setAdminView("utilisateurs");
           els.userForm.elements.identifier.focus();
         });
+        document.querySelector("[data-open-relation-create]").addEventListener("click", function(){
+          openRelationDialog();
+        });
         document.querySelector("[data-open-relations-config]").addEventListener("click", function(){
-          setAdminView("utilisateurs");
-          els.relationForm.scrollIntoView({ behavior: "smooth", block: "start" });
+          openRelationDialog();
         });
         els.financeRefresh.addEventListener("click", loadFinanceData);
         if (els.controlRefresh) els.controlRefresh.addEventListener("click", loadDataControl);
@@ -1529,6 +1523,10 @@
           setModalError(els.editUserError, "");
           els.editUserDialog.close();
         });
+        document.querySelector("[data-close-relation]").addEventListener("click", function(){
+          els.relationForm.reset();
+          els.relationDialog.close();
+        });
         document.querySelector("[data-confirm-cancel]").addEventListener("click", function(){
           state.pendingConfirm = null;
           els.confirmDialog.close();
@@ -1538,6 +1536,9 @@
           state.pendingConfirm = null;
           els.confirmDialog.close();
           if (typeof action === "function") await action();
+        });
+        document.querySelector("[data-info-ok]").addEventListener("click", function(){
+          els.infoDialog.close();
         });
         document.querySelector("[data-close-annual-month]").addEventListener("click", closeAnnualMonthDialog);
         els.annualMonthDialog.addEventListener("close", function(){
@@ -1553,7 +1554,6 @@
           if (!payload || !payload.user) return;
           els.name.textContent = payload.user.name || "Administrateur";
           els.role.textContent = "Rôle : " + (payload.user.roleLabel || payload.user.role || "admin");
-          els.source.textContent = sourceLabels[payload.user.source] || "Session sécurisée";
         }catch{}
       }
 
@@ -1701,6 +1701,11 @@
             "Rattachement enregistré",
             userName(data.responsableUserId) + " -> " + userName(data.commercialUserId) + " (" + data.relationType + ")"
           );
+          if (els.relationDialog.open) els.relationDialog.close();
+          openInfo(
+            "Rattachement enregistré",
+            userName(data.responsableUserId) + " voit maintenant " + userName(data.commercialUserId) + " avec le lien " + (data.relationType === "principal" ? "responsable principal" : "accès exceptionnel") + "."
+          );
           showToast("Rattachement enregistré.");
         }catch(error){
           showToast(error.message || "Rattachement impossible.", true);
@@ -1830,10 +1835,10 @@
         const button = event.target.closest("[data-admin-shortcut]");
         if (!button) return;
         if (button.dataset.adminShortcut === "attach") {
-          setAdminView("utilisateurs");
-          els.relationForm.elements.commercialUserId.value = button.dataset.commercialId || "";
-          els.relationForm.elements.relationType.value = "principal";
-          els.relationForm.scrollIntoView({ behavior: "smooth", block: "start" });
+          openRelationDialog({
+            commercialId: button.dataset.commercialId || "",
+            relationType: "principal"
+          });
         }
       }
 
@@ -1850,7 +1855,6 @@
         els.views.forEach(function(panel){
           panel.classList.toggle("active", panel.dataset.adminView === state.activeView);
         });
-        updateAdminBreadcrumb();
         if (state.activeView === "finance" && !state.financePayload) {
           loadFinanceData();
         }
@@ -1863,24 +1867,6 @@
         if (state.activeView === "imports" && !state.adminImportPayload) {
           loadAdminImports();
         }
-      }
-
-      function updateAdminBreadcrumb(){
-        if (!els.breadcrumb) return;
-        const labels = {
-          pilotage: ["Admin", "Accueil"],
-          utilisateurs: ["Admin", "Utilisateurs"],
-          rattachements: ["Admin", "\u00c9quipe"],
-          imports: ["Admin", "Donn\u00e9es", "Imports r\u00e9els"],
-          "data-control": ["Admin", "Donn\u00e9es", "Contr\u00f4le donn\u00e9es"],
-          "budgets-global": ["Admin", "Budgets"],
-          finance: ["Admin", "Finance"],
-          securite: ["Admin", "S\u00e9curit\u00e9"]
-        };
-        const parts = labels[state.activeView] || labels.pilotage;
-        els.breadcrumb.innerHTML = parts.map(function(part){
-          return "<span>" + escapeHtml(part) + "</span>";
-        }).join("");
       }
 
       async function loadFinanceData(){
@@ -3859,6 +3845,18 @@
         els.editUserForm.elements.displayName.focus();
       }
 
+      function openRelationDialog(options){
+        const config = options || {};
+        renderRelationOptions();
+        renderRelations();
+        els.relationForm.reset();
+        if (config.responsableId) els.relationForm.elements.responsableUserId.value = config.responsableId;
+        if (config.commercialId) els.relationForm.elements.commercialUserId.value = config.commercialId;
+        if (config.relationType) els.relationForm.elements.relationType.value = config.relationType;
+        if (!els.relationDialog.open) els.relationDialog.showModal();
+        els.relationForm.elements.responsableUserId.focus();
+      }
+
       function setModalError(node, message){
         if (!node) return;
         node.textContent = message || "";
@@ -3876,6 +3874,12 @@
         els.confirmText.textContent = text;
         state.pendingConfirm = action;
         els.confirmDialog.showModal();
+      }
+
+      function openInfo(title, text){
+        els.infoTitle.textContent = title || "Action confirmée";
+        els.infoText.textContent = text || "L'action a bien été enregistrée.";
+        els.infoDialog.showModal();
       }
 
       async function postAdmin(payload){
