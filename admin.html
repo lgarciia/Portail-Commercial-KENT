@@ -205,6 +205,7 @@
     .finance-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap;justify-content:flex-end}
     .finance-controls .field{min-width:180px}
     .finance-controls .field.compact{min-width:150px}
+    .finance-pdf-button[hidden]{display:none!important}
     .finance-nav{
       display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;margin-bottom:8px;
     }
@@ -752,6 +753,7 @@
               <select data-finance-month></select>
             </div>
             <button class="btn green" type="button" data-finance-refresh>Synchroniser</button>
+            <button class="btn ghost small finance-pdf-button" type="button" data-finance-pdf hidden>PDF</button>
           </div>
         </div>
 
@@ -1287,6 +1289,7 @@
         financeDay: document.querySelector("[data-finance-day]"),
         financeMonth: document.querySelector("[data-finance-month]"),
         financeRefresh: document.querySelector("[data-finance-refresh]"),
+        financePdf: document.querySelector("[data-finance-pdf]"),
         financePills: Array.from(document.querySelectorAll("[data-finance-view]")),
         financeSummary: document.querySelector("[data-finance-summary]"),
         financeBody: document.querySelector("[data-finance-body]"),
@@ -1381,6 +1384,7 @@
           openRelationDialog();
         });
         els.financeRefresh.addEventListener("click", loadFinanceData);
+        if (els.financePdf) els.financePdf.addEventListener("click", printFinanceMonthlyPdf);
         if (els.controlRefresh) els.controlRefresh.addEventListener("click", loadDataControl);
         if (els.adminBudgetRefresh) els.adminBudgetRefresh.addEventListener("click", loadAdminBudgets);
         if (els.adminBudgetYear) {
@@ -2684,6 +2688,7 @@
       }
 
       function renderFinance(){
+        syncFinancePdfButton();
         if (!state.financePayload) {
           els.financeSummary.innerHTML = '<article class="finance-kpi"><span>Finance</span><strong>-</strong></article>';
           els.financeBody.innerHTML = '<div class="empty">Aucune donnée finance chargée.</div>';
@@ -2700,6 +2705,13 @@
           return;
         }
         renderFinancePeriod(model);
+      }
+
+      function syncFinancePdfButton(){
+        if (!els.financePdf) return;
+        const visible = state.activeView === "finance" && state.financeView === "month";
+        els.financePdf.hidden = !visible;
+        els.financePdf.disabled = !visible || !state.financePayload;
       }
 
       function buildFinanceModel(){
@@ -2947,6 +2959,202 @@
             '</div>'
           ].join("");
         }).join("") + '</div>';
+      }
+
+      function printFinanceMonthlyPdf(){
+        if (state.financeView !== "month") {
+          showToast("Passe sur CA / mensuel pour exporter ce reporting.", true);
+          return;
+        }
+        if (!state.financePayload) {
+          showToast("Charge d'abord les données finance.", true);
+          return;
+        }
+        const model = buildFinanceModel();
+        const popup = window.open("", "_blank");
+        if (!popup) {
+          showToast("Ouverture du PDF bloquée par le navigateur.", true);
+          return;
+        }
+        popup.document.open();
+        popup.document.write(buildFinanceMonthlyPdfHtml(model));
+        popup.document.close();
+        popup.focus();
+        setTimeout(function(){
+          try{ popup.print(); }catch(error){}
+        }, 350);
+      }
+
+      function buildFinanceMonthlyPdfHtml(model){
+        const monthIndex = Math.max(0, Math.min(11, Number(model.period.month || 1) - 1));
+        const monthLabel = monthLongLabel(monthIndex);
+        const year = Number(model.period.year || new Date().getFullYear());
+        const source = financeSourceForMonth(year, monthIndex + 1);
+        const sourceLabel = source === "real" ? "réel validé" : "ventes saisies dans l'application";
+        const generatedAt = new Intl.DateTimeFormat("fr-FR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(new Date());
+        const title = "Reporting commercial mensuel";
+        const groupsHtml = model.groups.length
+          ? model.groups.map(renderFinancePdfGroup).join("")
+          : '<tr><td colspan="5" class="empty-pdf">Aucun responsable à afficher.</td></tr>';
+
+        return [
+          '<!doctype html><html lang="fr"><head><meta charset="utf-8">',
+          '<title>KENTIX - ' + escapeHtml(title) + ' - ' + escapeHtml(monthLabel) + ' ' + year + '</title>',
+          '<style>',
+            '@page{size:A4;margin:14mm}',
+            '*{box-sizing:border-box}',
+            'body{margin:0;background:#f4f7fb;color:#111827;font-family:Arial,Helvetica,sans-serif;font-size:12px}',
+            '.page{max-width:1060px;margin:0 auto;padding:24px}',
+            '.report{background:#fff;border:1px solid #dbe4ef;border-radius:20px;padding:24px;box-shadow:0 18px 50px rgba(15,23,42,.08)}',
+            '.top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;border-bottom:2px solid #e5edf6;padding-bottom:16px;margin-bottom:18px}',
+            '.brand{font-weight:900;letter-spacing:.18em;font-size:16px;color:#0f172a}',
+            'h1{margin:10px 0 6px;font-size:30px;line-height:1;letter-spacing:-.04em;color:#0f172a}',
+            '.sub{color:#64748b;font-size:12px;line-height:1.45}',
+            '.meta{display:grid;gap:6px;text-align:right;color:#475569;font-weight:700}',
+            '.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0 18px}',
+            '.kpi{border:1px solid #dbe4ef;border-radius:14px;background:#f8fafc;padding:12px}',
+            '.kpi span{display:block;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-size:10px;font-weight:900}',
+            '.kpi strong{display:block;margin-top:6px;font-size:20px;color:#0f172a}',
+            'table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid #dbe4ef;border-radius:16px}',
+            'thead th{background:#0f172a;color:#fff;text-align:left;padding:10px 11px;font-size:10px;text-transform:uppercase;letter-spacing:.08em}',
+            'td{padding:9px 11px;border-bottom:1px solid #e5edf6;vertical-align:middle}',
+            'tbody tr:last-child td{border-bottom:none}',
+            '.name strong{display:block;font-size:12px;color:#111827}',
+            '.name span{display:block;margin-top:2px;color:#64748b;font-size:10px}',
+            '.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}',
+            '.manager-row td{background:#eef6ff;font-weight:900}',
+            '.seller-row td{background:#fff}',
+            '.seller-row .name{padding-left:18px;border-left:3px solid #bfdbfe}',
+            '.total-row td{background:#111827;color:#fff;font-weight:900;font-size:13px}',
+            '.total-row .name strong,.total-row .name span{color:#fff}',
+            '.positive{color:#047857!important;font-weight:900}',
+            '.negative{color:#b91c1c!important;font-weight:900}',
+            '.neutral{color:#475569!important;font-weight:900}',
+            '.total-row .positive{color:#86efac!important}',
+            '.total-row .negative{color:#fecaca!important}',
+            '.empty-pdf{text-align:center;color:#64748b;padding:18px}',
+            '.footer{display:flex;justify-content:space-between;gap:12px;margin-top:18px;color:#64748b;font-size:10px;border-top:1px solid #e5edf6;padding-top:12px}',
+            '.actions{position:sticky;top:0;display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}',
+            '.actions button{border:1px solid #cbd5e1;background:#fff;color:#0f172a;border-radius:999px;padding:9px 13px;font-weight:900;cursor:pointer}',
+            '@media print{body{background:#fff}.page{padding:0}.report{box-shadow:none;border:none;border-radius:0;padding:0}.actions{display:none}.summary{break-inside:avoid}tr{break-inside:avoid}}',
+          '</style></head><body>',
+          '<div class="page">',
+            '<div class="actions"><button onclick="window.print()">Imprimer / PDF</button><button onclick="window.close()">Fermer</button></div>',
+            '<main class="report">',
+              '<section class="top">',
+                '<div>',
+                  '<div class="brand">KENTIX</div>',
+                  '<h1>' + escapeHtml(title) + '</h1>',
+                  '<div class="sub">Mois analysé : <strong>' + escapeHtml(monthLabel) + ' ' + year + '</strong><br>Détail responsables, vendeurs, réel, budget, écart et atteinte.</div>',
+                '</div>',
+                '<div class="meta">',
+                  '<span>Généré le ' + escapeHtml(generatedAt) + '</span>',
+                  '<span>Source du mois : ' + escapeHtml(sourceLabel) + '</span>',
+                '</div>',
+              '</section>',
+              '<section class="summary">',
+                renderFinancePdfKpi("Réel total", formatEuro(model.total.actual)),
+                renderFinancePdfKpi("Budget total", formatEuro(model.total.budget)),
+                renderFinancePdfKpi("Écart total", signedEuro(model.total.ecart), model.total.ecart),
+                renderFinancePdfKpi("Atteinte", model.total.taux === null ? "-" : formatPercent(model.total.taux), model.total.ecart),
+              '</section>',
+              '<table>',
+                '<thead><tr><th>Responsable / Vendeur</th><th class="num">Réel</th><th class="num">Budget</th><th class="num">Écart</th><th class="num">Atteinte</th></tr></thead>',
+                '<tbody>',
+                  groupsHtml,
+                  renderFinancePdfTotal(model.total),
+                '</tbody>',
+              '</table>',
+              '<footer class="footer">',
+                '<span>Généré par l’application KENTIX.</span>',
+                '<span>Données consolidées automatiquement par responsable et commercial.</span>',
+              '</footer>',
+            '</main>',
+          '</div>',
+          '</body></html>'
+        ].join("");
+      }
+
+      function renderFinancePdfGroup(group){
+        return [
+          '<tr class="manager-row">',
+            renderFinancePdfNameCell(group.name, group.commercials.length + ' vendeur(s)'),
+            renderFinancePdfMoneyCell(group.actual),
+            renderFinancePdfMoneyCell(group.budget),
+            renderFinancePdfGapCell(group.ecart),
+            renderFinancePdfPercentCell(group.taux, group.ecart),
+          '</tr>',
+          group.commercials.length
+            ? group.commercials.map(renderFinancePdfSeller).join("")
+            : '<tr class="seller-row"><td colspan="5" class="empty-pdf">Aucun vendeur rattaché.</td></tr>'
+        ].join("");
+      }
+
+      function renderFinancePdfSeller(commercial){
+        const finance = commercial.finance || {};
+        return [
+          '<tr class="seller-row">',
+            renderFinancePdfNameCell(commercial.displayName || "-", commercial.identifier || "-"),
+            renderFinancePdfMoneyCell(finance.currentActual),
+            renderFinancePdfMoneyCell(finance.currentBudget),
+            renderFinancePdfGapCell(finance.currentEcart),
+            renderFinancePdfPercentCell(finance.currentTaux, finance.currentEcart),
+          '</tr>'
+        ].join("");
+      }
+
+      function renderFinancePdfTotal(total){
+        const taux = total.taux === null || total.taux === undefined
+          ? (total.budget ? (total.actual / total.budget) * 100 : null)
+          : total.taux;
+        return [
+          '<tr class="total-row">',
+            renderFinancePdfNameCell("Total consolidé groupe", "Tous responsables et vendeurs"),
+            renderFinancePdfMoneyCell(total.actual),
+            renderFinancePdfMoneyCell(total.budget),
+            renderFinancePdfGapCell(total.ecart),
+            renderFinancePdfPercentCell(taux, total.ecart),
+          '</tr>'
+        ].join("");
+      }
+
+      function renderFinancePdfKpi(label, value, toneValue){
+        const tone = toneClass(toneValue);
+        return '<article class="kpi"><span>' + escapeHtml(label) + '</span><strong class="' + tone + '">' + escapeHtml(value) + '</strong></article>';
+      }
+
+      function renderFinancePdfNameCell(title, subtitle){
+        return '<td><div class="name"><strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(subtitle || "") + '</span></div></td>';
+      }
+
+      function renderFinancePdfMoneyCell(value){
+        return '<td class="num">' + escapeHtml(formatEuro(value || 0)) + '</td>';
+      }
+
+      function renderFinancePdfGapCell(value){
+        return '<td class="num ' + toneClass(value) + '">' + escapeHtml(signedEuro(value)) + '</td>';
+      }
+
+      function renderFinancePdfPercentCell(value, toneValue){
+        return '<td class="num ' + toneClass(toneValue) + '">' + escapeHtml(value === null || value === undefined ? "-" : formatPercent(value)) + '</td>';
+      }
+
+      function signedEuro(value){
+        const number = roundClientMoney(value || 0);
+        return (number > 0 ? "+" : "") + formatEuro(number);
+      }
+
+      function toneClass(value){
+        const number = Number(value || 0);
+        if (number > 0) return "positive";
+        if (number < 0) return "negative";
+        return "neutral";
       }
 
       function renderFinanceAnnual(model){
