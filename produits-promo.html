@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Produits promo - KENTIX</title>
+  <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
+  <script src="./commercial-scope.js"></script>
+  <link rel="stylesheet" href="./shared-theme.css">
+  <style>
+    :root{
+      --bg:#06111f;
+      --panel:rgba(15,23,42,.88);
+      --panel-soft:rgba(15,23,42,.62);
+      --line:rgba(148,163,184,.20);
+      --text:#e8f0ff;
+      --muted:#9fb1ca;
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --gold:#f59e0b;
+      --red:#ef4444;
+      --shadow:0 24px 70px rgba(0,0,0,.34);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:"Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 12% -6%,rgba(56,189,248,.16),transparent 34%),
+        radial-gradient(circle at 88% 2%,rgba(245,158,11,.16),transparent 34%),
+        linear-gradient(135deg,#06111f 0%,#081827 54%,#04101c 100%);
+      padding:18px;
+    }
+    button,input{font:inherit}
+    button{cursor:pointer}
+    .wrap{max-width:1320px;margin:0 auto}
+    .topbar{
+      border:1px solid var(--line);
+      border-radius:26px;
+      background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(8,15,28,.84));
+      box-shadow:var(--shadow);
+      padding:18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .brand{display:flex;align-items:center;gap:13px;min-width:0}
+    .logo{
+      width:46px;height:46px;border-radius:16px;
+      background:linear-gradient(135deg,rgba(245,158,11,.95),rgba(56,189,248,.78));
+      box-shadow:0 16px 34px rgba(245,158,11,.18);
+      flex:0 0 auto;
+    }
+    .eyebrow{
+      display:inline-flex;
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid rgba(245,158,11,.34);
+      color:#fde68a;
+      background:rgba(245,158,11,.10);
+      font-size:11px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      margin-bottom:8px;
+    }
+    h1{margin:0;font-size:clamp(28px,4vw,48px);letter-spacing:-.05em;line-height:1}
+    p{margin:7px 0 0;color:var(--muted);font-size:14px;font-weight:760;line-height:1.45}
+    .actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      min-height:40px;
+      padding:0 13px;
+      border-radius:14px;
+      font-weight:950;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      white-space:nowrap;
+      transition:.16s ease;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .btn.green{background:linear-gradient(135deg,#22c55e,#059669);border:none;box-shadow:0 14px 30px rgba(5,150,105,.20)}
+    .btn.gold{color:#07111f;background:linear-gradient(135deg,#fde68a,var(--gold));border:none;box-shadow:0 14px 30px rgba(245,158,11,.20)}
+    .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25);color:#fecaca}
+    .btn.small{min-height:32px;border-radius:11px;padding:0 10px;font-size:12px}
+    .layout{display:grid;grid-template-columns:minmax(300px,420px) minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
+    .panel{
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:linear-gradient(180deg,rgba(15,23,42,.88),rgba(8,15,28,.78));
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+    .panelHead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+    .panelHead h2{margin:0;font-size:20px;letter-spacing:-.04em}
+    .panelHead span{display:block;margin-top:5px;color:var(--muted);font-size:12px;font-weight:760;line-height:1.35}
+    .field{display:grid;gap:7px;margin-bottom:11px}
+    label{color:var(--muted);font-weight:950;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+    input{
+      width:100%;
+      min-height:42px;
+      border:1px solid rgba(148,163,184,.22);
+      border-radius:14px;
+      background:rgba(2,6,23,.42);
+      color:var(--text);
+      padding:9px 11px;
+      outline:none;
+      font-weight:850;
+    }
+    input::placeholder{color:rgba(159,177,202,.62)}
+    input:focus{border-color:rgba(56,189,248,.58);box-shadow:0 0 0 4px rgba(56,189,248,.12)}
+    .hint{border:1px solid rgba(245,158,11,.20);border-radius:16px;background:rgba(245,158,11,.09);color:#fde68a;padding:10px 11px;font-size:12px;font-weight:720;line-height:1.42;margin-top:12px}
+    .status{margin-top:12px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(2,6,23,.30);padding:10px 11px;color:#dbeafe;font-weight:820;line-height:1.4}
+    .status.success{border-color:rgba(34,197,94,.28);background:rgba(34,197,94,.10);color:#bbf7d0}
+    .status.warning{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.10);color:#fde68a}
+    .status.error{border-color:rgba(239,68,68,.30);background:rgba(239,68,68,.10);color:#fecaca}
+    .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:12px}
+    .kpi{border:1px solid rgba(148,163,184,.15);border-radius:16px;background:rgba(2,6,23,.30);padding:10px 12px}
+    .kpi span{display:block;color:var(--muted);font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.05em}
+    .kpi strong{display:block;margin-top:3px;font-size:21px;letter-spacing:-.04em}
+    .listTools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .searchBox{min-width:260px;max-width:380px;flex:1}
+    .segmented{display:flex;gap:6px;border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(2,6,23,.24);padding:4px}
+    .segment{border:0;background:transparent;color:var(--muted);min-height:30px;padding:0 10px;border-radius:10px;font-weight:950;font-size:12px}
+    .segment.active{background:rgba(56,189,248,.15);color:#dff6ff}
+    .tableWrap{overflow:auto;border-radius:18px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.32)}
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th,td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;vertical-align:middle}
+    th{position:sticky;top:0;background:rgba(8,15,28,.96);z-index:1;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+    td{font-weight:820;font-size:13px;color:#dbeafe}
+    tr:last-child td{border-bottom:0}
+    .ref{font-size:15px;color:#f8fafc;font-weight:1000;letter-spacing:-.02em}
+    .designation{color:#cbd5e1;font-weight:820;max-width:420px;white-space:normal;line-height:1.35}
+    .tag{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 9px;border-radius:999px;border:1px solid rgba(34,197,94,.24);background:rgba(34,197,94,.11);color:#bbf7d0;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
+    .tag.off{border-color:rgba(148,163,184,.20);background:rgba(148,163,184,.10);color:#cbd5e1}
+    .rowActions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
+    .empty{padding:28px;text-align:center;color:var(--muted);font-weight:820;line-height:1.45}
+    .schemaBox{display:none;margin-top:14px;border:1px solid rgba(245,158,11,.30);border-radius:18px;background:rgba(245,158,11,.10);padding:13px;color:#fde68a;font-weight:760;line-height:1.45}
+    .schemaBox.show{display:block}
+    code{font-family:"Consolas","Courier New",monospace;background:rgba(2,6,23,.40);border:1px solid rgba(148,163,184,.18);border-radius:8px;padding:2px 6px;color:#fef3c7}
+    @media(max-width:920px){.layout{grid-template-columns:1fr}.kpis{grid-template-columns:1fr}.topbar{align-items:flex-start}.actions{width:100%;justify-content:flex-start}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div class="eyebrow">Action promo</div>
+        <h1>Produits promo</h1>
+        <p>Ajoute une référence temporaire visible uniquement dans ton espace commercial. Le prix restera saisi manuellement dans la visite.</p>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="action-promo.html">Action Promo</a>
+      <a class="btn gold" href="action-promo-campagnes.html">Mes campagnes</a>
+      <a class="btn" href="index.html">Portail</a>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="panelHead">
+        <div>
+          <h2>Nouveau produit</h2>
+          <span>Référence + désignation. Aucun tarif automatique n'est créé.</span>
+        </div>
+      </div>
+
+      <form id="promoForm">
+        <div class="field">
+          <label for="referenceInput">Référence promo</label>
+          <input id="referenceInput" autocomplete="off" placeholder="Ex : PROMO-83970" />
+        </div>
+        <div class="field">
+          <label for="designationInput">Désignation</label>
+          <input id="designationInput" autocomplete="off" placeholder="Ex : Pack promotion nettoyant" />
+        </div>
+        <button class="btn green" id="addBtn" type="submit">Ajouter ce produit en promo</button>
+      </form>
+
+      <div class="hint">Ce produit sera disponible dans la fiche client uniquement pour le commercial connecté. S'il n'a pas de tarif, le prix remontera à 0 € et devra être renseigné à la main.</div>
+      <div class="status" id="statusBox">Chargement de ton espace promo...</div>
+      <div class="schemaBox" id="schemaBox">
+        Lance d'abord <code>supabase_produits_promo.sql</code> dans Supabase, puis redéploie/recharge la page.
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHead">
+        <div>
+          <h2>Mes produits promo</h2>
+          <span>Liste personnelle du commercial connecté.</span>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><span>Actifs</span><strong id="activeCount">0</strong></div>
+        <div class="kpi"><span>Masqués</span><strong id="hiddenCount">0</strong></div>
+        <div class="kpi"><span>Total</span><strong id="totalCount">0</strong></div>
+      </div>
+
+      <div class="listTools">
+        <input class="searchBox" id="searchInput" autocomplete="off" placeholder="Rechercher une référence ou une désignation..." />
+        <div class="segmented" role="tablist" aria-label="Filtre produits promo">
+          <button class="segment active" type="button" data-filter="active">Actifs</button>
+          <button class="segment" type="button" data-filter="hidden">Masqués</button>
+          <button class="segment" type="button" data-filter="all">Tous</button>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Référence</th>
+              <th>Désignation</th>
+              <th>Prix</th>
+              <th>Statut</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="promoBody">
+            <tr><td colspan="5" class="empty">Chargement...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PROMO_COLUMNS = "id,nom,reference_produit,prix_vente,actif,origine,created_by_user_id,promo_deleted_at";
+const state = {
+  user:null,
+  items:[],
+  filter:"active",
+  loading:false
+};
+const $ = id => document.getElementById(id);
+
+function escapeHtml(value){
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function normalize(value){
+  return String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function compact(value){
+  return normalize(value).replace(/[^a-z0-9]/g, "");
+}
+
+function normalizeReference(value){
+  return String(value ?? "").trim().replace(/\s+/g, " ").toUpperCase();
+}
+
+function isSchemaError(error){
+  const message = String(error?.message || error || "");
+  return /(origine|created_by_user_id|promo_deleted_at|schema cache|column)/i.test(message);
+}
+
+function isHiddenProduct(row){
+  return !row?.actif || Boolean(row?.promo_deleted_at);
+}
+
+function setLoading(isLoading){
+  state.loading = isLoading;
+  $("addBtn").disabled = isLoading;
+}
+
+function setStatus(message, tone = "info"){
+  const box = $("statusBox");
+  box.className = `status ${tone === "info" ? "" : tone}`.trim();
+  box.textContent = message;
+}
+
+function showSchemaWarning(show){
+  $("schemaBox").classList.toggle("show", Boolean(show));
+}
+
+function formatDate(value){
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("fr-FR");
+}
+
+function visibleItems(){
+  const term = compact($("searchInput").value);
+  return state.items
+    .filter(row => {
+      if (state.filter === "active" && isHiddenProduct(row)) return false;
+      if (state.filter === "hidden" && !isHiddenProduct(row)) return false;
+      if (!term) return true;
+      return compact(`${row.reference_produit || ""} ${row.nom || ""}`).includes(term);
+    })
+    .sort((a,b) => String(a.reference_produit || "").localeCompare(String(b.reference_produit || ""), "fr", { numeric:true, sensitivity:"base" }));
+}
+
+function renderKpis(){
+  const hidden = state.items.filter(isHiddenProduct).length;
+  const active = state.items.length - hidden;
+  $("activeCount").textContent = active;
+  $("hiddenCount").textContent = hidden;
+  $("totalCount").textContent = state.items.length;
+}
+
+function renderList(){
+  renderKpis();
+  const rows = visibleItems();
+  if (!rows.length){
+    $("promoBody").innerHTML = `<tr><td colspan="5" class="empty">Aucun produit promo dans cette vue.</td></tr>`;
+    return;
+  }
+
+  $("promoBody").innerHTML = rows.map(row => {
+    const hidden = isHiddenProduct(row);
+    const statusText = hidden ? `Masqué${row.promo_deleted_at ? " le " + formatDate(row.promo_deleted_at) : ""}` : "Actif";
+    return `
+      <tr>
+        <td><div class="ref">${escapeHtml(row.reference_produit || "-")}</div></td>
+        <td><div class="designation">${escapeHtml(row.nom || "-")}</div></td>
+        <td>Prix manuel</td>
+        <td><span class="tag ${hidden ? "off" : ""}">${escapeHtml(statusText)}</span></td>
+        <td>
+          <div class="rowActions">
+            ${hidden
+              ? `<button class="btn small green" type="button" data-action="restore" data-id="${escapeHtml(row.id)}">Réactiver</button>`
+              : `<button class="btn small" type="button" data-action="edit" data-id="${escapeHtml(row.id)}">Modifier</button><button class="btn small danger" type="button" data-action="delete" data-id="${escapeHtml(row.id)}">Supprimer</button>`}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function getOwnPromoById(id){
+  return state.items.find(row => String(row.id) === String(id)) || null;
+}
+
+async function loadSession(){
+  const user = window.KentCommercialScope && typeof window.KentCommercialScope.load === "function"
+    ? await window.KentCommercialScope.load()
+    : null;
+  state.user = user?.dbUserId && user?.role === "commercial" ? user : null;
+  return state.user;
+}
+
+async function fetchPromoProducts(){
+  if (!state.user?.dbUserId) return [];
+  const { data, error } = await supabaseClient
+    .from("produits")
+    .select(PROMO_COLUMNS)
+    .eq("origine", "promo_manuelle")
+    .eq("created_by_user_id", state.user.dbUserId)
+    .order("reference_produit", { ascending:true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function refreshProducts(){
+  try {
+    showSchemaWarning(false);
+    state.items = await fetchPromoProducts();
+    renderList();
+    setStatus(state.items.length ? "Produits promo chargés." : "Aucun produit promo pour le moment.", "success");
+  } catch (error) {
+    console.error("Chargement produits promo:", error);
+    if (isSchemaError(error)) {
+      showSchemaWarning(true);
+      setStatus("Structure Supabase produits promo non prête.", "warning");
+      $("promoBody").innerHTML = `<tr><td colspan="5" class="empty">Lance le SQL produits promo avant d'utiliser ce module.</td></tr>`;
+      return;
+    }
+    setStatus("Impossible de charger tes produits promo.", "error");
+    $("promoBody").innerHTML = `<tr><td colspan="5" class="empty">Erreur de chargement.</td></tr>`;
+  }
+}
+
+async function findProductsByReference(reference){
+  const { data, error } = await supabaseClient
+    .from("produits")
+    .select(PROMO_COLUMNS)
+    .eq("reference_produit", reference)
+    .limit(100);
+  if (error) throw error;
+  return data || [];
+}
+
+async function addPromoProduct(reference, designation){
+  const userId = state.user?.dbUserId;
+  if (!userId) throw new Error("Session commerciale absente.");
+
+  const existingRows = await findProductsByReference(reference);
+  const official = existingRows.find(row => row.origine !== "promo_manuelle");
+  if (official) {
+    await kentAlert("Cette référence existe déjà dans le référentiel produits. Utilise directement le produit existant dans la fiche client.", { title:"Référence déjà existante", tone:"warning" });
+    return;
+  }
+
+  const ownPromo = existingRows.find(row => row.origine === "promo_manuelle" && String(row.created_by_user_id || "") === String(userId));
+  if (ownPromo && !isHiddenProduct(ownPromo)) {
+    await kentAlert("Cette référence promo existe déjà dans ta liste.", { title:"Produit déjà présent", tone:"warning" });
+    return;
+  }
+
+  if (ownPromo && isHiddenProduct(ownPromo)) {
+    const { error } = await supabaseClient
+      .from("produits")
+      .update({ nom:designation, prix_vente:0, actif:true, promo_deleted_at:null })
+      .eq("id", ownPromo.id)
+      .eq("created_by_user_id", userId)
+      .eq("origine", "promo_manuelle");
+    if (error) throw error;
+    setStatus("Produit promo réactivé.", "success");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("produits")
+    .insert({
+      reference_produit:reference,
+      nom:designation,
+      prix_vente:0,
+      actif:true,
+      origine:"promo_manuelle",
+      created_by_user_id:userId,
+      promo_deleted_at:null
+    });
+  if (error) throw error;
+  setStatus("Produit promo ajouté.", "success");
+}
+
+async function handleSubmit(event){
+  event.preventDefault();
+  const reference = normalizeReference($("referenceInput").value);
+  const designation = String($("designationInput").value || "").trim();
+  if (!reference) return kentAlert("Renseigne une référence promo.", { title:"Référence obligatoire", tone:"warning" });
+  if (!designation) return kentAlert("Renseigne une désignation.", { title:"Désignation obligatoire", tone:"warning" });
+
+  setLoading(true);
+  try {
+    await addPromoProduct(reference, designation);
+    $("referenceInput").value = "";
+    $("designationInput").value = "";
+    await refreshProducts();
+  } catch (error) {
+    console.error("Ajout produit promo:", error);
+    if (isSchemaError(error)) {
+      showSchemaWarning(true);
+      setStatus("Lance le SQL produits promo avant d'ajouter une référence.", "warning");
+      return;
+    }
+    setStatus(error.message || "Impossible d'ajouter ce produit promo.", "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function editPromoProduct(row){
+  const nextName = await kentPrompt("Nouvelle désignation du produit promo :", row.nom || "", { title:"Modifier le produit promo", confirmText:"Enregistrer" });
+  const cleanName = String(nextName || "").trim();
+  if (!cleanName) return;
+
+  setLoading(true);
+  try {
+    const { error } = await supabaseClient
+      .from("produits")
+      .update({ nom:cleanName })
+      .eq("id", row.id)
+      .eq("created_by_user_id", state.user.dbUserId)
+      .eq("origine", "promo_manuelle");
+    if (error) throw error;
+    setStatus("Produit promo modifié.", "success");
+    await refreshProducts();
+  } catch (error) {
+    console.error("Modification produit promo:", error);
+    setStatus("Impossible de modifier ce produit promo.", "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function deletePromoProduct(row){
+  const confirmed = await kentConfirm(
+    `Supprimer la référence ${row.reference_produit || "promo"} de ta liste ?\n\nElle ne sera plus proposée dans tes visites, mais les historiques existants ne seront pas touchés.`,
+    { title:"Supprimer le produit promo", tone:"danger", confirmText:"Supprimer" }
+  );
+  if (!confirmed) return;
+
+  setLoading(true);
+  try {
+    const { error } = await supabaseClient
+      .from("produits")
+      .update({ actif:false, promo_deleted_at:new Date().toISOString() })
+      .eq("id", row.id)
+      .eq("created_by_user_id", state.user.dbUserId)
+      .eq("origine", "promo_manuelle");
+    if (error) throw error;
+    setStatus("Produit promo supprimé de ta liste.", "success");
+    await refreshProducts();
+  } catch (error) {
+    console.error("Suppression produit promo:", error);
+    setStatus("Impossible de supprimer ce produit promo.", "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function restorePromoProduct(row){
+  const confirmed = await kentConfirm(
+    `Réactiver la référence ${row.reference_produit || "promo"} dans ta liste ?`,
+    { title:"Réactiver le produit promo", tone:"success", confirmText:"Réactiver" }
+  );
+  if (!confirmed) return;
+
+  setLoading(true);
+  try {
+    const { error } = await supabaseClient
+      .from("produits")
+      .update({ actif:true, promo_deleted_at:null })
+      .eq("id", row.id)
+      .eq("created_by_user_id", state.user.dbUserId)
+      .eq("origine", "promo_manuelle");
+    if (error) throw error;
+    setStatus("Produit promo réactivé.", "success");
+    await refreshProducts();
+  } catch (error) {
+    console.error("Réactivation produit promo:", error);
+    setStatus("Impossible de réactiver ce produit promo.", "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+function attachEvents(){
+  $("promoForm").addEventListener("submit", handleSubmit);
+  $("searchInput").addEventListener("input", renderList);
+  document.querySelectorAll(".segment").forEach(button => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".segment").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      state.filter = button.dataset.filter || "active";
+      renderList();
+    });
+  });
+  $("promoBody").addEventListener("click", async event => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const row = getOwnPromoById(button.dataset.id);
+    if (!row) return;
+    if (button.dataset.action === "edit") await editPromoProduct(row);
+    if (button.dataset.action === "delete") await deletePromoProduct(row);
+    if (button.dataset.action === "restore") await restorePromoProduct(row);
+  });
+}
+
+async function init(){
+  attachEvents();
+  try {
+    const user = await loadSession();
+    if (!user) {
+      setStatus("Ce module est réservé aux commerciaux connectés.", "warning");
+      $("promoBody").innerHTML = `<tr><td colspan="5" class="empty">Connecte-toi avec un profil commercial pour gérer tes produits promo.</td></tr>`;
+      $("addBtn").disabled = true;
+      return;
+    }
+    setStatus(`Espace promo chargé pour ${user.name || user.id || "le commercial"}.`, "success");
+    await refreshProducts();
+  } catch (error) {
+    console.error("Initialisation produits promo:", error);
+    setStatus("Impossible d'initialiser le module produits promo.", "error");
+  }
+}
+
+init();
+</script>
+</body>
+</html>

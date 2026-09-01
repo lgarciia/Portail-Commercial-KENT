@@ -1110,6 +1110,34 @@
         : query;
     }
 
+    function getCurrentCommercialUserId() {
+      return String(state.portalSessionUser?.dbUserId || "").trim();
+    }
+
+    function isManualPromoProduct(produit) {
+      return normalizeText(produit?.origine || "") === "promo_manuelle";
+    }
+
+    function isVisibleProductForCurrentSession(produit) {
+      if (!isManualPromoProduct(produit)) return true;
+      const ownerId = String(produit?.created_by_user_id || "").trim();
+      return Boolean(ownerId && ownerId === getCurrentCommercialUserId());
+    }
+
+    function filterVisibleProductsForCurrentSession(rows = []) {
+      return (rows || []).filter(isVisibleProductForCurrentSession);
+    }
+
+    function isSelectableProductForCurrentSession(produit) {
+      if (!isManualPromoProduct(produit)) return true;
+      return Boolean(isVisibleProductForCurrentSession(produit) && produit?.actif && !produit?.promo_deleted_at);
+    }
+
+    function isPromoProductSchemaError(error) {
+      const message = String(error?.message || error || "");
+      return /(origine|created_by_user_id|promo_deleted_at|schema cache|column)/i.test(message);
+    }
+
     function cacheDom() {
       dom.clientSearch = document.getElementById("clientSearch");
       dom.clientSelect = document.getElementById("clientSelect");
@@ -1936,7 +1964,7 @@
       return data || [];
     }
 
-    async function fetchProduits() {
+    async function fetchProduitsWithSelect(selectColumns) {
       const pageSize = 1000;
       let from = 0;
       const all = [];
@@ -1945,7 +1973,7 @@
         const to = from + pageSize - 1;
         const { data, error } = await supabaseClient
           .from("produits")
-          .select("id, nom, actif, reference_produit, prix_vente")
+          .select(selectColumns)
           .order("nom", { ascending: true })
           .range(from, to);
 
@@ -1954,6 +1982,20 @@
         all.push(...batch);
         if (batch.length < pageSize) break;
         from += pageSize;
+      }
+
+      return all;
+    }
+
+    async function fetchProduits() {
+      let all = [];
+
+      try {
+        all = await fetchProduitsWithSelect("id, nom, actif, reference_produit, prix_vente, origine, created_by_user_id, promo_deleted_at");
+        all = filterVisibleProductsForCurrentSession(all);
+      } catch (error) {
+        if (!isPromoProductSchemaError(error)) throw error;
+        all = await fetchProduitsWithSelect("id, nom, actif, reference_produit, prix_vente");
       }
 
       if (all.length) saveLocalCache(LOCAL_CACHE_KEYS.produits, all);
@@ -2904,7 +2946,7 @@
     }
 
     function buildProductDatalistOptions(clientId = null) {
-      const pool = [...state.produits].sort((a, b) => {
+      const pool = state.produits.filter(isSelectableProductForCurrentSession).sort((a, b) => {
         return getProductLabel(a).localeCompare(getProductLabel(b), "fr");
       });
       return pool.map(produit => `<option value="${escapeHtml(getProductLabel(produit))}"></option>`).join("");
@@ -2918,7 +2960,7 @@
       const query = normalizeText(value);
       if (!query) return null;
 
-      return state.produits.find(produit => {
+      return state.produits.filter(isSelectableProductForCurrentSession).find(produit => {
         const reference = produit.reference_produit || "";
         const nom = produit.nom || "";
         const label = getProductLabel(produit);

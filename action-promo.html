@@ -377,6 +377,7 @@
       <div class="actions">
         <a class="btn" href="index.html">Portail</a>
         <a class="btn gold" href="action-promo-campagnes.html">Mes campagnes</a>
+        <a class="btn green" href="produits-promo.html">Ajouter un produit promo</a>
       </div>
     </div>
 
@@ -768,6 +769,25 @@ function applyCommercialScope(table, query){
     : query;
 }
 
+function getCurrentCommercialUserId(){
+  return String(window.KentCommercialScope?.getCommercialUserId?.() || "").trim();
+}
+
+function isManualPromoProduct(row){
+  return normalize(row?.origine || "") === "promo_manuelle";
+}
+
+function isVisibleProductForCurrentSession(row){
+  if (!isManualPromoProduct(row)) return true;
+  const ownerId = String(row?.created_by_user_id || "").trim();
+  return Boolean(row?.actif && !row?.promo_deleted_at && ownerId && ownerId === getCurrentCommercialUserId());
+}
+
+function isPromoProductSchemaError(error){
+  const message = String(error?.message || error || "");
+  return /(origine|created_by_user_id|promo_deleted_at|schema cache|column)/i.test(message);
+}
+
 async function fetchPaged(table, select, options = {}){
   const all = [];
   for (let from = 0; ; from += PAGE_SIZE){
@@ -963,12 +983,33 @@ async function loadValidatedCatalogMatches(term){
 
 async function loadSalesCatalogMatchesForSource(source, term){
   if (!activityAllowed(source.label)) return [];
-  const rows = await fetchLimited(source.tables.produits, "reference_produit,nom", {
-    search:{ columns:["reference_produit", "nom"], value:term },
-    order:{ column:"nom", ascending:true },
-    limit:QUICK_RESULT_LIMIT
-  });
-  return rows.map(row => productCatalogItem(row.reference_produit, row.nom, source.label, "Ventes saisies"));
+  if (source.tables.produits !== "produits") {
+    const sourceRows = await fetchLimited(source.tables.produits, "reference_produit,nom", {
+      search:{ columns:["reference_produit", "nom"], value:term },
+      order:{ column:"nom", ascending:true },
+      limit:QUICK_RESULT_LIMIT
+    });
+    return sourceRows.map(row => productCatalogItem(row.reference_produit, row.nom, source.label, "Ventes saisies"));
+  }
+
+  let rows = [];
+  try {
+    rows = await fetchLimited(source.tables.produits, "reference_produit,nom,actif,origine,created_by_user_id,promo_deleted_at", {
+      search:{ columns:["reference_produit", "nom"], value:term },
+      order:{ column:"nom", ascending:true },
+      limit:QUICK_RESULT_LIMIT
+    });
+  } catch (error) {
+    if (!isPromoProductSchemaError(error)) throw error;
+    rows = await fetchLimited(source.tables.produits, "reference_produit,nom", {
+      search:{ columns:["reference_produit", "nom"], value:term },
+      order:{ column:"nom", ascending:true },
+      limit:QUICK_RESULT_LIMIT
+    });
+  }
+  return rows
+    .filter(isVisibleProductForCurrentSession)
+    .map(row => productCatalogItem(row.reference_produit, row.nom, source.label, "Ventes saisies"));
 }
 
 async function loadProductSuggestions(term){
@@ -1305,10 +1346,26 @@ async function loadSalesRowsForSource(source, term){
   const productCacheKey = `${currentCatalogKey()}::sales-products::${source.key}::${compact(term)}`;
   let products = getCached(salesProductsCache, productCacheKey);
   if (!products) {
-    products = await fetchPaged(source.tables.produits, "id,nom,reference_produit", {
-      search:{ columns:["reference_produit", "nom"], value:term },
-      order:{ column:"nom", ascending:true }
-    });
+    if (source.tables.produits === "produits") {
+      try {
+        products = await fetchPaged(source.tables.produits, "id,nom,reference_produit,actif,origine,created_by_user_id,promo_deleted_at", {
+          search:{ columns:["reference_produit", "nom"], value:term },
+          order:{ column:"nom", ascending:true }
+        });
+      } catch (error) {
+        if (!isPromoProductSchemaError(error)) throw error;
+        products = await fetchPaged(source.tables.produits, "id,nom,reference_produit", {
+          search:{ columns:["reference_produit", "nom"], value:term },
+          order:{ column:"nom", ascending:true }
+        });
+      }
+      products = products.filter(isVisibleProductForCurrentSession);
+    } else {
+      products = await fetchPaged(source.tables.produits, "id,nom,reference_produit", {
+        search:{ columns:["reference_produit", "nom"], value:term },
+        order:{ column:"nom", ascending:true }
+      });
+    }
     products = setCached(salesProductsCache, productCacheKey, products);
   }
   const matchingProducts = products.filter(product => productMatches(product, term));
