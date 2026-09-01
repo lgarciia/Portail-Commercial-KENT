@@ -380,22 +380,22 @@
     .finance-sector-title h3{margin:0;font-size:17px;letter-spacing:-.02em}
     .finance-sector-title span{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.35}
     .france-map-wrap{
-      border:1px solid rgba(148,163,184,.20);border-radius:22px;
-      background:linear-gradient(145deg,rgba(15,23,42,.28),rgba(15,118,110,.10));
-      min-height:430px;padding:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;
+      border:1px solid rgba(148,163,184,.18);border-radius:20px;
+      background:rgba(255,255,255,.035);
+      min-height:410px;padding:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;
     }
-    .france-map-svg{width:100%;max-height:520px;display:block;filter:drop-shadow(0 18px 34px rgba(0,0,0,.18))}
-    .france-map-path{stroke:rgba(255,255,255,.86);stroke-width:.9;vector-effect:non-scaling-stroke;transition:filter .15s ease,fill-opacity .15s ease,stroke .15s ease}
+    .france-map-svg{width:100%;max-height:500px;display:block}
+    .france-map-path{stroke:rgba(255,255,255,.96);stroke-width:.75;vector-effect:non-scaling-stroke;transition:fill-opacity .12s ease,stroke .12s ease}
     .france-map-path.has-sector{cursor:pointer}
-    .france-map-path.has-sector:hover{filter:brightness(1.12) saturate(1.05);stroke:#0f172a;stroke-width:1.35}
-    .france-map-path.no-sector{fill:#64748b;fill-opacity:.20}
-    .france-map-path.zero-sector{fill-opacity:.38}
+    .france-map-path.has-sector:hover{fill-opacity:.96;stroke:#0f172a;stroke-width:1.1}
+    .france-map-path.no-sector{fill:#64748b;fill-opacity:.16}
+    .france-map-path.zero-sector{fill-opacity:.48}
     .france-map-insets{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-top:10px}
     .france-map-inset{
-      border:1px solid rgba(148,163,184,.18);border-radius:16px;background:rgba(255,255,255,.04);
-      padding:8px;display:grid;gap:5px;min-width:0;
+      border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(255,255,255,.035);
+      padding:7px;display:grid;gap:5px;min-width:0;
     }
-    .france-map-inset svg{width:100%;height:52px;display:block}
+    .france-map-inset svg{width:100%;height:46px;display:block}
     .france-map-inset span{color:var(--muted);font-size:10px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
     .france-map-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .france-map-legend span{
@@ -404,7 +404,7 @@
     }
     .france-map-legend i{width:9px;height:9px;border-radius:999px;background:var(--sector-color,#94a3b8);display:inline-block}
     .france-map-placeholder{
-      min-height:430px;border:1px dashed rgba(148,163,184,.28);border-radius:22px;background:rgba(255,255,255,.035);
+      min-height:410px;border:1px dashed rgba(148,163,184,.28);border-radius:20px;background:rgba(255,255,255,.035);
       display:grid;place-items:center;text-align:center;padding:24px;color:var(--muted);
     }
     .france-map-placeholder strong{display:block;color:var(--text);font-size:16px;margin-bottom:5px}
@@ -1100,7 +1100,7 @@
     }
     .france-map-wrap{
       border-color:#d8e1ec;
-      background:linear-gradient(145deg,#f8fafc,#eef6ff);
+      background:#f8fafc;
     }
     .france-map-placeholder{
       border-color:#cbd5e1;
@@ -1108,7 +1108,7 @@
     }
     .france-map-path{stroke:#ffffff}
     .france-map-path.has-sector:hover{stroke:#0f172a}
-    .france-map-path.no-sector{fill:#cbd5e1;fill-opacity:.86}
+    .france-map-path.no-sector{fill:#e2e8f0;fill-opacity:1}
     .france-map-inset{
       border-color:#d8e1ec;
       background:#f8fafc;
@@ -2176,8 +2176,8 @@
       ];
       const FRANCE_DEPARTMENTS_GEOJSON_URL = "/api/france-departments-map";
       const FRANCE_OVERSEAS_DEPARTMENT_CODES = new Set(["971", "972", "973", "974", "976"]);
-      const FRANCE_MAIN_MAP_VIEWBOX = { width: 640, height: 610, padding: 16 };
-      const FRANCE_INSET_MAP_VIEWBOX = { width: 112, height: 64, padding: 5 };
+      const FRANCE_MAIN_MAP_VIEWBOX = { width: 680, height: 560, padding: 12 };
+      const FRANCE_INSET_MAP_VIEWBOX = { width: 112, height: 58, padding: 5 };
 
       init();
 
@@ -4582,40 +4582,50 @@
       }
 
       function createGeoProjection(features, viewBox){
-        const bounds = geoBounds(features);
-        if (!Number.isFinite(bounds.minLon) || !Number.isFinite(bounds.minLat)) return null;
+        const bounds = geoProjectedBounds(features);
+        if (!Number.isFinite(bounds.minX) || !Number.isFinite(bounds.minY)) return null;
         const width = viewBox.width;
         const height = viewBox.height;
         const padding = viewBox.padding;
-        const spanLon = Math.max(.0001, bounds.maxLon - bounds.minLon);
-        const spanLat = Math.max(.0001, bounds.maxLat - bounds.minLat);
-        const scale = Math.min((width - padding * 2) / spanLon, (height - padding * 2) / spanLat);
-        const offsetX = (width - spanLon * scale) / 2;
-        const offsetY = (height - spanLat * scale) / 2;
+        const spanX = Math.max(.0001, bounds.maxX - bounds.minX);
+        const spanY = Math.max(.0001, bounds.maxY - bounds.minY);
+        const scale = Math.min((width - padding * 2) / spanX, (height - padding * 2) / spanY);
+        const offsetX = (width - spanX * scale) / 2;
+        const offsetY = (height - spanY * scale) / 2;
         return function(point){
-          const lon = Number(point[0]);
-          const lat = Number(point[1]);
+          const projected = projectGeoPoint(point) || { x: bounds.minX, y: bounds.minY };
           return {
-            x: offsetX + (lon - bounds.minLon) * scale,
-            y: offsetY + (bounds.maxLat - lat) * scale
+            x: offsetX + (projected.x - bounds.minX) * scale,
+            y: offsetY + (bounds.maxY - projected.y) * scale
           };
         };
       }
 
-      function geoBounds(features){
-        const bounds = { minLon: Infinity, minLat: Infinity, maxLon: -Infinity, maxLat: -Infinity };
+      function geoProjectedBounds(features){
+        const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
         features.forEach(function(feature){
           walkGeoCoordinates(feature.geometry, function(point){
-            const lon = Number(point[0]);
-            const lat = Number(point[1]);
-            if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
-            bounds.minLon = Math.min(bounds.minLon, lon);
-            bounds.maxLon = Math.max(bounds.maxLon, lon);
-            bounds.minLat = Math.min(bounds.minLat, lat);
-            bounds.maxLat = Math.max(bounds.maxLat, lat);
+            const projected = projectGeoPoint(point);
+            if (!projected) return;
+            bounds.minX = Math.min(bounds.minX, projected.x);
+            bounds.maxX = Math.max(bounds.maxX, projected.x);
+            bounds.minY = Math.min(bounds.minY, projected.y);
+            bounds.maxY = Math.max(bounds.maxY, projected.y);
           });
         });
         return bounds;
+      }
+
+      function projectGeoPoint(point){
+        const lon = Number(point?.[0]);
+        const lat = Number(point?.[1]);
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+        const clampedLat = Math.max(-85, Math.min(85, lat));
+        const radians = Math.PI / 180;
+        return {
+          x: lon,
+          y: Math.log(Math.tan(Math.PI / 4 + (clampedLat * radians) / 2)) / radians
+        };
       }
 
       function walkGeoCoordinates(geometry, visitor){
