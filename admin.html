@@ -379,19 +379,36 @@
     .finance-sector-title{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
     .finance-sector-title h3{margin:0;font-size:17px;letter-spacing:-.02em}
     .finance-sector-title span{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.35}
-    .finance-dept-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;max-height:430px;overflow:auto;padding-right:3px}
-    .finance-dept{
-      min-height:42px;border:1px solid rgba(148,163,184,.28);border-radius:12px;background:rgba(15,23,42,.22);
-      display:grid;align-content:center;gap:2px;padding:7px;text-align:center;position:relative;overflow:hidden;
+    .france-map-wrap{
+      border:1px solid rgba(148,163,184,.20);border-radius:22px;
+      background:linear-gradient(145deg,rgba(15,23,42,.28),rgba(15,118,110,.10));
+      min-height:430px;padding:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;
     }
-    .finance-dept::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--sector-color,#94a3b8);opacity:.88}
-    .finance-dept:not(.empty){
-      background:color-mix(in srgb,var(--sector-color,#0f766e) var(--sector-strength,14%),rgba(15,23,42,.18));
-      border-color:color-mix(in srgb,var(--sector-color,#0f766e) 34%,rgba(148,163,184,.28));
+    .france-map-svg{width:100%;max-height:520px;display:block;filter:drop-shadow(0 18px 34px rgba(0,0,0,.18))}
+    .france-map-path{stroke:rgba(255,255,255,.86);stroke-width:.9;vector-effect:non-scaling-stroke;transition:filter .15s ease,fill-opacity .15s ease,stroke .15s ease}
+    .france-map-path.has-sector{cursor:pointer}
+    .france-map-path.has-sector:hover{filter:brightness(1.12) saturate(1.05);stroke:#0f172a;stroke-width:1.35}
+    .france-map-path.no-sector{fill:#64748b;fill-opacity:.20}
+    .france-map-path.zero-sector{fill-opacity:.38}
+    .france-map-insets{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-top:10px}
+    .france-map-inset{
+      border:1px solid rgba(148,163,184,.18);border-radius:16px;background:rgba(255,255,255,.04);
+      padding:8px;display:grid;gap:5px;min-width:0;
     }
-    .finance-dept strong{font-size:12px;color:var(--text);position:relative}
-    .finance-dept span{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
-    .finance-dept.empty{background:rgba(148,163,184,.08);opacity:.78}
+    .france-map-inset svg{width:100%;height:52px;display:block}
+    .france-map-inset span{color:var(--muted);font-size:10px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+    .france-map-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .france-map-legend span{
+      display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 8px;border-radius:999px;
+      border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);color:var(--muted);font-size:10px;font-weight:950;
+    }
+    .france-map-legend i{width:9px;height:9px;border-radius:999px;background:var(--sector-color,#94a3b8);display:inline-block}
+    .france-map-placeholder{
+      min-height:430px;border:1px dashed rgba(148,163,184,.28);border-radius:22px;background:rgba(255,255,255,.035);
+      display:grid;place-items:center;text-align:center;padding:24px;color:var(--muted);
+    }
+    .france-map-placeholder strong{display:block;color:var(--text);font-size:16px;margin-bottom:5px}
+    .france-map-credit{margin-top:8px;color:var(--muted);font-size:10px;font-weight:800}
     .finance-sector-list{display:grid;gap:8px}
     .finance-sector-row{
       display:grid;grid-template-columns:minmax(190px,1.45fr) minmax(150px,1fr) 76px repeat(4,minmax(96px,.75fr)) 36px;
@@ -732,7 +749,7 @@
       .manager-grid{grid-template-columns:1fr}
       .finance-summary,.performance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .finance-sector-layout{grid-template-columns:1fr}
-      .finance-dept-grid{grid-template-columns:repeat(6,minmax(0,1fr));max-height:300px}
+      .france-map-wrap,.france-map-placeholder{min-height:360px}
       .finance-sector-row{grid-template-columns:minmax(170px,1.3fr) minmax(130px,.8fr) 66px repeat(4,minmax(88px,.72fr)) 34px;overflow:hidden}
       .finance-sector-seller{grid-template-columns:minmax(170px,1.3fr) minmax(130px,.8fr) 66px repeat(4,minmax(88px,.72fr))}
       .control-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -761,7 +778,8 @@
       .finance-summary,.performance-grid{grid-template-columns:1fr}
       .control-summary,.control-detail-grid{grid-template-columns:1fr}
       .control-row{grid-template-columns:1fr}
-      .finance-dept-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .france-map-wrap,.france-map-placeholder{min-height:300px}
+      .france-map-insets{grid-template-columns:repeat(2,minmax(0,1fr))}
       .finance-sector-row,.finance-sector-seller{grid-template-columns:1fr}
       .budget-admin-head{flex-direction:column}
       .budget-admin-summary{grid-template-columns:1fr}
@@ -1080,24 +1098,30 @@
       border-color:var(--line);
       background:#fff;
     }
-    .finance-dept{
+    .france-map-wrap{
+      border-color:#d8e1ec;
+      background:linear-gradient(145deg,#f8fafc,#eef6ff);
+    }
+    .france-map-placeholder{
+      border-color:#cbd5e1;
+      background:#f8fafc;
+    }
+    .france-map-path{stroke:#ffffff}
+    .france-map-path.has-sector:hover{stroke:#0f172a}
+    .france-map-path.no-sector{fill:#cbd5e1;fill-opacity:.86}
+    .france-map-inset{
       border-color:#d8e1ec;
       background:#f8fafc;
     }
-    .finance-dept.empty{
-      border-color:#e2e8f0;
-      background:#f1f5f9;
-      opacity:.72;
+    .france-map-legend span{
+      border-color:#d8e1ec;
+      background:#f8fafc;
+      color:#475569;
     }
-    .finance-dept:not(.empty){
-      background:color-mix(in srgb,var(--sector-color,#0f766e) var(--sector-strength,14%),#fff);
-      border-color:color-mix(in srgb,var(--sector-color,#0f766e) 34%,#d8e1ec);
-    }
-    .finance-dept strong,
     .finance-sector-name strong{
       color:#0f172a;
     }
-    .finance-dept span,
+    .france-map-inset span,
     .finance-sector-title span,
     .finance-sector-name span{
       color:#64748b;
@@ -2001,6 +2025,12 @@
         sectors: [],
         sectorsReady: false,
         sectorsWarning: "",
+        franceMap: {
+          status: "idle",
+          mainFeatures: [],
+          insetFeatures: [],
+          error: ""
+        },
         stats: {},
         filter: "active",
         search: "",
@@ -2144,6 +2174,10 @@
         ["92", "Hauts-de-Seine"], ["93", "Seine-Saint-Denis"], ["94", "Val-de-Marne"], ["95", "Val-d'Oise"],
         ["971", "Guadeloupe"], ["972", "Martinique"], ["973", "Guyane"], ["974", "La Reunion"], ["976", "Mayotte"]
       ];
+      const FRANCE_DEPARTMENTS_GEOJSON_URL = "/api/france-departments-map";
+      const FRANCE_OVERSEAS_DEPARTMENT_CODES = new Set(["971", "972", "973", "974", "976"]);
+      const FRANCE_MAIN_MAP_VIEWBOX = { width: 640, height: 610, padding: 16 };
+      const FRANCE_INSET_MAP_VIEWBOX = { width: 112, height: 64, padding: 5 };
 
       init();
 
@@ -4338,37 +4372,285 @@
       }
 
       function renderFinanceSectorMap(groups){
-        const maxActual = Math.max(1, ...groups.map(function(group){ return Number(group.monthActual || 0); }));
+        if ((state.franceMap?.status || "idle") === "idle") {
+          ensureFranceDepartmentsMap();
+        }
+        const mapState = state.franceMap || {};
+        const body = mapState.status === "ready"
+          ? renderFranceGeographicMap(groups, mapState)
+          : renderFranceMapPlaceholder(mapState);
         return [
           '<section class="finance-sector-map">',
             '<div class="finance-sector-title">',
-              '<div><h3>Carte secteurs</h3><span>Départements rattachés aux zones commerciales.</span></div>',
+              '<div><h3>Carte de France</h3><span>Départements colorés selon les secteurs commerciaux.</span></div>',
             '</div>',
-            '<div class="finance-dept-grid">',
-              FR_DEPARTMENTS.map(function(item){ return renderFinanceDepartment(item, groups, maxActual); }).join(""),
-            '</div>',
+            body,
           '</section>'
         ].join("");
       }
 
-      function renderFinanceDepartment(item, groups, maxActual){
-        const code = item[0];
-        const label = item[1];
-        const group = groups.find(function(sector){
-          return sector.id !== "__sans_secteur__" && Array.isArray(sector.departments) && sector.departments.includes(code);
-        });
-        const color = safeSectorColor(group?.color || "#94A3B8");
-        const strength = group ? Math.min(42, Math.max(12, Math.round((Number(group.monthActual || 0) / maxActual) * 38))) : 0;
-        const className = group ? "finance-dept" : "finance-dept empty";
-        const title = group
-          ? group.name + " - " + code + " " + label + " - CA mois : " + formatEuro(group.monthActual)
-          : "Département non affecté - " + code + " " + label;
+      function renderFranceGeographicMap(groups, mapState){
+        const maxActual = Math.max(1, ...groups.map(function(group){ return Number(group.monthActual || 0); }));
         return [
-          '<div class="' + className + '" style="--sector-color:' + escapeHtml(color) + ';--sector-strength:' + strength + '%" title="' + escapeHtml(title) + '">',
-            '<strong>' + escapeHtml(code) + '</strong>',
-            '<span>' + escapeHtml(label) + '</span>',
+          '<div class="france-map-wrap">',
+            '<svg class="france-map-svg" viewBox="0 0 ' + FRANCE_MAIN_MAP_VIEWBOX.width + ' ' + FRANCE_MAIN_MAP_VIEWBOX.height + '" role="img" aria-label="Carte de France par secteurs commerciaux">',
+              mapState.mainFeatures.map(function(feature){
+                return renderFranceDepartmentPath(feature, groups, maxActual);
+              }).join(""),
+            '</svg>',
+          '</div>',
+          mapState.insetFeatures.length ? [
+            '<div class="france-map-insets">',
+              mapState.insetFeatures.map(function(feature){
+                return renderFranceInsetDepartment(feature, groups, maxActual);
+              }).join(""),
+            '</div>'
+          ].join("") : "",
+          renderFinanceSectorMapLegend(groups),
+          '<div class="france-map-credit">Carte géographique des départements français, affichage interne Kentix.</div>'
+        ].join("");
+      }
+
+      function renderFranceMapPlaceholder(mapState){
+        const isError = mapState.status === "error";
+        return [
+          '<div class="france-map-placeholder">',
+            '<div>',
+              '<strong>' + (isError ? "Carte indisponible" : "Chargement de la carte France") + '</strong>',
+              '<span>' + escapeHtml(isError ? mapState.error || "Impossible de charger les contours des départements." : "Préparation des départements et des secteurs commerciaux.") + '</span>',
+            '</div>',
           '</div>'
         ].join("");
+      }
+
+      function renderFranceInsetDepartment(feature, groups, maxActual){
+        const view = franceDepartmentView(feature, groups, maxActual);
+        return [
+          '<div class="france-map-inset" title="' + escapeHtml(view.title) + '">',
+            '<svg viewBox="0 0 ' + FRANCE_INSET_MAP_VIEWBOX.width + ' ' + FRANCE_INSET_MAP_VIEWBOX.height + '" aria-label="' + escapeHtml(view.title) + '">',
+              '<path class="' + view.className + '" d="' + escapeHtml(feature.path) + '" fill="' + escapeHtml(view.color) + '" fill-opacity="' + view.opacity + '"' + view.dataAttr + '><title>' + escapeHtml(view.title) + '</title></path>',
+            '</svg>',
+            '<span>' + escapeHtml(feature.code + " - " + feature.name) + '</span>',
+          '</div>'
+        ].join("");
+      }
+
+      function renderFranceDepartmentPath(feature, groups, maxActual){
+        const view = franceDepartmentView(feature, groups, maxActual);
+        return '<path class="' + view.className + '" d="' + escapeHtml(feature.path) + '" fill="' + escapeHtml(view.color) + '" fill-opacity="' + view.opacity + '"' + view.dataAttr + '><title>' + escapeHtml(view.title) + '</title></path>';
+      }
+
+      function franceDepartmentView(feature, groups, maxActual){
+        const group = financeSectorForDepartment(feature.code, groups);
+        const color = group ? safeSectorColor(group.color || "#0F766E") : "#CBD5E1";
+        const actual = Number(group?.monthActual || 0);
+        const ratio = group ? Math.min(1, Math.max(0, actual / Math.max(1, maxActual))) : 0;
+        const opacity = group ? Math.min(.92, Math.max(.42, .46 + ratio * .36)).toFixed(2) : ".86";
+        const className = [
+          "france-map-path",
+          group ? "has-sector" : "no-sector",
+          group && !actual ? "zero-sector" : ""
+        ].filter(Boolean).join(" ");
+        const title = group
+          ? feature.code + " - " + feature.name + " | " + group.name + " | CA mois : " + formatEuro(group.monthActual) + " | Budget : " + formatEuro(group.monthBudget)
+          : feature.code + " - " + feature.name + " | Département non rattaché";
+        return {
+          color,
+          opacity,
+          className,
+          title,
+          dataAttr: group ? ' data-finance-sector="' + escapeHtml(group.id) + '"' : ""
+        };
+      }
+
+      function renderFinanceSectorMapLegend(groups){
+        const listed = groups
+          .filter(function(group){ return group.id !== "__sans_secteur__" && Array.isArray(group.departments) && group.departments.length; })
+          .slice(0, 7);
+        const items = listed.map(function(group){
+          return '<span><i style="--sector-color:' + escapeHtml(safeSectorColor(group.color || "#0F766E")) + '"></i>' + escapeHtml(group.name) + '</span>';
+        });
+        items.push('<span><i style="--sector-color:#CBD5E1"></i>Non rattaché</span>');
+        return '<div class="france-map-legend">' + items.join("") + '</div>';
+      }
+
+      function financeSectorForDepartment(code, groups){
+        const normalized = normalizeDepartmentCode(code);
+        if (!normalized) return null;
+        return groups.find(function(group){
+          return group.id !== "__sans_secteur__"
+            && Array.isArray(group.departments)
+            && group.departments.some(function(item){ return normalizeDepartmentCode(item) === normalized; });
+        }) || null;
+      }
+
+      function ensureFranceDepartmentsMap(){
+        if (!state.franceMap || ["loading", "ready"].includes(state.franceMap.status)) return;
+        state.franceMap.status = "loading";
+        state.franceMap.error = "";
+        fetch(FRANCE_DEPARTMENTS_GEOJSON_URL, { cache: "force-cache" })
+          .then(function(response){
+            if (!response.ok) throw new Error("Contours France indisponibles (" + response.status + ").");
+            return response.json();
+          })
+          .then(function(geojson){
+            const prepared = prepareFranceMapFeatures(normalizeFranceGeoFeatures(geojson));
+            if (!prepared.mainFeatures.length) throw new Error("Contours France incomplets.");
+            state.franceMap = {
+              status: "ready",
+              mainFeatures: prepared.mainFeatures,
+              insetFeatures: prepared.insetFeatures,
+              error: ""
+            };
+          })
+          .catch(function(error){
+            state.franceMap.status = "error";
+            state.franceMap.error = error.message || "Impossible de charger la carte France.";
+          })
+          .finally(function(){
+            if (state.activeView === "finance" && state.financeView === "sectors") {
+              renderFinance();
+            }
+          });
+      }
+
+      function normalizeFranceGeoFeatures(geojson){
+        const features = Array.isArray(geojson?.features) ? geojson.features : [];
+        const order = new Map(FR_DEPARTMENTS.map(function(item, index){ return [item[0], index]; }));
+        return features.map(function(feature){
+          const code = departmentCodeFromFranceFeature(feature);
+          const fallback = FR_DEPARTMENTS.find(function(item){ return item[0] === code; });
+          return {
+            code,
+            name: String(feature?.properties?.nom || feature?.properties?.name || fallback?.[1] || code || "Département"),
+            geometry: feature?.geometry || null
+          };
+        }).filter(function(feature){
+          return feature.code && feature.geometry;
+        }).sort(function(a, b){
+          return (order.get(a.code) ?? 999) - (order.get(b.code) ?? 999);
+        });
+      }
+
+      function departmentCodeFromFranceFeature(feature){
+        const props = feature?.properties || {};
+        const candidates = [
+          props.code,
+          props.CODE_DEPT,
+          props.code_departement,
+          props.codeDepartement,
+          props.dep,
+          props.departement,
+          props.id,
+          feature?.id
+        ];
+        for (const candidate of candidates) {
+          const code = normalizeDepartmentCode(candidate);
+          if (code && FR_DEPARTMENTS.some(function(item){ return item[0] === code; })) return code;
+        }
+        const label = props.nom || props.name || props.libelle || "";
+        const normalizedLabel = normalizeDepartmentName(label);
+        const byName = FR_DEPARTMENTS.find(function(item){
+          return normalizeDepartmentName(item[1]) === normalizedLabel;
+        });
+        return byName ? byName[0] : "";
+      }
+
+      function prepareFranceMapFeatures(features){
+        const main = features.filter(function(feature){
+          return !FRANCE_OVERSEAS_DEPARTMENT_CODES.has(feature.code);
+        });
+        const insets = features.filter(function(feature){
+          return FRANCE_OVERSEAS_DEPARTMENT_CODES.has(feature.code);
+        });
+        const mainProjection = createGeoProjection(main, FRANCE_MAIN_MAP_VIEWBOX);
+        return {
+          mainFeatures: mainProjection ? main.map(function(feature){
+            return {
+              ...feature,
+              path: geometryToSvgPath(feature.geometry, mainProjection)
+            };
+          }).filter(function(feature){ return feature.path; }) : [],
+          insetFeatures: insets.map(function(feature){
+            const projection = createGeoProjection([feature], FRANCE_INSET_MAP_VIEWBOX);
+            return {
+              ...feature,
+              path: projection ? geometryToSvgPath(feature.geometry, projection) : ""
+            };
+          }).filter(function(feature){ return feature.path; })
+        };
+      }
+
+      function createGeoProjection(features, viewBox){
+        const bounds = geoBounds(features);
+        if (!Number.isFinite(bounds.minLon) || !Number.isFinite(bounds.minLat)) return null;
+        const width = viewBox.width;
+        const height = viewBox.height;
+        const padding = viewBox.padding;
+        const spanLon = Math.max(.0001, bounds.maxLon - bounds.minLon);
+        const spanLat = Math.max(.0001, bounds.maxLat - bounds.minLat);
+        const scale = Math.min((width - padding * 2) / spanLon, (height - padding * 2) / spanLat);
+        const offsetX = (width - spanLon * scale) / 2;
+        const offsetY = (height - spanLat * scale) / 2;
+        return function(point){
+          const lon = Number(point[0]);
+          const lat = Number(point[1]);
+          return {
+            x: offsetX + (lon - bounds.minLon) * scale,
+            y: offsetY + (bounds.maxLat - lat) * scale
+          };
+        };
+      }
+
+      function geoBounds(features){
+        const bounds = { minLon: Infinity, minLat: Infinity, maxLon: -Infinity, maxLat: -Infinity };
+        features.forEach(function(feature){
+          walkGeoCoordinates(feature.geometry, function(point){
+            const lon = Number(point[0]);
+            const lat = Number(point[1]);
+            if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+            bounds.minLon = Math.min(bounds.minLon, lon);
+            bounds.maxLon = Math.max(bounds.maxLon, lon);
+            bounds.minLat = Math.min(bounds.minLat, lat);
+            bounds.maxLat = Math.max(bounds.maxLat, lat);
+          });
+        });
+        return bounds;
+      }
+
+      function walkGeoCoordinates(geometry, visitor){
+        if (!geometry || !Array.isArray(geometry.coordinates)) return;
+        function walk(value){
+          if (!Array.isArray(value)) return;
+          if (typeof value[0] === "number" && typeof value[1] === "number") {
+            visitor(value);
+            return;
+          }
+          value.forEach(walk);
+        }
+        walk(geometry.coordinates);
+      }
+
+      function geometryToSvgPath(geometry, project){
+        const polygons = geometry?.type === "Polygon"
+          ? [geometry.coordinates]
+          : geometry?.type === "MultiPolygon"
+            ? geometry.coordinates
+            : [];
+        return polygons.map(function(polygon){
+          return polygon.map(function(ring){
+            if (!Array.isArray(ring) || ring.length < 2) return "";
+            return ring.map(function(point, index){
+              const projected = project(point);
+              const command = index === 0 ? "M" : "L";
+              return command + svgNumber(projected.x) + " " + svgNumber(projected.y);
+            }).join(" ") + " Z";
+          }).filter(Boolean).join(" ");
+        }).filter(Boolean).join(" ");
+      }
+
+      function svgNumber(value){
+        return Number(value).toFixed(1).replace(/\.0$/, "");
       }
 
       function renderFinanceSectorRows(sectorModel, model){
@@ -5535,8 +5817,25 @@
         return '<option value="' + user.id + '">' + escapeHtml(user.displayName + " - " + user.identifier) + '</option>';
       }
 
+      function normalizeDepartmentCode(value){
+        const raw = String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+        if (!raw) return "";
+        const match = raw.match(/^(2A|2B|0?[1-9]|[1-8][0-9]|9[0-5]|97[1-4]|976)\b/);
+        if (!match) return raw;
+        const code = match[1];
+        return /^\d$/.test(code) ? code.padStart(2, "0") : code;
+      }
+
+      function normalizeDepartmentName(value){
+        return String(value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+      }
+
       function departmentLabel(code){
-        const normalized = String(code || "").toUpperCase();
+        const normalized = normalizeDepartmentCode(code);
         const item = FR_DEPARTMENTS.find(function(department){ return department[0] === normalized; });
         return item ? item[0] + " - " + item[1] : normalized;
       }
