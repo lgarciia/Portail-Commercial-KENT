@@ -779,7 +779,9 @@
       }
       if (typeId === "PSA") {
         return {
-          mode: "psa-ref-header"
+          mode: "psa-stellantis-revente-header",
+          singleSheet: true,
+          duplicatePolicy: "first"
         };
       }
 
@@ -808,8 +810,8 @@
           : "Lecture Ford: Code produit + Description + colonne Tarif Revente (entetes). Fallback A/F/J actif.";
       } else if (strategy.mode === "gueudet-prof-header") {
         modeMessage = "Lecture Gueudet imposee: colonnes Reference, Description, Tarif Revente au professionnel.";
-      } else if (strategy.mode === "psa-ref-header") {
-        modeMessage = "Lecture PSA imposee: colonne Ref. (et non CrossRef + Code), Designation, TARIF.";
+      } else if (strategy.mode === "psa-stellantis-revente-header") {
+        modeMessage = "Lecture PSA Revente imposee: colonnes Code Stellantis, Description, Tarif Revente. La premiere reference est conservee en cas de doublon.";
       }
 
       hint.innerHTML = [
@@ -1067,6 +1069,56 @@
       return null;
     }
 
+    function isPsaStellantisCodeHeader(token) {
+      if (!token.includes("code")) return false;
+      return (
+        token.includes("stellantis") ||
+        token.includes("stelantis") ||
+        token.includes("stellar") ||
+        token.includes("clantif")
+      );
+    }
+
+    function isPsaReventeTarifHeader(token) {
+      const isTarifToken = token.includes("tarif") || token.includes("prix");
+      if (!isTarifToken) return false;
+      return token.includes("revente") || token.includes("vente");
+    }
+
+    function isDesignationHeader(token) {
+      return token.includes("description") || token.includes("designation") || token.includes("libelle");
+    }
+
+    function findPsaReventeHeaderInRows(rows) {
+      const maxScan = Math.min(rows.length, 40);
+      for (let rowIndex = 0; rowIndex < maxScan; rowIndex += 1) {
+        const row = rows[rowIndex] || [];
+        const tokens = row.map(cell => normalizeHeaderToken(cell));
+        let refIndex = -1;
+        let designationIndex = -1;
+        let tarifIndex = -1;
+
+        tokens.forEach((token, index) => {
+          if (!token) return;
+          if (refIndex === -1 && isPsaStellantisCodeHeader(token)) {
+            refIndex = index;
+          }
+          if (designationIndex === -1 && isDesignationHeader(token)) {
+            designationIndex = index;
+          }
+          if (tarifIndex === -1 && isPsaReventeTarifHeader(token)) {
+            tarifIndex = index;
+          }
+        });
+
+        if (refIndex >= 0 && designationIndex >= 0 && tarifIndex >= 0) {
+          return { rowIndex, refIndex, designationIndex, tarifIndex };
+        }
+      }
+
+      return null;
+    }
+
     function findFordHeaderInRows(rows, targetTarif = "revente") {
       const maxScan = Math.min(rows.length, 60);
 
@@ -1146,9 +1198,10 @@
 
     function analyzeWorkbook(workbook, importType) {
       const allRows = [];
-      const sheetNames = workbook.SheetNames || [];
-      let sheetsUsed = 0;
       const strategy = getImportReadStrategy(importType);
+      const workbookSheetNames = workbook.SheetNames || [];
+      const sheetNames = strategy.singleSheet ? workbookSheetNames.slice(0, 1) : workbookSheetNames;
+      let sheetsUsed = 0;
 
       for (const sheetName of sheetNames) {
         const sheet = workbook.Sheets[sheetName];
@@ -1195,6 +1248,10 @@
           } else {
             continue;
           }
+        } else if (strategy.mode === "psa-stellantis-revente-header") {
+          header = findPsaReventeHeaderInRows(rows);
+          if (!header) continue;
+          dataStartRow = header.rowIndex + 1;
         } else {
           header = findHeaderInRows(rows, strategy.mode);
           if (!header) continue;
@@ -1240,22 +1297,38 @@
       }
 
       const validRows = allRows.filter(row => row.status === "ok");
-      const lastIndexByKey = new Map();
+      const duplicateCountsByKey = new Map();
+      validRows.forEach(row => {
+        duplicateCountsByKey.set(row.referenceKey, (duplicateCountsByKey.get(row.referenceKey) || 0) + 1);
+      });
+
+      const selectedIndexByKey = new Map();
       validRows.forEach((row, index) => {
-        lastIndexByKey.set(row.referenceKey, index);
+        if (strategy.duplicatePolicy === "first") {
+          if (!selectedIndexByKey.has(row.referenceKey)) {
+            selectedIndexByKey.set(row.referenceKey, index);
+          }
+          return;
+        }
+        selectedIndexByKey.set(row.referenceKey, index);
       });
 
       let duplicates = 0;
       validRows.forEach((row, index) => {
-        const lastIndex = lastIndexByKey.get(row.referenceKey);
-        const keep = lastIndex === index;
+        const selectedIndex = selectedIndexByKey.get(row.referenceKey);
+        const keep = selectedIndex === index;
+        const hasDuplicate = (duplicateCountsByKey.get(row.referenceKey) || 0) > 1;
         row.keepForImport = keep;
         if (!keep) {
           row.status = "warn";
-          row.detail = "Doublon reference: ligne ignoree (dernier tarif conserve).";
+          row.detail = strategy.duplicatePolicy === "first"
+            ? "Doublon reference: ligne ignoree (premier tarif conserve)."
+            : "Doublon reference: ligne ignoree (dernier tarif conserve).";
           duplicates += 1;
-        } else if (lastIndexByKey.has(row.referenceKey) && validRows.filter(v => v.referenceKey === row.referenceKey).length > 1) {
-          row.detail = "Doublon reference detecte: dernier tarif conserve.";
+        } else if (hasDuplicate) {
+          row.detail = strategy.duplicatePolicy === "first"
+            ? "Doublon reference detecte: premier tarif conserve."
+            : "Doublon reference detecte: dernier tarif conserve.";
         }
       });
 
@@ -1658,17 +1731,26 @@
     }
 
     function downloadTemplate() {
-      const csv = [
-        "Ref.,Designation,TARIF",
-        "86807 00,Exemple produit 1,12.5",
-        "11111 AA,Exemple produit 2,9.9"
-      ].join("\n");
+      const type = getSelectedImportType();
+      const isPsaRevente = type.id === "PSA";
+      const csv = isPsaRevente
+        ? [
+            "UPE STELLANTIS 2026 - REVENTE,,,,,,,,,",
+            "Code Produit,Code Stellantis,Categorie,Famille,Sous-Famille,Description,Grains,Emballage,Tarif Achat,Tarif Revente",
+            "BC720 24,LKENBC720,CHIMIQUES,B TO C,BIKE,ALL SEASON CHAIN LUBE,,AER 500 ML,11.7,14.63",
+            "BC168 24,LKENBC168,CHIMIQUES,B TO C,BIKE,BEARING AND ASSEMBLY GREASE,,POT 400 GR,36.85,46.06"
+          ].join("\n")
+        : [
+            "Ref.,Designation,TARIF",
+            "86807 00,Exemple produit 1,12.5",
+            "11111 AA,Exemple produit 2,9.9"
+          ].join("\n");
 
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "modele_import_tarifs_multi.csv";
+      a.download = isPsaRevente ? "modele_import_psa_tarif_revente.csv" : "modele_import_tarifs_multi.csv";
       document.body.appendChild(a);
       a.click();
       a.remove();
