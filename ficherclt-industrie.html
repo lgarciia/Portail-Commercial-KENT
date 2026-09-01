@@ -3418,6 +3418,47 @@
       return { commandes, invalidFilledRow };
     }
 
+    function findZeroTotalCommandes(commandes) {
+      return (commandes || []).filter(commande => {
+        const lineTotal = roundPrice(Number(commande.quantite || 0) * roundPrice(commande.prix_unitaire || 0));
+        return lineTotal === 0;
+      });
+    }
+
+    function zeroTotalCommandesMessage(commandes) {
+      const zeroRows = findZeroTotalCommandes(commandes);
+      const samples = zeroRows.slice(0, 5).map(commande => {
+        const produit = getProduitDisplay(commande.produit_id);
+        const reference = produit.reference_produit || "Référence inconnue";
+        const label = produit.nom || "Produit";
+        return "- " + reference + " - " + label + " | Qté " + Number(commande.quantite || 0) + " | PU " + formatCurrency(commande.prix_unitaire || 0);
+      });
+      const more = zeroRows.length > samples.length
+        ? "\n+" + (zeroRows.length - samples.length) + " autre(s) ligne(s) à 0 €."
+        : "";
+      return [
+        zeroRows.length + " ligne(s) produit ont un total à 0 €.",
+        "",
+        samples.join("\n") + more,
+        "",
+        "C'est possible si c'est volontaire, mais vérifie bien le prix ou la quantité avant de valider."
+      ].join("\n");
+    }
+
+    async function confirmZeroTotalCommandes(commandes) {
+      const zeroRows = findZeroTotalCommandes(commandes);
+      if (!zeroRows.length) return true;
+      return kentConfirm(
+        zeroTotalCommandesMessage(commandes),
+        {
+          title: "Ligne à 0 € détectée",
+          tone: "warning",
+          confirmText: "Valider quand même",
+          cancelText: "Corriger"
+        }
+      );
+    }
+
     function collectCommandesForQuoteFromForm() {
       const rows = [...dom.productsFormList.querySelectorAll(".product-row")];
       const lignes = [];
@@ -4195,6 +4236,7 @@
       if (!note) return showToast("La note terrain est obligatoire pour enregistrer la visite.", "warning");
       if (invalidFilledRow) return showToast("Une ligne produit est renseignee mais le produit n'est pas reconnu.", "warning");
       if (orderVisit && !commandes.length) return showToast("Ajoute au moins un produit valide avec quantité ou stock.", "warning");
+      if (orderVisit && !(await confirmZeroTotalCommandes(commandes))) return;
 
       const totalCommande = orderVisit
         ? commandes.reduce((sum, commande) => {
