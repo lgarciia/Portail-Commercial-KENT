@@ -18,7 +18,7 @@
       --text:#e8f0ff;
       --muted:#9fb1ca;
       --blue:#38bdf8;
-      --green:#22c55e;
+      --green:#0f766e;
       --gold:#f59e0b;
       --red:#ef4444;
       --shadow:0 24px 70px rgba(0,0,0,.34);
@@ -92,7 +92,8 @@
     }
     .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11)}
     .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
-    .btn.green{background:linear-gradient(135deg,#22c55e,#059669);border:none;box-shadow:0 14px 30px rgba(5,150,105,.20)}
+    .btn.green{background:rgba(15,118,110,.16);border:1px solid rgba(45,212,191,.26);color:#ccfbf1;box-shadow:none}
+    .btn.green:hover{background:rgba(15,118,110,.24);border-color:rgba(45,212,191,.38)}
     .btn.gold{color:#07111f;background:linear-gradient(135deg,#fde68a,var(--gold));border:none;box-shadow:0 14px 30px rgba(245,158,11,.20)}
     .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25);color:#fecaca}
     .btn.small{min-height:32px;border-radius:11px;padding:0 10px;font-size:12px}
@@ -124,7 +125,7 @@
     input:focus{border-color:rgba(56,189,248,.58);box-shadow:0 0 0 4px rgba(56,189,248,.12)}
     .hint{border:1px solid rgba(245,158,11,.20);border-radius:16px;background:rgba(245,158,11,.09);color:#fde68a;padding:10px 11px;font-size:12px;font-weight:720;line-height:1.42;margin-top:12px}
     .status{margin-top:12px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(2,6,23,.30);padding:10px 11px;color:#dbeafe;font-weight:820;line-height:1.4}
-    .status.success{border-color:rgba(34,197,94,.28);background:rgba(34,197,94,.10);color:#bbf7d0}
+    .status.success{border-color:rgba(15,118,110,.30);background:rgba(15,118,110,.12);color:#ccfbf1}
     .status.warning{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.10);color:#fde68a}
     .status.error{border-color:rgba(239,68,68,.30);background:rgba(239,68,68,.10);color:#fecaca}
     .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:12px}
@@ -190,7 +191,7 @@
           <label for="designationInput">Désignation</label>
           <input id="designationInput" autocomplete="off" placeholder="Ex : Pack promotion nettoyant" />
         </div>
-        <button class="btn green" id="addBtn" type="submit">Ajouter ce produit en promo</button>
+        <button class="btn green small" id="addBtn" type="submit">Valider</button>
       </form>
 
       <div class="hint">Ce produit sera disponible dans la fiche client uniquement pour le commercial connecté. S'il n'a pas de tarif, le prix remontera à 0 € et devra être renseigné à la main.</div>

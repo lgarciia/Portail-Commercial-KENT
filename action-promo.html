@@ -17,7 +17,7 @@
       --text:#e8f0ff;
       --muted:#9fb1ca;
       --blue:#38bdf8;
-      --green:#22c55e;
+      --green:#0f766e;
       --gold:#f59e0b;
       --red:#ef4444;
       --shadow:0 24px 70px rgba(0,0,0,.34);
@@ -106,7 +106,9 @@
     .btn:disabled{opacity:.52;cursor:not-allowed;transform:none}
     .btn.primary{background:linear-gradient(135deg,#38bdf8,#2563eb);border:none;box-shadow:0 14px 30px rgba(37,99,235,.25)}
     .btn.gold{color:#07111f;background:linear-gradient(135deg,#fde68a,var(--gold));border:none;box-shadow:0 14px 30px rgba(245,158,11,.22)}
-    .btn.green{background:linear-gradient(135deg,#22c55e,#059669);border:none;box-shadow:0 14px 30px rgba(5,150,105,.22)}
+    .btn.green{background:rgba(15,118,110,.16);border:1px solid rgba(45,212,191,.26);color:#ccfbf1;box-shadow:none}
+    .btn.green:hover{background:rgba(15,118,110,.24);border-color:rgba(45,212,191,.38)}
+    .btn.compact{min-height:36px;padding:0 11px;border-radius:12px;font-size:12px}
     .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.24);color:#fecaca}
     .grid{margin-top:14px}
     .card{
@@ -377,7 +379,7 @@
       <div class="actions">
         <a class="btn" href="index.html">Portail</a>
         <a class="btn gold" href="action-promo-campagnes.html">Mes campagnes</a>
-        <a class="btn green" href="produits-promo.html">Ajouter un produit promo</a>
+        <a class="btn green compact" href="produits-promo.html">Produit promo</a>
       </div>
     </div>
 
