@@ -372,6 +372,56 @@
     .finance-dot{width:9px;height:9px;border-radius:999px;display:inline-block}
     .finance-dot.real{background:#38bdf8}
     .finance-dot.budget{background:#f59e0b}
+    .finance-sector-layout{display:grid;grid-template-columns:minmax(280px,.82fr) minmax(0,1.18fr);gap:14px;align-items:start}
+    .finance-sector-map,.finance-sector-table{
+      border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.045);padding:14px;min-width:0;
+    }
+    .finance-sector-title{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+    .finance-sector-title h3{margin:0;font-size:17px;letter-spacing:-.02em}
+    .finance-sector-title span{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.35}
+    .finance-dept-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;max-height:430px;overflow:auto;padding-right:3px}
+    .finance-dept{
+      min-height:42px;border:1px solid rgba(148,163,184,.28);border-radius:12px;background:rgba(15,23,42,.22);
+      display:grid;align-content:center;gap:2px;padding:7px;text-align:center;position:relative;overflow:hidden;
+    }
+    .finance-dept::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--sector-color,#94a3b8);opacity:.88}
+    .finance-dept:not(.empty){
+      background:color-mix(in srgb,var(--sector-color,#0f766e) var(--sector-strength,14%),rgba(15,23,42,.18));
+      border-color:color-mix(in srgb,var(--sector-color,#0f766e) 34%,rgba(148,163,184,.28));
+    }
+    .finance-dept strong{font-size:12px;color:var(--text);position:relative}
+    .finance-dept span{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
+    .finance-dept.empty{background:rgba(148,163,184,.08);opacity:.78}
+    .finance-sector-list{display:grid;gap:8px}
+    .finance-sector-row{
+      display:grid;grid-template-columns:minmax(190px,1.45fr) minmax(150px,1fr) 76px repeat(4,minmax(96px,.75fr)) 36px;
+      gap:8px;align-items:center;border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.04);padding:10px 12px;
+    }
+    .finance-sector-row.header{
+      background:rgba(255,255,255,.03);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950;
+    }
+    .finance-sector-row.total{background:rgba(56,189,248,.10);border-color:rgba(56,189,248,.24);font-weight:1000}
+    .finance-sector-row button{
+      width:32px;height:32px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.075);color:#fff;font-weight:1000;
+    }
+    .finance-sector-name{display:flex;align-items:center;gap:9px;min-width:0}
+    .finance-sector-dot{width:12px;height:12px;border-radius:999px;background:var(--sector-color,#0f766e);box-shadow:0 0 0 4px color-mix(in srgb,var(--sector-color,#0f766e) 16%,transparent);flex:0 0 auto}
+    .finance-sector-name strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .finance-sector-name span{display:block;margin-top:3px;color:var(--muted);font-size:11px}
+    .finance-sector-departments{display:flex;gap:5px;flex-wrap:wrap}
+    .finance-sector-departments span{
+      display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 7px;border-radius:999px;
+      border:1px solid var(--line);background:rgba(255,255,255,.055);color:var(--muted);font-size:10px;font-weight:950;
+    }
+    .finance-sector-detail{margin:0 0 5px 18px;border-left:2px solid rgba(20,184,166,.30);padding-left:12px;display:grid;gap:6px}
+    .finance-sector-seller{
+      display:grid;grid-template-columns:minmax(190px,1.45fr) minmax(150px,1fr) 76px repeat(4,minmax(96px,.75fr));
+      gap:8px;align-items:center;border:1px solid rgba(255,255,255,.10);border-radius:15px;background:rgba(255,255,255,.032);padding:9px 10px;
+    }
+    .finance-sector-help{
+      border:1px solid rgba(14,165,233,.18);background:rgba(14,165,233,.08);border-radius:16px;
+      padding:10px 12px;color:#dbeafe;font-size:12px;font-weight:850;margin-bottom:12px;
+    }
     .performance-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
     .performance-card{
       border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.045);padding:14px;
@@ -681,6 +731,10 @@
       .layout,.overview-grid,.security-grid{grid-template-columns:1fr}
       .manager-grid{grid-template-columns:1fr}
       .finance-summary,.performance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .finance-sector-layout{grid-template-columns:1fr}
+      .finance-dept-grid{grid-template-columns:repeat(6,minmax(0,1fr));max-height:300px}
+      .finance-sector-row{grid-template-columns:minmax(170px,1.3fr) minmax(130px,.8fr) 66px repeat(4,minmax(88px,.72fr)) 34px;overflow:hidden}
+      .finance-sector-seller{grid-template-columns:minmax(170px,1.3fr) minmax(130px,.8fr) 66px repeat(4,minmax(88px,.72fr))}
       .control-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
       .control-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .control-row{grid-template-columns:minmax(170px,1.1fr) repeat(4,minmax(92px,.7fr)) 34px;overflow:hidden}
@@ -707,6 +761,8 @@
       .finance-summary,.performance-grid{grid-template-columns:1fr}
       .control-summary,.control-detail-grid{grid-template-columns:1fr}
       .control-row{grid-template-columns:1fr}
+      .finance-dept-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .finance-sector-row,.finance-sector-seller{grid-template-columns:1fr}
       .budget-admin-head{flex-direction:column}
       .budget-admin-summary{grid-template-columns:1fr}
       .budget-admin-commercial-head,.budget-admin-row{grid-template-columns:1fr}
@@ -1017,6 +1073,65 @@
     .positive{color:#047857}
     .finance-month-popup-row .negative,
     .negative{color:#dc2626}
+    .finance-sector-map,
+    .finance-sector-table,
+    .finance-sector-row,
+    .finance-sector-seller{
+      border-color:var(--line);
+      background:#fff;
+    }
+    .finance-dept{
+      border-color:#d8e1ec;
+      background:#f8fafc;
+    }
+    .finance-dept.empty{
+      border-color:#e2e8f0;
+      background:#f1f5f9;
+      opacity:.72;
+    }
+    .finance-dept:not(.empty){
+      background:color-mix(in srgb,var(--sector-color,#0f766e) var(--sector-strength,14%),#fff);
+      border-color:color-mix(in srgb,var(--sector-color,#0f766e) 34%,#d8e1ec);
+    }
+    .finance-dept strong,
+    .finance-sector-name strong{
+      color:#0f172a;
+    }
+    .finance-dept span,
+    .finance-sector-title span,
+    .finance-sector-name span{
+      color:#64748b;
+    }
+    .finance-sector-row.header{
+      background:#eaf0f7;
+      color:#334155;
+    }
+    .finance-sector-row.total{
+      background:#eff6ff;
+      border-color:#bfdbfe;
+      color:#172554;
+    }
+    .finance-sector-row button{
+      border-color:#b8c6d9;
+      background:#eef3f8;
+      color:#0f172a;
+    }
+    .finance-sector-departments span{
+      border-color:#d8e1ec;
+      background:#f8fafc;
+      color:#475569;
+    }
+    .finance-sector-detail{
+      border-left-color:#99f6e4;
+    }
+    .finance-sector-seller{
+      background:#f8fafc;
+    }
+    .finance-sector-help{
+      border-color:#bfdbfe;
+      background:#eff6ff;
+      color:#1e3a8a;
+    }
     .control-kpi.good,
     .health-card.good,
     .budget-admin-kpi.good{
@@ -1343,6 +1458,7 @@
           <button class="finance-pill" type="button" data-finance-view="week">CA / hebdo</button>
           <button class="finance-pill" type="button" data-finance-view="month">CA / mensuel</button>
           <button class="finance-pill" type="button" data-finance-view="year">CA / annuel</button>
+          <button class="finance-pill" type="button" data-finance-view="sectors">Secteurs</button>
           <button class="finance-pill" type="button" data-finance-view="performance">Indicateurs performance</button>
           <a class="finance-pill finance-link" href="requete-commerce.html?scope=equipe">Requ&ecirc;te commerce</a>
         </div>
@@ -1897,6 +2013,7 @@
         financeSettingsReady: false,
         financeSettingsWarning: "",
         expandedFinanceManager: "",
+        expandedFinanceSector: "",
         selectedAnnualMonth: 0,
         adminBudgetPayload: null,
         adminBudgetYear: String(new Date().getFullYear()),
@@ -2159,6 +2276,7 @@
           button.addEventListener("click", function(){
             state.financeView = button.dataset.financeView || "day";
             state.expandedFinanceManager = "";
+            state.expandedFinanceSector = "";
             els.financePills.forEach(function(item){
               item.classList.toggle("active", item === button);
             });
@@ -2177,6 +2295,14 @@
           if (sourceButton) {
             event.stopPropagation();
             saveFinanceMonthSource(Number(sourceButton.dataset.financeSourceMonth || 0));
+            return;
+          }
+          const sectorButton = event.target.closest("[data-finance-sector]");
+          if (sectorButton) {
+            event.stopPropagation();
+            const id = sectorButton.dataset.financeSector || "";
+            state.expandedFinanceSector = state.expandedFinanceSector === id ? "" : id;
+            renderFinance();
             return;
           }
           const button = event.target.closest("[data-finance-manager]");
@@ -2671,6 +2797,7 @@
           state.financeSettingsReady = settingsPayload.ready !== false;
           state.financeSettingsWarning = settingsPayload.warning || "";
           state.expandedFinanceManager = "";
+          state.expandedFinanceSector = "";
           renderFinance();
           showToast("Finance admin synchronisée.");
         }catch(error){
@@ -3494,6 +3621,10 @@
           renderFinanceAnnual(model);
           return;
         }
+        if (state.financeView === "sectors") {
+          renderFinanceSectors(model);
+          return;
+        }
         renderFinancePeriod(model);
       }
 
@@ -3692,6 +3823,134 @@
           monthlyBudget: Array.from({ length: 12 }, function(){ return 0; }),
           commercials: []
         };
+      }
+
+      function buildFinanceSectorModel(model){
+        const sectors = financeSectorCatalog(model);
+        const sectorMap = new Map(sectors.map(function(sector){ return [sector.id, sector]; }));
+        const noSectorId = "__sans_secteur__";
+        const groups = new Map();
+        sectors.forEach(function(sector){
+          groups.set(sector.id, emptyFinanceSectorGroup(sector));
+        });
+        groups.set(noSectorId, emptyFinanceSectorGroup({
+          id: noSectorId,
+          name: "Sans secteur",
+          departments: [],
+          color: "#94A3B8",
+          active: true,
+          hidden: false
+        }));
+
+        (model.total.commercials || []).forEach(function(commercial){
+          const rawSectorId = commercial.sectorId || "";
+          const sector = rawSectorId ? sectorMap.get(rawSectorId) : null;
+          const groupId = sector ? sector.id : noSectorId;
+          const group = groups.get(groupId) || groups.get(noSectorId);
+          group.commercials.push(commercial);
+          addFinanceValuesToSector(group, commercial.finance || {});
+        });
+
+        const sectorGroups = Array.from(groups.values())
+          .filter(function(group){ return group.commercials.length || group.id !== noSectorId; })
+          .map(finalizeFinanceSectorGroup)
+          .sort(function(a, b){
+            if (a.id === noSectorId) return 1;
+            if (b.id === noSectorId) return -1;
+            return b.monthActual - a.monthActual || a.name.localeCompare(b.name);
+          });
+
+        return {
+          groups: sectorGroups,
+          total: finalizeFinanceSectorGroup(sectorGroups.reduce(function(acc, group){
+            acc.monthActual += group.monthActual;
+            acc.monthBudget += group.monthBudget;
+            acc.yearActual += group.yearActual;
+            acc.yearBudget += group.yearBudget;
+            acc.yearActualToDate += group.yearActualToDate;
+            acc.yearBudgetToDate += group.yearBudgetToDate;
+            group.monthlyActual.forEach(function(value, index){ acc.monthlyActual[index] += value; });
+            group.monthlyBudget.forEach(function(value, index){ acc.monthlyBudget[index] += value; });
+            acc.commercials.push(...group.commercials);
+            return acc;
+          }, emptyFinanceSectorGroup({
+            id: "__total_secteurs__",
+            name: "Total secteurs",
+            departments: [],
+            color: "#2563EB",
+            active: true,
+            hidden: false
+          }))),
+          noSectorId
+        };
+      }
+
+      function financeSectorCatalog(model){
+        const fromPayload = Array.isArray(model.payload?.sectors) ? model.payload.sectors : [];
+        const fromAdmin = Array.isArray(state.sectors) ? state.sectors : [];
+        return (fromPayload.length ? fromPayload : fromAdmin)
+          .filter(function(sector){ return sector && sector.active !== false && !sector.hidden; })
+          .map(function(sector){
+            return {
+              id: sector.id || "",
+              name: sector.name || "Secteur",
+              departments: Array.isArray(sector.departments) ? sector.departments : [],
+              color: sector.color || "#0F766E",
+              active: sector.active !== false,
+              hidden: Boolean(sector.hidden)
+            };
+          })
+          .filter(function(sector){ return sector.id; });
+      }
+
+      function emptyFinanceSectorGroup(sector){
+        return {
+          id: sector.id,
+          name: sector.name,
+          departments: Array.isArray(sector.departments) ? sector.departments : [],
+          color: sector.color || "#0F766E",
+          monthActual: 0,
+          monthBudget: 0,
+          monthEcart: 0,
+          monthTaux: null,
+          yearActual: 0,
+          yearBudget: 0,
+          yearActualToDate: 0,
+          yearBudgetToDate: 0,
+          yearEcartToDate: 0,
+          monthlyActual: Array.from({ length: 12 }, function(){ return 0; }),
+          monthlyBudget: Array.from({ length: 12 }, function(){ return 0; }),
+          commercials: []
+        };
+      }
+
+      function addFinanceValuesToSector(group, finance){
+        group.monthActual += Number(finance.month || 0);
+        group.monthBudget += Number(finance.monthBudget || 0);
+        group.yearActual += Number(finance.year || 0);
+        group.yearBudget += Number(finance.yearBudget || 0);
+        group.yearActualToDate += Number(finance.yearActualToDate || 0);
+        group.yearBudgetToDate += Number(finance.yearBudgetToDate || 0);
+        safeMonthly(finance.monthlyActual).forEach(function(value, index){ group.monthlyActual[index] += value; });
+        safeMonthly(finance.monthlyBudget).forEach(function(value, index){ group.monthlyBudget[index] += value; });
+      }
+
+      function finalizeFinanceSectorGroup(group){
+        group.monthActual = roundClientMoney(group.monthActual);
+        group.monthBudget = roundClientMoney(group.monthBudget);
+        group.monthEcart = roundClientMoney(group.monthActual - group.monthBudget);
+        group.monthTaux = group.monthBudget ? roundClientMoney((group.monthActual / group.monthBudget) * 100) : null;
+        group.yearActual = roundClientMoney(group.yearActual);
+        group.yearBudget = roundClientMoney(group.yearBudget);
+        group.yearActualToDate = roundClientMoney(group.yearActualToDate);
+        group.yearBudgetToDate = roundClientMoney(group.yearBudgetToDate);
+        group.yearEcartToDate = roundClientMoney(group.yearActualToDate - group.yearBudgetToDate);
+        group.monthlyActual = group.monthlyActual.map(roundClientMoney);
+        group.monthlyBudget = group.monthlyBudget.map(roundClientMoney);
+        group.commercials = group.commercials
+          .slice()
+          .sort(function(a, b){ return Number(b.finance?.month || 0) - Number(a.finance?.month || 0); });
+        return group;
       }
 
       function renderFinancePeriod(model){
@@ -4042,6 +4301,162 @@
             '<span class="' + tone + '">' + (gap > 0 ? "+" : "") + formatEuro(gap) + '</span>',
           '</div>'
         ].join("");
+      }
+
+      function renderFinanceSectors(model){
+        const sectorModel = buildFinanceSectorModel(model);
+        const monthIndex = Math.max(0, Math.min(11, Number(model.period.month || 1) - 1));
+        const activeGroups = sectorModel.groups.filter(function(group){ return group.id !== sectorModel.noSectorId; });
+        const assignedCommercials = activeGroups.reduce(function(sum, group){ return sum + group.commercials.length; }, 0);
+        const unassigned = sectorModel.groups.find(function(group){ return group.id === sectorModel.noSectorId; });
+        renderFinanceSummaryCards([
+          { label: "Secteurs actifs", value: formatInteger(activeGroups.length) },
+          { label: "Commerciaux rattachés", value: formatInteger(assignedCommercials) },
+          { label: "CA " + monthShortLabel(monthIndex), value: formatEuro(sectorModel.total.monthActual) },
+          { label: "Écart mois", value: formatEuro(sectorModel.total.monthEcart), tone: sectorModel.total.monthEcart >= 0 ? "positive" : "negative" }
+        ]);
+
+        const warning = model.payload?.sectorsReady === false
+          ? '<div class="finance-sector-help">' + escapeHtml(model.payload?.sectorsWarning || "Lance le SQL des secteurs commerciaux pour activer cette vue.") + '</div>'
+          : '';
+        const noSectorWarning = unassigned && unassigned.commercials.length
+          ? '<div class="finance-sector-help">À contrôler : ' + formatInteger(unassigned.commercials.length) + ' commercial(aux) actif(s) ne sont pas encore rattachés à un secteur.</div>'
+          : '';
+        els.financeBody.innerHTML = [
+          warning,
+          noSectorWarning,
+          '<div class="finance-sector-layout">',
+            renderFinanceSectorMap(sectorModel.groups),
+            '<section class="finance-sector-table">',
+              '<div class="finance-sector-title">',
+                '<div><h3>Performance par secteur</h3><span>Mois analysé : ' + escapeHtml(monthLongLabel(monthIndex)) + ' ' + escapeHtml(model.period.year || "") + '</span></div>',
+              '</div>',
+              renderFinanceSectorRows(sectorModel, model),
+            '</section>',
+          '</div>'
+        ].join("");
+      }
+
+      function renderFinanceSectorMap(groups){
+        const maxActual = Math.max(1, ...groups.map(function(group){ return Number(group.monthActual || 0); }));
+        return [
+          '<section class="finance-sector-map">',
+            '<div class="finance-sector-title">',
+              '<div><h3>Carte secteurs</h3><span>Départements rattachés aux zones commerciales.</span></div>',
+            '</div>',
+            '<div class="finance-dept-grid">',
+              FR_DEPARTMENTS.map(function(item){ return renderFinanceDepartment(item, groups, maxActual); }).join(""),
+            '</div>',
+          '</section>'
+        ].join("");
+      }
+
+      function renderFinanceDepartment(item, groups, maxActual){
+        const code = item[0];
+        const label = item[1];
+        const group = groups.find(function(sector){
+          return sector.id !== "__sans_secteur__" && Array.isArray(sector.departments) && sector.departments.includes(code);
+        });
+        const color = safeSectorColor(group?.color || "#94A3B8");
+        const strength = group ? Math.min(42, Math.max(12, Math.round((Number(group.monthActual || 0) / maxActual) * 38))) : 0;
+        const className = group ? "finance-dept" : "finance-dept empty";
+        const title = group
+          ? group.name + " - " + code + " " + label + " - CA mois : " + formatEuro(group.monthActual)
+          : "Département non affecté - " + code + " " + label;
+        return [
+          '<div class="' + className + '" style="--sector-color:' + escapeHtml(color) + ';--sector-strength:' + strength + '%" title="' + escapeHtml(title) + '">',
+            '<strong>' + escapeHtml(code) + '</strong>',
+            '<span>' + escapeHtml(label) + '</span>',
+          '</div>'
+        ].join("");
+      }
+
+      function renderFinanceSectorRows(sectorModel, model){
+        return [
+          '<div class="finance-sector-list">',
+            '<div class="finance-sector-row header">',
+              '<div>Secteur</div><div>Départements</div><div>Vendeurs</div><div>Réel mois</div><div>Budget mois</div><div>Écart</div><div>Atteinte</div><div></div>',
+            '</div>',
+            sectorModel.groups.map(function(group){ return renderFinanceSectorRow(group, model); }).join("") || '<div class="empty">Aucun secteur à afficher.</div>',
+            renderFinanceSectorTotalRow(sectorModel.total),
+          '</div>'
+        ].join("");
+      }
+
+      function renderFinanceSectorRow(group, model){
+        const opened = state.expandedFinanceSector === group.id;
+        const canOpen = group.commercials.length > 0;
+        const color = safeSectorColor(group.color || "#0F766E");
+        return [
+          '<div class="finance-sector-row">',
+            '<div class="finance-sector-name" style="--sector-color:' + escapeHtml(color) + '">',
+              '<span class="finance-sector-dot"></span>',
+              '<span><strong>' + escapeHtml(group.name) + '</strong><span>' + escapeHtml(group.id === "__sans_secteur__" ? "À rattacher" : "Zone commerciale") + '</span></span>',
+            '</div>',
+            '<div class="finance-sector-departments">' + renderFinanceSectorDepartmentPills(group.departments) + '</div>',
+            '<div class="finance-value"><strong>' + formatInteger(group.commercials.length) + '</strong><span>actif(s)</span></div>',
+            financeCell(group.monthActual),
+            financeCell(group.monthBudget),
+            financeCell(group.monthEcart, true),
+            '<div class="finance-value"><strong>' + (group.monthTaux === null ? '-' : formatPercent(group.monthTaux)) + '</strong><span>atteinte</span></div>',
+            canOpen ? '<button type="button" data-finance-sector="' + escapeHtml(group.id) + '">' + (opened ? '-' : '+') + '</button>' : '<div></div>',
+          '</div>',
+          opened ? renderFinanceSectorSellerDetails(group, model) : ''
+        ].join("");
+      }
+
+      function renderFinanceSectorSellerDetails(group, model){
+        if (!group.commercials.length) {
+          return '<div class="finance-sector-detail"><div class="empty">Aucun commercial dans ce secteur.</div></div>';
+        }
+        return [
+          '<div class="finance-sector-detail">',
+            group.commercials.map(function(commercial){
+              const finance = commercial.finance || {};
+              return [
+                '<div class="finance-sector-seller">',
+                  '<div class="finance-name"><strong>' + escapeHtml(commercial.displayName || "-") + '</strong><span>' + escapeHtml(commercial.identifier || "-") + '</span></div>',
+                  '<div class="finance-value"><strong>' + escapeHtml(managerNameForSeller(commercial, model.groups)) + '</strong><span>responsable</span></div>',
+                  '<div class="finance-value"><strong>1</strong><span>vendeur</span></div>',
+                  financeCell(finance.month),
+                  financeCell(finance.monthBudget),
+                  financeCell(Number(finance.month || 0) - Number(finance.monthBudget || 0), true),
+                  '<div class="finance-value"><strong>' + (finance.monthBudget ? formatPercent((Number(finance.month || 0) / Number(finance.monthBudget || 0)) * 100) : '-') + '</strong><span>atteinte</span></div>',
+                '</div>'
+              ].join("");
+            }).join(""),
+          '</div>'
+        ].join("");
+      }
+
+      function renderFinanceSectorTotalRow(total){
+        return [
+          '<div class="finance-sector-row total">',
+            '<div class="finance-sector-name"><span><strong>Total consolidé</strong><span>Tous secteurs</span></span></div>',
+            '<div class="finance-sector-departments"><span>-</span></div>',
+            '<div class="finance-value"><strong>' + formatInteger(total.commercials.length) + '</strong><span>vendeur(s)</span></div>',
+            financeCell(total.monthActual),
+            financeCell(total.monthBudget),
+            financeCell(total.monthEcart, true),
+            '<div class="finance-value"><strong>' + (total.monthTaux === null ? '-' : formatPercent(total.monthTaux)) + '</strong><span>atteinte</span></div>',
+            '<div></div>',
+          '</div>'
+        ].join("");
+      }
+
+      function renderFinanceSectorDepartmentPills(departments){
+        const list = Array.isArray(departments) ? departments : [];
+        if (!list.length) return '<span>Sans département</span>';
+        const shown = list.slice(0, 4).map(function(code){
+          return '<span>' + escapeHtml(code) + '</span>';
+        });
+        if (list.length > shown.length) shown.push('<span>+' + (list.length - shown.length) + '</span>');
+        return shown.join("");
+      }
+
+      function safeSectorColor(value){
+        const color = String(value || "").trim();
+        return /^#[0-9a-f]{6}$/i.test(color) ? color : "#0F766E";
       }
 
       function renderFinancePerformance(model){

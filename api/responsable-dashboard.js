@@ -6,7 +6,7 @@ import {
   supabaseAdminFetch
 } from "./_auth.js";
 
-const USER_SELECT = [
+const BASE_USER_SELECT = [
   "id",
   "identifier",
   "display_name",
@@ -19,6 +19,8 @@ const USER_SELECT = [
   "last_login_at"
 ].join(",");
 
+const USER_SELECT = `${BASE_USER_SELECT},sector_id`;
+
 const RELATION_SELECT = [
   "id",
   "responsable_user_id",
@@ -26,6 +28,18 @@ const RELATION_SELECT = [
   "relation_type",
   "active",
   "note",
+  "created_at",
+  "updated_at"
+].join(",");
+
+const SECTOR_SELECT = [
+  "id",
+  "name",
+  "departments",
+  "color",
+  "description",
+  "active",
+  "hidden",
   "created_at",
   "updated_at"
 ].join(",");
@@ -119,18 +133,23 @@ export default async function handler(request, response) {
 async function buildDashboard(session, request) {
   const period = parsePeriod(request);
   const mode = parseDashboardMode(request);
-  const [users, relations] = await Promise.all([listUsers(), listRelations()]);
+  const [usersResult, relations, sectorsResult] = await Promise.all([listUsers(), listRelations(), listSectors()]);
+  const users = usersResult.rows;
+  const sectors = sectorsResult.rows;
+  const sectorMap = new Map(sectors.map((sector) => [String(sector.id), sector]));
   const activeUsers = users.filter((user) => user.active && !user.hidden);
   const activeRelations = relations.filter((relation) => relation.active);
   const currentPortalUser = resolveCurrentPortalUser(session, users);
+  const sectorsReady = Boolean(usersResult.sectorsReady && sectorsResult.ready);
+  const sectorsWarning = sectorsReady ? "" : usersResult.warning || sectorsResult.warning || "Secteurs commerciaux non initialises.";
+  const warnings = sectorsWarning ? [{ label: "secteurs commerciaux", message: sectorsWarning }] : [];
 
   const visibleCommercials =
     session.role === "admin"
-      ? buildAdminCommercialScope(activeUsers, activeRelations, users)
-      : buildResponsableCommercialScope(currentPortalUser, activeUsers, activeRelations, users);
+      ? buildAdminCommercialScope(activeUsers, activeRelations, users, sectorMap)
+      : buildResponsableCommercialScope(currentPortalUser, activeUsers, activeRelations, sectorMap);
 
   const commercialIds = visibleCommercials.map((item) => item.id).filter(Boolean);
-  const warnings = [];
   const includeMainData = mode !== "campaigns";
   const includeDocuments = mode !== "finance" && mode !== "campaigns";
   const includeCampaigns = mode === "full" || mode === "campaigns";
@@ -214,6 +233,9 @@ async function buildDashboard(session, request) {
       alerts: buildAlerts(enrichedCommercials)
     },
     commercials: enrichedCommercials,
+    sectorsReady,
+    sectorsWarning,
+    sectors: sectors.map(safeSector),
     sales: salesBlock,
     budgets: budgetBlock,
     real: realBlock,
@@ -314,15 +336,44 @@ async function safeBlock(factory, fallback, warnings, label) {
 }
 
 async function listUsers() {
-  return supabaseAdminFetch(
-    `/rest/v1/portal_users?select=${encodeURIComponent(USER_SELECT)}&order=display_name.asc`
-  );
+  try {
+    const rows = await supabaseAdminFetch(
+      `/rest/v1/portal_users?select=${encodeURIComponent(USER_SELECT)}&order=display_name.asc`
+    );
+    return { rows: Array.isArray(rows) ? rows : [], sectorsReady: true, warning: "" };
+  } catch (error) {
+    if (!isMissingSectorSchemaError(error)) throw error;
+    const rows = await supabaseAdminFetch(
+      `/rest/v1/portal_users?select=${encodeURIComponent(BASE_USER_SELECT)}&order=display_name.asc`
+    );
+    return {
+      rows: (Array.isArray(rows) ? rows : []).map((user) => ({ ...user, sector_id: null })),
+      sectorsReady: false,
+      warning: "Colonne portal_users.sector_id absente : lance le SQL des secteurs commerciaux."
+    };
+  }
 }
 
 async function listRelations() {
   return supabaseAdminFetch(
     `/rest/v1/portal_user_relations?select=${encodeURIComponent(RELATION_SELECT)}&order=created_at.asc`
   );
+}
+
+async function listSectors() {
+  try {
+    const rows = await supabaseAdminFetch(
+      `/rest/v1/portal_commercial_sectors?select=${encodeURIComponent(SECTOR_SELECT)}&order=active.desc,name.asc`
+    );
+    return { rows: Array.isArray(rows) ? rows : [], ready: true, warning: "" };
+  } catch (error) {
+    if (!isMissingSectorSchemaError(error)) throw error;
+    return {
+      rows: [],
+      ready: false,
+      warning: "Table portal_commercial_sectors absente : lance le SQL des secteurs commerciaux."
+    };
+  }
 }
 
 async function buildSalesBlock(commercialIds, period) {
@@ -1025,7 +1076,7 @@ function buildAlerts(commercials) {
   return alerts.slice(0, 8);
 }
 
-function buildAdminCommercialScope(activeUsers, relations, allUsers) {
+function buildAdminCommercialScope(activeUsers, relations, allUsers, sectorMap) {
   return activeUsers.filter((user) => user.role === "commercial").map((commercial) => {
     const commercialRelations = relations.filter((relation) => relation.commercial_user_id === commercial.id);
     const principal = commercialRelations.find((relation) => relation.relation_type === "principal");
@@ -1038,12 +1089,13 @@ function buildAdminCommercialScope(activeUsers, relations, allUsers) {
         ? representative.relation_type === "principal"
           ? "Rattache principal"
           : "Acces exceptionnel"
-        : "Sans responsable actif"
+        : "Sans responsable actif",
+      sectorMap
     });
   });
 }
 
-function buildResponsableCommercialScope(currentPortalUser, activeUsers, relations) {
+function buildResponsableCommercialScope(currentPortalUser, activeUsers, relations, sectorMap) {
   if (!currentPortalUser) return [];
 
   return relations
@@ -1058,13 +1110,16 @@ function buildResponsableCommercialScope(currentPortalUser, activeUsers, relatio
         scopeLabel:
           relation.relation_type === "principal"
             ? "Responsable principal"
-            : "Acces exceptionnel"
+            : "Acces exceptionnel",
+        sectorMap
       });
     })
     .filter(Boolean);
 }
 
-function commercialSummary({ commercial, relation, responsables, scopeLabel }) {
+function commercialSummary({ commercial, relation, responsables, scopeLabel, sectorMap }) {
+  const sectorId = normalizeText(commercial.sector_id);
+  const sector = sectorId && sectorMap ? sectorMap.get(sectorId) || null : null;
   return {
     id: commercial.id,
     identifier: commercial.identifier,
@@ -1087,6 +1142,11 @@ function commercialSummary({ commercial, relation, responsables, scopeLabel }) {
     scopeLabel,
     relationNote: relation?.note || "",
     responsables: responsables.filter(Boolean),
+    sectorId,
+    sectorName: sector ? sector.name || "" : sectorId ? "Secteur masque" : "",
+    sectorDepartments: sector ? safeDepartments(sector.departments) : [],
+    sectorColor: sector ? normalizeColor(sector.color) : "",
+    sectorActive: sector ? Boolean(sector.active) && !sector.hidden : false,
     metrics: emptyMetrics()
   };
 }
@@ -1202,6 +1262,52 @@ function normalizeDocumentStatus(row) {
   if (status === "transmis" || status === "en_cours") return "enCours";
   if (row?.valide === true) return "valide";
   return "sansStatut";
+}
+
+function safeSector(sector) {
+  return {
+    id: sector.id,
+    name: sector.name || "",
+    departments: safeDepartments(sector.departments),
+    color: normalizeColor(sector.color),
+    description: sector.description || "",
+    active: Boolean(sector.active),
+    hidden: Boolean(sector.hidden),
+    createdAt: sector.created_at || "",
+    updatedAt: sector.updated_at || ""
+  };
+}
+
+function safeDepartments(value) {
+  const source = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[,\s;|]+/)
+      : [];
+  return [...new Set(source.map((item) => normalizeDepartmentCode(item)).filter(Boolean))];
+}
+
+function normalizeDepartmentCode(value) {
+  const raw = normalizeText(value).toUpperCase();
+  if (raw === "2A" || raw === "2B") return raw;
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.length === 1 ? `0${digits}` : digits;
+}
+
+function normalizeColor(value) {
+  const color = normalizeText(value);
+  return /^#[0-9a-f]{6}$/i.test(color) ? color.toUpperCase() : "#0F766E";
+}
+
+function isMissingSectorSchemaError(error) {
+  const message = [
+    error?.message,
+    error?.payload?.message,
+    error?.payload?.details,
+    error?.payload?.hint
+  ].filter(Boolean).join(" ");
+  return /portal_commercial_sectors|sector_id|schema cache|column .* does not exist|relation .* does not exist/i.test(message);
 }
 
 function normalizeDocumentRow(row) {
