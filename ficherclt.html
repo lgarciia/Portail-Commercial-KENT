@@ -4046,16 +4046,8 @@
         ].filter(Boolean);
         doc.text(clientLines, 160, 38, { maxWidth: pageWidth - 170 - marginRight });
 
-        if (missingConditionnements > 0) {
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(8.5);
-          doc.setTextColor(180, 83, 9);
-          doc.text(`${missingConditionnements} ligne(s) sans correspondance conditionnement: colonnes Code Produit / Conditionnement / Grains laissees vides.`, marginLeft, 64);
-          doc.setTextColor(0, 0, 0);
-        }
-
         doc.autoTable({
-          startY: 70,
+          startY: 64,
           head: [[
             "Ref 5",
             "Code Produit",
