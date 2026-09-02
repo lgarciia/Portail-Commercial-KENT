@@ -68,7 +68,8 @@
       color:var(--text);text-decoration:none;font-weight:950;white-space:nowrap;transition:.15s;
     }
     .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.12)}
-    .btn.primary{background:linear-gradient(135deg, rgba(56,189,248,.86), rgba(34,197,94,.68));border-color:rgba(255,255,255,.18)}
+    .btn.primary{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.34);color:#dff6ff}
+    .btn.primary:hover{background:rgba(56,189,248,.20);border-color:rgba(56,189,248,.48)}
     .btn.green{background:linear-gradient(135deg, rgba(34,197,94,.82), rgba(16,185,129,.62));border-color:rgba(34,197,94,.30)}
     .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.30);color:#fecaca}
     .btn.ghost{background:rgba(255,255,255,.04)}
@@ -281,6 +282,21 @@
     td{font-size:13px;color:rgba(255,255,255,.86)}
     tr:last-child td{border-bottom:0}
     .num{text-align:right;font-variant-numeric:tabular-nums}
+    .team-table{min-width:1480px}
+    .team-table th,.team-table td{padding:9px 10px}
+    .team-table thead tr:first-child th{
+      background:rgba(15,23,42,.98);
+      color:#e2e8f0;
+      font-size:10px;
+      text-align:center;
+      border-bottom:1px solid rgba(255,255,255,.13);
+    }
+    .team-table thead tr:nth-child(2) th{top:35px}
+    .team-group-start{border-left:1px solid rgba(255,255,255,.13)}
+    .money-tone{font-weight:1000;white-space:nowrap}
+    .money-tone.positive{color:#bbf7d0}
+    .money-tone.negative{color:#fecaca}
+    .money-tone.neutral{color:#e5e7eb}
     .row-title{display:grid;gap:2px}
     .row-title strong{font-size:13px}
     .row-title span{font-size:11px;color:var(--muted)}
@@ -521,12 +537,36 @@
         <div class="panel-head">
           <div>
             <h2>Équipe rattachée</h2>
-            <div class="sub">Tous les commerciaux visibles par ce responsable. Lecture seule, aucune modification depuis cet ecran.</div>
+            <div class="sub">Lecture seule : CA/J, CA/M et CA/A comparés aux budgets actifs. Le budget jour est calculé au prorata des jours ouvrés français du mois.</div>
           </div>
         </div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>Commercial</th><th>Identifiant</th><th>Rattachement</th><th>Périmètre</th><th class="num">CA mois</th><th class="num">Budget à date</th><th class="num">Documents transmis</th><th>Dernière connexion</th></tr></thead>
+          <table class="team-table">
+            <thead class="team-table-head">
+              <tr>
+                <th colspan="3">Identité</th>
+                <th colspan="3">CA / J</th>
+                <th colspan="3">CA / M</th>
+                <th colspan="3">CA / A</th>
+                <th colspan="2">Suivi</th>
+              </tr>
+              <tr>
+                <th>Commercial</th>
+                <th>Identifiant</th>
+                <th>Rattachement</th>
+                <th class="num team-group-start">Réel</th>
+                <th class="num">Budget</th>
+                <th class="num">Écart</th>
+                <th class="num team-group-start">Réel</th>
+                <th class="num">Budget</th>
+                <th class="num">Écart</th>
+                <th class="num team-group-start">Réel</th>
+                <th class="num">Budget</th>
+                <th class="num">Écart</th>
+                <th class="num team-group-start">Documents transmis</th>
+                <th>Dernière connexion</th>
+              </tr>
+            </thead>
             <tbody data-team-rows></tbody>
           </table>
         </div>
@@ -1093,12 +1133,30 @@
       function renderTeamRows(){
         const rows = scopedCommercials().slice().sort((a,b) => String(a.displayName || "").localeCompare(String(b.displayName || ""), "fr"));
         if (!rows.length) {
-          els.teamRows.innerHTML = '<tr><td colspan="8"><div class="empty">Aucun commercial visible dans cette equipe.</div></td></tr>';
+          els.teamRows.innerHTML = '<tr><td colspan="14"><div class="empty">Aucun commercial visible dans cette equipe.</div></td></tr>';
           return;
         }
         els.teamRows.innerHTML = rows.map(function(item){
           const metrics = item.metrics || {};
-          return `<tr><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.roleLabel || "Commercial")}</span></div></td><td>${escapeHtml(item.identifier)}</td><td>${relationBadge(item.relationType, item.relationLabel)}</td><td>${escapeHtml(item.scopeLabel || "-")}</td><td class="num">${money(metrics.caMois)}</td><td class="num">${money(metrics.budgetADate)}</td><td class="num">${integer(metrics.documentsEnCours)}</td><td>${escapeHtml(formatDateTime(item.lastLoginAt))}</td></tr>`;
+          const finance = getCommercialFinanceSnapshot(item);
+          return [
+            '<tr>',
+              '<td><div class="row-title"><strong>' + escapeHtml(item.displayName) + '</strong><span>' + escapeHtml(item.roleLabel || "Commercial") + '</span></div></td>',
+              '<td>' + escapeHtml(item.identifier) + '</td>',
+              '<td>' + relationBadge(item.relationType, item.relationLabel) + '</td>',
+              '<td class="num team-group-start">' + money(finance.caDay) + '</td>',
+              '<td class="num">' + money(finance.budgetDay) + '</td>',
+              '<td class="num">' + moneyTone(finance.gapDay) + '</td>',
+              '<td class="num team-group-start">' + money(finance.caMonth) + '</td>',
+              '<td class="num">' + money(finance.budgetMonth) + '</td>',
+              '<td class="num">' + moneyTone(finance.gapMonth) + '</td>',
+              '<td class="num team-group-start">' + money(finance.caYear) + '</td>',
+              '<td class="num">' + money(finance.budgetYear) + '</td>',
+              '<td class="num">' + moneyTone(finance.gapYear) + '</td>',
+              '<td class="num team-group-start">' + integer(metrics.documentsEnCours) + '</td>',
+              '<td>' + escapeHtml(formatDateTime(item.lastLoginAt)) + '</td>',
+            '</tr>'
+          ].join("");
         }).join("");
       }
 
@@ -1610,6 +1668,42 @@
         return monthly.map(round2);
       }
 
+      function getCommercialHybridMonthly(item){
+        const metrics = item?.metrics || {};
+        const realMonthly = getRealMonthlyForCommercial(item?.id || "");
+        const salesMonthly = normalizeMonthly(metrics.caMensuel);
+        const importedMonths = new Set((metrics.reelMoisImportes || []).map(Number));
+        return emptyMonthly().map(function(_, index){
+          const monthNumber = index + 1;
+          return round2(importedMonths.has(monthNumber) ? realMonthly[index] : salesMonthly[index]);
+        });
+      }
+
+      function getCommercialFinanceSnapshot(item){
+        const metrics = item?.metrics || {};
+        const monthIndex = getSelectedMonthIndex();
+        const budgetMonthly = getBudgetMonthlyForCommercial(item?.id || "");
+        const hybridMonthly = getCommercialHybridMonthly(item);
+        const budgetMonth = round2(budgetMonthly[monthIndex] || 0);
+        const budgetDay = round2(budgetMonth / Math.max(1, getBusinessDaysInSelectedMonth()));
+        const caDay = round2(metrics.caJour || 0);
+        const caMonth = round2(hybridMonthly[monthIndex] || 0);
+        const caYear = sumArray(hybridMonthly);
+        const budgetYear = round2(metrics.budgetAnnuel || sumArray(budgetMonthly));
+
+        return {
+          caDay,
+          budgetDay,
+          gapDay: round2(caDay - budgetDay),
+          caMonth,
+          budgetMonth,
+          gapMonth: round2(caMonth - budgetMonth),
+          caYear,
+          budgetYear,
+          gapYear: round2(caYear - budgetYear)
+        };
+      }
+
       function getRealMonthlyForCommercial(commercialId){
         if (!commercialId) return normalizeMonthly(state.payload?.real?.totals?.monthly);
         return normalizeMonthly((state.payload?.real?.byCommercial || {})[commercialId]?.monthly);
@@ -1739,6 +1833,17 @@
         return Number(value || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       }
 
+      function signedMoney(value){
+        const amount = round2(value);
+        return amount > 0 ? "+" + money(amount) : money(amount);
+      }
+
+      function moneyTone(value){
+        const amount = round2(value);
+        const cls = amount > 0 ? "positive" : amount < 0 ? "negative" : "neutral";
+        return `<span class="money-tone ${cls}">${escapeHtml(signedMoney(amount))}</span>`;
+      }
+
       function number(value){
         return Number(value || 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
       }
@@ -1774,6 +1879,68 @@
 
       function getSelectedMonthIndex(){
         return Math.max(0, Math.min(11, Number(state.payload?.period?.month || els.month.value || 1) - 1));
+      }
+
+      function getSelectedYear(){
+        return Number(state.payload?.period?.year || els.year.value || new Date().getFullYear());
+      }
+
+      function getBusinessDaysInSelectedMonth(){
+        const year = getSelectedYear();
+        const monthIndex = getSelectedMonthIndex();
+        const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+        const holidays = getFrenchPublicHolidays(year);
+        let count = 0;
+        for (let day = 1; day <= lastDay; day += 1) {
+          const weekday = new Date(year, monthIndex, day).getDay();
+          const iso = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          if (weekday !== 0 && weekday !== 6 && !holidays.has(iso)) count += 1;
+        }
+        return count || lastDay || 1;
+      }
+
+      function getFrenchPublicHolidays(year){
+        const fixed = [
+          `${year}-01-01`,
+          `${year}-05-01`,
+          `${year}-05-08`,
+          `${year}-07-14`,
+          `${year}-08-15`,
+          `${year}-11-01`,
+          `${year}-11-11`,
+          `${year}-12-25`
+        ];
+        const easter = getEasterSundayUtc(year);
+        const moving = [1, 39, 50].map(offset => isoFromUtcDate(addUtcDays(easter, offset)));
+        return new Set([...fixed, ...moving]);
+      }
+
+      function getEasterSundayUtc(year){
+        const a = year % 19;
+        const b = Math.floor(year / 100);
+        const c = year % 100;
+        const d = Math.floor(b / 4);
+        const e = b % 4;
+        const f = Math.floor((b + 8) / 25);
+        const g = Math.floor((b - f + 1) / 3);
+        const h = (19 * a + b - d - g + 15) % 30;
+        const i = Math.floor(c / 4);
+        const k = c % 4;
+        const l = (32 + 2 * e + 2 * i - h - k) % 7;
+        const m = Math.floor((a + 11 * h + 22 * l) / 451);
+        const month = Math.floor((h + l - 7 * m + 114) / 31);
+        const day = ((h + l - 7 * m + 114) % 31) + 1;
+        return new Date(Date.UTC(year, month - 1, day));
+      }
+
+      function addUtcDays(date, days){
+        const next = new Date(date.getTime());
+        next.setUTCDate(next.getUTCDate() + days);
+        return next;
+      }
+
+      function isoFromUtcDate(date){
+        return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
       }
 
       function formatDateShort(value){
