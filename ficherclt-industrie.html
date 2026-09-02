@@ -527,7 +527,40 @@
     .modal-actions{align-items:center;margin-top:22px}
     .helper-text{color:var(--muted);font-size:.88rem;line-height:1.55;max-width:720px}
     .helper-inline{color:var(--muted);font-size:.82rem;line-height:1.45}
-    .client-number-hint{color:var(--muted-2);font-size:.78rem;line-height:1.35;margin-top:2px}
+    .field-label-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .inline-mini-btn{
+      border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.72);color:#dbeafe;
+      border-radius:999px;padding:7px 10px;font-size:.72rem;font-weight:800;cursor:pointer;
+      transition:border-color .18s ease,background .18s ease,transform .18s ease;white-space:nowrap;
+    }
+    .inline-mini-btn:hover{transform:translateY(-1px);border-color:rgba(96,165,250,.36);background:rgba(30,41,59,.86)}
+    .last-accounts-modal{width:min(980px,100%);max-width:980px}
+    .last-accounts-toolbar{
+      display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.55fr);gap:12px;margin-bottom:14px;
+      padding:12px;border-radius:18px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+    }
+    .last-accounts-list{display:flex;flex-direction:column;gap:8px;max-height:min(56vh,520px);overflow:auto;padding-right:4px}
+    .last-account-row,.last-account-head{
+      display:grid;grid-template-columns:1.15fr .8fr .9fr .75fr;gap:12px;align-items:center;
+    }
+    .last-account-head{
+      padding:0 14px 6px;color:var(--muted-2);font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    }
+    .last-account-row{
+      padding:13px 14px;border-radius:16px;background:rgba(15,23,42,.72);border:1px solid rgba(148,163,184,.12);
+    }
+    .last-account-row strong{display:block;color:var(--text);font-size:.9rem;line-height:1.25}
+    .last-account-row span{display:block;color:var(--muted);font-size:.78rem;line-height:1.35;margin-top:3px}
+    .last-account-pill{
+      display:inline-flex;align-items:center;justify-content:center;width:max-content;max-width:100%;
+      padding:7px 10px;border-radius:999px;background:rgba(56,189,248,.11);border:1px solid rgba(56,189,248,.17);
+      color:#d8f3ff;font-size:.76rem;font-weight:800;line-height:1.2;
+    }
+    .last-account-date{color:#cbd5e1;font-weight:700;font-size:.82rem}
+    .last-account-empty{
+      padding:26px 18px;border-radius:18px;background:rgba(255,255,255,.035);border:1px dashed rgba(148,163,184,.18);
+      color:var(--muted);text-align:center;line-height:1.55;
+    }
     #clientModalOverlay .modal-header{
       position:relative;
       padding-right:56px;
@@ -596,6 +629,8 @@
       .modal-actions{flex-direction:column;align-items:stretch}
       .actions-inline{width:100%}
       .actions-inline .btn{flex:1 1 auto}
+      .last-accounts-toolbar,.last-account-row,.last-account-head{grid-template-columns:1fr}
+      .field-label-row{align-items:flex-start;flex-direction:column}
       .fab{display:inline-flex}
     }
   </style>
@@ -893,9 +928,11 @@
           </div>
 
           <div class="field-group">
-            <label for="clientNumeroCompteInput">Numero client / compte</label>
+            <div class="field-label-row">
+              <label for="clientNumeroCompteInput">Numéro client / compte</label>
+              <button class="inline-mini-btn" id="openLastAccountsBtn" type="button">Derniers comptes</button>
+            </div>
             <input type="text" id="clientNumeroCompteInput" placeholder="Compte ou numero client" />
-            <div class="client-number-hint" id="clientNumeroHint">Chargement du dernier numero...</div>
           </div>
 
           <div class="field-group">
@@ -927,6 +964,37 @@
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="lastAccountsOverlay">
+    <div class="modal last-accounts-modal">
+      <div class="modal-header">
+        <div>
+          <h3>Derniers comptes créés</h3>
+          <p>Consulte les derniers comptes du commercial connecté, avec un filtre par plaque pour retrouver le bon ordre de création.</p>
+        </div>
+        <button class="close-btn" id="closeLastAccountsBtn" type="button">&times;</button>
+      </div>
+
+      <div class="last-accounts-toolbar">
+        <div class="field-group">
+          <label for="lastAccountsSearchInput">Recherche</label>
+          <input type="search" id="lastAccountsSearchInput" placeholder="Client, compte ou plaque..." />
+        </div>
+        <div class="field-group">
+          <label for="lastAccountsPlaqueSelect">Plaque</label>
+          <select id="lastAccountsPlaqueSelect"></select>
+        </div>
+      </div>
+
+      <div class="last-account-head">
+        <span>Client</span>
+        <span>Compte</span>
+        <span>Plaque</span>
+        <span>Ajout</span>
+      </div>
+      <div class="last-accounts-list" id="lastAccountsList"></div>
     </div>
   </div>
 
@@ -1016,7 +1084,6 @@
       pendingDocumentLinkIds: [],
       recommendationCart: new Map(),
       recommendationClientId: "",
-      lastAddedClientNumero: "",
       accountChoiceResolver: null,
       accountChoiceOptions: [],
       portalSessionUser: null
@@ -1178,12 +1245,17 @@
       dom.clientForm = document.getElementById("clientForm");
       dom.clientNomInput = document.getElementById("clientNomInput");
       dom.clientNumeroCompteInput = document.getElementById("clientNumeroCompteInput");
-      dom.clientNumeroHint = document.getElementById("clientNumeroHint");
       dom.clientTelephoneInput = document.getElementById("clientTelephoneInput");
       dom.clientEmailInput = document.getElementById("clientEmailInput");
       dom.clientAdresseInput = document.getElementById("clientAdresseInput");
       dom.clientPlaqueSelect = document.getElementById("clientPlaqueSelect");
       dom.saveClientBtn = document.getElementById("saveClientBtn");
+      dom.openLastAccountsBtn = document.getElementById("openLastAccountsBtn");
+      dom.lastAccountsOverlay = document.getElementById("lastAccountsOverlay");
+      dom.closeLastAccountsBtn = document.getElementById("closeLastAccountsBtn");
+      dom.lastAccountsSearchInput = document.getElementById("lastAccountsSearchInput");
+      dom.lastAccountsPlaqueSelect = document.getElementById("lastAccountsPlaqueSelect");
+      dom.lastAccountsList = document.getElementById("lastAccountsList");
       dom.toastContainer = document.getElementById("toastContainer");
       dom.produitsDatalist = document.getElementById("produitsDatalist");
       dom.clientAccountModalOverlay = document.getElementById("clientAccountModalOverlay");
@@ -1260,49 +1332,106 @@
         .replace(/[^A-Z0-9]/g, "");
     }
 
-    function parseClientNumberValue(value) {
-      const raw = String(value ?? "").trim().replace(/\s+/g, "");
-      if (!/^\d+$/.test(raw)) return null;
-      const numericValue = Number.parseInt(raw, 10);
-      if (!Number.isFinite(numericValue)) return null;
-      return { numericValue, width: raw.length };
+    function isMissingColumnError(error, columnName) {
+      const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ").toLowerCase();
+      return message.includes(String(columnName || "").toLowerCase());
     }
 
-    async function fetchLastAddedClientNumeroCompte() {
-      const { data, error } = await supabaseClient
-        .from("industrie_clients")
-        .select("numero_compte, created_at")
-        .order("created_at", { ascending: false })
-        .limit(25);
-
-      if (error) throw error;
-      const rows = Array.isArray(data) ? data : [];
-      const found = rows.find(row => String(row?.numero_compte ?? "").trim() !== "");
-      return found ? String(found.numero_compte).trim() : "";
+    function formatDateTime(value) {
+      if (!value) return "Date non disponible";
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return "Date non disponible";
+      return parsed.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
     }
 
-    function formatClientNumberHint(lastNumeroCompte) {
-      const raw = String(lastNumeroCompte ?? "").trim();
-      if (!raw) return "Aucun numéro client trouvé pour le moment (exemple conseille: 0001).";
-      const parsed = parseClientNumberValue(raw);
-      if (!parsed) return `Dernier numero ajoute en base: ${raw} | Prochain conseille: manuel`;
-      const next = String(parsed.numericValue + 1).padStart(parsed.width, "0");
-      return `Dernier numero ajoute en base: ${raw} | Prochain conseille: ${next}`;
+    function getClientCreatedTimestamp(client) {
+      const parsed = client?.created_at ? new Date(client.created_at) : null;
+      return parsed && !Number.isNaN(parsed.getTime()) ? parsed.getTime() : 0;
     }
 
-    async function updateClientNumberHint() {
-      if (!dom.clientNumeroHint) return;
-      dom.clientNumeroHint.textContent = "Lecture du dernier numero ajoute en base...";
-      try {
-        const lastNumeroCompte = await fetchLastAddedClientNumeroCompte();
-        state.lastAddedClientNumero = lastNumeroCompte;
-        dom.clientNumeroHint.textContent = formatClientNumberHint(lastNumeroCompte);
-      } catch (error) {
-        console.error("Erreur lecture dernier numero client:", error);
-        dom.clientNumeroHint.textContent = state.lastAddedClientNumero
-          ? formatClientNumberHint(state.lastAddedClientNumero)
-          : "Dernier numero ajoute indisponible pour le moment.";
+    function renderLastAccountsPlaqueOptions(selectedValue = "") {
+      if (!dom.lastAccountsPlaqueSelect) return;
+      const selected = String(selectedValue || dom.lastAccountsPlaqueSelect.value || "");
+      const options = [
+        '<option value="">Toutes les plaques</option>',
+        '<option value="__none">Sans plaque</option>'
+      ];
+
+      state.plaques.forEach(plaque => {
+        options.push(`<option value="${escapeHtml(plaque.id)}">${escapeHtml(plaque.nom || "Plaque")}</option>`);
+      });
+
+      dom.lastAccountsPlaqueSelect.innerHTML = options.join("");
+      const values = Array.from(dom.lastAccountsPlaqueSelect.options).map(option => option.value);
+      dom.lastAccountsPlaqueSelect.value = values.includes(selected) ? selected : "";
+    }
+
+    function getLastAccountRows() {
+      const search = normalizeText(dom.lastAccountsSearchInput?.value || "");
+      const plaqueFilter = String(dom.lastAccountsPlaqueSelect?.value || "");
+
+      return [...state.clients]
+        .filter(client => {
+          if (plaqueFilter === "__none") return !client.plaque_id;
+          if (plaqueFilter) return String(client.plaque_id || "") === plaqueFilter;
+          return true;
+        })
+        .filter(client => {
+          if (!search) return true;
+          return [
+            client.nom,
+            client.numero_compte,
+            getClientPlaqueLabel(client)
+          ].some(value => normalizeText(value).includes(search));
+        })
+        .sort((a, b) => {
+          const dateDiff = getClientCreatedTimestamp(b) - getClientCreatedTimestamp(a);
+          if (dateDiff) return dateDiff;
+          return normalizeText(a.nom).localeCompare(normalizeText(b.nom), "fr");
+        });
+    }
+
+    function renderLastAccounts() {
+      if (!dom.lastAccountsList) return;
+      const rows = getLastAccountRows();
+
+      if (!rows.length) {
+        dom.lastAccountsList.innerHTML = `
+          <div class="last-account-empty">
+            Aucun compte trouvé avec ces filtres. Change la plaque ou la recherche pour consulter l'historique.
+          </div>
+        `;
+        return;
       }
+
+      dom.lastAccountsList.innerHTML = rows.map(client => `
+        <div class="last-account-row">
+          <div>
+            <strong>${escapeHtml(client.nom || "Client sans nom")}</strong>
+            <span>${escapeHtml(client.adresse || "Adresse non renseignée")}</span>
+          </div>
+          <div><strong>${escapeHtml(client.numero_compte || "Non renseigné")}</strong></div>
+          <div><span class="last-account-pill">${escapeHtml(getClientPlaqueLabel(client))}</span></div>
+          <div class="last-account-date">${escapeHtml(formatDateTime(client.created_at))}</div>
+        </div>
+      `).join("");
+    }
+
+    function openLastAccountsModal() {
+      const selectedPlaqueId = dom.clientPlaqueSelect?.value || dom.lastAccountsPlaqueSelect?.value || "";
+      renderLastAccountsPlaqueOptions(selectedPlaqueId);
+      if (dom.lastAccountsSearchInput) dom.lastAccountsSearchInput.value = "";
+      renderLastAccounts();
+      dom.lastAccountsOverlay.classList.add("active");
+      setTimeout(() => dom.lastAccountsSearchInput?.focus(), 30);
+    }
+
+    function closeLastAccountsModal() {
+      dom.lastAccountsOverlay.classList.remove("active");
     }
 
     function saveLocalCache(key, value) {
@@ -1930,19 +2059,37 @@
     }
 
     async function fetchClients() {
-      let query = supabaseClient
-        .from("industrie_clients")
-        .select(`
-          id,
-          nom,
-          numero_compte,
-          adresse,
-          telephone,
-          plaque_id
-        `)
-        .order("nom", { ascending: true });
-      query = applyCommercialScopeToQuery(query);
-      const { data, error } = await query;
+      const baseSelect = `
+        id,
+        nom,
+        numero_compte,
+        adresse,
+        telephone,
+        plaque_id
+      `;
+      const datedSelect = `
+        id,
+        nom,
+        numero_compte,
+        adresse,
+        telephone,
+        plaque_id,
+        created_at
+      `;
+
+      const runQuery = async selectColumns => {
+        let query = supabaseClient
+          .from("industrie_clients")
+          .select(selectColumns)
+          .order("nom", { ascending: true });
+        query = applyCommercialScopeToQuery(query);
+        return query;
+      };
+
+      let { data, error } = await runQuery(datedSelect);
+      if (error && isMissingColumnError(error, "created_at")) {
+        ({ data, error } = await runQuery(baseSelect));
+      }
 
       if (error) throw error;
       return data || [];
@@ -2341,7 +2488,6 @@
       dom.clientAdresseInput.value = "";
       dom.clientPlaqueSelect.innerHTML = buildPlaqueOptions();
       dom.saveClientBtn.textContent = "Enregistrer client";
-      updateClientNumberHint();
     }
 
     function openClientModal() {
@@ -2411,7 +2557,6 @@
 
         const insertedClientId = data?.id ? String(data.id) : "";
         state.clients = await fetchClients();
-        updateClientNumberHint();
 
         let targetClientId = insertedClientId;
         if (!targetClientId) {
@@ -4462,6 +4607,10 @@
       dom.closeClientModalBtn.addEventListener("click", closeClientModal);
       dom.cancelClientBtn.addEventListener("click", closeClientModal);
       dom.clientForm.addEventListener("submit", saveClient);
+      dom.openLastAccountsBtn.addEventListener("click", openLastAccountsModal);
+      dom.closeLastAccountsBtn.addEventListener("click", closeLastAccountsModal);
+      dom.lastAccountsSearchInput.addEventListener("input", renderLastAccounts);
+      dom.lastAccountsPlaqueSelect.addEventListener("change", renderLastAccounts);
       dom.addClientAccountBtn.addEventListener("click", openClientAccountModal);
       dom.clientAccountsList.addEventListener("click", handleClientAccountsClick);
       dom.closeClientAccountModalBtn.addEventListener("click", closeClientAccountModal);
@@ -4487,6 +4636,10 @@
         if (event.target === dom.clientModalOverlay) closeClientModal();
       });
 
+      dom.lastAccountsOverlay.addEventListener("click", event => {
+        if (event.target === dom.lastAccountsOverlay) closeLastAccountsModal();
+      });
+
       dom.clientAccountModalOverlay.addEventListener("click", event => {
         if (event.target === dom.clientAccountModalOverlay) closeClientAccountModal();
       });
@@ -4500,6 +4653,7 @@
           closeVisitModal();
           closeTopProduits();
           closeClientModal();
+          closeLastAccountsModal();
           closeClientAccountModal();
           closeAccountChoiceModal(null);
         }
@@ -4535,7 +4689,6 @@
         state.plaques = plaques;
         state.conditionnements = conditionnements;
         state.conditionnementsByRef5 = buildConditionnementIndex(conditionnements);
-        updateClientNumberHint();
 
         const noProductsVisible = state.produits.length === 0;
 
