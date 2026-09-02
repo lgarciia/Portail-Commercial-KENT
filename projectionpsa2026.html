@@ -1289,9 +1289,20 @@ function easterSunday(year){
   function saveLS(){
     const payload = {
       days,
-      basePivot
+      lastSource: basePivot?.meta
+        ? {
+            source: basePivot.meta.source || "",
+            entityKey: basePivot.meta.entityKey || "",
+            entityLabel: basePivot.meta.entityLabel || "",
+            updatedAt: basePivot.meta.updatedAt || ""
+          }
+        : null
     };
-    localStorage.setItem(LS_KEY, JSON.stringify(payload));
+    try{
+      localStorage.setItem(LS_KEY, JSON.stringify(payload));
+    }catch(error){
+      console.warn("Sauvegarde locale projection ignoree:", error?.message || error);
+    }
   }
 
   function toNumber(v){

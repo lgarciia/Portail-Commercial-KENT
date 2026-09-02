@@ -426,7 +426,11 @@
 
     async function editBudget(id){
       try{
-        const { budget, lines } = await window.BudgetSupabase.getBudget(id);
+        const budget = budgets.find(item => String(item.id) === String(id));
+        if (!budget) {
+          await kentAlert("Budget introuvable. Recharge la liste puis réessaie.", { title: "Budget introuvable", tone: "warning" });
+          return;
+        }
         if (isAdminLocked(budget)) {
           await kentAlert(
             "Ce budget est valid\u00e9 par admin. Il est en lecture seule tant que l'admin ne l'a pas d\u00e9valid\u00e9.",
@@ -435,13 +439,8 @@
           return;
         }
         if (!await kentConfirm("Charger ce budget dans Budget annuel pour le modifier ?", { title: "Modifier ce budget", confirmText: "Charger" })) return;
-        const payload = {
-          globalBudget: Number(budget.total_annuel || 0),
-          clients: lines.map(lineToBudgetClient)
-        };
-        localStorage.setItem(budgetStorageKey(budget.annee, budget.commercial_user_id), JSON.stringify(payload));
         KentDataConfig.setActiveYear(Number(budget.annee));
-        window.location.href = `budget2026.html?year=${encodeURIComponent(budget.annee)}`;
+        window.location.href = `budget2026.html?year=${encodeURIComponent(budget.annee)}&editBudgetId=${encodeURIComponent(id)}`;
       }catch(error){
         console.error("Edit budget failed", error);
         await kentAlert(error?.message || "Impossible de charger ce budget en modification.", { title: "Erreur modification", tone: "danger" });

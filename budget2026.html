@@ -516,6 +516,7 @@ Client C"></textarea>
  ***********************/
 const APP_YEAR = KentDataConfig.getActiveYear();
 let LS_KEY = budgetStorageKey(APP_YEAR, "global");
+let localCacheWarningShown = false;
 
 const MONTHS = [
   { key:"jan", label:"Janvier" },
@@ -580,7 +581,18 @@ function formatMoney(n){
   return eur.format(Number.isFinite(n) ? n : 0);
 }
 function save(){
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  }catch(error){
+    console.warn("Sauvegarde locale budget ignoree:", error?.message || error);
+    if (!localCacheWarningShown) {
+      localCacheWarningShown = true;
+      void kentAlert(
+        "Ce budget est trop volumineux pour être sauvegardé automatiquement dans le navigateur. Tu peux continuer à le modifier et le valider dans Supabase. Évite simplement de recharger la page avant validation.",
+        { title: "Cache navigateur plein", tone: "warning" }
+      );
+    }
+  }
 }
 function load(){
   try{
@@ -1217,6 +1229,53 @@ async function loadSelectedProjection(){
   }
 }
 
+function getEditBudgetIdFromUrl(){
+  const params = new URLSearchParams(window.location.search);
+  return params.get("editBudgetId") || "";
+}
+
+async function loadBudgetForEditFromUrl(){
+  const editBudgetId = getEditBudgetIdFromUrl();
+  if (!editBudgetId) return false;
+  if (!window.BudgetSupabase){
+    setBudgetSupabaseHint("Module Supabase budget indisponible. Recharge la page.");
+    return false;
+  }
+
+  try{
+    setBudgetSupabaseHint("Chargement du budget en modification...");
+    const { budget, lines } = await window.BudgetSupabase.getBudget(editBudgetId);
+    if (window.BudgetSupabase.isAdminValidatedBudget?.(budget)) {
+      setBudgetSupabaseHint("Budget validé admin : modification verrouillée.");
+      await kentAlert(
+        "Ce budget est validé par admin. Il est en lecture seule tant que l'admin ne l'a pas dévalidé.",
+        { title: "Budget verrouillé", tone: "warning" }
+      );
+      return false;
+    }
+
+    const budgetYear = Number(budget.annee || APP_YEAR);
+    if (budgetYear && budgetYear !== APP_YEAR) {
+      KentDataConfig.setActiveYear(budgetYear);
+      window.location.href = `budget2026.html?year=${encodeURIComponent(budgetYear)}&editBudgetId=${encodeURIComponent(editBudgetId)}`;
+      return true;
+    }
+
+    if (budget?.entite_id && $("budgetEntitySelect")) {
+      $("budgetEntitySelect").value = String(budget.entite_id);
+    }
+    applyRowsToBudgetState(lines, budget.projection_id || "");
+    $("globalBudget").value = state.globalBudget ? String(state.globalBudget) : "";
+    setBudgetSupabaseHint(`Budget chargé en modification : ${budget.nom || "budget"}.`);
+    return true;
+  }catch(error){
+    console.error("Load edit budget failed", error);
+    setBudgetSupabaseHint("Impossible de charger le budget en modification.");
+    await kentAlert(error?.message || "Impossible de charger ce budget en modification.", { title: "Erreur modification", tone: "danger" });
+    return false;
+  }
+}
+
 async function createBudgetEntityFromPrompt(){
   const label = await kentPrompt("Nom de la nouvelle entite :", "", { title: "Nouvelle entit\u00e9" });
   if (!label || !label.trim()) return;
@@ -1486,6 +1545,7 @@ async function initBudgetPage(){
   $("globalBudget").value = state.globalBudget ? String(state.globalBudget) : "";
   renderAll();
   await refreshBudgetSupabaseControls();
+  await loadBudgetForEditFromUrl();
 }
 
 initBudgetPage();
