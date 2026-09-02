@@ -363,6 +363,22 @@
     return { projection, lines: lines || [] };
   }
 
+  async function deleteProjection(id){
+    const projectionId = String(id || "").trim();
+    if (!projectionId) throw new Error("Projection introuvable.");
+    const owner = await ownerContext();
+    // La contrainte SQL supprime les lignes de projection en cascade,
+    // et conserve les budgets déjà créés en passant leur projection_id à null.
+    let projectionQuery = client()
+      .from("budget_projections")
+      .delete()
+      .eq("id", projectionId);
+    projectionQuery = applyOwner(projectionQuery, owner);
+    const { error } = await projectionQuery;
+    if (error) throw error;
+    return true;
+  }
+
   async function activeBudgetForEntityYear(entityId, year){
     const owner = await ownerContext();
     let query = client()
@@ -599,6 +615,7 @@
     listProjections,
     saveProjection,
     getProjection,
+    deleteProjection,
     validateBudget,
     listBudgets,
     getBudget,

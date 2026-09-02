@@ -94,6 +94,21 @@
   .budgetFieldProjection .input.mid{
     width:190px;
   }
+  .entityImpactLabel{
+    display:inline-flex;
+    align-items:center;
+    min-height:34px;
+    padding:0 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.055);
+    color:var(--muted);
+    font-size:11px;
+    font-weight:950;
+    text-transform:uppercase;
+    letter-spacing:.18px;
+    white-space:nowrap;
+  }
   .budgetFieldEnvelope{
     max-width:380px;
   }
@@ -210,6 +225,14 @@
   }
   .btn:hover{background: rgba(255,255,255,0.09)}
   .btn:active{transform:scale(.98)}
+  .btn:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    transform:none;
+  }
+  .btn:disabled:hover{
+    background:rgba(255,255,255,0.06);
+  }
   .btn.primary{
     background: rgba(124,58,237,.22);
     border-color: rgba(124,58,237,.45);
@@ -459,7 +482,6 @@
     </div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <a class="btn compact" href="mes-budgets.html" data-year-link>Mes budgets</a>
       <button class="btn compact" id="budgetProcessBtn" type="button" title="Process budget">?</button>
       <button class="btn compact" id="resetBtn">Réinitialiser</button>
       <button class="btn green compact" id="exportXlsxBtn" title="Exporter le budget en Excel" aria-label="Exporter le budget en Excel">
@@ -482,14 +504,13 @@
           </select>
           <button class="btn" id="loadProjectionBtn">Charger projection</button>
           <button class="btn" id="refreshProjectionBtn">Actualiser</button>
+          <button class="btn danger compact" id="deleteProjectionBtn">Supprimer projection</button>
         </div>
         <div class="val" style="margin-top:10px">
+          <span class="entityImpactLabel">Entité à impacter</span>
           <select class="input mid" id="budgetEntitySelect">
             <option value="">Entité...</option>
           </select>
-          <button class="btn" id="newEntityBtn">Nouvelle entité</button>
-          <button class="btn compact" id="renameBudgetEntityBtn">Renommer</button>
-          <button class="btn danger compact" id="deleteBudgetEntityBtn">Supprimer</button>
           <button class="btn green" id="validateBudgetBtn">Valider budget actif</button>
         </div>
         <div class="footnote" id="budgetSupabaseHint" style="margin-top:10px">Excel sert &agrave; construire une projection. Le reporting lit ensuite le budget actif Supabase.</div>
@@ -623,6 +644,7 @@ let state = {
 let sortTotalDesc = true;
 let currentProjectionId = "";
 let budgetEntities = [];
+let budgetProjections = [];
 
 function budgetStorageKey(year, scopeSuffix = "global"){
   const safeYear = Number(year || APP_YEAR);
@@ -1275,6 +1297,7 @@ async function refreshBudgetSupabaseControls(){
       window.BudgetSupabase.listProjections(APP_YEAR)
     ]);
     budgetEntities = entities;
+    budgetProjections = projections;
 
     $("budgetEntitySelect").innerHTML = entities.map(entity => (
       `<option value="${escapeHtml(entity.id)}">${escapeHtml(entity.libelle)}</option>`
@@ -1283,13 +1306,18 @@ async function refreshBudgetSupabaseControls(){
     $("projectionSelect").innerHTML = projections.length
       ? projections.map(projection => `<option value="${escapeHtml(projection.id)}">${escapeHtml(projection.nom)} - ${Number(projection.total_annuel || 0).toLocaleString("fr-FR")} EUR</option>`).join("")
       : '<option value="">Aucune projection enregistrée</option>';
+    $("loadProjectionBtn").disabled = !projections.length;
+    $("deleteProjectionBtn").disabled = !projections.length;
 
     setBudgetSupabaseHint(`${projections.length} projection(s) enregistrée(s) - ${entities.length} entité(s) disponible(s).`);
   }catch(error){
     console.warn("Budget Supabase controls unavailable", error);
     budgetEntities = [];
+    budgetProjections = [];
     $("projectionSelect").innerHTML = '<option value="">Supabase non prêt</option>';
     $("budgetEntitySelect").innerHTML = '<option value="">Supabase non prêt</option>';
+    $("loadProjectionBtn").disabled = true;
+    $("deleteProjectionBtn").disabled = true;
     setBudgetSupabaseHint("Supabase budget non prêt. Lance le SQL budget_system avant d'utiliser ces boutons.");
   }
 }
@@ -1304,6 +1332,29 @@ async function loadSelectedProjection(){
   }catch(error){
     console.error("Load projection failed", error);
     await kentAlert(error?.message || "Impossible de charger la projection.", { title: "Erreur projection", tone: "danger" });
+  }
+}
+
+async function deleteSelectedProjection(){
+  const projectionId = $("projectionSelect").value;
+  if (!projectionId) {
+    await kentAlert("Sélectionne une projection avant de la supprimer.", { title: "Projection manquante", tone: "warning" });
+    return;
+  }
+  const projection = budgetProjections.find(item => String(item.id) === String(projectionId));
+  const projectionName = projection?.nom || "cette projection";
+  const projectionTotal = Number(projection?.total_annuel || 0).toLocaleString("fr-FR");
+  const message = `Supprimer définitivement "${projectionName}" ?\n\nSes lignes de projection seront supprimées aussi. Les budgets déjà validés, les ventes, les clients et les entités ne seront pas supprimés.`;
+  if (!await kentConfirm(message, { title: "Supprimer la projection", tone: "danger", confirmText: "Supprimer" })) return;
+
+  try{
+    await window.BudgetSupabase.deleteProjection(projectionId);
+    if (String(currentProjectionId) === String(projectionId)) currentProjectionId = "";
+    await refreshBudgetSupabaseControls();
+    await kentAlert(`Projection supprimée : ${projectionName} (${projectionTotal} EUR).`, { title: "Projection supprimée", tone: "success" });
+  }catch(error){
+    console.error("Delete projection failed", error);
+    await kentAlert(error?.message || "Impossible de supprimer cette projection.", { title: "Erreur projection", tone: "danger" });
   }
 }
 
@@ -1596,9 +1647,7 @@ if ($("budgetProcessBtn")) {
 $("exportXlsxBtn").addEventListener("click", exportXLSX);
 $("refreshProjectionBtn").addEventListener("click", refreshBudgetSupabaseControls);
 $("loadProjectionBtn").addEventListener("click", loadSelectedProjection);
-$("newEntityBtn").addEventListener("click", createBudgetEntityFromPrompt);
-$("renameBudgetEntityBtn").addEventListener("click", renameBudgetEntity);
-$("deleteBudgetEntityBtn").addEventListener("click", deactivateBudgetEntity);
+$("deleteProjectionBtn").addEventListener("click", deleteSelectedProjection);
 $("validateBudgetBtn").addEventListener("click", validateCurrentBudget);
 
 /* Paste modal */
