@@ -108,6 +108,54 @@
     .btn.danger{ background: rgba(255,110,110,0.12); border-color: rgba(255,110,110,0.22); }
     .btn.slim{ padding:0 9px; box-shadow:none; }
     .btn.save{ border-color:rgba(95,255,160,.28); background:rgba(95,255,160,.10); }
+    .btnIcon{
+      width:14px;
+      height:14px;
+      display:block;
+      fill:currentColor;
+      flex:0 0 auto;
+    }
+
+    .ioMenu{
+      position:relative;
+      display:inline-flex;
+      z-index:30;
+    }
+    .ioMenuPanel{
+      position:absolute;
+      top:calc(100% + 8px);
+      right:0;
+      width:210px;
+      display:none;
+      grid-template-columns:1fr;
+      gap:6px;
+      padding:8px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.13);
+      background:rgba(13,18,30,0.96);
+      box-shadow:0 22px 46px rgba(0,0,0,0.48);
+      backdrop-filter:blur(16px);
+    }
+    .ioMenu.open .ioMenuPanel{display:grid;}
+    .ioMenuItem{
+      width:100%;
+      height:34px;
+      justify-content:flex-start;
+      border-radius:12px;
+      background:rgba(255,255,255,0.055);
+      box-shadow:none;
+      padding:0 10px;
+      font-size:11px;
+    }
+    .ioMenuItem:hover{
+      background:rgba(255,255,255,0.095);
+      transform:none;
+    }
+    .ioMenuChevron{
+      opacity:.72;
+      font-size:11px;
+      margin-left:2px;
+    }
 
     .fileInput{ display:none; }
 
@@ -356,13 +404,24 @@
 
     <div class="actions">
       <input id="fileInput" class="fileInput" type="file" accept=".xlsx,.xls" />
-      <button class="btn primary slim" id="btnReload">Charger Excel</button>
-      <button class="btn ghost slim" id="btnDownloadTemplate">Modèle</button>
+      <div class="ioMenu" id="importExportMenu">
+        <button class="btn primary slim" id="btnImportExport" type="button" aria-haspopup="true" aria-expanded="false">
+          <svg class="btnIcon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3a1 1 0 0 1 1 1v9.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1Zm-7 14a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/>
+          </svg>
+          Import / export
+          <span class="ioMenuChevron">▾</span>
+        </button>
+        <div class="ioMenuPanel" role="menu" aria-label="Actions import export">
+          <button class="btn ioMenuItem" id="btnDownloadTemplate" type="button" role="menuitem">Modèle</button>
+          <button class="btn ioMenuItem" id="btnReload" type="button" role="menuitem">Import Excel</button>
+          <button class="btn ioMenuItem" id="btnExportXlsx" type="button" role="menuitem">Export Excel</button>
+        </div>
+      </div>
       <button class="btn ghost slim" id="btnRecalc">Recalculer</button>
       <button class="btn save slim" id="btnSaveProjection">Enregistrer</button>
       <a class="btn ghost slim" href="mes-budgets.html" data-year-link>Mes budgets</a>
-      <button class="btn ghost slim" id="btnExportXlsx">XLSX</button>
-      <button class="btn danger slim" id="btnReset">Reset</button>
+      <button class="btn danger slim" id="btnReset" title="Réinitialiser uniquement cette page de projection">Reset</button>
     </div>
   </div>
 
@@ -464,6 +523,8 @@
   // =========================
   const el = {
     fileInput: document.getElementById("fileInput"),
+    importExportMenu: document.getElementById("importExportMenu"),
+    btnImportExport: document.getElementById("btnImportExport"),
     btnReload: document.getElementById("btnReload"),
     btnDownloadTemplate: document.getElementById("btnDownloadTemplate"),
     btnRecalc: document.getElementById("btnRecalc"),
@@ -493,6 +554,7 @@
   document.title = `Projection PSA ${APP_YEAR} — Prorata jours ouvrés`;
   el.btnReload.title = `Charger manuellement ${FILE_NAME}`;
   el.btnExportXlsx.title = `Exporter ${EXPORT_FILE}`;
+  el.btnDownloadTemplate.title = "Télécharger le modèle Excel de projection";
   el.yearReal.value = String(PREV_YEAR);
   el.yearBudget.value = String(APP_YEAR);
   document.getElementById("pageTitle").textContent = `Projection PSA ${APP_YEAR}`;
@@ -561,8 +623,24 @@
     // =========================
     // EVENTS
     // =========================
-    el.btnReload.addEventListener("click", () => el.fileInput.click());
-    el.btnDownloadTemplate.addEventListener("click", downloadProjectionTemplate);
+    el.btnImportExport.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleImportExportMenu();
+    });
+    document.addEventListener("click", (event) => {
+      if (!el.importExportMenu?.contains(event.target)) closeImportExportMenu();
+    });
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeImportExportMenu();
+    });
+    el.btnReload.addEventListener("click", () => {
+      closeImportExportMenu();
+      el.fileInput.click();
+    });
+    el.btnDownloadTemplate.addEventListener("click", () => {
+      closeImportExportMenu();
+      downloadProjectionTemplate();
+    });
     el.fileInput.addEventListener("change", async (e) => {
       const f = e.target.files?.[0];
       if (!f) return;
@@ -577,12 +655,18 @@
       renderAll();
     });
 
-    el.btnExportXlsx.addEventListener("click", exportBudgetXlsx);
+    el.btnExportXlsx.addEventListener("click", () => {
+      closeImportExportMenu();
+      exportBudgetXlsx();
+    });
     el.btnSaveProjection.addEventListener("click", saveProjectionSupabase);
     el.realSourceSelect.addEventListener("change", loadSelectedSupabaseReal);
 
     el.btnReset.addEventListener("click", async () => {
-      if (!await kentConfirm("Reset projection PSA (cache + jours ouvres) ?", { title: "Reinitialiser la projection", tone: "danger", confirmText: "Reinitialiser" })) return;
+      if (!await kentConfirm(
+        "Réinitialiser cette projection locale ?\n\nCela vide uniquement le cache de cette page, les jours ouvrés saisis, la recherche et les paramètres. Aucune donnée Supabase n'est supprimée.",
+        { title: "Réinitialiser la projection", tone: "danger", confirmText: "Réinitialiser" }
+      )) return;
       localStorage.removeItem(LS_KEY);
       basePivot = null;
       projected = null;
@@ -595,7 +679,7 @@
       filterText = "";
       ensureDaysDefaults();
       renderDaysGrid();
-      setStatus(false, "Reset effectue. Recharge un fichier Excel.");
+      setStatus(false, "Reset effectué. Recharge un fichier Excel ou sélectionne un réel Supabase.");
       renderEmpty("Charge ton fichier Excel ou selectionne un reel N-1 Supabase pour generer la projection.");
     });
 
@@ -622,6 +706,16 @@
 
     el.uplift.addEventListener("input", () => { renderAll(); });
     el.rounding.addEventListener("change", () => { renderAll(); });
+  }
+
+  function toggleImportExportMenu(){
+    const isOpen = el.importExportMenu?.classList.toggle("open");
+    el.btnImportExport?.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+
+  function closeImportExportMenu(){
+    el.importExportMenu?.classList.remove("open");
+    el.btnImportExport?.setAttribute("aria-expanded", "false");
   }
 
   // =========================

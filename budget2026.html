@@ -72,6 +72,84 @@
   .row{
     display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;
   }
+  .budgetSetupGrid{
+    display:grid;
+    grid-template-columns:minmax(520px,1.28fr) minmax(280px,.72fr) minmax(420px,1fr);
+    align-items:stretch;
+  }
+  .budgetSetupGrid .field{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+  }
+  .budgetFieldProjection .val,
+  .budgetFieldClients .val{
+    align-items:center;
+  }
+  .budgetFieldProjection .input.wide{
+    width:auto;
+    min-width:260px;
+    flex:1 1 300px;
+  }
+  .budgetFieldProjection .input.mid{
+    width:190px;
+  }
+  .budgetFieldEnvelope{
+    max-width:380px;
+  }
+  .budgetFieldEnvelope .input{
+    width:155px;
+  }
+  .budgetFieldEnvelope .footnote{
+    flex-basis:100%;
+    font-size:10px;
+  }
+  .budgetFieldEnvelope .kpiLine{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:7px;
+    margin-top:8px;
+  }
+  .budgetFieldEnvelope .kpi{
+    min-width:0;
+    padding:8px;
+    border-radius:13px;
+  }
+  .budgetFieldEnvelope .kpi .k{
+    font-size:9px;
+  }
+  .budgetFieldEnvelope .kpi .v{
+    margin-top:4px;
+    font-size:15px;
+    line-height:1.1;
+  }
+  .budgetFieldClients .input.wide{
+    width:auto;
+    min-width:220px;
+    flex:1 1 250px;
+  }
+  .budgetFieldClients .input.mid{
+    width:150px;
+  }
+  @media (max-width: 1360px){
+    .budgetSetupGrid{
+      grid-template-columns:1fr 1fr;
+    }
+    .budgetFieldClients{
+      grid-column:1 / -1;
+    }
+    .budgetFieldEnvelope{
+      max-width:none;
+    }
+  }
+  @media (max-width: 860px){
+    .budgetSetupGrid{
+      grid-template-columns:1fr;
+    }
+    .budgetFieldClients{
+      grid-column:auto;
+    }
+  }
   .field{
     flex: 1;
     min-width: 300px;
@@ -393,11 +471,11 @@
     </div>
   </div>
 
-  <div class="card">
-    <div class="row">
+  <div class="card budgetSetupCard">
+    <div class="row budgetSetupGrid">
 
-      <div class="field" style="min-width:620px">
-        <div class="lab">Projections / validation</div>
+      <div class="field budgetFieldProjection">
+        <div class="lab">Projection / validation</div>
         <div class="val">
           <select class="input wide" id="projectionSelect">
             <option value="">Chargement des projections...</option>
@@ -422,7 +500,7 @@
           l'admin doit d'abord le d&eacute;valider, puis tu peux d&eacute;sactiver ou supprimer l'ancien budget avant d'en refaire un propre.
         </div>
       </div>
-      <div class="field">
+      <div class="field budgetFieldEnvelope">
         <div class="lab">Enveloppe globale</div>
         <div class="val">
           <input class="input" id="globalBudget" placeholder="Ex: 500000" inputmode="decimal" />
@@ -450,7 +528,7 @@
         </div>
       </div>
 
-      <div class="field" style="min-width:520px">
+      <div class="field budgetFieldClients">
         <div class="lab">Clients</div>
         <div class="val">
           <button class="btn" id="pasteClientsBtn">Coller une liste</button>
