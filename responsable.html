@@ -1717,7 +1717,7 @@
           const current = map.get(key) || { commercialUserId:key, total:0, toDate:0, lignes:0 };
           current.total += Number(row.total || 0);
           current.toDate += Number(row.toDate || 0);
-          current.lignes += 1;
+          current.lignes += Number(row.lignes || 1);
           map.set(key, current);
         });
         return Array.from(map.values()).map(row => ({

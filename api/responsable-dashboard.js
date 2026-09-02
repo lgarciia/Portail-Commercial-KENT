@@ -107,6 +107,15 @@ const SALES_SOURCES = [
   }
 ];
 
+const DASHBOARD_FAST_VIEWS = {
+  salesDaily: "v_kent_dashboard_sales_daily",
+  salesLines: "v_kent_dashboard_sales_lines",
+  visitsMonthly: "v_kent_dashboard_visits_monthly",
+  clientsTotal: "v_kent_dashboard_clients_total",
+  budgetSummary: "v_kent_dashboard_budget_summary",
+  realSummary: "v_kent_dashboard_real_summary"
+};
+
 export default async function handler(request, response) {
   const guard = requireRole(request, ["admin", "responsable"]);
   if (!guard.ok) {
@@ -133,6 +142,7 @@ export default async function handler(request, response) {
 async function buildDashboard(session, request) {
   const period = parsePeriod(request);
   const mode = parseDashboardMode(request);
+  const options = parseDashboardOptions(request, mode);
   const [usersResult, relations, sectorsResult] = await Promise.all([listUsers(), listRelations(), listSectors()]);
   const users = usersResult.rows;
   const sectors = sectorsResult.rows;
@@ -156,16 +166,16 @@ async function buildDashboard(session, request) {
 
   const [salesBlock, budgetBlock, realBlock, documentsBlock, campaignsBlock] = await Promise.all([
     includeMainData
-      ? safeBlock(() => buildSalesBlock(commercialIds, period), emptySalesBlock(), warnings, "ventes terrain")
+      ? safeBlock(() => buildSalesBlock(commercialIds, period, options), emptySalesBlock(), warnings, "ventes terrain")
       : Promise.resolve(emptySalesBlock()),
     includeMainData
-      ? safeBlock(() => buildBudgetBlock(commercialIds, period), emptyBudgetBlock(), warnings, "budgets")
+      ? safeBlock(() => buildBudgetBlock(commercialIds, period, options), emptyBudgetBlock(), warnings, "budgets")
       : Promise.resolve(emptyBudgetBlock()),
     includeMainData
-      ? safeBlock(() => buildRealBlock(commercialIds, period), emptyRealBlock(), warnings, "reel importe")
+      ? safeBlock(() => buildRealBlock(commercialIds, period, options), emptyRealBlock(), warnings, "reel importe")
       : Promise.resolve(emptyRealBlock()),
     includeDocuments
-      ? safeBlock(() => buildDocumentsBlock(commercialIds, period), emptyDocumentsBlock(), warnings, "BDC / devis")
+      ? safeBlock(() => buildDocumentsBlock(commercialIds, period, options), emptyDocumentsBlock(), warnings, "BDC / devis")
       : Promise.resolve(emptyDocumentsBlock()),
     includeCampaigns
       ? safeBlock(() => buildCampaignsBlock(commercialIds, period), emptyCampaignsBlock(), warnings, "campagnes promo")
@@ -280,6 +290,19 @@ function parseDashboardMode(request) {
   return "full";
 }
 
+function parseDashboardOptions(request, mode) {
+  const url = new URL(request.url, "http://localhost");
+  const detailParam = normalizeText(url.searchParams.get("detail")).toLowerCase();
+  const compactRequested = ["0", "false", "compact", "summary"].includes(detailParam);
+  const compact = mode === "finance" || compactRequested;
+  return {
+    compact,
+    includeSalesDetails: !compact,
+    includeBudgetRows: !compact,
+    includeDocumentRows: !compact
+  };
+}
+
 function getParisParts(date) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: PARIS_TIMEZONE,
@@ -376,18 +399,75 @@ async function listSectors() {
   }
 }
 
-async function buildSalesBlock(commercialIds, period) {
+async function buildSalesBlock(commercialIds, period, options = {}) {
+  if (!commercialIds.length) return emptySalesBlock();
+  try {
+    return await buildSalesBlockFast(commercialIds, period, options);
+  } catch (error) {
+    if (!isMissingDashboardFastViewError(error)) throw error;
+    return buildSalesBlockLegacy(commercialIds, period, options);
+  }
+}
+
+async function buildSalesBlockFast(commercialIds, period, options = {}) {
+  const monthStart = `${period.year}-${String(period.month).padStart(2, "0")}-01`;
+  const monthEnd = `${period.year}-${String(period.month).padStart(2, "0")}-${String(daysInMonth(period.year, period.month)).padStart(2, "0")}`;
+  const detailStart = minIsoDate(monthStart, period.weekStart);
+  const detailEnd = maxIsoDate(monthEnd, period.weekEnd);
+  const detailSelect = [
+    "id",
+    "visit_id",
+    "source",
+    "secteur",
+    "secteur_label",
+    "commercial_user_id",
+    "client_id",
+    "client_nom",
+    "numero_compte",
+    "date",
+    "type_visite",
+    "note",
+    "reference",
+    "designation",
+    "quantite",
+    "prix_unitaire",
+    "montant"
+  ].join(",");
+
+  const [dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows] = await Promise.all([
+    fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.salesDaily, "commercial_user_id,secteur,date,annee,mois,montant,lignes,ventes", commercialIds, {
+      annee: `eq.${period.year}`,
+      order: "date.asc"
+    }),
+    fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.visitsMonthly, "commercial_user_id,secteur,annee,mois,visites_total,visites_terrain,commandes_telephone,clients_terrain", commercialIds, {
+      annee: `eq.${period.year}`,
+      mois: `eq.${period.month}`
+    }),
+    fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.clientsTotal, "commercial_user_id,secteur,clients_total", commercialIds),
+    options.includeSalesDetails
+      ? fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.salesLines, detailSelect, commercialIds, {
+          date: `gte.${detailStart}`,
+          date_lte: `lte.${detailEnd}`,
+          order: "date.desc,client_nom.asc"
+        }, { date_lte: "date" })
+      : Promise.resolve([])
+  ]);
+
+  return summarizeSalesFastRows(dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows, period, options);
+}
+
+async function buildSalesBlockLegacy(commercialIds, period, options = {}) {
   if (!commercialIds.length) return emptySalesBlock();
   const sourceResults = await Promise.all(
-    SALES_SOURCES.map((source) => loadSalesSource(source, commercialIds, period))
+    SALES_SOURCES.map((source) => loadSalesSource(source, commercialIds, period, options))
   );
   const rows = sourceResults.flatMap((item) => item.rows);
   const visits = sourceResults.flatMap((item) => item.visits);
   const clients = sourceResults.flatMap((item) => item.clients || []);
-  return summarizeSalesRows(rows, visits, period, clients);
+  return summarizeSalesRows(rows, visits, period, clients, options);
 }
 
-async function loadSalesSource(source, commercialIds, period) {
+async function loadSalesSource(source, commercialIds, period, options = {}) {
   const allowedCommercialIds = new Set((commercialIds || []).map((id) => String(id || "").trim()).filter(Boolean));
   const visitSelect = "id,client_id,date_visite,note,type_visite,total_commande,commercial_user_id";
   const clientSelect = "id,nom,numero_compte,plaque_id,commercial_user_id";
@@ -397,19 +477,19 @@ async function loadSalesSource(source, commercialIds, period) {
     order: "date_visite.desc,id.asc"
   };
 
-  const ownedClients = await fetchByCommercialChunks(source.clients, clientSelect, commercialIds, {
-    order: "nom.asc"
-  });
-  const ownedClientIds = unique(ownedClients.map((client) => client.id).filter(Boolean));
-  const [visitsByCommercial, visitsByClient] = await Promise.all([
-    fetchByCommercialChunks(source.visites, visitSelect, commercialIds, visitYearParams, { date_visite_lte: "date_visite" }),
-    ownedClientIds.length
-      ? fetchByChunks(source.visites, visitSelect, "client_id", ownedClientIds, {
-          ...visitYearParams,
-          commercial_user_id: "is.null"
-        }, { date_visite_lte: "date_visite" })
-      : Promise.resolve([])
+  const [ownedClients, visitsByCommercial] = await Promise.all([
+    fetchByCommercialChunks(source.clients, clientSelect, commercialIds, {
+      order: "nom.asc"
+    }),
+    fetchByCommercialChunks(source.visites, visitSelect, commercialIds, visitYearParams, { date_visite_lte: "date_visite" })
   ]);
+  const ownedClientIds = unique(ownedClients.map((client) => client.id).filter(Boolean));
+  const visitsByClient = ownedClientIds.length
+    ? await fetchByChunks(source.visites, visitSelect, "client_id", ownedClientIds, {
+        ...visitYearParams,
+        commercial_user_id: "is.null"
+      }, { date_visite_lte: "date_visite" })
+    : [];
   const visits = mergeRowsById([...visitsByCommercial, ...visitsByClient]);
   const scopedClients = ownedClients.map((client) => ({
     id: client.id,
@@ -449,7 +529,10 @@ async function loadSalesSource(source, commercialIds, period) {
 
   const visitById = new Map(enrichedVisits.map((visit) => [String(visit.id), visit]));
   const visitIds = enrichedVisits.map((visit) => visit.id).filter(Boolean);
-  const lines = await fetchByChunks(source.lignes, "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire", "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
+  const lineSelect = options.includeSalesDetails
+    ? "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire"
+    : "id,visite_id,produit_id,quantite,prix_unitaire";
+  const lines = await fetchByChunks(source.lignes, lineSelect, "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
 
   const rowShells = lines.map((line) => {
     const visit = visitById.get(String(line.visite_id));
@@ -477,10 +560,10 @@ async function loadSalesSource(source, commercialIds, period) {
     };
   }).filter((row) => row?.commercialUserId);
 
-  const detailProductIds = unique(rowShells
+  const detailProductIds = options.includeSalesDetails ? unique(rowShells
     .filter((row) => sameMonth(row.date, period.year, period.month) || row.date === period.day || (row.date >= period.weekStart && row.date <= period.weekEnd))
     .map((row) => row.productId)
-    .filter(Boolean));
+    .filter(Boolean)) : [];
   const products = await fetchByChunks(source.produits, "id,nom,reference_produit,prix_vente", "id", detailProductIds);
   const productById = new Map(products.map((product) => [String(product.id), product]));
 
@@ -497,11 +580,152 @@ async function loadSalesSource(source, commercialIds, period) {
   return { rows, visits: enrichedVisits, clients: scopedClients };
 }
 
+function summarizeSalesFastRows(dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows, period, options = {}) {
+  const byCommercial = new Map();
+  const totals = {
+    day: 0,
+    week: 0,
+    month: 0,
+    year: 0,
+    monthly: emptyMonthlyArray(),
+    monthAuto: 0,
+    monthIndustrie: 0,
+    visitsMonth: 0,
+    phoneMonth: 0,
+    clientsMonth: 0,
+    clientsTotal: 0,
+    ventesAnnee: 0,
+    lignesAnnee: 0
+  };
+
+  for (const row of dailyRows || []) {
+    const commercialId = normalizeText(row.commercial_user_id);
+    if (!commercialId) continue;
+    const commercial = ensureSalesCommercial(byCommercial, commercialId);
+    const amount = toNumber(row.montant);
+    const lines = Number(row.lignes || 0);
+    const sales = Number(row.ventes || 0);
+    const monthIndex = clampNumber(row.mois, 1, 12, 1) - 1;
+    const date = normalizeText(row.date);
+    const secteur = normalizeText(row.secteur);
+
+    commercial.year += amount;
+    commercial.linesYear += lines;
+    commercial.salesYearDirect += sales;
+    totals.year += amount;
+    totals.lignesAnnee += lines;
+    totals.ventesAnnee += sales;
+
+    if (monthIndex >= 0) {
+      commercial.monthly[monthIndex] += amount;
+      totals.monthly[monthIndex] += amount;
+    }
+
+    if (date >= period.weekStart && date <= period.weekEnd) {
+      commercial.week += amount;
+      totals.week += amount;
+    }
+
+    if (sameMonth(date, period.year, period.month)) {
+      commercial.month += amount;
+      totals.month += amount;
+      if (secteur === "industrie") {
+        commercial.monthIndustrie += amount;
+        totals.monthIndustrie += amount;
+      } else {
+        commercial.monthAuto += amount;
+        totals.monthAuto += amount;
+      }
+    }
+
+    if (date === period.day) {
+      commercial.day += amount;
+      totals.day += amount;
+    }
+  }
+
+  for (const row of visitsMonthlyRows || []) {
+    const commercialId = normalizeText(row.commercial_user_id);
+    if (!commercialId) continue;
+    const commercial = ensureSalesCommercial(byCommercial, commercialId);
+    const terrain = Number(row.visites_terrain || 0);
+    const phone = Number(row.commandes_telephone || 0);
+    const clients = Number(row.clients_terrain || 0);
+    commercial.visitsMonth += terrain;
+    commercial.terrainMonth += terrain;
+    commercial.phoneMonth += phone;
+    commercial.clientsMonthDirect += clients;
+    totals.visitsMonth += terrain;
+    totals.phoneMonth += phone;
+    totals.clientsMonth += clients;
+  }
+
+  for (const row of clientsTotalRows || []) {
+    const commercialId = normalizeText(row.commercial_user_id);
+    if (!commercialId) continue;
+    const commercial = ensureSalesCommercial(byCommercial, commercialId);
+    const count = Number(row.clients_total || 0);
+    commercial.clientsTotalDirect += count;
+    totals.clientsTotal += count;
+  }
+
+  const normalizedDetails = options.includeSalesDetails
+    ? (detailRows || []).map(normalizeFastSalesDetailRow)
+    : [];
+  const dailyDetails = normalizedDetails.filter((row) => row.date === period.day);
+  const weeklyDetails = normalizedDetails.filter((row) => row.date >= period.weekStart && row.date <= period.weekEnd);
+  const monthlyDetails = normalizedDetails.filter((row) => sameMonth(row.date, period.year, period.month));
+  const topClientsMonth = buildTopClientsFromSalesRows(monthlyDetails);
+
+  const byCommercialObject = Object.fromEntries(
+    Array.from(byCommercial.entries()).map(([id, value]) => [id, salesCommercialToObject(value)])
+  );
+
+  return {
+    totals: mapMoneyTotals({
+      ...totals,
+      monthly: totals.monthly.map(roundMoney)
+    }),
+    byCommercial: byCommercialObject,
+    dailyRows: sortRows(dailyDetails).slice(0, 2500),
+    weeklyRows: sortRows(weeklyDetails).slice(0, 2500),
+    monthlyRows: sortRows(monthlyDetails).slice(0, 1200),
+    yearlyRows: [],
+    topClientsMonth
+  };
+}
+
+function normalizeFastSalesDetailRow(row) {
+  const quantity = toNumber(row.quantite);
+  const unitPrice = toNumber(row.prix_unitaire);
+  const isPhoneOrder = isPhoneOrderVisit({ type_visite: row.type_visite, note: row.note });
+  return {
+    id: row.id,
+    visitId: row.visit_id || "",
+    source: row.source || row.secteur || "",
+    secteur: row.secteur || "",
+    secteurLabel: row.secteur_label || (row.secteur === "industrie" ? "Industrie" : "Automobile"),
+    commercialUserId: row.commercial_user_id || "",
+    clientId: row.client_id || "",
+    clientNom: row.client_nom || "Client sans nom",
+    numeroCompte: row.numero_compte || "",
+    date: normalizeText(row.date),
+    typeVisite: normalizeVisitType(row.type_visite),
+    typeLabel: isPhoneOrder ? "Commande telephone" : "Visite terrain",
+    isPhoneOrder,
+    reference: row.reference || "",
+    designation: row.designation || "Produit sans designation",
+    quantite: quantity,
+    prixUnitaire: unitPrice,
+    montant: roundMoney(row.montant ?? quantity * unitPrice)
+  };
+}
+
 function resolveSaleOwnerId(visit, client) {
   return normalizeText(visit?.commercial_user_id) || normalizeText(client?.commercial_user_id);
 }
 
-function summarizeSalesRows(rows, visits, period, clients = []) {
+function summarizeSalesRows(rows, visits, period, clients = [], options = {}) {
   const byCommercial = new Map();
   const topClientsMonth = new Map();
   const clientKeysTotal = new Set();
@@ -618,35 +842,62 @@ function summarizeSalesRows(rows, visits, period, clients = []) {
   });
 
   const byCommercialObject = Object.fromEntries(
-    Array.from(byCommercial.entries()).map(([id, value]) => [id, {
-      day: roundMoney(value.day),
-      week: roundMoney(value.week),
-      month: roundMoney(value.month),
-      year: roundMoney(value.year),
-      monthly: value.monthly.map(roundMoney),
-      monthAuto: roundMoney(value.monthAuto),
-      monthIndustrie: roundMoney(value.monthIndustrie),
-      visitsMonth: value.visitsMonth,
-      phoneMonth: value.phoneMonth,
-      terrainMonth: value.terrainMonth,
-      clientsMonth: value.clientsMonthSet.size,
-      clientsTotal: value.clientsTotalSet.size,
-      ventesAnnee: value.salesYearSet.size,
-      lignesAnnee: value.linesYear
-    }])
+    Array.from(byCommercial.entries()).map(([id, value]) => [id, salesCommercialToObject(value)])
   );
 
   return {
     totals,
     byCommercial: byCommercialObject,
-    dailyRows: sortRows(dayRows).slice(0, 2500),
-    weeklyRows: sortRows(weekRows).slice(0, 2500),
-    monthlyRows: sortRows(monthRows).slice(0, 1200),
-    yearlyRows: sortRows(yearRows).slice(0, 1500),
-    topClientsMonth: Array.from(topClientsMonth.values())
-      .map((item) => ({ ...item, montant: roundMoney(item.montant) }))
-      .sort((a, b) => b.montant - a.montant)
-      .slice(0, 30)
+    dailyRows: options.includeSalesDetails ? sortRows(dayRows).slice(0, 2500) : [],
+    weeklyRows: options.includeSalesDetails ? sortRows(weekRows).slice(0, 2500) : [],
+    monthlyRows: options.includeSalesDetails ? sortRows(monthRows).slice(0, 1200) : [],
+    yearlyRows: options.includeSalesDetails ? sortRows(yearRows).slice(0, 1500) : [],
+    topClientsMonth: options.includeSalesDetails ? finalizeTopClientsMap(topClientsMonth) : []
+  };
+}
+
+function buildTopClientsFromSalesRows(rows) {
+  const map = new Map();
+  for (const row of rows || []) {
+    const key = `${row.commercialUserId}::${row.clientId || row.clientNom}`;
+    const current = map.get(key) || {
+      commercialUserId: row.commercialUserId,
+      clientId: row.clientId,
+      clientNom: row.clientNom,
+      numeroCompte: row.numeroCompte,
+      montant: 0,
+      lignes: 0
+    };
+    current.montant += toNumber(row.montant);
+    current.lignes += 1;
+    map.set(key, current);
+  }
+  return finalizeTopClientsMap(map);
+}
+
+function finalizeTopClientsMap(map) {
+  return Array.from(map.values())
+    .map((item) => ({ ...item, montant: roundMoney(item.montant) }))
+    .sort((a, b) => b.montant - a.montant)
+    .slice(0, 30);
+}
+
+function salesCommercialToObject(value) {
+  return {
+    day: roundMoney(value.day),
+    week: roundMoney(value.week),
+    month: roundMoney(value.month),
+    year: roundMoney(value.year),
+    monthly: value.monthly.map(roundMoney),
+    monthAuto: roundMoney(value.monthAuto),
+    monthIndustrie: roundMoney(value.monthIndustrie),
+    visitsMonth: value.visitsMonth,
+    phoneMonth: value.phoneMonth,
+    terrainMonth: value.terrainMonth,
+    clientsMonth: value.clientsMonthSet.size || value.clientsMonthDirect || 0,
+    clientsTotal: value.clientsTotalSet.size || value.clientsTotalDirect || 0,
+    ventesAnnee: value.salesYearSet.size || value.salesYearDirect || 0,
+    lignesAnnee: value.linesYear
   };
 }
 
@@ -665,8 +916,11 @@ function ensureSalesCommercial(map, commercialUserId) {
       phoneMonth: 0,
       terrainMonth: 0,
       clientsMonthSet: new Set(),
+      clientsMonthDirect: 0,
       clientsTotalSet: new Set(),
+      clientsTotalDirect: 0,
       salesYearSet: new Set(),
+      salesYearDirect: 0,
       linesYear: 0
     });
   }
@@ -680,7 +934,112 @@ function getIsoMonthIndex(value) {
   return index >= 0 && index < 12 ? index : -1;
 }
 
-async function buildBudgetBlock(commercialIds, period) {
+async function buildBudgetBlock(commercialIds, period, options = {}) {
+  if (!commercialIds.length) return emptyBudgetBlock();
+  try {
+    return await buildBudgetBlockFast(commercialIds, period, options);
+  } catch (error) {
+    if (!isMissingDashboardFastViewError(error)) throw error;
+    return buildBudgetBlockLegacy(commercialIds, period, options);
+  }
+}
+
+async function buildBudgetBlockFast(commercialIds, period, options = {}) {
+  const summaryRows = await fetchByCommercialChunks(
+    DASHBOARD_FAST_VIEWS.budgetSummary,
+    "commercial_user_id,commercial_identifier,commercial_name,entite_id,entite_key,entite_libelle,annee,active_budgets,lignes,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec,total",
+    commercialIds,
+    {
+      annee: `eq.${period.year}`,
+      order: "commercial_name.asc,entite_libelle.asc"
+    }
+  );
+  if (!summaryRows.length) return emptyBudgetBlock();
+
+  const byCommercial = {};
+  const byEntity = {};
+  const monthlyTotals = emptyMonthlyArray();
+  let totalYear = 0;
+  let totalToDate = 0;
+
+  const rows = summaryRows.map((sourceRow) => {
+    const monthly = monthlyFromRow(sourceRow);
+    const total = roundMoney(monthly.reduce((sum, value) => sum + value, 0));
+    const toDate = roundMoney(sumToMonth(monthly, period.toDateMonth));
+    const commercialId = sourceRow.commercial_user_id || "";
+    const entiteId = sourceRow.entite_id || sourceRow.entite_key || "sans-entite";
+    const lineCount = Number(sourceRow.lignes || 0);
+    const activeBudgetCount = Number(sourceRow.active_budgets || 0);
+
+    if (!byCommercial[commercialId]) byCommercial[commercialId] = emptyBudgetCommercial();
+    byCommercial[commercialId].year += total;
+    byCommercial[commercialId].toDate += toDate;
+    byCommercial[commercialId].lines += lineCount;
+    byCommercial[commercialId].activeBudgets += activeBudgetCount;
+    if (entiteId) byCommercial[commercialId].entityIds.add(String(entiteId));
+    monthly.forEach((value, index) => {
+      byCommercial[commercialId].monthly[index] += value;
+    });
+
+    if (!byEntity[entiteId]) {
+      byEntity[entiteId] = {
+        id: entiteId,
+        key: sourceRow.entite_key || "",
+        libelle: sourceRow.entite_libelle || "Entite",
+        total: 0,
+        toDate: 0,
+        lignes: 0,
+        monthly: emptyMonthlyArray()
+      };
+    }
+    byEntity[entiteId].total += total;
+    byEntity[entiteId].toDate += toDate;
+    byEntity[entiteId].lignes += lineCount;
+    monthly.forEach((value, index) => {
+      monthlyTotals[index] += value;
+      byEntity[entiteId].monthly[index] += value;
+    });
+    totalYear += total;
+    totalToDate += toDate;
+
+    return {
+      id: `${commercialId}:${entiteId}`,
+      budgetId: "",
+      commercialUserId: commercialId,
+      commercialName: sourceRow.commercial_name || "",
+      entiteId,
+      entiteKey: sourceRow.entite_key || "",
+      entiteLibelle: sourceRow.entite_libelle || "Entite",
+      clientNom: "Budget consolidé",
+      numeroClient: "",
+      monthly,
+      total,
+      toDate,
+      lignes: lineCount
+    };
+  });
+
+  normalizeBudgetCommercials(byCommercial);
+  const entitiesRows = Object.values(byEntity).map((entity) => ({
+    ...entity,
+    total: roundMoney(entity.total),
+    toDate: roundMoney(entity.toDate),
+    monthly: entity.monthly.map(roundMoney)
+  })).sort((a, b) => b.total - a.total);
+
+  return {
+    totals: {
+      year: roundMoney(totalYear),
+      toDate: roundMoney(totalToDate),
+      monthly: monthlyTotals.map(roundMoney)
+    },
+    byCommercial,
+    entities: entitiesRows,
+    rows: options.includeBudgetRows ? rows.slice(0, 1500) : []
+  };
+}
+
+async function buildBudgetBlockLegacy(commercialIds, period, options = {}) {
   if (!commercialIds.length) return emptyBudgetBlock();
   const budgets = await fetchByCommercialChunks("budgets", "id,projection_id,entite_id,nom,annee,statut,total_annuel,nb_lignes,validated_at,commercial_user_id,commercial_identifier,commercial_name", commercialIds, {
     annee: `eq.${period.year}`,
@@ -778,11 +1137,116 @@ async function buildBudgetBlock(commercialIds, period) {
     },
     byCommercial,
     entities: entitiesRows,
-    rows: rows.slice(0, 1500)
+    rows: options.includeBudgetRows ? rows.slice(0, 1500) : []
   };
 }
 
-async function buildRealBlock(commercialIds, period) {
+async function buildRealBlock(commercialIds, period, options = {}) {
+  if (!commercialIds.length) return emptyRealBlock();
+  try {
+    return await buildRealBlockFast(commercialIds, period, options);
+  } catch (error) {
+    if (!isMissingDashboardFastViewError(error)) throw error;
+    return buildRealBlockLegacy(commercialIds, period, options);
+  }
+}
+
+async function buildRealBlockFast(commercialIds, period, options = {}) {
+  const [rows, imports] = await Promise.all([
+    fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.realSummary, "commercial_user_id,commercial_identifier,commercial_name,entite_id,entite_key,entite_libelle,annee,mois,montant,quantite,lignes", commercialIds, {
+      annee: `eq.${period.year}`,
+      order: "mois.asc,entite_libelle.asc"
+    }),
+    fetchByCommercialChunks("reel_imports", "id,commercial_user_id,entite_id,annee,mois,statut,total_mois,nb_lignes", commercialIds, {
+      annee: `eq.${period.year}`,
+      statut: "eq.active",
+      order: "mois.asc"
+    })
+  ]);
+
+  const byCommercial = {};
+  const byEntity = {};
+  const monthlyTotals = emptyMonthlyArray();
+  const monthlyRows = [];
+  let totalYear = 0;
+  let totalToDate = 0;
+
+  for (const importRow of imports) {
+    const commercialId = importRow.commercial_user_id || "";
+    if (!commercialId) continue;
+    if (!byCommercial[commercialId]) byCommercial[commercialId] = emptyRealCommercial();
+    const month = clampNumber(importRow.mois, 1, 12, 1);
+    byCommercial[commercialId].imports += 1;
+    byCommercial[commercialId].importMonthsSet.add(month);
+    byCommercial[commercialId].lastImportMonth = Math.max(byCommercial[commercialId].lastImportMonth || 0, month);
+    byCommercial[commercialId].importedLines += Number(importRow.nb_lignes || 0);
+    byCommercial[commercialId].importedAmount += toNumber(importRow.total_mois);
+  }
+
+  for (const row of rows) {
+    const amount = toNumber(row.montant);
+    const monthIndex = clampNumber(row.mois, 1, 12, 1) - 1;
+    const commercialId = row.commercial_user_id || "";
+    const lineCount = Number(row.lignes || 0);
+    if (!byCommercial[commercialId]) byCommercial[commercialId] = emptyRealCommercial();
+    byCommercial[commercialId].year += amount;
+    byCommercial[commercialId].monthly[monthIndex] += amount;
+    byCommercial[commercialId].lines += lineCount;
+    if (monthIndex + 1 <= period.toDateMonth) byCommercial[commercialId].toDate += amount;
+
+    const entityId = row.entite_id || row.entite_key || "sans-entite";
+    if (!byEntity[entityId]) {
+      byEntity[entityId] = {
+        id: entityId,
+        key: row.entite_key || "",
+        libelle: row.entite_libelle || "Entite",
+        total: 0,
+        toDate: 0,
+        lignes: 0,
+        monthly: emptyMonthlyArray()
+      };
+    }
+    byEntity[entityId].total += amount;
+    byEntity[entityId].monthly[monthIndex] += amount;
+    byEntity[entityId].lignes += lineCount;
+    if (monthIndex + 1 <= period.toDateMonth) byEntity[entityId].toDate += amount;
+
+    monthlyTotals[monthIndex] += amount;
+    totalYear += amount;
+    if (monthIndex + 1 <= period.toDateMonth) totalToDate += amount;
+    if (monthIndex + 1 === period.month) monthlyRows.push(normalizeRealSummaryRow(row));
+  }
+
+  Object.keys(byCommercial).forEach((id) => {
+    byCommercial[id].year = roundMoney(byCommercial[id].year);
+    byCommercial[id].toDate = roundMoney(byCommercial[id].toDate);
+    byCommercial[id].monthly = byCommercial[id].monthly.map(roundMoney);
+    byCommercial[id].importedAmount = roundMoney(byCommercial[id].importedAmount);
+    byCommercial[id].importedMonths = Array.from(byCommercial[id].importMonthsSet).sort((a, b) => a - b);
+    delete byCommercial[id].importMonthsSet;
+  });
+
+  const entitiesRows = Object.values(byEntity).map((entity) => ({
+    ...entity,
+    total: roundMoney(entity.total),
+    toDate: roundMoney(entity.toDate),
+    monthly: entity.monthly.map(roundMoney)
+  })).sort((a, b) => b.total - a.total);
+
+  return {
+    totals: {
+      year: roundMoney(totalYear),
+      toDate: roundMoney(totalToDate),
+      monthly: monthlyTotals.map(roundMoney)
+    },
+    byCommercial,
+    entities: entitiesRows,
+    monthlyRows: options.includeBudgetRows ? monthlyRows.slice(0, 1200) : [],
+    rows: options.includeBudgetRows ? monthlyRows.slice(0, 1500) : []
+  };
+}
+
+async function buildRealBlockLegacy(commercialIds, period, options = {}) {
   if (!commercialIds.length) return emptyRealBlock();
   const [rows, imports] = await Promise.all([
     fetchByCommercialChunks("v_reel_lignes_actives", "id,commercial_user_id,commercial_identifier,commercial_name,entite_id,entite_key,entite_libelle,annee,mois,client_code,client_nom,montant,quantite,reference,designation,date_piece", commercialIds, {
@@ -872,12 +1336,12 @@ async function buildRealBlock(commercialIds, period) {
     },
     byCommercial,
     entities: entitiesRows,
-    monthlyRows: monthlyRows.slice(0, 1200),
-    rows: rows.map(normalizeRealRow).slice(0, 1500)
+    monthlyRows: options.includeBudgetRows ? monthlyRows.slice(0, 1200) : [],
+    rows: options.includeBudgetRows ? rows.map(normalizeRealRow).slice(0, 1500) : []
   };
 }
 
-async function buildDocumentsBlock(commercialIds, period) {
+async function buildDocumentsBlock(commercialIds, period, options = {}) {
   if (!commercialIds.length) return emptyDocumentsBlock();
   const rows = await fetchByCommercialChunks("documents_commerciaux", "id,commercial_user_id,secteur,type_document,client_nom,numero_compte,numero_compte_libelle,date_document,nom_fichier,montant_ht,statut_validation,valide,type_visite,nb_lignes,created_at", commercialIds, {
     date_document: `gte.${period.year}-01-01`,
@@ -921,8 +1385,8 @@ async function buildDocumentsBlock(commercialIds, period) {
   return {
     totals,
     byCommercial,
-    recent: recent.slice(0, 80),
-    rows: recent.slice(0, 1000)
+    recent: options.includeDocumentRows ? recent.slice(0, 80) : [],
+    rows: options.includeDocumentRows ? recent.slice(0, 1000) : []
   };
 }
 
@@ -1310,6 +1774,16 @@ function isMissingSectorSchemaError(error) {
   return /portal_commercial_sectors|sector_id|schema cache|column .* does not exist|relation .* does not exist/i.test(message);
 }
 
+function isMissingDashboardFastViewError(error) {
+  const message = [
+    error?.message,
+    error?.payload?.message,
+    error?.payload?.details,
+    error?.payload?.hint
+  ].filter(Boolean).join(" ");
+  return /v_kent_dashboard_|schema cache|column .* does not exist|relation .* does not exist|could not find/i.test(message);
+}
+
 function normalizeDocumentRow(row) {
   return {
     id: row.id,
@@ -1388,6 +1862,25 @@ function normalizeRealRow(row) {
   };
 }
 
+function normalizeRealSummaryRow(row) {
+  return {
+    id: `${row.commercial_user_id || ""}:${row.entite_id || row.entite_key || ""}:${row.annee || ""}:${row.mois || ""}`,
+    commercialUserId: row.commercial_user_id || "",
+    entiteId: row.entite_id || "",
+    entiteKey: row.entite_key || "",
+    entiteLibelle: row.entite_libelle || "Entite",
+    annee: Number(row.annee || 0),
+    mois: Number(row.mois || 0),
+    clientCode: "",
+    clientNom: "Réel consolidé",
+    montant: roundMoney(toNumber(row.montant)),
+    quantite: toNumber(row.quantite),
+    reference: "",
+    designation: "",
+    datePiece: ""
+  };
+}
+
 function monthlyFromRow(row) {
   return MONTH_KEYS.map((key) => roundMoney(toNumber(row[key])));
 }
@@ -1398,6 +1891,18 @@ function sumToMonth(values, month) {
 
 function sameMonth(dateValue, year, month) {
   return String(dateValue || "").startsWith(`${year}-${String(month).padStart(2, "0")}`);
+}
+
+function daysInMonth(year, month) {
+  return new Date(Number(year || 1970), Number(month || 1), 0).getDate();
+}
+
+function minIsoDate(...dates) {
+  return dates.filter(Boolean).sort()[0] || "";
+}
+
+function maxIsoDate(...dates) {
+  return dates.filter(Boolean).sort().at(-1) || "";
 }
 
 function sortRows(rows) {

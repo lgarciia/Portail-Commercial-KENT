@@ -2850,7 +2850,7 @@
         if (els.controlPeriod) els.controlPeriod.textContent = "Ann\u00e9e " + parts.year;
         setLoading(true, "Contr\u00f4le donn\u00e9es", "Lecture des commerciaux, ventes, budgets, r\u00e9els et documents.");
         try{
-          const payload = await fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day) + "&mode=control");
+          const payload = await fetchJson("/api/responsable-dashboard?year=" + parts.year + "&month=" + parts.month + "&day=" + encodeURIComponent(day) + "&mode=control&detail=0");
           state.controlPayload = payload;
           state.controlExpandedCommercial = "";
           renderDataControl();
