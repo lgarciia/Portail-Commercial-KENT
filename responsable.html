@@ -563,7 +563,7 @@
                 <th class="num team-group-start">Réel</th>
                 <th class="num">Budget</th>
                 <th class="num">Écart</th>
-                <th class="num team-group-start">Documents transmis</th>
+                <th class="num team-group-start">Visites / M</th>
                 <th>Dernière connexion</th>
               </tr>
             </thead>
@@ -1153,7 +1153,7 @@
               '<td class="num team-group-start">' + money(finance.caYear) + '</td>',
               '<td class="num">' + money(finance.budgetYear) + '</td>',
               '<td class="num">' + moneyTone(finance.gapYear) + '</td>',
-              '<td class="num team-group-start">' + integer(metrics.documentsEnCours) + '</td>',
+              '<td class="num team-group-start">' + integer(metrics.terrainMois ?? metrics.visitesMois) + '</td>',
               '<td>' + escapeHtml(formatDateTime(item.lastLoginAt)) + '</td>',
             '</tr>'
           ].join("");
