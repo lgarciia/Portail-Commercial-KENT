@@ -57,6 +57,9 @@
       border-bottom:1px solid var(--stroke);
       background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
       backdrop-filter: blur(10px);
+      position:relative;
+      z-index:1000;
+      overflow:visible;
     }
 
     .brand{
@@ -119,7 +122,7 @@
     .ioMenu{
       position:relative;
       display:inline-flex;
-      z-index:30;
+      z-index:1100;
     }
     .ioMenuPanel{
       position:absolute;
@@ -135,6 +138,7 @@
       background:rgba(13,18,30,0.96);
       box-shadow:0 22px 46px rgba(0,0,0,0.48);
       backdrop-filter:blur(16px);
+      z-index:1200;
     }
     .ioMenu.open .ioMenuPanel{display:grid;}
     .ioMenuItem{
@@ -150,6 +154,14 @@
     .ioMenuItem:hover{
       background:rgba(255,255,255,0.095);
       transform:none;
+    }
+    .ioMenuItem.danger{
+      color:#ffd7d7;
+      border-color:rgba(255,110,110,0.22);
+      background:rgba(255,110,110,0.09);
+    }
+    .ioMenuItem.danger:hover{
+      background:rgba(255,110,110,0.14);
     }
     .ioMenuChevron{
       opacity:.72;
@@ -416,12 +428,11 @@
           <button class="btn ioMenuItem" id="btnDownloadTemplate" type="button" role="menuitem">Modèle</button>
           <button class="btn ioMenuItem" id="btnReload" type="button" role="menuitem">Import Excel</button>
           <button class="btn ioMenuItem" id="btnExportXlsx" type="button" role="menuitem">Export Excel</button>
+          <button class="btn ioMenuItem danger" id="btnReset" type="button" role="menuitem" title="Réinitialiser uniquement cette page de projection">Reset</button>
         </div>
       </div>
       <button class="btn ghost slim" id="btnRecalc">Recalculer</button>
       <button class="btn save slim" id="btnSaveProjection">Enregistrer</button>
-      <a class="btn ghost slim" href="mes-budgets.html" data-year-link>Mes budgets</a>
-      <button class="btn danger slim" id="btnReset" title="Réinitialiser uniquement cette page de projection">Reset</button>
     </div>
   </div>
 
@@ -663,6 +674,7 @@
     el.realSourceSelect.addEventListener("change", loadSelectedSupabaseReal);
 
     el.btnReset.addEventListener("click", async () => {
+      closeImportExportMenu();
       if (!await kentConfirm(
         "Réinitialiser cette projection locale ?\n\nCela vide uniquement le cache de cette page, les jours ouvrés saisis, la recherche et les paramètres. Aucune donnée Supabase n'est supprimée.",
         { title: "Réinitialiser la projection", tone: "danger", confirmText: "Réinitialiser" }
