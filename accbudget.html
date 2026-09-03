@@ -86,6 +86,20 @@
       user-select:none;
       white-space:nowrap;
     }
+    .btnStep{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:20px;
+      height:20px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.10);
+      border:1px solid rgba(255,255,255,0.12);
+      color:rgba(255,255,255,0.86);
+      font-size:11px;
+      font-weight:950;
+      line-height:1;
+    }
 
     .btn:hover{
       background:rgba(255,255,255,0.12);
@@ -626,9 +640,9 @@
     <div class="yearSelectWrap">
       <select class="ddBtn" id="yearSelect" title="Choix de l'année active"></select>
     </div>
-    <a class="btn" href="projectionpsa2026.html" data-year-link>Mes projections</a>
-    <a class="btn primary" href="budget2026.html" data-year-link>Budget annuel</a>
-    <a class="btn" href="mes-budgets.html" data-year-link>Mes budgets</a>
+    <a class="btn" href="projectionpsa2026.html" data-year-link><span class="btnStep">1</span>Mes projections</a>
+    <a class="btn" href="budget2026.html" data-year-link><span class="btnStep">2</span>Budget annuel</a>
+    <a class="btn" href="mes-budgets.html" data-year-link><span class="btnStep">3</span>Mes budgets</a>
 
     <a class="btn" href="reel-n1.html" data-year-link>Réel N-1</a>
 
