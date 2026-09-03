@@ -254,6 +254,7 @@
     .audit-row small{color:var(--muted-2)}
     .wrap.finance-mode{max-width:none;padding:18px 24px}
     .finance-mode .identity,.finance-mode .hero,.finance-mode .stats{display:none}
+    .finance-workspace-mode .admin-tabs{display:none}
     .finance-mode .admin-tabs{
       margin:0 0 14px;max-width:none;background:rgba(226,232,240,.075);
       border-radius:18px;padding:6px;
@@ -275,6 +276,25 @@
     .finance-pdf-button[hidden]{display:none!important}
     .finance-nav{
       display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;margin-bottom:8px;
+    }
+    .finance-workspace-tabs{
+      display:flex;gap:8px;align-items:center;overflow-x:auto;
+      border:1px solid rgba(226,232,240,.16);border-radius:18px;
+      background:rgba(15,23,42,.26);padding:7px;margin:0 0 14px;
+    }
+    .finance-workspace-tab{
+      min-height:34px;border-radius:999px;border:1px solid rgba(226,232,240,.14);
+      background:rgba(255,255,255,.055);color:rgba(226,232,240,.76);
+      padding:0 13px;font-weight:950;font-size:12px;white-space:nowrap;
+      display:inline-flex;align-items:center;justify-content:center;gap:7px;
+      transition:background .16s ease,border-color .16s ease,transform .16s ease,color .16s ease;
+    }
+    .finance-workspace-tab:hover{background:rgba(248,250,252,.10);border-color:rgba(248,250,252,.18);transform:translateY(-1px)}
+    .finance-workspace-tab.active{
+      background:rgba(248,250,252,.14);
+      border-color:rgba(248,250,252,.34);
+      color:#fff;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 10px 22px rgba(2,6,23,.16);
     }
     .finance-pill{
       border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.055);
@@ -446,6 +466,33 @@
     .performance-card span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
     .performance-card strong{display:block;margin-top:8px;font-size:18px}
     .performance-card b{display:block;margin-top:6px;font-size:24px;letter-spacing:-.04em}
+    .reporting-cumul-shell{
+      border:1px solid var(--line);border-radius:28px;padding:18px;
+      background:linear-gradient(135deg, rgba(14,116,144,.18), rgba(15,23,42,.72));
+      box-shadow:var(--shadow);
+    }
+    .reporting-cumul-head{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+      border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:13px;margin-bottom:12px;
+    }
+    .reporting-cumul-head h2{margin:8px 0 6px;font-size:clamp(30px,3vw,42px);letter-spacing:-.055em;line-height:1}
+    .reporting-cumul-nav{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;margin-bottom:8px}
+    .reporting-cumul-card{
+      border:1px solid var(--line);border-radius:24px;background:rgba(15,23,42,.36);padding:18px;
+    }
+    .reporting-cumul-panel{display:none}
+    .reporting-cumul-panel.active{display:grid;gap:14px;animation:viewIn .18s ease both}
+    .reporting-cumul-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .reporting-cumul-kpi{
+      border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.064);padding:14px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .reporting-cumul-kpi span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
+    .reporting-cumul-kpi strong{display:block;margin-top:7px;font-size:22px;letter-spacing:-.035em}
+    .reporting-cumul-roadmap{
+      border:1px solid rgba(56,189,248,.20);border-radius:18px;
+      background:rgba(14,165,233,.08);color:#dbeafe;padding:12px 14px;font-size:13px;font-weight:850;line-height:1.45;
+    }
     .control-shell{
       border:1px solid var(--line);border-radius:28px;padding:18px;
       background:linear-gradient(135deg, rgba(30,64,175,.20), rgba(15,23,42,.74));
@@ -748,6 +795,7 @@
       .layout,.overview-grid,.security-grid{grid-template-columns:1fr}
       .manager-grid{grid-template-columns:1fr}
       .finance-summary,.performance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .reporting-cumul-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .finance-sector-layout{grid-template-columns:1fr}
       .france-map-wrap,.france-map-placeholder{min-height:360px}
       .finance-sector-row{grid-template-columns:minmax(170px,1.3fr) minmax(130px,.8fr) 66px repeat(4,minmax(88px,.72fr)) 34px;overflow:hidden}
@@ -776,6 +824,8 @@
       .role-grid,.health-grid{grid-template-columns:1fr}
       .finance-head{flex-direction:column}
       .finance-summary,.performance-grid{grid-template-columns:1fr}
+      .reporting-cumul-head{flex-direction:column}
+      .reporting-cumul-grid{grid-template-columns:1fr}
       .control-summary,.control-detail-grid{grid-template-columns:1fr}
       .control-row{grid-template-columns:1fr}
       .france-map-wrap,.france-map-placeholder{min-height:300px}
@@ -821,6 +871,7 @@
     .hero,
     .panel,
     .finance-shell,
+    .reporting-cumul-shell,
     .control-shell,
     .budget-admin-shell,
     .import-admin-shell{
@@ -849,6 +900,7 @@
     .finance-value span,
     .finance-month,
     .finance-legend,
+    .reporting-cumul-kpi span,
     .control-head p,
     .control-main span,
     .control-cell span,
@@ -873,6 +925,7 @@
     .role-card strong,
     .health-card strong,
     .finance-kpi strong,
+    .reporting-cumul-kpi strong,
     .finance-name strong,
     .finance-value strong,
     .performance-card strong,
@@ -924,6 +977,8 @@
     .import-card,
     .import-preview,
     .import-mini-kpi,
+    .reporting-cumul-kpi,
+    .reporting-cumul-card,
     .control-detail-card{
       border-color:var(--line);
       background:#fff;
@@ -947,6 +1002,7 @@
     .btn,
     .admin-tab,
     .admin-section-tab,
+    .finance-workspace-tab,
     .finance-pill,
     .finance-source-toggle,
     .finance-month-button,
@@ -959,6 +1015,7 @@
     .btn:hover,
     .admin-tab:hover,
     .admin-section-tab:hover:not(:disabled),
+    .finance-workspace-tab:hover,
     .finance-pill:hover,
     .finance-month-button:hover,
     .filter:hover{
@@ -997,6 +1054,7 @@
     }
     .admin-tabs,
     .admin-section-tabs,
+    .finance-workspace-tabs,
     .finance-nav{
       border-color:#b8c6d9;
       background:#e2eaf4;
@@ -1014,6 +1072,7 @@
     }
     .admin-tab.active,
     .admin-section-tab.active,
+    .finance-workspace-tab.active,
     .finance-pill.active,
     .filter.active{
       background:#111827;
@@ -1027,12 +1086,15 @@
     }
     .admin-tab-ico{opacity:.82}
     .finance-head,
+    .reporting-cumul-head,
     .control-head,
     .budget-admin-head,
     .import-admin-head{
       border-bottom-color:var(--line);
     }
     .finance-kpi,
+    .reporting-cumul-kpi,
+    .reporting-cumul-card,
     .finance-panel,
     .finance-row,
     .finance-seller,
@@ -1152,6 +1214,11 @@
       background:#f8fafc;
     }
     .finance-sector-help{
+      border-color:#bfdbfe;
+      background:#eff6ff;
+      color:#1e3a8a;
+    }
+    .reporting-cumul-roadmap{
       border-color:#bfdbfe;
       background:#eff6ff;
       color:#1e3a8a;
@@ -1391,7 +1458,7 @@
         <span class="badge">Administration</span>
         <h1>Console admin</h1>
         <p>
-          Pilote les utilisateurs, les &eacute;quipes, les donn&eacute;es, les budgets et la finance groupe
+          Pilote les utilisateurs, les &eacute;quipes, les imports et la finance groupe
           depuis un espace centralis&eacute;.
         </p>
         <div class="status-line">
@@ -1421,7 +1488,6 @@
       <button class="admin-tab" type="button" data-admin-tab="rattachements"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.6"/><circle cx="16" cy="8" r="2.6"/><circle cx="12" cy="16" r="2.6"/><path d="M9.8 9.8 11 13.6m3.2-3.8L13 13.6"/></svg><span>&Eacute;quipe</span></button>
       <button class="admin-tab" type="button" data-admin-tab="secteurs"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6.5 10 4l4 2 6-2.5v14L14 20l-4-2-6 2.5v-14Z"/><path d="M10 4v14"/><path d="M14 6v14"/></svg><span>Secteurs</span></button>
       <button class="admin-tab" type="button" data-admin-tab="imports"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12"/><path d="M6 12h12"/><path d="M6 17h12"/></svg><span>Import</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="budgets-global"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M8 10h8M8 14h5"/></svg><span>Budgets</span></button>
       <button class="admin-tab" type="button" data-admin-tab="finance"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18V11"/><path d="M12 18V6"/><path d="M18 18v-9"/><path d="M4 18h16"/></svg><span>Finance</span></button>
       <button class="admin-tab" type="button" data-admin-tab="securite"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="10" width="12" height="9" rx="2"/><path d="M9 10V8a3 3 0 0 1 6 0v2"/></svg><span>S&eacute;curit&eacute;</span></button>
       <a class="admin-tab admin-link-tab" href="parametrage.html" title="Ouvrir le param&eacute;trage technique"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2 2 0 0 1-2.83 2.83l-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6V20a2 2 0 0 1-4 0v-.08a1.8 1.8 0 0 0-1-.52a1.8 1.8 0 0 0-1.98.36l-.05.05a2 2 0 0 1-2.83-2.83l.05-.05A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-.6-1H4a2 2 0 0 1 0-4h.08a1.8 1.8 0 0 0 .52-1a1.8 1.8 0 0 0-.36-1.98l-.05-.05a2 2 0 0 1 2.83-2.83l.05.05A1.8 1.8 0 0 0 9 4.6a1.8 1.8 0 0 0 1-.6V4a2 2 0 0 1 4 0v.08a1.8 1.8 0 0 0 1 .52a1.8 1.8 0 0 0 1.98-.36l.05-.05a2 2 0 0 1 2.83 2.83l-.05.05A1.8 1.8 0 0 0 19.4 9c.22.35.43.68.6 1H20a2 2 0 0 1 0 4h-.08a1.8 1.8 0 0 0-.52 1Z"/></svg><span>Param&eacute;trage</span></a>
@@ -1456,6 +1522,13 @@
 
     <section class="admin-view" data-admin-view="finance">
       <section class="finance-shell">
+        <div class="finance-workspace-tabs" aria-label="Navigation finance admin">
+          <button class="finance-workspace-tab" type="button" data-finance-section-target="pilotage">Accueil</button>
+          <button class="finance-workspace-tab active" type="button" data-finance-section-target="finance">Reporting</button>
+          <button class="finance-workspace-tab" type="button" data-finance-section-target="budgets-global">Budgets</button>
+          <button class="finance-workspace-tab" type="button" data-finance-section-target="reporting-cumul">Reporting cumul</button>
+        </div>
+
         <div class="finance-head">
           <div>
             <h2>Pilotage groupe</h2>
@@ -1492,7 +1565,7 @@
         </div>
 
         <div class="finance-panel" data-finance-body>
-          <div class="empty">Ouvre la vue Finance pour charger les chiffres.</div>
+          <div class="empty">Ouvre Finance &gt; Reporting pour charger les chiffres.</div>
         </div>
       </section>
     </section>
@@ -1585,6 +1658,13 @@
 
     <section class="admin-view" data-admin-view="budgets-global">
       <section class="budget-admin-shell">
+        <div class="finance-workspace-tabs" aria-label="Navigation finance admin">
+          <button class="finance-workspace-tab" type="button" data-finance-section-target="pilotage">Accueil</button>
+          <button class="finance-workspace-tab" type="button" data-finance-section-target="finance">Reporting</button>
+          <button class="finance-workspace-tab active" type="button" data-finance-section-target="budgets-global">Budgets</button>
+          <button class="finance-workspace-tab" type="button" data-finance-section-target="reporting-cumul">Reporting cumul</button>
+        </div>
+
         <div class="budget-admin-head">
           <div>
             <span class="badge">Validation budgets</span>
@@ -1617,7 +1697,7 @@
 
         <div class="budget-admin-note" data-admin-budget-note>
           <b>Process simple :</b> le commercial construit une projection, valide son budget actif, puis il appara&icirc;t ici en statut
-          <b>A valider admin</b>. L'admin le valide pour le verrouiller. Si un budget doit &ecirc;tre refait, l'admin le d&eacute;valide d'abord ;
+          <b>&Agrave; valider admin</b>. L'admin le valide pour le verrouiller. Si un budget doit &ecirc;tre refait, l'admin le d&eacute;valide d'abord ;
           le commercial peut ensuite d&eacute;sactiver ou supprimer l'ancien budget avant d'en valider un nouveau sur la m&ecirc;me entit&eacute; et la m&ecirc;me ann&eacute;e.
         </div>
 
@@ -1627,8 +1707,95 @@
 
         <div class="budget-admin-panel">
           <div class="budget-admin-table" data-admin-budget-body>
-            <div class="empty">Ouvre la vue Budgets pour charger les validations admin.</div>
+            <div class="empty">Ouvre Finance &gt; Budgets pour charger les validations admin.</div>
           </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="reporting-cumul">
+      <section class="reporting-cumul-shell">
+        <div class="finance-workspace-tabs" aria-label="Navigation finance admin">
+          <button class="finance-workspace-tab" type="button" data-finance-section-target="pilotage">Accueil</button>
+          <button class="finance-workspace-tab" type="button" data-finance-section-target="finance">Reporting</button>
+          <button class="finance-workspace-tab" type="button" data-finance-section-target="budgets-global">Budgets</button>
+          <button class="finance-workspace-tab active" type="button" data-finance-section-target="reporting-cumul">Reporting cumul</button>
+        </div>
+
+        <div class="reporting-cumul-head">
+          <div>
+            <span class="badge">Analyse groupe</span>
+            <h2>Reporting cumul</h2>
+            <p>
+              Espace pr&eacute;par&eacute; pour les vues consolid&eacute;es : projection annuelle, classements Top 100 et analyse de marge.
+            </p>
+          </div>
+        </div>
+
+        <div class="reporting-cumul-nav" aria-label="Vues reporting cumul">
+          <button class="finance-pill active" type="button" data-reporting-cumul-view="projection">Projection</button>
+          <button class="finance-pill" type="button" data-reporting-cumul-view="top-ca">Top 100 CA</button>
+          <button class="finance-pill" type="button" data-reporting-cumul-view="top-marge">Top 100 marge</button>
+          <button class="finance-pill" type="button" data-reporting-cumul-view="marge-nette">Marge nette</button>
+          <button class="finance-pill" type="button" data-reporting-cumul-view="marge-brute">Marge brute</button>
+        </div>
+
+        <div class="reporting-cumul-card">
+          <section class="reporting-cumul-panel active" data-reporting-cumul-panel="projection">
+            <div>
+              <h3>Projection du CA annuel</h3>
+              <p>Vue pr&eacute;vue pour projeter le chiffre d'affaires annuel &agrave; partir du r&eacute;el cumul&eacute; et du budget restant.</p>
+            </div>
+            <div class="reporting-cumul-grid">
+              <article class="reporting-cumul-kpi"><span>R&eacute;el cumul&eacute;</span><strong>-</strong></article>
+              <article class="reporting-cumul-kpi"><span>Budget cumul&eacute;</span><strong>-</strong></article>
+              <article class="reporting-cumul-kpi"><span>&Eacute;cart cumul&eacute;</span><strong>-</strong></article>
+              <article class="reporting-cumul-kpi"><span>Projection annuelle</span><strong>-</strong></article>
+            </div>
+            <div class="reporting-cumul-roadmap">
+              Prochaine &eacute;tape : brancher cette vue sur les agr&eacute;gats finance d&eacute;j&agrave; valid&eacute;s, sans changer les calculs existants.
+            </div>
+          </section>
+
+          <section class="reporting-cumul-panel" data-reporting-cumul-panel="top-ca">
+            <div>
+              <h3>Top 100 CA</h3>
+              <p>Vue pr&eacute;vue pour classer les meilleurs clients, produits ou lignes commerciales par chiffre d'affaires.</p>
+            </div>
+            <div class="reporting-cumul-roadmap">
+              Le tableau sera pens&eacute; pour filtrer par mois, ann&eacute;e, responsable, commercial et secteur.
+            </div>
+          </section>
+
+          <section class="reporting-cumul-panel" data-reporting-cumul-panel="top-marge">
+            <div>
+              <h3>Top 100 marge</h3>
+              <p>Vue pr&eacute;vue pour identifier les meilleures contributions en marge, avec lecture groupe et d&eacute;tail commercial.</p>
+            </div>
+            <div class="reporting-cumul-roadmap">
+              Le branchement sera fait uniquement quand la source marge sera cadr&eacute;e proprement.
+            </div>
+          </section>
+
+          <section class="reporting-cumul-panel" data-reporting-cumul-panel="marge-nette">
+            <div>
+              <h3>Marge nette</h3>
+              <p>Vue pr&eacute;vue pour suivre la marge nette consolid&eacute;e, avec &eacute;carts et filtres d'analyse.</p>
+            </div>
+            <div class="reporting-cumul-roadmap">
+              Cette partie attendra la d&eacute;finition exacte des co&ucirc;ts, remises, frais et retraitements &agrave; appliquer.
+            </div>
+          </section>
+
+          <section class="reporting-cumul-panel" data-reporting-cumul-panel="marge-brute">
+            <div>
+              <h3>Marge brute</h3>
+              <p>Vue pr&eacute;vue pour suivre la marge brute avant retraitements, en coh&eacute;rence avec les ventes et tarifs.</p>
+            </div>
+            <div class="reporting-cumul-roadmap">
+              On pourra y brancher les premiers indicateurs d&egrave;s que la source tarifaire de marge brute sera valid&eacute;e.
+            </div>
+          </section>
         </div>
       </section>
     </section>
@@ -2036,6 +2203,7 @@
         search: "",
         activeView: "pilotage",
         financeView: "day",
+        reportingCumulView: "projection",
         financePayload: null,
         controlPayload: null,
         controlExpandedCommercial: "",
@@ -2084,9 +2252,12 @@
         financeMonth: document.querySelector("[data-finance-month]"),
         financeRefresh: document.querySelector("[data-finance-refresh]"),
         financePdf: document.querySelector("[data-finance-pdf]"),
+        financeSectionTabs: Array.from(document.querySelectorAll("[data-finance-section-target]")),
         financePills: Array.from(document.querySelectorAll("[data-finance-view]")),
         financeSummary: document.querySelector("[data-finance-summary]"),
         financeBody: document.querySelector("[data-finance-body]"),
+        reportingCumulTabs: Array.from(document.querySelectorAll("[data-reporting-cumul-view]")),
+        reportingCumulPanels: Array.from(document.querySelectorAll("[data-reporting-cumul-panel]")),
         controlRefresh: document.querySelector("[data-control-refresh]"),
         controlPeriod: document.querySelector("[data-control-period]"),
         controlSummary: document.querySelector("[data-control-summary]"),
@@ -2204,6 +2375,16 @@
         els.subtabs.forEach(function(button){
           button.addEventListener("click", function(){
             setAdminView(button.dataset.adminSubtab);
+          });
+        });
+        els.financeSectionTabs.forEach(function(button){
+          button.addEventListener("click", function(){
+            setAdminView(button.dataset.financeSectionTarget || "finance");
+          });
+        });
+        els.reportingCumulTabs.forEach(function(button){
+          button.addEventListener("click", function(){
+            setReportingCumulView(button.dataset.reportingCumulView || "projection");
           });
         });
         document.querySelector("[data-open-user-create]").addEventListener("click", function(){
@@ -2789,12 +2970,27 @@
         }
       }
 
+      function setReportingCumulView(view){
+        state.reportingCumulView = view || "projection";
+        els.reportingCumulTabs.forEach(function(tab){
+          tab.classList.toggle("active", tab.dataset.reportingCumulView === state.reportingCumulView);
+        });
+        els.reportingCumulPanels.forEach(function(panel){
+          panel.classList.toggle("active", panel.dataset.reportingCumulPanel === state.reportingCumulView);
+        });
+      }
+
       function setAdminView(view){
         state.activeView = view || "pilotage";
-        els.wrap.classList.toggle("finance-mode", ["finance", "imports", "budgets-global", "data-control"].includes(state.activeView));
-        const primaryView = state.activeView === "data-control" ? "imports" : state.activeView;
+        const financeViews = ["finance", "budgets-global", "reporting-cumul"];
+        els.wrap.classList.toggle("finance-mode", ["finance", "imports", "budgets-global", "data-control", "reporting-cumul"].includes(state.activeView));
+        els.wrap.classList.toggle("finance-workspace-mode", financeViews.includes(state.activeView));
+        const primaryView = state.activeView === "data-control" ? "imports" : (financeViews.includes(state.activeView) ? "finance" : state.activeView);
         els.tabs.forEach(function(tab){
           tab.classList.toggle("active", tab.dataset.adminTab === primaryView);
+        });
+        els.financeSectionTabs.forEach(function(tab){
+          tab.classList.toggle("active", tab.dataset.financeSectionTarget === state.activeView);
         });
         els.subtabs.forEach(function(tab){
           tab.classList.toggle("active", tab.dataset.adminSubtab === state.activeView);
@@ -2833,12 +3029,12 @@
           state.expandedFinanceManager = "";
           state.expandedFinanceSector = "";
           renderFinance();
-          showToast("Finance admin synchronisée.");
+          showToast("Reporting finance synchronisé.");
         }catch(error){
           state.financePayload = null;
           els.financeSummary.innerHTML = '<article class="finance-kpi negative"><span>Erreur</span><strong>Indisponible</strong></article>';
-          els.financeBody.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Finance indisponible.") + '</div>';
-          showToast(error.message || "Finance indisponible.", true);
+          els.financeBody.innerHTML = '<div class="empty">' + escapeHtml(error.message || "Reporting finance indisponible.") + '</div>';
+          showToast(error.message || "Reporting finance indisponible.", true);
         }finally{
           setLoading(false);
         }
@@ -2930,7 +3126,7 @@
         if (els.adminImportCommercial) state.adminImportCommercialId = els.adminImportCommercial.value || state.adminImportCommercialId || "";
         if (els.adminImportEntity) state.adminImportEntityId = els.adminImportEntity.value || state.adminImportEntityId || "";
 
-        setLoading(true, "Imports reels", "Lecture des commerciaux, entites et imports mensuels.");
+        setLoading(true, "Imports réels", "Lecture des commerciaux, entités et imports mensuels.");
         try{
           const params = new URLSearchParams();
           params.set("year", state.adminImportYear);
@@ -2944,7 +3140,7 @@
             state.adminImportEntityId = payload.entities[0].id;
           }
           renderAdminImports();
-          showToast("Imports reels synchronises.");
+          showToast("Imports réels synchronisés.");
         }catch(error){
           state.adminImportPayload = null;
           if (els.adminImportSummary) {
@@ -3050,7 +3246,7 @@
               '<strong>Aucun fichier previsualise</strong>',
               '<span class="budget-chip open">En attente</span>',
             '</div>',
-            '<p>Choisis un fichier Excel puis lance la previsualisation.</p>'
+            '<p>Choisis un fichier Excel puis lance la prévisualisation.</p>'
           ].join("");
         }
       }
@@ -3319,7 +3515,7 @@
       function downloadAdminImportTemplate(){
         const entity = selectedAdminImportEntity();
         if (!window.XLSX || !window.ReelSupabase?.configForEntity) {
-          showToast("Modele indisponible. Recharge la page.", true);
+          showToast("Modèle indisponible. Recharge la page.", true);
           return;
         }
         if (!entity) {
@@ -3361,8 +3557,8 @@
         ws["!cols"] = headers.map(function(header){ return { wch: Math.max(14, String(header).length + 4) }; });
         const helpSheet = XLSX.utils.aoa_to_sheet(help);
         helpSheet["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 62 }];
-        XLSX.utils.book_append_sheet(wb, ws, "Modele import reel");
-        XLSX.utils.book_append_sheet(wb, helpSheet, "A lire");
+        XLSX.utils.book_append_sheet(wb, ws, "Modèle import réel");
+        XLSX.utils.book_append_sheet(wb, helpSheet, "À lire");
         XLSX.writeFile(wb, "modele_import_reel_admin_" + safeFileName(entity.key || entity.label) + "_" + year + ".xlsx");
       }
 
@@ -3400,7 +3596,7 @@
         });
 
         if (!commercialRows.length) {
-          els.adminBudgetBody.innerHTML = '<div class="empty">Aucun budget ne correspond a ce filtre.</div>';
+          els.adminBudgetBody.innerHTML = '<div class="empty">Aucun budget ne correspond à ce filtre.</div>';
           return;
         }
 
@@ -3413,7 +3609,7 @@
           { label: "Commerciaux", value: formatInteger(stats.commercials || 0) },
           { label: "Budgets", value: formatInteger(stats.totalBudgets || 0) },
           { label: "Actifs", value: formatInteger(stats.activeBudgets || 0) },
-          { label: "A valider", value: formatInteger(stats.toValidate || 0), tone: Number(stats.toValidate || 0) ? "warn" : "good" },
+          { label: "À valider", value: formatInteger(stats.toValidate || 0), tone: Number(stats.toValidate || 0) ? "warn" : "good" },
           { label: "Total actif", value: formatEuro(stats.activeTotal || 0) }
         ];
         els.adminBudgetSummary.innerHTML = cards.map(function(card){
@@ -3498,7 +3694,7 @@
       function budgetValidationChip(status){
         if (status === "valide") return '<span class="budget-chip valid">Valid&eacute; admin</span>';
         if (status === "devalide") return '<span class="budget-chip open">D&eacute;valid&eacute;</span>';
-        return '<span class="budget-chip wait">A valider</span>';
+        return '<span class="budget-chip wait">À valider</span>';
       }
 
       function filterAdminBudgets(budgets){
@@ -3992,7 +4188,7 @@
         renderFinanceSummaryCards([
           { label: config.actualLabel, value: formatEuro(model.total.actual) },
           { label: config.budgetLabel, value: formatEuro(model.total.budget) },
-          { label: "Ecart", value: formatEuro(model.total.ecart), tone: model.total.ecart >= 0 ? "positive" : "negative" },
+          { label: "Écart", value: formatEuro(model.total.ecart), tone: model.total.ecart >= 0 ? "positive" : "negative" },
           { label: "Atteinte", value: model.total.taux === null ? "-" : formatPercent(model.total.taux), tone: model.total.ecart >= 0 ? "positive" : "negative" }
         ]);
 
@@ -4249,7 +4445,7 @@
         renderFinanceSummaryCards([
           { label: "CA M-1", value: formatEuro(model.total.yearActualToDate) },
           { label: "Budget M-1", value: formatEuro(model.total.yearBudgetToDate) },
-          { label: "Ecart M-1", value: formatEuro(model.total.yearEcartToDate), tone: model.total.yearEcartToDate >= 0 ? "positive" : "negative" },
+          { label: "Écart M-1", value: formatEuro(model.total.yearEcartToDate), tone: model.total.yearEcartToDate >= 0 ? "positive" : "negative" },
           { label: "Budget annuel", value: formatEuro(model.total.yearBudget) }
         ]);
 
@@ -4317,7 +4513,7 @@
               '<span>Analyse</span>',
               '<span>CA réel</span>',
               '<span>Budget</span>',
-              '<span>Ecart</span>',
+              '<span>Écart</span>',
             '</div>',
             renderAnnualMonthRow(monthLongLabel(index), actual, budget, gap),
             renderAnnualMonthRow("Cumulé à date", cumulativeActual, cumulativeBudget, cumulativeGap),
@@ -4824,7 +5020,7 @@
             '<div>' + escapeHtml(firstLabel) + '</div>',
             '<div>Réel</div>',
             '<div>Budget</div>',
-            '<div>Ecart</div>',
+            '<div>Écart</div>',
             '<div>Atteinte</div>',
             '<div></div>',
           '</div>'
@@ -4837,7 +5033,7 @@
           : total.taux;
         return [
           '<div class="finance-row total">',
-            '<div class="finance-name"><strong>Total consolide</strong><span>Responsables + vendeurs</span></div>',
+            '<div class="finance-name"><strong>Total consolidé</strong><span>Responsables + vendeurs</span></div>',
             financeCell(total.actual),
             financeCell(total.budget),
             financeCell(total.ecart, true),
@@ -4863,7 +5059,7 @@
 
       function financeSourceNote(model){
         if (!state.financeSettingsReady) {
-          return '<div class="finance-source-note warn">' + escapeHtml(state.financeSettingsWarning || "Parametrage source finance non pret : les mois restent en ventes saisies tant que le SQL n'est pas lance.") + '</div>';
+          return '<div class="finance-source-note warn">' + escapeHtml(state.financeSettingsWarning || "Paramétrage source finance non prêt : les mois restent en ventes saisies tant que le SQL n'est pas lancé.") + '</div>';
         }
         if (state.financeView === "month") {
           const source = financeSourceForMonth(model.period.year, model.period.month);
@@ -4878,7 +5074,7 @@
       function financeCell(value, signed){
         const number = roundClientMoney(value || 0);
         const label = signed && number > 0 ? "+" + formatEuro(number) : formatEuro(number);
-        return '<div class="finance-value"><strong>' + escapeHtml(label) + '</strong><span>' + (signed ? "ecart" : "HT") + '</span></div>';
+        return '<div class="finance-value"><strong>' + escapeHtml(label) + '</strong><span>' + (signed ? "écart" : "HT") + '</span></div>';
       }
 
       function financeViewConfig(){
@@ -5165,10 +5361,10 @@
         return [
           '<div class="control-row">',
             '<div class="control-main"><strong>' + escapeHtml(commercial.displayName || "-") + '</strong><span>' + escapeHtml(commercial.identifier || "-") + '</span></div>',
-            '<div class="control-cell"><strong>' + escapeHtml(controlManagerName(commercial)) + '</strong><span>' + escapeHtml(commercial.relationLabel || "Non rattache") + '</span></div>',
+            '<div class="control-cell"><strong>' + escapeHtml(controlManagerName(commercial)) + '</strong><span>' + escapeHtml(commercial.relationLabel || "Non rattaché") + '</span></div>',
             '<div class="control-cell"><strong>' + formatInteger(metrics.clientsTotal || 0) + '</strong><span>clients</span></div>',
             '<div class="control-cell"><strong>' + formatInteger(metrics.ventesAnnee || 0) + '</strong><span>' + formatInteger(metrics.lignesAnnee || 0) + ' lignes</span></div>',
-            '<div class="control-cell"><strong>' + escapeHtml(formatEuro(metrics.budgetAnnuel || 0)) + '</strong><span>' + formatInteger(metrics.entitesBudgetees || 0) + ' entite(s)</span></div>',
+            '<div class="control-cell"><strong>' + escapeHtml(formatEuro(metrics.budgetAnnuel || 0)) + '</strong><span>' + formatInteger(metrics.entitesBudgetees || 0) + ' entité(s)</span></div>',
             '<div class="control-cell"><strong>' + escapeHtml(controlRealLabel(metrics)) + '</strong><span>' + formatInteger(metrics.reelImportsActifs || 0) + ' import(s)</span></div>',
             '<div class="control-cell"><strong>' + formatInteger(metrics.documentsSansStatut || 0) + '</strong><span>sans statut</span></div>',
             '<div class="control-cell"><strong>' + escapeHtml(formatDate(commercial.lastLoginAt)) + '</strong><span>connexion</span></div>',
@@ -5187,7 +5383,7 @@
         return [
           '<div class="control-detail">',
             '<div class="control-detail-grid">',
-              renderControlDetailCard("Rattachement", controlManagerName(commercial), commercial.relationLabel || "Non rattache"),
+              renderControlDetailCard("Rattachement", controlManagerName(commercial), commercial.relationLabel || "Non rattaché"),
               renderControlDetailCard("Portefeuille", formatInteger(metrics.clientsTotal || 0) + " client(s)", formatInteger(metrics.clientsMois || 0) + " client(s) travaill\u00e9s ce mois"),
               renderControlDetailCard("Ventes saisies", formatEuro(metrics.caAnnee || 0), formatInteger(metrics.ventesAnnee || 0) + " vente(s), " + formatInteger(metrics.terrainMois || 0) + " visite(s) terrain ce mois"),
               renderControlDetailCard("Budget actif", formatEuro(metrics.budgetAnnuel || 0), formatInteger(metrics.budgetsActifs || 0) + " budget(s), " + formatInteger(metrics.lignesBudget || 0) + " ligne(s)"),
