@@ -254,7 +254,8 @@
     .audit-row small{color:var(--muted-2)}
     .wrap.finance-mode{max-width:none;padding:18px 24px}
     .finance-mode .identity,.finance-mode .hero,.finance-mode .stats{display:none}
-    .finance-workspace-mode .admin-tabs{display:none}
+    .finance-workspace-mode .admin-tabs,
+    .organization-workspace-mode .admin-tabs{display:none}
     .finance-mode .admin-tabs{
       margin:0 0 14px;max-width:none;background:rgba(226,232,240,.075);
       border-radius:18px;padding:6px;
@@ -1484,13 +1485,10 @@
 
     <nav class="admin-tabs" aria-label="Navigation admin">
       <button class="admin-tab active" type="button" data-admin-tab="pilotage"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V19h11v-8.5"/></svg><span>Accueil</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="utilisateurs"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19c1.2-3.2 3.4-4.8 6.5-4.8s5.3 1.6 6.5 4.8"/></svg><span>Utilisateurs</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="rattachements"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.6"/><circle cx="16" cy="8" r="2.6"/><circle cx="12" cy="16" r="2.6"/><path d="M9.8 9.8 11 13.6m3.2-3.8L13 13.6"/></svg><span>&Eacute;quipe</span></button>
-      <button class="admin-tab" type="button" data-admin-tab="secteurs"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6.5 10 4l4 2 6-2.5v14L14 20l-4-2-6 2.5v-14Z"/><path d="M10 4v14"/><path d="M14 6v14"/></svg><span>Secteurs</span></button>
+      <button class="admin-tab" type="button" data-admin-tab="organisation" data-admin-target="utilisateurs"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.6"/><circle cx="16" cy="8" r="2.6"/><circle cx="12" cy="16" r="2.6"/><path d="M9.8 9.8 11 13.6m3.2-3.8L13 13.6"/></svg><span>Organisation</span></button>
       <button class="admin-tab" type="button" data-admin-tab="imports"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12"/><path d="M6 12h12"/><path d="M6 17h12"/></svg><span>Import</span></button>
       <button class="admin-tab" type="button" data-admin-tab="finance"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18V11"/><path d="M12 18V6"/><path d="M18 18v-9"/><path d="M4 18h16"/></svg><span>Finance</span></button>
       <button class="admin-tab" type="button" data-admin-tab="securite"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="10" width="12" height="9" rx="2"/><path d="M9 10V8a3 3 0 0 1 6 0v2"/></svg><span>S&eacute;curit&eacute;</span></button>
-      <a class="admin-tab admin-link-tab" href="parametrage.html" title="Ouvrir le param&eacute;trage technique"><svg class="admin-tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2 2 0 0 1-2.83 2.83l-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6V20a2 2 0 0 1-4 0v-.08a1.8 1.8 0 0 0-1-.52a1.8 1.8 0 0 0-1.98.36l-.05.05a2 2 0 0 1-2.83-2.83l.05-.05A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-.6-1H4a2 2 0 0 1 0-4h.08a1.8 1.8 0 0 0 .52-1a1.8 1.8 0 0 0-.36-1.98l-.05-.05a2 2 0 0 1 2.83-2.83l.05.05A1.8 1.8 0 0 0 9 4.6a1.8 1.8 0 0 0 1-.6V4a2 2 0 0 1 4 0v.08a1.8 1.8 0 0 0 1 .52a1.8 1.8 0 0 0 1.98-.36l.05-.05a2 2 0 0 1 2.83 2.83l-.05.05A1.8 1.8 0 0 0 19.4 9c.22.35.43.68.6 1H20a2 2 0 0 1 0 4h-.08a1.8 1.8 0 0 0-.52 1Z"/></svg><span>Param&eacute;trage</span></a>
     </nav>
     <section class="admin-view active" data-admin-view="pilotage">
       <div class="overview-grid">
@@ -1837,6 +1835,12 @@
     </section>
 
     <section class="admin-view" data-admin-view="utilisateurs">
+      <div class="finance-workspace-tabs" aria-label="Navigation organisation admin">
+        <button class="finance-workspace-tab" type="button" data-organization-section-target="pilotage">Accueil</button>
+        <button class="finance-workspace-tab active" type="button" data-organization-section-target="utilisateurs">Utilisateurs</button>
+        <button class="finance-workspace-tab" type="button" data-organization-section-target="rattachements">&Eacute;quipe</button>
+        <button class="finance-workspace-tab" type="button" data-organization-section-target="secteurs">Secteurs</button>
+      </div>
       <section class="user-admin-layout">
       <section class="panel" aria-label="Gestion utilisateurs">
         <div class="panel-head">
@@ -1920,6 +1924,12 @@
     </section>
 
     <section class="admin-view" data-admin-view="rattachements">
+      <div class="finance-workspace-tabs" aria-label="Navigation organisation admin">
+        <button class="finance-workspace-tab" type="button" data-organization-section-target="pilotage">Accueil</button>
+        <button class="finance-workspace-tab" type="button" data-organization-section-target="utilisateurs">Utilisateurs</button>
+        <button class="finance-workspace-tab active" type="button" data-organization-section-target="rattachements">&Eacute;quipe</button>
+        <button class="finance-workspace-tab" type="button" data-organization-section-target="secteurs">Secteurs</button>
+      </div>
       <section class="panel">
         <div class="panel-head">
           <div>
@@ -1946,6 +1956,12 @@
     </section>
 
     <section class="admin-view" data-admin-view="secteurs">
+      <div class="finance-workspace-tabs" aria-label="Navigation organisation admin">
+        <button class="finance-workspace-tab" type="button" data-organization-section-target="pilotage">Accueil</button>
+        <button class="finance-workspace-tab" type="button" data-organization-section-target="utilisateurs">Utilisateurs</button>
+        <button class="finance-workspace-tab" type="button" data-organization-section-target="rattachements">&Eacute;quipe</button>
+        <button class="finance-workspace-tab active" type="button" data-organization-section-target="secteurs">Secteurs</button>
+      </div>
       <section class="panel">
         <div class="panel-head">
           <div>
@@ -1971,6 +1987,7 @@
               <h2>Comptes masqu&eacute;s</h2>
               <div class="sub">Aucune suppression dure : on restaure si besoin, l'historique reste conserv&eacute;.</div>
             </div>
+            <a class="btn ghost small" href="parametrage.html">Param&eacute;trage technique</a>
           </div>
           <div class="table-wrap">
             <table>
@@ -2253,6 +2270,7 @@
         financeRefresh: document.querySelector("[data-finance-refresh]"),
         financePdf: document.querySelector("[data-finance-pdf]"),
         financeSectionTabs: Array.from(document.querySelectorAll("[data-finance-section-target]")),
+        organizationSectionTabs: Array.from(document.querySelectorAll("[data-organization-section-target]")),
         financePills: Array.from(document.querySelectorAll("[data-finance-view]")),
         financeSummary: document.querySelector("[data-finance-summary]"),
         financeBody: document.querySelector("[data-finance-body]"),
@@ -2369,7 +2387,7 @@
         document.querySelector("[data-reset-form]").addEventListener("click", resetUserForm);
         els.tabs.forEach(function(button){
           button.addEventListener("click", function(){
-            setAdminView(button.dataset.adminTab);
+            setAdminView(button.dataset.adminTarget || button.dataset.adminTab);
           });
         });
         els.subtabs.forEach(function(button){
@@ -2380,6 +2398,11 @@
         els.financeSectionTabs.forEach(function(button){
           button.addEventListener("click", function(){
             setAdminView(button.dataset.financeSectionTarget || "finance");
+          });
+        });
+        els.organizationSectionTabs.forEach(function(button){
+          button.addEventListener("click", function(){
+            setAdminView(button.dataset.organizationSectionTarget || "utilisateurs");
           });
         });
         els.reportingCumulTabs.forEach(function(button){
@@ -2983,14 +3006,21 @@
       function setAdminView(view){
         state.activeView = view || "pilotage";
         const financeViews = ["finance", "budgets-global", "reporting-cumul"];
-        els.wrap.classList.toggle("finance-mode", ["finance", "imports", "budgets-global", "data-control", "reporting-cumul"].includes(state.activeView));
+        const organizationViews = ["utilisateurs", "rattachements", "secteurs"];
+        els.wrap.classList.toggle("finance-mode", ["finance", "imports", "budgets-global", "data-control", "reporting-cumul", "utilisateurs", "rattachements", "secteurs"].includes(state.activeView));
         els.wrap.classList.toggle("finance-workspace-mode", financeViews.includes(state.activeView));
-        const primaryView = state.activeView === "data-control" ? "imports" : (financeViews.includes(state.activeView) ? "finance" : state.activeView);
+        els.wrap.classList.toggle("organization-workspace-mode", organizationViews.includes(state.activeView));
+        const primaryView = state.activeView === "data-control"
+          ? "imports"
+          : (financeViews.includes(state.activeView) ? "finance" : (organizationViews.includes(state.activeView) ? "organisation" : state.activeView));
         els.tabs.forEach(function(tab){
           tab.classList.toggle("active", tab.dataset.adminTab === primaryView);
         });
         els.financeSectionTabs.forEach(function(tab){
           tab.classList.toggle("active", tab.dataset.financeSectionTarget === state.activeView);
+        });
+        els.organizationSectionTabs.forEach(function(tab){
+          tab.classList.toggle("active", tab.dataset.organizationSectionTarget === state.activeView);
         });
         els.subtabs.forEach(function(tab){
           tab.classList.toggle("active", tab.dataset.adminSubtab === state.activeView);
