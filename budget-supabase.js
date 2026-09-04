@@ -549,15 +549,17 @@
     return budget;
   }
 
-  async function getActiveBudgetData(entityKey, year){
+  async function getActiveBudgetData(entityKey, year, options = {}){
     const owner = await ownerContext();
     const key = String(entityKey || "").trim().toLowerCase();
-    if (!key || !year) return null;
+    const entityId = String(options.entityId || "").trim();
+    if ((!key && !entityId) || !year) return null;
 
     let query = client()
       .from("budget_entites")
-      .select("*")
-      .eq("key", key);
+      .select("*");
+    if (key) query = query.eq("key", key);
+    if (entityId) query = query.eq("id", entityId);
     query = applyOwner(query, owner);
     query = query
       .order("ordre", { ascending: true })

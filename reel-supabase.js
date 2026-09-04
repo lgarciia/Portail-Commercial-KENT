@@ -565,9 +565,10 @@
     return all;
   }
 
-  async function getActiveLinesByEntityYear(entityKey, year){
+  async function getActiveLinesByEntityYear(entityKey, year, options = {}){
     if (!entityKey) throw new Error("Entite obligatoire.");
     if (!Number(year)) throw new Error("Annee obligatoire.");
+    const entityId = String(options.entityId || "").trim();
     const owner = await ownerContext();
     return await selectAllPaged(() => {
       let query = client()
@@ -575,6 +576,7 @@
         .select("*")
         .eq("entite_key", String(entityKey))
         .eq("annee", Number(year));
+      if (entityId) query = query.eq("entite_id", entityId);
       query = applyOwner(query, owner);
       return query
         .order("mois", { ascending: true })

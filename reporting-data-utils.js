@@ -285,7 +285,7 @@
     const allowExcelFallback = options.allowExcelFallback === true;
 
     try{
-      return await window.BudgetSupabase.getActiveBudgetData(options.entityKey, options.year);
+      return await window.BudgetSupabase.getActiveBudgetData(options.entityKey, options.year, options);
     }catch(error){
       if (!allowExcelFallback) throw error;
       console.warn("Budget actif Supabase indisponible, fallback Excel:", error?.message || error);

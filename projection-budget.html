@@ -391,16 +391,21 @@
       for (const row of rows || []) {
         const key = String(row.key || "").trim().toLowerCase();
         if (!key || map.has(key)) continue;
-        map.set(key, { key, label: row.label || row.libelle || row.key || "Entité" });
+        map.set(key, { id: row.id || "", key, label: row.label || row.libelle || row.key || "Entité" });
       }
       return Array.from(map.values());
     }
 
     async function loadEntities(){
       try{
+        const scopedUser = await window.KentCommercialScope?.load?.();
+        if (!scopedUser || scopedUser.role !== "commercial" || !scopedUser.dbUserId) {
+          throw new Error("Session commerciale introuvable : projection non chargée pour éviter une lecture globale.");
+        }
         if (window.BudgetSupabase && typeof window.BudgetSupabase.listEntities === "function") {
           const rows = await window.BudgetSupabase.listEntities();
           const mapped = dedupeEntities((rows || []).map(row => ({
+            id: row.id,
             key: row.key,
             label: row.libelle || row.key
           })));
@@ -409,7 +414,7 @@
       }catch(error){
         console.warn("Entités Supabase indisponibles:", error?.message || error);
       }
-      return DEFAULT_ENTITIES.slice();
+      return [];
     }
 
     function renderEntitySelect(){
@@ -430,10 +435,12 @@
     }
 
     async function loadBudgetTotals(entity, year){
+      if (!entity.id) return emptyTotals();
       if (!window.ReportingDataUtils || !window.KentDataConfig) return emptyTotals();
       const fileCandidates = window.KentDataConfig.getEntityFileCandidates(entity.key, "budget", year);
       const { budgetData } = await window.ReportingDataUtils.loadBudgetData({
         entityKey: entity.key,
+        entityId: entity.id || "",
         year,
         fileCandidates,
         budgetConfig,
@@ -445,7 +452,8 @@
     async function loadRealTotals(entity, year){
       const totals = emptyTotals();
       if (!window.ReelSupabase || typeof window.ReelSupabase.getActiveLinesByEntityYear !== "function") return totals;
-      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(entity.key, year);
+      if (!entity.id) return totals;
+      const rows = await window.ReelSupabase.getActiveLinesByEntityYear(entity.key, year, { entityId: entity.id });
       for (const row of rows || []) {
         const index = Number(row?.mois || 0) - 1;
         if (index < 0 || index > 11) continue;
