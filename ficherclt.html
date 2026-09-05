@@ -599,9 +599,62 @@
       top:0;
       right:0;
     }
-    .top-products-list{display:flex;flex-direction:column;gap:12px}
-    .top-product-item{padding:16px;border-radius:18px}
-    .top-product-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;margin-bottom:12px}
+    .checklist-modal{width:min(1180px,100%);max-width:1180px}
+    .checklist-command-bar{
+      position:sticky;top:-1px;z-index:8;
+      display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+      margin-bottom:14px;padding:12px;border-radius:18px;
+      background:rgba(8,15,26,.94);border:1px solid rgba(56,189,248,.18);
+      box-shadow:0 16px 42px rgba(2,6,23,.28);backdrop-filter:blur(10px);
+    }
+    .checklist-command-summary{display:flex;flex-direction:column;gap:4px}
+    .checklist-command-summary span{
+      color:var(--muted-2);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;font-weight:800;
+    }
+    .checklist-command-summary strong{color:#d8f3ff;font-size:.94rem}
+    .checklist-command-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .checklist-product-panel{
+      margin-bottom:14px;padding:12px;border-radius:20px;
+      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+    }
+    .checklist-product-panel[hidden]{display:none}
+    .recommendation-product-builder{
+      width:100%;display:grid;
+      grid-template-columns:minmax(230px,1.6fr) minmax(160px,.9fr) minmax(150px,.75fr) minmax(150px,.75fr) minmax(130px,.65fr) auto;
+      gap:10px;align-items:end;
+    }
+    .quick-reco-panel .recommendation-product-builder{flex:1 1 100%}
+    .recommendation-field{min-width:0}
+    .recommendation-field label{
+      display:block;margin-bottom:7px;color:var(--muted-2);
+      font-size:.68rem;text-transform:uppercase;letter-spacing:.09em;font-weight:800;
+    }
+    .recommendation-field input,.recommendation-field select{
+      width:100%;min-height:44px;border-radius:13px;border:1px solid rgba(148,163,184,.22);
+      background:rgba(15,23,42,.78);color:var(--text);padding:10px 12px;outline:none;font-weight:750;
+    }
+    .recommendation-field input:focus,.recommendation-field select:focus{
+      border-color:rgba(56,189,248,.58);box-shadow:0 0 0 3px rgba(56,189,248,.12);
+    }
+    .recommendation-field-product .product-selected-hint{margin-top:6px}
+    .recommendation-stepper{display:grid;grid-template-columns:42px minmax(52px,1fr) 42px;gap:6px;align-items:center}
+    .recommendation-stepper button,.checklist-stepper button{
+      min-height:42px;border:none;border-radius:13px;cursor:pointer;
+      background:rgba(56,189,248,.14);color:#d8f3ff;font-weight:900;font-size:1.08rem;
+      border:1px solid rgba(56,189,248,.18);transition:transform .16s ease,background .16s ease,border-color .16s ease;
+    }
+    .recommendation-stepper button:hover,.checklist-stepper button:hover{
+      transform:translateY(-1px);background:rgba(56,189,248,.22);border-color:rgba(56,189,248,.32);
+    }
+    .recommendation-stepper input,.checklist-stepper input{text-align:center;padding-inline:6px}
+    .recommendation-add-btn{min-height:44px;align-self:end}
+    .top-products-list{display:flex;flex-direction:column;gap:12px;padding-bottom:8px}
+    .top-product-item{
+      padding:16px;border-radius:20px;
+      display:grid;grid-template-columns:minmax(260px,1.15fr) minmax(210px,.75fr) minmax(330px,1fr);
+      gap:14px;align-items:center;
+    }
+    .top-product-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;margin-bottom:0}
     .rank-badge{
       width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;
       border-radius:14px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.16);
@@ -609,7 +662,22 @@
     }
     .top-product-main strong{display:block;font-size:.94rem;line-height:1.35}
     .top-product-main span{display:block;margin-top:4px;color:var(--muted-2);font-size:.78rem}
-    .top-product-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .top-product-history{display:flex;flex-direction:column;gap:10px;min-width:0}
+    .top-product-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0}
+    .checklist-quantity-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .checklist-counter{
+      padding:10px;border-radius:16px;background:rgba(2,6,23,.22);border:1px solid rgba(255,255,255,.07);
+    }
+    .checklist-counter-label{
+      display:block;margin-bottom:7px;color:var(--muted-2);
+      font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;
+    }
+    .checklist-stepper{display:grid;grid-template-columns:42px minmax(56px,1fr) 42px;gap:6px;align-items:center}
+    .checklist-stepper input{
+      min-height:42px;border-radius:13px;border:1px solid rgba(148,163,184,.22);
+      background:rgba(15,23,42,.72);color:var(--text);font-weight:900;outline:none;
+    }
+    .checklist-stepper input:focus{border-color:rgba(56,189,248,.58);box-shadow:0 0 0 3px rgba(56,189,248,.12)}
     .progress-track{width:100%;height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
     .progress-track span{display:block;height:100%;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent-strong))}
     .toast-container{
@@ -637,6 +705,9 @@
       .hero-card,.control-layout{grid-template-columns:1fr}
       .product-row{grid-template-columns:repeat(2,minmax(0,1fr))}
       .product-row .field-group:last-child{grid-column:1/-1}
+      .recommendation-product-builder{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .recommendation-add-btn{grid-column:1/-1}
+      .top-product-item{grid-template-columns:1fr}
     }
     @media (max-width:980px){
       .filter-grid,.modal-grid,.stats-grid,.meta-grid,.highlight-grid{grid-template-columns:1fr}
@@ -652,6 +723,10 @@
       .panel-toolbar{align-items:stretch}
       .view-switch{width:100%;justify-content:space-between}
       .switch-btn{flex:1 1 50%}
+      .checklist-command-actions{width:100%}
+      .checklist-command-actions .btn{flex:1 1 auto}
+      .checklist-quantity-board{grid-template-columns:1fr}
+      .recommendation-product-builder{grid-template-columns:1fr}
       .product-row{grid-template-columns:1fr}
       .products-addline-wrap{justify-content:stretch}
       .products-addline-wrap .btn{width:100%}
@@ -676,7 +751,7 @@
         </div>
         <div class="hero-actions">
           <a class="btn btn-secondary" href="documents-commerciaux.html">BDC / Devis</a>
-          <button class="btn btn-info" id="openTopProductsBtn" type="button">Top produits</button>
+          <button class="btn btn-info" id="openTopProductsBtn" type="button">Checklist</button>
           <button class="btn btn-secondary" id="openClientModalBtn" type="button">Ajout client</button>
           <button class="btn btn-primary" id="openVisitModalBtn" type="button">+ Nouvelle visite</button>
         </div>
@@ -837,12 +912,52 @@
           <div class="quick-reco-copy">
             <div class="quick-reco-eyebrow">Recommande rapide</div>
             <strong>Sélectionne les produits à reprendre</strong>
-            <p>Coche un produit ou saisis une quantité, puis prépare la commande dans la fenêtre de visite existante.</p>
+            <p>Coche un produit, saisis une quantité ou ajoute une nouvelle référence, puis prépare la commande.</p>
           </div>
           <div class="quick-reco-actions">
             <div class="quick-reco-summary" id="quickRecoSummary">0 produit sélectionné</div>
-            <button class="btn btn-info btn-sm" id="prepareQuickRecoBtn" type="button" disabled>Preparer la commande</button>
+            <button class="btn btn-info btn-sm" id="prepareQuickRecoBtn" type="button" disabled>Préparer la commande</button>
             <button class="btn btn-secondary btn-sm" id="clearQuickRecoBtn" type="button" disabled>Vider</button>
+          </div>
+          <div class="recommendation-product-builder" id="quickRecoProductBuilder">
+            <div class="recommendation-field recommendation-field-product">
+              <label for="quickRecoProductSearch">Ajouter une référence</label>
+              <div class="product-search-wrap">
+                <input type="text" id="quickRecoProductSearch" list="produitsDatalist" placeholder="Référence ou désignation..." autocomplete="off" />
+                <button class="product-search-trigger" id="quickRecoProductPickerBtn" type="button" title="Rechercher une référence" aria-label="Rechercher une référence">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="6.5"></circle>
+                    <path d="m16 16 4.2 4.2"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="product-selected-hint" id="quickRecoProductHint">Recherche un produit pour afficher son tarif.</div>
+            </div>
+            <div class="recommendation-field">
+              <label for="quickRecoPlaqueSelect">Plaque tarif</label>
+              <select id="quickRecoPlaqueSelect"></select>
+            </div>
+            <div class="recommendation-field recommendation-field-small">
+              <label for="quickRecoQuantityInput">Recommande</label>
+              <div class="recommendation-stepper">
+                <button type="button" data-reco-builder="quick" data-reco-target="quantity" data-delta="-1">−</button>
+                <input type="number" id="quickRecoQuantityInput" min="0" value="" placeholder="0" />
+                <button type="button" data-reco-builder="quick" data-reco-target="quantity" data-delta="1">+</button>
+              </div>
+            </div>
+            <div class="recommendation-field recommendation-field-small">
+              <label for="quickRecoStockInput">Stock client</label>
+              <div class="recommendation-stepper">
+                <button type="button" data-reco-builder="quick" data-reco-target="stock" data-delta="-1">−</button>
+                <input type="number" id="quickRecoStockInput" min="0" value="" placeholder="0" />
+                <button type="button" data-reco-builder="quick" data-reco-target="stock" data-delta="1">+</button>
+              </div>
+            </div>
+            <div class="recommendation-field recommendation-field-price">
+              <label for="quickRecoPriceInput">Prix unit.</label>
+              <input type="number" id="quickRecoPriceInput" step="0.01" min="0" value="" placeholder="0,00" />
+            </div>
+            <button class="btn btn-info btn-sm recommendation-add-btn" id="quickRecoAddProductBtn" type="button">Ajouter</button>
           </div>
         </div>
         <div class="table-shell">
@@ -927,13 +1042,65 @@
   </div>
 
   <div class="modal-overlay" id="topProduitsOverlay">
-    <div class="modal" style="max-width:920px;">
+    <div class="modal checklist-modal">
       <div class="modal-header">
         <div>
-          <h3>Top produits du client</h3>
-          <p>Lecture simple des habitudes d’achat du client, utile en préparation de visite et en rebond commercial.</p>
+          <h3>Checklist client</h3>
+          <p>Prépare la commande à partir des références déjà vendues au client. La checklist se ferme uniquement avec la croix.</p>
         </div>
         <button class="close-btn" id="closeTopProduitsBtn" type="button">✕</button>
+      </div>
+      <div class="checklist-command-bar">
+        <div class="checklist-command-summary">
+          <span>Préparation en cours</span>
+          <strong id="checklistCartSummary">0 produit sélectionné</strong>
+        </div>
+        <div class="checklist-command-actions">
+          <button class="btn btn-secondary btn-sm" id="toggleChecklistProductPanelBtn" type="button">+ Ajouter une référence</button>
+          <button class="btn btn-info btn-sm" id="prepareChecklistOrderBtn" type="button" disabled>Préparer la commande</button>
+        </div>
+      </div>
+      <div class="checklist-product-panel" id="checklistProductPanel" hidden>
+        <div class="recommendation-product-builder">
+          <div class="recommendation-field recommendation-field-product">
+            <label for="checklistProductSearch">Référence à ajouter</label>
+            <div class="product-search-wrap">
+              <input type="text" id="checklistProductSearch" list="produitsDatalist" placeholder="Référence ou désignation..." autocomplete="off" />
+              <button class="product-search-trigger" id="checklistProductPickerBtn" type="button" title="Rechercher une référence" aria-label="Rechercher une référence">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="6.5"></circle>
+                  <path d="m16 16 4.2 4.2"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="product-selected-hint" id="checklistProductHint">Recherche un produit pour afficher son tarif.</div>
+          </div>
+          <div class="recommendation-field">
+            <label for="checklistPlaqueSelect">Plaque tarif</label>
+            <select id="checklistPlaqueSelect"></select>
+          </div>
+          <div class="recommendation-field recommendation-field-small">
+            <label for="checklistQuantityInput">Recommande</label>
+            <div class="recommendation-stepper">
+              <button type="button" data-reco-builder="checklist" data-reco-target="quantity" data-delta="-1">−</button>
+              <input type="number" id="checklistQuantityInput" min="0" value="" placeholder="0" />
+              <button type="button" data-reco-builder="checklist" data-reco-target="quantity" data-delta="1">+</button>
+            </div>
+          </div>
+          <div class="recommendation-field recommendation-field-small">
+            <label for="checklistStockInput">Stock client</label>
+            <div class="recommendation-stepper">
+              <button type="button" data-reco-builder="checklist" data-reco-target="stock" data-delta="-1">−</button>
+              <input type="number" id="checklistStockInput" min="0" value="" placeholder="0" />
+              <button type="button" data-reco-builder="checklist" data-reco-target="stock" data-delta="1">+</button>
+            </div>
+          </div>
+          <div class="recommendation-field recommendation-field-price">
+            <label for="checklistPriceInput">Prix unit.</label>
+            <input type="number" id="checklistPriceInput" step="0.01" min="0" value="" placeholder="0,00" />
+          </div>
+          <button class="btn btn-info btn-sm recommendation-add-btn" id="checklistAddProductBtn" type="button">Ajouter</button>
+        </div>
       </div>
       <div id="topProduitsList" class="top-products-list"></div>
     </div>
@@ -1294,6 +1461,26 @@
       dom.topProduitsOverlay = document.getElementById("topProduitsOverlay");
       dom.topProduitsList = document.getElementById("topProduitsList");
       dom.closeTopProduitsBtn = document.getElementById("closeTopProduitsBtn");
+      dom.checklistCartSummary = document.getElementById("checklistCartSummary");
+      dom.toggleChecklistProductPanelBtn = document.getElementById("toggleChecklistProductPanelBtn");
+      dom.prepareChecklistOrderBtn = document.getElementById("prepareChecklistOrderBtn");
+      dom.checklistProductPanel = document.getElementById("checklistProductPanel");
+      dom.checklistProductSearch = document.getElementById("checklistProductSearch");
+      dom.checklistProductPickerBtn = document.getElementById("checklistProductPickerBtn");
+      dom.checklistPlaqueSelect = document.getElementById("checklistPlaqueSelect");
+      dom.checklistQuantityInput = document.getElementById("checklistQuantityInput");
+      dom.checklistStockInput = document.getElementById("checklistStockInput");
+      dom.checklistPriceInput = document.getElementById("checklistPriceInput");
+      dom.checklistProductHint = document.getElementById("checklistProductHint");
+      dom.checklistAddProductBtn = document.getElementById("checklistAddProductBtn");
+      dom.quickRecoProductSearch = document.getElementById("quickRecoProductSearch");
+      dom.quickRecoProductPickerBtn = document.getElementById("quickRecoProductPickerBtn");
+      dom.quickRecoPlaqueSelect = document.getElementById("quickRecoPlaqueSelect");
+      dom.quickRecoQuantityInput = document.getElementById("quickRecoQuantityInput");
+      dom.quickRecoStockInput = document.getElementById("quickRecoStockInput");
+      dom.quickRecoPriceInput = document.getElementById("quickRecoPriceInput");
+      dom.quickRecoProductHint = document.getElementById("quickRecoProductHint");
+      dom.quickRecoAddProductBtn = document.getElementById("quickRecoAddProductBtn");
       dom.clientModalOverlay = document.getElementById("clientModalOverlay");
       dom.clientModalTitle = document.getElementById("clientModalTitle");
       dom.clientModalSubtitle = document.getElementById("clientModalSubtitle");
@@ -2702,6 +2889,7 @@
       dom.clientSelect.value = nextValue;
       updateClientHeader();
       refreshProductDatalist(nextValue);
+      refreshRecommendationBuilderForms();
       return true;
     }
 
@@ -2739,7 +2927,11 @@
 
     function getRecommendationCartItems() {
       return [...state.recommendationCart.values()]
-        .filter(item => item && Number(item.quantite || 0) > 0 && getProduitById(item.produit_id))
+        .filter(item => {
+          const quantity = parseRecommendationQuantity(item?.quantite);
+          const stock = parseRecommendationQuantity(item?.stock_client);
+          return item && (quantity > 0 || stock > 0) && getProduitById(item.produit_id);
+        })
         .sort((a, b) => {
           const produitA = getProduitDisplay(a.produit_id);
           const produitB = getProduitDisplay(b.produit_id);
@@ -2750,13 +2942,16 @@
     function renderRecommendationCartSummary() {
       const items = getRecommendationCartItems();
       const totalQty = items.reduce((sum, item) => sum + Number(item.quantite || 0), 0);
+      const totalStock = items.reduce((sum, item) => sum + Number(item.stock_client || 0), 0);
       const label = items.length
-        ? `${items.length} produit(s) - ${totalQty.toLocaleString("fr-FR")} unité(s)`
+        ? `${items.length} produit(s) - ${totalQty.toLocaleString("fr-FR")} recommandé(s) - ${totalStock.toLocaleString("fr-FR")} en stock`
         : "0 produit sélectionné";
 
       dom.quickRecoSummary.textContent = label;
       dom.prepareQuickRecoBtn.disabled = !items.length;
       dom.clearQuickRecoBtn.disabled = !items.length;
+      if (dom.checklistCartSummary) dom.checklistCartSummary.textContent = label;
+      if (dom.prepareChecklistOrderBtn) dom.prepareChecklistOrderBtn.disabled = !items.length;
     }
 
     function syncRecommendationHeaderControls() {
@@ -2764,12 +2959,26 @@
       dom.visitesTableHead.querySelectorAll("[data-reco-product-id]").forEach(control => {
         const productId = String(control.dataset.recoProductId || "");
         const item = state.recommendationCart.get(productId);
+        const quantity = parseRecommendationQuantity(item?.quantite);
         if (control.classList.contains("quick-reco-check-input")) {
-          control.checked = Boolean(item);
+          control.checked = quantity > 0;
         }
         if (control.classList.contains("quick-product-qty")) {
-          control.value = item ? String(item.quantite || "") : "";
+          control.value = quantity > 0 ? String(quantity) : "";
         }
+      });
+    }
+
+    function syncChecklistControls() {
+      if (!dom.topProduitsList) return;
+      dom.topProduitsList.querySelectorAll("input[data-checklist-product-id][data-checklist-field]").forEach(input => {
+        const productId = String(input.dataset.checklistProductId || "");
+        const field = String(input.dataset.checklistField || "");
+        const item = state.recommendationCart.get(productId);
+        const value = field === "stock_client"
+          ? parseRecommendationQuantity(item?.stock_client)
+          : parseRecommendationQuantity(item?.quantite);
+        input.value = value > 0 ? String(value) : "";
       });
     }
 
@@ -2777,6 +2986,7 @@
       syncRecommendationClientScope();
       renderRecommendationCartSummary();
       syncRecommendationHeaderControls();
+      syncChecklistControls();
     }
 
     function clearRecommendationCart(options = {}) {
@@ -2791,6 +3001,51 @@
       return Number.isFinite(quantity) && quantity > 0 ? quantity : 0;
     }
 
+    function getRecommendationDefaultPricing(productId, plaqueId = "") {
+      const clientId = getSelectedClientId();
+      const resolvedPlaqueId = resolveLinePlaqueId(plaqueId, clientId);
+      const tarifInfo = getTarifFromLinePlaque(clientId, resolvedPlaqueId, productId);
+      return {
+        plaque_id: resolvedPlaqueId,
+        prix_unitaire: roundPrice(tarifInfo.prix || 0),
+        hasTarif: Boolean(tarifInfo.hasTarif)
+      };
+    }
+
+    function setRecommendationCartPayload(productId, patch = {}, options = {}) {
+      syncRecommendationClientScope();
+      const produit = getProduitById(productId);
+      if (!produit) return null;
+
+      const normalizedProductId = String(productId);
+      const existing = state.recommendationCart.get(normalizedProductId) || {};
+      const pricing = getRecommendationDefaultPricing(normalizedProductId, patch.plaque_id ?? existing.plaque_id ?? "");
+      const nextQuantity = patch.quantite !== undefined
+        ? parseRecommendationQuantity(patch.quantite)
+        : parseRecommendationQuantity(existing.quantite);
+      const nextStock = patch.stock_client !== undefined
+        ? parseRecommendationQuantity(patch.stock_client)
+        : parseRecommendationQuantity(existing.stock_client);
+      const nextPrice = patch.prix_unitaire !== undefined
+        ? roundPrice(patch.prix_unitaire || 0)
+        : (existing.prix_unitaire !== undefined ? roundPrice(existing.prix_unitaire || 0) : pricing.prix_unitaire);
+
+      if (nextQuantity > 0 || nextStock > 0) {
+        state.recommendationCart.set(normalizedProductId, {
+          produit_id: normalizedProductId,
+          quantite: nextQuantity,
+          stock_client: nextStock,
+          plaque_id: pricing.plaque_id,
+          prix_unitaire: nextPrice
+        });
+      } else {
+        state.recommendationCart.delete(normalizedProductId);
+      }
+
+      if (!options.silent) renderRecommendationCartState();
+      return state.recommendationCart.get(normalizedProductId) || null;
+    }
+
     function setRecommendationCartItem(productId, quantity, selected) {
       syncRecommendationClientScope();
       const produit = getProduitById(productId);
@@ -2799,16 +3054,151 @@
       const normalizedProductId = String(productId);
       const nextQuantity = parseRecommendationQuantity(quantity);
 
-      if (selected || nextQuantity > 0) {
-        state.recommendationCart.set(normalizedProductId, {
-          produit_id: normalizedProductId,
-          quantite: nextQuantity > 0 ? nextQuantity : 1
-        });
-      } else {
+      if (!selected && nextQuantity <= 0) {
         state.recommendationCart.delete(normalizedProductId);
+      } else {
+        setRecommendationCartPayload(normalizedProductId, {
+          quantite: nextQuantity > 0 ? nextQuantity : 1
+        }, { silent: true });
       }
 
       renderRecommendationCartState();
+    }
+
+    function getRecommendationBuilderElements(scope) {
+      const isChecklist = scope === "checklist";
+      return {
+        search: isChecklist ? dom.checklistProductSearch : dom.quickRecoProductSearch,
+        picker: isChecklist ? dom.checklistProductPickerBtn : dom.quickRecoProductPickerBtn,
+        plaque: isChecklist ? dom.checklistPlaqueSelect : dom.quickRecoPlaqueSelect,
+        quantity: isChecklist ? dom.checklistQuantityInput : dom.quickRecoQuantityInput,
+        stock: isChecklist ? dom.checklistStockInput : dom.quickRecoStockInput,
+        price: isChecklist ? dom.checklistPriceInput : dom.quickRecoPriceInput,
+        hint: isChecklist ? dom.checklistProductHint : dom.quickRecoProductHint,
+        add: isChecklist ? dom.checklistAddProductBtn : dom.quickRecoAddProductBtn
+      };
+    }
+
+    function refreshRecommendationBuilderPlaques(scope) {
+      const elements = getRecommendationBuilderElements(scope);
+      if (!elements.plaque) return;
+      const selected = resolveLinePlaqueId(elements.plaque.value || "", getSelectedClientId());
+      elements.plaque.innerHTML = buildLinePlaqueOptions(selected, getSelectedClientId());
+      elements.plaque.value = selected;
+    }
+
+    function refreshRecommendationBuilderPrice(scope) {
+      const elements = getRecommendationBuilderElements(scope);
+      if (!elements.search || !elements.price || !elements.hint) return;
+
+      refreshRecommendationBuilderPlaques(scope);
+      const produit = findProduitFromSearch(elements.search.value);
+      if (!produit) {
+        elements.price.value = "";
+        elements.hint.textContent = elements.search.value.trim()
+          ? "Produit non reconnu dans la base active."
+          : "Recherche un produit pour afficher son tarif.";
+        return;
+      }
+
+      const pricing = getRecommendationDefaultPricing(produit.id, elements.plaque?.value || "");
+      elements.price.value = toPriceInputValue(pricing.prix_unitaire);
+      const plaque = getPlaqueById(pricing.plaque_id);
+      const plaqueLabel = plaque?.nom || "plaque sélectionnée";
+      elements.hint.textContent = pricing.hasTarif
+        ? `${getProductLabel(produit)} - tarif ${plaqueLabel}`
+        : `${getProductLabel(produit)} - aucun tarif trouvé pour ${plaqueLabel}, prix à saisir.`;
+    }
+
+    function refreshRecommendationBuilderForms() {
+      ["quick", "checklist"].forEach(scope => refreshRecommendationBuilderPrice(scope));
+    }
+
+    function resetRecommendationBuilder(scope) {
+      const elements = getRecommendationBuilderElements(scope);
+      if (elements.search) elements.search.value = "";
+      if (elements.quantity) elements.quantity.value = "";
+      if (elements.stock) elements.stock.value = "";
+      if (elements.price) elements.price.value = "";
+      if (elements.hint) elements.hint.textContent = "Recherche un produit pour afficher son tarif.";
+      refreshRecommendationBuilderPlaques(scope);
+    }
+
+    function adjustRecommendationBuilderInput(scope, target, delta) {
+      const elements = getRecommendationBuilderElements(scope);
+      const input = target === "stock" ? elements.stock : elements.quantity;
+      if (!input) return;
+      const current = parseRecommendationQuantity(input.value);
+      const next = Math.max(0, current + Number(delta || 0));
+      input.value = next > 0 ? String(next) : "";
+    }
+
+    function addRecommendationBuilderProduct(scope) {
+      const elements = getRecommendationBuilderElements(scope);
+      const produit = findProduitFromSearch(elements.search?.value || "");
+      if (!produit) return showToast("Sélectionne une référence reconnue avant d'ajouter.", "warning");
+
+      const quantity = parseRecommendationQuantity(elements.quantity?.value);
+      const stock = parseRecommendationQuantity(elements.stock?.value);
+      if (quantity <= 0 && stock <= 0) {
+        return showToast("Renseigne une quantité recommandée ou un stock client.", "warning");
+      }
+
+      const existing = state.recommendationCart.get(String(produit.id)) || {};
+      const nextQuantity = parseRecommendationQuantity(existing.quantite) + quantity;
+      const nextStock = stock > 0 ? stock : parseRecommendationQuantity(existing.stock_client);
+      setRecommendationCartPayload(produit.id, {
+        quantite: nextQuantity,
+        stock_client: nextStock,
+        plaque_id: elements.plaque?.value || "",
+        prix_unitaire: roundPrice(elements.price?.value || 0)
+      });
+
+      showToast("Produit ajouté à la préparation.", "success");
+      resetRecommendationBuilder(scope);
+      if (scope === "checklist") setTimeout(() => elements.search?.focus(), 30);
+    }
+
+    function toggleChecklistProductPanel(forceOpen = null) {
+      if (!dom.checklistProductPanel) return;
+      const shouldOpen = forceOpen === null ? dom.checklistProductPanel.hidden : Boolean(forceOpen);
+      dom.checklistProductPanel.hidden = !shouldOpen;
+      dom.toggleChecklistProductPanelBtn.textContent = shouldOpen ? "Masquer l'ajout" : "+ Ajouter une référence";
+      if (shouldOpen) {
+        refreshRecommendationBuilderPrice("checklist");
+        setTimeout(() => dom.checklistProductSearch?.focus(), 30);
+      }
+    }
+
+    function adjustChecklistProductQuantity(productId, field, delta) {
+      const existing = state.recommendationCart.get(String(productId)) || {};
+      const current = field === "stock_client"
+        ? parseRecommendationQuantity(existing.stock_client)
+        : parseRecommendationQuantity(existing.quantite);
+      const next = Math.max(0, current + Number(delta || 0));
+      const patch = field === "stock_client" ? { stock_client: next } : { quantite: next };
+      setRecommendationCartPayload(productId, patch);
+    }
+
+    function handleChecklistListClick(event) {
+      const button = event.target.closest("[data-checklist-action][data-checklist-product-id]");
+      if (!button) return;
+      const productId = button.dataset.checklistProductId;
+      const field = button.dataset.checklistField;
+      const delta = Number(button.dataset.delta || 0);
+      if (!productId || !field || !delta) return;
+      adjustChecklistProductQuantity(productId, field, delta);
+    }
+
+    function handleChecklistListInput(event) {
+      const input = event.target.closest("[data-checklist-product-id][data-checklist-field]");
+      if (!input) return;
+      const productId = input.dataset.checklistProductId;
+      const field = input.dataset.checklistField;
+      const patch = field === "stock_client"
+        ? { stock_client: input.value }
+        : { quantite: input.value };
+      setRecommendationCartPayload(productId, patch);
     }
 
     function getLastCommandeForProduct(productId) {
@@ -2855,11 +3245,14 @@
         prefills: items.map(item => ({
           produit_id: item.produit_id,
           quantite: item.quantite,
-          stock_client: 0,
-          couleur: "green"
+          stock_client: item.stock_client || 0,
+          couleur: "green",
+          plaque_id: item.plaque_id || "",
+          prix_unitaire: item.prix_unitaire
         }))
       });
-      showToast(`${items.length} produit(s) precharges dans la commande.`, "success");
+      if (dom.topProduitsOverlay?.classList.contains("active")) closeTopProduits();
+      showToast(`${items.length} produit(s) préchargé(s) dans la commande.`, "success");
     }
 
     function renderTimelineCard(visite) {
@@ -3367,7 +3760,7 @@
       const popupClientId = getPopupSelectedClientId();
       const produit = prefill?.produit_id ? getProduitDisplay(prefill.produit_id) : null;
       const label = produit ? getProductLabel(produit) : "";
-      const linePlaqueId = resolveLinePlaqueId("", popupClientId);
+      const linePlaqueId = resolveLinePlaqueId(prefill?.plaque_id || "", popupClientId);
       const tarifInfo = produit ? getTarifFromLinePlaque(popupClientId, linePlaqueId, produit.id) : { prix: 0, hasTarif: false };
       const initialPrice = prefill?.prix_unitaire != null
         ? roundPrice(prefill.prix_unitaire || 0)
@@ -4576,6 +4969,7 @@
     function renderTopProduits() {
       if (!state.visites.length) {
         dom.topProduitsList.innerHTML = `<div class="empty-state">Aucune donnée disponible pour ce client.</div>`;
+        renderRecommendationCartState();
         return;
       }
 
@@ -4609,6 +5003,7 @@
 
       if (!topProduits.length) {
         dom.topProduitsList.innerHTML = `<div class="empty-state">Aucun produit commandé pour ce client.</div>`;
+        renderRecommendationCartState();
         return;
       }
 
@@ -4616,8 +5011,12 @@
 
       dom.topProduitsList.innerHTML = topProduits.map((item, index) => {
         const ratio = Math.max(10, Math.round((item.quantite / maxQuantity) * 100));
+        const productId = String(item.produit_id || "");
+        const cartItem = state.recommendationCart.get(productId) || {};
+        const recommendQty = parseRecommendationQuantity(cartItem.quantite);
+        const stockQty = parseRecommendationQuantity(cartItem.stock_client);
         return `
-          <div class="top-product-item">
+          <div class="top-product-item" data-product-id="${escapeHtml(productId)}">
             <div class="top-product-head">
               <div class="rank-badge">#${index + 1}</div>
               <div class="top-product-main">
@@ -4625,18 +5024,40 @@
                 <span>${escapeHtml(item.reference_produit)}</span>
               </div>
             </div>
-            <div class="top-product-stats">
-              <div class="metric-chip">Qté <strong>${item.quantite}</strong></div>
-              <div class="metric-chip">Visites <strong>${item.visites}</strong></div>
-              <div class="metric-chip">CA <strong>${formatCurrency(item.chiffreAffaires)}</strong></div>
+            <div class="top-product-history">
+              <div class="top-product-stats">
+                <div class="metric-chip">Qté <strong>${item.quantite}</strong></div>
+                <div class="metric-chip">Visites <strong>${item.visites}</strong></div>
+                <div class="metric-chip">CA <strong>${formatCurrency(item.chiffreAffaires)}</strong></div>
+              </div>
+              <div class="progress-track"><span style="width:${ratio}%"></span></div>
             </div>
-            <div class="progress-track"><span style="width:${ratio}%"></span></div>
+            <div class="checklist-quantity-board">
+              <div class="checklist-counter">
+                <span class="checklist-counter-label">Stock client</span>
+                <div class="checklist-stepper">
+                  <button type="button" data-checklist-action="adjust" data-checklist-product-id="${escapeHtml(productId)}" data-checklist-field="stock_client" data-delta="-1">−</button>
+                  <input class="checklist-order-input" type="number" min="0" inputmode="numeric" data-checklist-product-id="${escapeHtml(productId)}" data-checklist-field="stock_client" value="${stockQty > 0 ? escapeHtml(stockQty) : ""}" placeholder="0">
+                  <button type="button" data-checklist-action="adjust" data-checklist-product-id="${escapeHtml(productId)}" data-checklist-field="stock_client" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="checklist-counter">
+                <span class="checklist-counter-label">Recommande</span>
+                <div class="checklist-stepper">
+                  <button type="button" data-checklist-action="adjust" data-checklist-product-id="${escapeHtml(productId)}" data-checklist-field="quantite" data-delta="-1">−</button>
+                  <input class="checklist-order-input" type="number" min="0" inputmode="numeric" data-checklist-product-id="${escapeHtml(productId)}" data-checklist-field="quantite" value="${recommendQty > 0 ? escapeHtml(recommendQty) : ""}" placeholder="0">
+                  <button type="button" data-checklist-action="adjust" data-checklist-product-id="${escapeHtml(productId)}" data-checklist-field="quantite" data-delta="1">+</button>
+                </div>
+              </div>
+            </div>
           </div>
         `;
       }).join("");
+      renderRecommendationCartState();
     }
 
     function openTopProduits() {
+      refreshRecommendationBuilderForms();
       renderTopProduits();
       dom.topProduitsOverlay.classList.add("active");
     }
@@ -4648,6 +5069,7 @@
     async function handleClientChange() {
       updateClientHeader();
       refreshProductDatalist(getSelectedClientId());
+      refreshRecommendationBuilderForms();
       await loadVisites();
     }
 
@@ -4677,6 +5099,16 @@
       dom.mobileAddVisitBtn.addEventListener("click", () => openVisitModal());
       dom.prepareQuickRecoBtn.addEventListener("click", openVisitModalFromRecommendationCart);
       dom.clearQuickRecoBtn.addEventListener("click", () => clearRecommendationCart());
+      dom.quickRecoProductSearch.addEventListener("input", () => refreshRecommendationBuilderPrice("quick"));
+      dom.quickRecoPlaqueSelect.addEventListener("change", () => refreshRecommendationBuilderPrice("quick"));
+      dom.quickRecoProductPickerBtn.addEventListener("click", () => openProductSearchPicker(dom.quickRecoProductSearch));
+      dom.quickRecoAddProductBtn.addEventListener("click", () => addRecommendationBuilderProduct("quick"));
+      dom.quickRecoProductSearch.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          addRecommendationBuilderProduct("quick");
+        }
+      });
       dom.closeVisitModalBtn.addEventListener("click", closeVisitModal);
       dom.cancelVisitBtn.addEventListener("click", closeVisitModal);
       dom.addProductRowBtn.addEventListener("click", () => {
@@ -4696,6 +5128,18 @@
       });
       dom.popupVisitType.addEventListener("change", () => applyVisitTypeUiState());
       dom.closeTopProduitsBtn.addEventListener("click", closeTopProduits);
+      dom.prepareChecklistOrderBtn.addEventListener("click", openVisitModalFromRecommendationCart);
+      dom.toggleChecklistProductPanelBtn.addEventListener("click", () => toggleChecklistProductPanel());
+      dom.checklistProductSearch.addEventListener("input", () => refreshRecommendationBuilderPrice("checklist"));
+      dom.checklistPlaqueSelect.addEventListener("change", () => refreshRecommendationBuilderPrice("checklist"));
+      dom.checklistProductPickerBtn.addEventListener("click", () => openProductSearchPicker(dom.checklistProductSearch));
+      dom.checklistAddProductBtn.addEventListener("click", () => addRecommendationBuilderProduct("checklist"));
+      dom.checklistProductSearch.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          addRecommendationBuilderProduct("checklist");
+        }
+      });
       dom.closeClientModalBtn.addEventListener("click", closeClientModal);
       dom.cancelClientBtn.addEventListener("click", closeClientModal);
       dom.clientForm.addEventListener("submit", saveClient);
@@ -4715,13 +5159,16 @@
       dom.visitesTableBody.addEventListener("click", handleVisitActionClick);
       dom.visitesTableHead.addEventListener("input", handleRecommendationControlChange);
       dom.visitesTableHead.addEventListener("change", handleRecommendationControlChange);
+      dom.topProduitsList.addEventListener("click", handleChecklistListClick);
+      dom.topProduitsList.addEventListener("input", handleChecklistListInput);
+      document.querySelectorAll("[data-reco-builder][data-reco-target]").forEach(button => {
+        button.addEventListener("click", () => {
+          adjustRecommendationBuilderInput(button.dataset.recoBuilder, button.dataset.recoTarget, button.dataset.delta);
+        });
+      });
 
       dom.visitModalOverlay.addEventListener("click", event => {
         if (event.target === dom.visitModalOverlay) closeVisitModal();
-      });
-
-      dom.topProduitsOverlay.addEventListener("click", event => {
-        if (event.target === dom.topProduitsOverlay) closeTopProduits();
       });
 
       dom.clientModalOverlay.addEventListener("click", event => {
@@ -4743,7 +5190,6 @@
       document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
           closeVisitModal();
-          closeTopProduits();
           closeClientModal();
           closeLastAccountsModal();
           closeClientAccountModal();
