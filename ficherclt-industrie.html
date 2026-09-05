@@ -530,10 +530,13 @@
     }
     .product-row{
       display:grid;
-      grid-template-columns:minmax(0,2fr) 1.15fr .72fr .8fr .95fr .95fr 1fr auto;
-      gap:10px;align-items:end;padding:16px;border-radius:18px;
+      grid-template-columns:minmax(210px,1.45fr) minmax(135px,.8fr) minmax(74px,.38fr) minmax(86px,.45fr) minmax(96px,.5fr) minmax(104px,.55fr) minmax(96px,.5fr) minmax(74px,.36fr) auto;
+      gap:8px;align-items:end;padding:12px;border-radius:18px;
       background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
     }
+    .product-row .field-group{gap:6px}
+    .product-row label{font-size:.74rem;white-space:nowrap}
+    .product-row input,.product-row select{min-height:42px;padding:10px 11px;font-size:.86rem}
     .product-search-wrap{position:relative}
     .product-search-wrap input{padding-right:46px;appearance:none;-webkit-appearance:none;background-image:none!important}
     .product-search-wrap input[list]::-webkit-calendar-picker-indicator{
@@ -552,12 +555,25 @@
     .product-search-trigger svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none}
     .product-selected-hint{min-height:18px;margin-top:6px;color:var(--muted-2);font-size:.75rem;line-height:1.35}
     .price-box{
-      min-height:46px;display:flex;align-items:center;padding:11px 12px;border-radius:14px;
+      min-height:42px;display:flex;align-items:center;padding:10px 11px;border-radius:14px;
       background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
       color:var(--text);font-weight:700;font-size:.86rem;
     }
     .price-edit-input{display:block}
-    .color-picker{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:46px}
+    .color-picker{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-height:42px}
+    .demo-toggle{
+      min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+      padding:8px 10px;border-radius:14px;border:1px solid rgba(148,163,184,.18);
+      background:rgba(15,23,42,.72);color:#dbeafe;font-size:.78rem;font-weight:800;
+      cursor:pointer;user-select:none;
+    }
+    .demo-toggle input{width:16px;height:16px;min-height:auto;padding:0;accent-color:#38bdf8}
+    .demo-toggle span{line-height:1}
+    .demo-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:4px 8px;border-radius:999px;background:rgba(56,189,248,.13);
+      border:1px solid rgba(56,189,248,.22);color:#d8f3ff;font-size:.68rem;font-weight:900;
+    }
     .form-total-box{
       margin-top:18px;padding:16px 18px;border-radius:18px;
       background:rgba(56,189,248,.11);border:1px solid rgba(56,189,248,.18);
@@ -2455,7 +2471,7 @@
           const chunk = visiteIds.slice(i, i + chunkSize);
           const { data: lignesData, error: lignesError } = await supabaseClient
             .from("industrie_visite_commandes")
-            .select("id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire")
+            .select("id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire, demo_effectuee")
             .in("visite_id", chunk);
 
           if (lignesError) {
@@ -2474,7 +2490,8 @@
       return visites.map(visite => {
         const nestedCommandes = [];
         const fallbackCommandes = commandesByVisiteId.get(String(visite.id)) || [];
-        const commandes = nestedCommandes.length ? nestedCommandes : fallbackCommandes;
+        const commandes = (nestedCommandes.length ? nestedCommandes : fallbackCommandes)
+          .map(commande => ({ ...commande, demo_effectuee: Boolean(commande.demo_effectuee) }));
 
         return {
           ...visite,
@@ -3230,6 +3247,7 @@
           quantite: item.quantite,
           stock_client: item.stock_client || 0,
           couleur: "green",
+          demo_effectuee: false,
           plaque_id: item.plaque_id || "",
           prix_unitaire: item.prix_unitaire
         }))
@@ -3267,6 +3285,7 @@
                 <div class="visit-line-metrics">
                   <div class="metric-chip">Qté <strong>${Number(commande.quantite || 0)}</strong></div>
                   <div class="metric-chip">Stock <strong>${Number(commande.stock_client || 0)}</strong></div>
+                  ${commande.demo_effectuee ? '<div class="metric-chip">Démo <strong>Oui</strong></div>' : ''}
                   <div class="metric-chip">PU <strong>${formatCurrency(commande.prix_unitaire || 0)}</strong></div>
                   <div class="metric-chip">Ligne <strong>${formatCurrency(lineTotal)}</strong></div>
                 </div>
@@ -3397,6 +3416,7 @@
                   <div>${getColorDotHtml(commande.couleur || "green")}</div>
                   <strong>Q ${Number(commande.quantite || 0)}</strong>
                   <span>Stock ${Number(commande.stock_client || 0)}</span>
+                  ${commande.demo_effectuee ? '<span class="demo-badge">Démo</span>' : ''}
                 </div>
               </td>
             `;
@@ -3677,18 +3697,19 @@
         produitId: row.querySelector(".produit-id-input")?.value || "",
         typedValue: row.querySelector(".produit-search-input")?.value.trim() || "",
         quantite: parseInt(row.querySelector(".quantite-input")?.value, 10) || 0,
-        stockClient: parseInt(row.querySelector(".stock-input")?.value, 10) || 0
+        stockClient: parseInt(row.querySelector(".stock-input")?.value, 10) || 0,
+        demoEffectuee: Boolean(row.querySelector(".demo-input")?.checked)
       };
     }
 
     function hasProductRowKeyboardData(row) {
-      const { typedValue, quantite, stockClient } = getProductRowKeyboardState(row);
-      return Boolean(typedValue || quantite > 0 || stockClient > 0);
+      const { typedValue, quantite, stockClient, demoEffectuee } = getProductRowKeyboardState(row);
+      return Boolean(typedValue || quantite > 0 || stockClient > 0 || demoEffectuee);
     }
 
     function isProductRowReadyForKeyboardAdd(row) {
-      const { produitId, quantite, stockClient } = getProductRowKeyboardState(row);
-      return Boolean(produitId && (quantite > 0 || stockClient > 0));
+      const { produitId, quantite, stockClient, demoEffectuee } = getProductRowKeyboardState(row);
+      return Boolean(produitId && (quantite > 0 || stockClient > 0 || demoEffectuee));
     }
 
     function getNextProductRow(row) {
@@ -3752,6 +3773,7 @@
         : roundPrice(tarifInfo.prix || 0);
       const frozenPrice = prefill?.prix_unitaire != null;
       const quantiteValue = prefill?.quantite != null ? Number(prefill.quantite || 0) : "";
+      const demoChecked = Boolean(prefill?.demo_effectuee);
 
       const row = document.createElement("div");
       row.className = "product-row";
@@ -3804,6 +3826,14 @@
         <div class="field-group">
           <label>Couleur</label>
           ${createColorPicker(prefill?.couleur || "green")}
+        </div>
+
+        <div class="field-group">
+          <label>Démo</label>
+          <label class="demo-toggle">
+            <input type="checkbox" class="demo-input" ${demoChecked ? "checked" : ""} />
+            <span>Oui</span>
+          </label>
         </div>
 
         <div class="field-group">
@@ -3869,7 +3899,7 @@
         priceInput.value = normalized;
       });
 
-      row.querySelectorAll(".produit-search-input, .line-plaque-select, .quantite-input, .stock-input, .price-edit-input").forEach(control => {
+      row.querySelectorAll(".produit-search-input, .line-plaque-select, .quantite-input, .stock-input, .price-edit-input, .demo-input").forEach(control => {
         control.addEventListener("keydown", event => handleProductRowEnter(event, row));
       });
 
@@ -3999,7 +4029,7 @@
     }
 
     function collectCommandesFromForm() {
-      if (!isOrderVisitType(getPopupVisitType())) {
+      if (!isProductEntryVisitType(getPopupVisitType())) {
         return { commandes: [], invalidFilledRow: false };
       }
 
@@ -4013,21 +4043,23 @@
         const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
         const stockClient = parseInt(row.querySelector(".stock-input").value, 10) || 0;
         const couleur = row.querySelector(".color-picker")?.dataset.selected || "green";
+        const demoEffectuee = Boolean(row.querySelector(".demo-input")?.checked);
         const prixUnitaire = roundPrice(row.querySelector(".prix-unitaire-input").value || 0);
-        const rowHasData = typedValue || quantite > 0 || stockClient > 0;
+        const rowHasData = typedValue || quantite > 0 || stockClient > 0 || demoEffectuee;
 
         if (rowHasData && !produitId) {
           invalidFilledRow = true;
           return;
         }
 
-        if (produitId && (quantite > 0 || stockClient > 0)) {
+        if (produitId && (quantite > 0 || stockClient > 0 || demoEffectuee)) {
           commandes.push({
             produit_id: produitId,
             quantite,
             stock_client: stockClient,
             couleur,
-            prix_unitaire: roundPrice(prixUnitaire)
+            prix_unitaire: roundPrice(prixUnitaire),
+            demo_effectuee: demoEffectuee
           });
         }
       });
@@ -4038,7 +4070,7 @@
     function findZeroTotalCommandes(commandes) {
       return (commandes || []).filter(commande => {
         const lineTotal = roundPrice(Number(commande.quantite || 0) * roundPrice(commande.prix_unitaire || 0));
-        return lineTotal === 0;
+        return lineTotal === 0 && !(commande.demo_effectuee && Number(commande.quantite || 0) <= 0);
       });
     }
 
@@ -4839,6 +4871,7 @@
       const note = dom.popupNote.value.trim();
       const { commandes, invalidFilledRow } = collectCommandesFromForm();
       const orderVisit = isOrderVisitType(typeVisite);
+      const productEntryVisit = isProductEntryVisitType(typeVisite);
 
       if (!clientId) return showToast("Selectionne un client avant d'enregistrer.", "warning");
       if (!dateVisite) return showToast("Renseigne une date de visite.", "warning");
@@ -4867,14 +4900,15 @@
             .eq("visite_id", visiteId);
           if (deleteCommandesError) throw deleteCommandesError;
 
-          if (orderVisit && commandes.length) {
+          if (productEntryVisit && commandes.length) {
             const lignes = commandes.map(commande => ({
               visite_id: visiteId,
               produit_id: commande.produit_id,
               quantite: commande.quantite,
               stock_client: commande.stock_client,
               couleur: commande.couleur,
-              prix_unitaire: commande.prix_unitaire
+              prix_unitaire: commande.prix_unitaire,
+              demo_effectuee: Boolean(commande.demo_effectuee)
             }));
 
             const { error: insertCommandesError } = await supabaseClient
@@ -4892,14 +4926,15 @@
         } else {
           const { data: visiteData, usedFallback } = await insertVisitRecordWithPhoneFallback(visitPayload, typeVisite);
 
-          if (orderVisit && commandes.length) {
+          if (productEntryVisit && commandes.length) {
             const lignes = commandes.map(commande => ({
               visite_id: visiteData.id,
               produit_id: commande.produit_id,
               quantite: commande.quantite,
               stock_client: commande.stock_client,
               couleur: commande.couleur,
-              prix_unitaire: commande.prix_unitaire
+              prix_unitaire: commande.prix_unitaire,
+              demo_effectuee: Boolean(commande.demo_effectuee)
             }));
 
             const { error: insertCommandesError } = await supabaseClient

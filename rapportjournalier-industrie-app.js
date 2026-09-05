@@ -21,6 +21,8 @@
       nbRouges: 0,
       nbJaunes: 0,
       nbBleus: 0,
+      nbDemos: 0,
+      nbVisitesAvecDemo: 0,
       totalQuantite: 0,
       totalStock: 0,
       totalCA: 0,
@@ -189,7 +191,8 @@
       nbRouges: 0,
       nbJaunes: 0,
       nbVerts: 0,
-      nbBleus: 0
+      nbBleus: 0,
+      nbDemos: 0
     };
 
     (visite.commandes || []).forEach(function (cmd) {
@@ -202,6 +205,7 @@
       if (color === "yellow") metrics.nbJaunes += 1;
       if (color === "green") metrics.nbVerts += 1;
       if (color === "blue") metrics.nbBleus += 1;
+      if (cmd.demo_effectuee) metrics.nbDemos += 1;
     });
 
     return metrics;
@@ -350,7 +354,7 @@
     var commandes = visiteIds.length
       ? await fetchAllRapportRows(
           "industrie_visite_commandes",
-          "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire",
+          "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire, demo_effectuee",
           { in: { column: "visite_id", values: visiteIds } }
         )
       : [];
@@ -401,6 +405,7 @@
             quantite: normalizeNumber(cmd.quantite),
             stock_client: normalizeNumber(cmd.stock_client),
             couleur: normalizeColor(cmd.couleur),
+            demo_effectuee: Boolean(cmd.demo_effectuee),
             prix_unitaire: unitPrice,
             montant_ligne: normalizeNumber(cmd.quantite) * unitPrice,
             produit: produit
@@ -440,6 +445,8 @@
       stats.nbJaunes += visitMetrics.nbJaunes;
       stats.nbVerts += visitMetrics.nbVerts;
       stats.nbBleus += visitMetrics.nbBleus;
+      stats.nbDemos += visitMetrics.nbDemos;
+      if (visitMetrics.nbDemos > 0) stats.nbVisitesAvecDemo += 1;
       if (terrainVisit) {
         terrainLineCount += visitMetrics.nbLignes;
         if (saleVisit) stats.nbVisitesAvecVente += 1;
@@ -462,6 +469,7 @@
           yellows: 0,
           greens: 0,
           blues: 0,
+          demos: 0,
           notes: [],
           productsMap: new Map()
         });
@@ -477,6 +485,7 @@
       clientEntry.yellows += visitMetrics.nbJaunes;
       clientEntry.greens += visitMetrics.nbVerts;
       clientEntry.blues += visitMetrics.nbBleus;
+      clientEntry.demos += visitMetrics.nbDemos;
 
       if (visite.note && String(visite.note).trim()) {
         clientEntry.notes.push({
@@ -504,7 +513,8 @@
             reds: 0,
             yellows: 0,
             greens: 0,
-            blues: 0
+            blues: 0,
+            demos: 0
           });
         }
 
@@ -512,11 +522,12 @@
         clientProduct.lines += 1;
         clientProduct.quantity += normalizeNumber(cmd.quantite);
         clientProduct.stock += normalizeNumber(cmd.stock_client);
-        clientProduct.ca += normalizeNumber(cmd.montant_ligne);
+        clientProduct.ca += getLineRevenue(visite, cmd);
         if (color === "red") clientProduct.reds += 1;
         if (color === "yellow") clientProduct.yellows += 1;
         if (color === "green") clientProduct.greens += 1;
         if (color === "blue") clientProduct.blues += 1;
+        if (cmd.demo_effectuee) clientProduct.demos += 1;
 
         if (!productMap.has(String(productKey))) {
           productMap.set(String(productKey), {
@@ -530,6 +541,7 @@
             yellows: 0,
             greens: 0,
             blues: 0,
+            demos: 0,
             clientIds: new Set()
           });
         }
@@ -538,12 +550,13 @@
         globalProduct.lines += 1;
         globalProduct.quantity += normalizeNumber(cmd.quantite);
         globalProduct.stock += normalizeNumber(cmd.stock_client);
-        globalProduct.ca += normalizeNumber(cmd.montant_ligne);
+        globalProduct.ca += getLineRevenue(visite, cmd);
         globalProduct.clientIds.add(String(clientId));
         if (color === "red") globalProduct.reds += 1;
         if (color === "yellow") globalProduct.yellows += 1;
         if (color === "green") globalProduct.greens += 1;
         if (color === "blue") globalProduct.blues += 1;
+        if (cmd.demo_effectuee) globalProduct.demos += 1;
       });
     });
 
@@ -568,6 +581,7 @@
           yellows: client.yellows,
           greens: client.greens,
           blues: client.blues,
+          demos: client.demos,
           notes: client.notes.sort(function (a, b) {
             return String(a.date).localeCompare(String(b.date));
           }),
@@ -586,7 +600,8 @@
                 reds: product.reds,
                 yellows: product.yellows,
                 greens: product.greens,
-                blues: product.blues
+                blues: product.blues,
+                demos: product.demos
               };
             })
         };
@@ -602,6 +617,7 @@
         visits: client.visits,
         lines: client.lines,
         quantity: client.quantity,
+        demos: client.demos,
         ca: client.ca
       };
     });
@@ -615,6 +631,7 @@
           quantity: product.quantity,
           ca: product.ca,
           clients: product.clientIds.size,
+          demos: product.demos,
           reds: product.reds,
           yellows: product.yellows,
           greens: product.greens,
@@ -642,6 +659,7 @@
       summaryQuantite: formatNumber(stats.totalQuantite),
       summaryCA: formatCurrency(stats.totalCA),
       summaryStock: formatNumber(stats.totalStock),
+      summaryDemos: formatNumber(stats.nbDemos),
       summaryRouges: formatNumber(stats.nbRouges),
       summaryJaunes: formatNumber(stats.nbJaunes),
       summaryVerts: formatNumber(stats.nbVerts)
@@ -735,7 +753,7 @@
           escapeHtml(product.reference || "-") +
           " · Lignes : " +
           formatNumber(product.lines) +
-          " · Priorites : " +
+          " · Priorités : " +
           escapeHtml(buildColorSummary(product)) +
           "</div>" +
           "</div>" +
@@ -871,6 +889,8 @@
     lines.push("- Lignes produits : " + formatNumber(reportStats.nbLignes));
     lines.push("- Quantité totale : " + formatNumber(reportStats.totalQuantite));
     lines.push("- Stock observé : " + formatNumber(reportStats.totalStock));
+    lines.push("- Démonstrations : " + formatNumber(reportStats.nbDemos));
+    lines.push("- Visites avec démo : " + formatNumber(reportStats.nbVisitesAvecDemo));
     lines.push("- CA du jour : " + formatCurrency(reportStats.totalCA));
     lines.push("- Alertes rouges : " + formatNumber(reportStats.nbRouges));
     lines.push("- Vigilances jaunes : " + formatNumber(reportStats.nbJaunes));
@@ -925,6 +945,8 @@
                 formatNumber(product.quantity) +
                 " | Stock " +
                 formatNumber(product.stock) +
+                " | Démos " +
+                formatNumber(product.demos) +
                 " | CA " +
                 formatCurrency(product.ca) +
                 " | Priorites " +
@@ -955,6 +977,7 @@
       buildPreviewSummaryCard("Lignes produits", formatNumber(reportStats.nbLignes)) +
       buildPreviewSummaryCard("Quantité totale", formatNumber(reportStats.totalQuantite)) +
       buildPreviewSummaryCard("Stock observé", formatNumber(reportStats.totalStock)) +
+      buildPreviewSummaryCard("Démonstrations", formatNumber(reportStats.nbDemos)) +
       buildPreviewSummaryCard("CA du jour", formatCurrency(reportStats.totalCA)) +
       "</div>"
     );
@@ -1060,7 +1083,7 @@
             escapeHtml(product.reference || "-") +
             " · Lignes : " +
             formatNumber(product.lines) +
-            " · Priorites : " +
+            " · Priorités : " +
             escapeHtml(buildColorSummary(product)) +
             "</div>" +
             "</td>" +
@@ -1339,6 +1362,8 @@
       ["Quantité totale", formatNumber(reportStats.totalQuantite) + " unité(s)"],
       ["Stock observé", formatNumber(reportStats.totalStock) + " unité(s)"],
       ["Moyenne lignes / visite", formatAverage(reportStats.avgLinesPerVisit)],
+      ["Démonstrations", formatNumber(reportStats.nbDemos)],
+      ["Visites avec démo", formatNumber(reportStats.nbVisitesAvecDemo)],
       ["Alertes rouges", formatNumber(reportStats.nbRouges)],
       ["Vigilances jaunes", formatNumber(reportStats.nbJaunes)],
       ["Opportunités vertes", formatNumber(reportStats.nbVerts)]
@@ -1396,7 +1421,9 @@
                   escapeHtml(product.reference || "-") +
                   " · Lignes : " +
                   formatNumber(product.lines) +
-                  " · Priorites : " +
+                  " · Démos : " +
+                  formatNumber(product.demos || 0) +
+                  " · Priorités : " +
                   escapeHtml(buildColorSummary(product)) +
                   "</div>" +
                   "</td>" +

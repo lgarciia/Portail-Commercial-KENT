@@ -944,6 +944,10 @@
           <div class="summary-chip-value" id="summaryLignes">0</div>
         </div>
         <div class="summary-chip">
+          <div class="summary-chip-label">Démonstrations</div>
+          <div class="summary-chip-value" id="summaryDemos">0</div>
+        </div>
+        <div class="summary-chip">
           <div class="summary-chip-label">Opportunités vertes</div>
           <div class="summary-chip-value" id="summaryVerts">0</div>
         </div>
@@ -1125,7 +1129,7 @@
       const commandes = visiteIds.length
         ? await fetchRapportRows(
             "industrie_visite_commandes",
-            "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire",
+            "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire, demo_effectuee",
             { in: { column: "visite_id", values: visiteIds } }
           )
         : [];
@@ -1163,6 +1167,7 @@
         client: clientsById.get(String(visite.client_id)) || null,
         commandes: (commandesByVisiteId.get(String(visite.id)) || []).map(cmd => ({
           ...cmd,
+          demo_effectuee: Boolean(cmd.demo_effectuee),
           produit: produitsById.get(String(cmd.produit_id)) || null
         }))
       }));
@@ -1172,20 +1177,30 @@
       const uniqueClients = new Set();
       let nbLignes = 0;
       let nbVerts = 0;
+      let nbDemos = 0;
+      let nbVisitesAvecDemo = 0;
 
       visites.forEach(visite => {
         if (isTerrainVisit(visite) && visite.client?.id) uniqueClients.add(visite.client.id);
+        let visitDemos = 0;
         (visite.commandes || []).forEach(cmd => {
           nbLignes += 1;
           if ((cmd.couleur || "") === "green") nbVerts += 1;
+          if (cmd.demo_effectuee) {
+            nbDemos += 1;
+            visitDemos += 1;
+          }
         });
+        if (visitDemos > 0) nbVisitesAvecDemo += 1;
       });
 
       return {
         nbVisites: visites.filter(isTerrainVisit).length,
         nbClients: uniqueClients.size,
         nbLignes,
-        nbVerts
+        nbVerts,
+        nbDemos,
+        nbVisitesAvecDemo
       };
     }
 
@@ -1193,6 +1208,8 @@
       document.getElementById("summaryVisites").textContent = stats.nbVisites;
       document.getElementById("summaryClients").textContent = stats.nbClients;
       document.getElementById("summaryLignes").textContent = stats.nbLignes;
+      const summaryDemos = document.getElementById("summaryDemos");
+      if (summaryDemos) summaryDemos.textContent = stats.nbDemos;
       document.getElementById("summaryVerts").textContent = stats.nbVerts;
     }
 
@@ -1448,4 +1465,3 @@
   <script src="./rapportjournalier-industrie-app.js"></script>
 </body>
 </html>
-
