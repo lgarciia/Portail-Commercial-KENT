@@ -176,7 +176,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 980px;
+      min-width: 1080px;
     }
 
     thead {
@@ -217,6 +217,21 @@
       color: var(--muted);
       font-size: 13px;
       font-weight: 600;
+    }
+
+    .source-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      color: #e0f2fe;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
     .date-text {
@@ -305,7 +320,7 @@
     <div class="topbar">
       <div class="title-wrap">
         <h1>Mes rappels clients</h1>
-        <p>Affichage des lignes de rappel par couleur sur l'ensemble des clients.</p>
+        <p>Affichage consolidé des rappels automobile et industrie par couleur.</p>
       </div>
 
       <div class="top-actions">
@@ -345,6 +360,7 @@
               <th>Client</th>
               <th>Numéro</th>
               <th>Produit</th>
+              <th>Origine</th>
               <th>Date</th>
               <th>Note</th>
               <th>Action</th>
@@ -352,7 +368,7 @@
           </thead>
           <tbody id="rappelTableBody">
             <tr>
-              <td colspan="6" class="loading-state">Chargement des rappels...</td>
+              <td colspan="7" class="loading-state">Chargement des rappels...</td>
             </tr>
           </tbody>
         </table>
@@ -422,7 +438,7 @@
   }
 
   function shouldScopeTable(tableName) {
-    return ["clients", "visites"].includes(tableName);
+    return ["clients", "visites", "industrie_clients", "industrie_visites"].includes(tableName);
   }
 
   function applyCommercialScope(tableName, query) {
@@ -438,7 +454,7 @@
       const label = getColorFilterLabel(colorValue);
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6" class="empty-state">Aucune ligne ${escapeHtml(label)} trouvee.</td>
+          <td colspan="7" class="empty-state">Aucune ligne ${escapeHtml(label)} trouvée.</td>
         </tr>
       `;
       return;
@@ -449,10 +465,11 @@
         <td><div class="client-name">${escapeHtml(row.client_nom)}</div></td>
         <td><div class="account-number">${escapeHtml(row.numero_compte)}</div></td>
         <td><div class="product-name">${escapeHtml(row.produit_nom)}</div></td>
+        <td><span class="source-pill">${escapeHtml(row.source_label)}</span></td>
         <td><div class="date-text">${escapeHtml(formatDate(row.date_visite))}</div></td>
         <td><div class="note-text">${escapeHtml(row.note)}</div></td>
         <td class="action-cell">
-          <button class="icon-btn" onclick="goToClient('${String(row.client_id).replace(/'/g, "\\'")}')" title="Voir la fiche client">
+          <button class="icon-btn" onclick="goToClient('${escapeJsArg(row.client_id)}','${escapeJsArg(row.target_page)}')" title="Voir la fiche client ${escapeHtml(row.source_label)}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
               <path d="M367-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q560-607 560-640t-23.5-56.5Q513-720 480-720t-56.5 23.5Q400-673 400-640t23.5 56.5Q447-560 480-560t56.5-23.5ZM480-640Zm0 400Z"/>
             </svg>
@@ -484,6 +501,7 @@
         row.client_nom,
         row.numero_compte,
         row.produit_nom,
+        row.source_label,
         row.note,
         row.date_visite
       ]
@@ -507,6 +525,10 @@
       }
     }
     return map;
+  }
+
+  function escapeJsArg(value) {
+    return String(value || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   }
 
   async function fetchAllRows(tableName, columns = "*", options = {}) {
@@ -573,6 +595,32 @@
     return colorValue === selectedColor;
   }
 
+  function buildReminderRows({ commandes, visites, clients, produits, sourceLabel, targetPage }) {
+    const visitesById = mapById(visites);
+    const clientsById = mapById(clients);
+    const produitsById = mapById(produits);
+
+    return commandes.map(cmd => {
+      const visite = visitesById.get(String(cmd.visite_id)) || null;
+      if (!visite) return null;
+      const client = clientsById.get(String(visite.client_id)) || null;
+      const produit = produitsById.get(String(cmd.produit_id)) || null;
+      const couleurNorm = normalizeColor(cmd.couleur);
+
+      return {
+        client_id: visite?.client_id || "",
+        client_nom: client?.nom || "[client introuvable]",
+        numero_compte: client?.numero_compte || "-",
+        produit_nom: buildProductDisplay(produit, cmd),
+        source_label: sourceLabel,
+        target_page: targetPage,
+        date_visite: visite?.date_visite || "",
+        note: visite?.note || "",
+        couleur_norm: couleurNorm
+      };
+    }).filter(row => row && TRACKED_COLORS.has(row.couleur_norm));
+  }
+
   async function loadRappels() {
     try {
       setStatus("Chargement...");
@@ -580,44 +628,48 @@
 
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6" class="loading-state">Chargement des rappels...</td>
+          <td colspan="7" class="loading-state">Chargement des rappels...</td>
         </tr>
       `;
 
       const [
-        commandes,
-        visites,
-        clients,
-        produits
+        commandesAuto,
+        visitesAuto,
+        clientsAuto,
+        produitsAuto,
+        commandesIndustrie,
+        visitesIndustrie,
+        clientsIndustrie,
+        produitsIndustrie
       ] = await Promise.all([
         fetchAllRows("visite_commandes", "*"),
         fetchAllRows("visites", "*"),
         fetchAllRows("clients", "*"),
-        fetchAllRows("produits", "*")
+        fetchAllRows("produits", "*"),
+        fetchAllRows("industrie_visite_commandes", "*"),
+        fetchAllRows("industrie_visites", "*"),
+        fetchAllRows("industrie_clients", "*"),
+        fetchAllRows("industrie_produits", "*")
       ]);
 
-      const visitesById = mapById(visites);
-      const clientsById = mapById(clients);
-      const produitsById = mapById(produits);
-
-      allRows = commandes.map(cmd => {
-        const visite = visitesById.get(String(cmd.visite_id)) || null;
-        if (!visite) return null;
-        const client = visite ? (clientsById.get(String(visite.client_id)) || null) : null;
-        const produit = produitsById.get(String(cmd.produit_id)) || null;
-        const couleurNorm = normalizeColor(cmd.couleur);
-
-        return {
-          client_id: visite?.client_id || "",
-          client_nom: client?.nom || "[client introuvable]",
-          numero_compte: client?.numero_compte || "-",
-          produit_nom: buildProductDisplay(produit, cmd),
-          date_visite: visite?.date_visite || "",
-          note: visite?.note || "",
-          couleur_norm: couleurNorm
-        };
-      })
-      .filter(row => row && TRACKED_COLORS.has(row.couleur_norm))
+      allRows = [
+        ...buildReminderRows({
+          commandes: commandesAuto,
+          visites: visitesAuto,
+          clients: clientsAuto,
+          produits: produitsAuto,
+          sourceLabel: "Automobile",
+          targetPage: "ficherclt.html"
+        }),
+        ...buildReminderRows({
+          commandes: commandesIndustrie,
+          visites: visitesIndustrie,
+          clients: clientsIndustrie,
+          produits: produitsIndustrie,
+          sourceLabel: "Industrie",
+          targetPage: "ficherclt-industrie.html"
+        })
+      ]
       .sort((a, b) => {
         const da = a.date_visite ? new Date(a.date_visite).getTime() : 0;
         const db = b.date_visite ? new Date(b.date_visite).getTime() : 0;
@@ -630,7 +682,7 @@
       console.error("Erreur loadRappels :", err);
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6" class="error-state">
+          <td colspan="7" class="error-state">
             ${escapeHtml(err.message || "Erreur inconnue")}
           </td>
         </tr>
@@ -640,12 +692,12 @@
     }
   }
 
-  function goToClient(clientId) {
+  function goToClient(clientId, targetPage = "ficherclt.html") {
     if (!clientId) {
       alert("Client introuvable pour cette ligne.");
       return;
     }
-    window.location.href = "ficherclt.html?client_id=" + encodeURIComponent(clientId);
+    window.location.href = targetPage + "?client_id=" + encodeURIComponent(clientId);
   }
 
   window.goToClient = goToClient;

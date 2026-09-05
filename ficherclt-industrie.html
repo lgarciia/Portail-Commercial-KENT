@@ -525,6 +525,19 @@
       gap:10px;align-items:end;padding:16px;border-radius:18px;
       background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
     }
+    .product-search-wrap{position:relative}
+    .product-search-wrap .produit-search-input{padding-right:46px}
+    .product-search-trigger{
+      position:absolute;right:7px;top:50%;transform:translateY(-50%);
+      width:34px;height:34px;border-radius:12px;border:1px solid rgba(148,163,184,.18);
+      background:rgba(15,23,42,.72);color:#d8f3ff;display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease;
+    }
+    .product-search-trigger:hover,.product-search-trigger:focus-visible{
+      transform:translateY(-50%) scale(1.03);background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.36);
+      outline:none;
+    }
+    .product-search-trigger svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none}
     .product-selected-hint{min-height:18px;margin-top:6px;color:var(--muted-2);font-size:.75rem;line-height:1.35}
     .price-box{
       min-height:46px;display:flex;align-items:center;padding:11px 12px;border-radius:14px;
@@ -3275,6 +3288,20 @@
       setTimeout(() => input.focus(), 0);
     }
 
+    function openProductSearchPicker(input) {
+      if (!input) return;
+      input.focus();
+      try {
+        if (typeof input.showPicker === "function") {
+          input.showPicker();
+          return;
+        }
+      } catch (error) {
+        console.debug("Ouverture native de la liste produit indisponible:", error?.message || error);
+      }
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    }
+
     function handleProductRowEnter(event, row) {
       if (event.key !== "Enter" || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
 
@@ -3318,7 +3345,15 @@
       row.innerHTML = `
         <div class="field-group">
           <label>Produit</label>
-          <input type="text" class="produit-search-input" list="produitsDatalist" placeholder="Tape une référence ou un nom..." autocomplete="off" value="${escapeHtml(label)}" />
+          <div class="product-search-wrap">
+            <input type="text" class="produit-search-input" list="produitsDatalist" placeholder="Tape une référence ou un nom..." autocomplete="off" value="${escapeHtml(label)}" />
+            <button class="product-search-trigger" type="button" title="Rechercher une référence" aria-label="Rechercher une référence">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4.2 4.2"></path>
+              </svg>
+            </button>
+          </div>
           <input type="hidden" class="produit-id-input" value="${escapeHtml(produit?.id || "")}" />
           <input type="hidden" class="prix-unitaire-input" value="${escapeHtml(toPriceInputValue(initialPrice))}" />
           <div class="product-selected-hint">Choisis un produit actif ou deja utilise</div>
@@ -3369,6 +3404,10 @@
       row.querySelector(".produit-search-input").addEventListener("change", () => {
         syncProductRow(row);
         updatePopupTotalCommande();
+      });
+
+      row.querySelector(".product-search-trigger").addEventListener("click", () => {
+        openProductSearchPicker(row.querySelector(".produit-search-input"));
       });
 
       row.querySelector(".line-plaque-select").addEventListener("change", () => {
