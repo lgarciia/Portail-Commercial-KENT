@@ -3819,8 +3819,8 @@
     }
 
     function buildBdcMailtoLink(client, dateVisite, selectedAccount = null) {
-      const { subject, body } = buildBdcMailContent(client, dateVisite, selectedAccount);
-      return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const { subject } = buildBdcMailContent(client, dateVisite, selectedAccount);
+      return `mailto:?subject=${encodeURIComponent(subject)}`;
     }
 
     function buildDocumentStoragePath(type, filename, dateStr) {
