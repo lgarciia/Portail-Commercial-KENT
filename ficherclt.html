@@ -298,7 +298,7 @@
     .meta-grid,.highlight-grid,.stats-grid{display:grid;gap:12px;align-items:stretch}
     .meta-grid,.highlight-grid{grid-template-columns:repeat(2,minmax(0,1fr));position:relative;z-index:1}
     .highlight-grid{margin-top:14px}
-    .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .stats-grid{grid-template-columns:repeat(7,minmax(0,1fr))}
     .meta-card,.highlight-card,.stat-card{padding:14px;border-radius:16px}
     .meta-card,.highlight-card{
       min-width:0;
@@ -320,8 +320,9 @@
     .meta-card strong,.highlight-card strong,.stat-card strong{
       display:block;color:var(--text);line-height:1.28;word-break:break-word;overflow-wrap:anywhere;
     }
-    .stat-card{padding:16px;border-radius:18px;min-height:104px;display:flex;flex-direction:column;justify-content:center;gap:8px}
-    .stat-card strong{font-size:1.35rem;letter-spacing:-.03em}
+    .stat-card{padding:11px 12px;border-radius:16px;min-height:82px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+    .stat-card span{font-size:.68rem;margin-bottom:4px}
+    .stat-card strong{font-size:1.05rem;letter-spacing:-.03em}
     .panel-toolbar{margin-bottom:18px}
     .view-switch{
       display:inline-flex;align-items:center;gap:8px;
@@ -412,7 +413,7 @@
       background:rgba(255,255,255,.02);
     }
     table{width:100%;border-collapse:collapse;min-width:1100px}
-    th,td{padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.07);text-align:center;vertical-align:middle;font-size:.82rem}
+    th,td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.07);text-align:center;vertical-align:middle;font-size:.8rem}
     th{
       color:#dbe7f9;background:rgba(8,15,26,.96);
       position:sticky;top:0;z-index:1;
@@ -425,24 +426,32 @@
     .sticky-col-2{left:112px;min-width:120px;width:120px}
     .note-col{min-width:260px}
     .actions-col{min-width:130px;width:130px}
-    .product-col{min-width:126px;width:126px}
+    .product-col{min-width:116px;width:116px}
     .table-product-head{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;line-height:1.18}
     .table-product-head strong{font-size:.73rem;text-transform:none;letter-spacing:0}
     .table-product-head span{color:var(--muted-2);font-size:.66rem;text-transform:none;letter-spacing:0}
+    .quick-product-tap{
+      width:100%;border:none;background:transparent;color:inherit;cursor:pointer;padding:0 2px 6px;
+      border-bottom:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;gap:3px;
+      transition:color .16s ease,transform .16s ease;
+    }
+    .quick-product-tap:hover,.quick-product-tap:focus-visible{color:#d8f3ff;transform:translateY(-1px);outline:none}
+    .quick-product-tap strong{font-size:.71rem;text-transform:none;letter-spacing:0}
+    .quick-product-tap span{color:var(--muted-2);font-size:.64rem;text-transform:none;letter-spacing:0}
     .quick-product-control{
-      margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);
+      margin-top:6px;padding-top:6px;
       display:grid;gap:6px;justify-items:center;
     }
     .quick-product-check{
       display:inline-flex;align-items:center;gap:6px;
-      color:#d8f3ff;font-size:.68rem;text-transform:none;letter-spacing:0;font-weight:800;
+      color:#d8f3ff;font-size:.64rem;text-transform:none;letter-spacing:0;font-weight:800;
       cursor:pointer;
     }
-    .quick-product-check input{width:16px;height:16px;accent-color:#38bdf8}
+    .quick-product-check input{width:15px;height:15px;accent-color:#38bdf8}
     .quick-product-qty{
-      width:62px;border:1px solid rgba(148,163,184,.26);
+      width:58px;border:1px solid rgba(148,163,184,.26);
       background:rgba(15,23,42,.72);color:var(--text);
-      border-radius:10px;padding:7px 8px;text-align:center;font-size:.78rem;font-weight:800;outline:none;
+      border-radius:10px;padding:6px 7px;text-align:center;font-size:.76rem;font-weight:800;outline:none;
     }
     .quick-product-qty:focus{border-color:rgba(56,189,248,.62);box-shadow:0 0 0 3px rgba(56,189,248,.12)}
     .quick-product-last{color:var(--muted-2);font-size:.62rem;text-transform:none;letter-spacing:0;font-weight:600}
@@ -526,7 +535,10 @@
       background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
     }
     .product-search-wrap{position:relative}
-    .product-search-wrap .produit-search-input{padding-right:46px}
+    .product-search-wrap input{padding-right:46px;appearance:none;-webkit-appearance:none;background-image:none!important}
+    .product-search-wrap input[list]::-webkit-calendar-picker-indicator{
+      display:none!important;opacity:0!important;pointer-events:none;width:0;height:0;margin:0;
+    }
     .product-search-trigger{
       position:absolute;right:7px;top:50%;transform:translateY(-50%);
       width:34px;height:34px;border-radius:12px;border:1px solid rgba(148,163,184,.18);
@@ -621,7 +633,7 @@
     .recommendation-product-builder{
       width:100%;display:grid;
       grid-template-columns:minmax(230px,1.6fr) minmax(160px,.9fr) minmax(150px,.75fr) minmax(150px,.75fr) minmax(130px,.65fr) auto;
-      gap:10px;align-items:end;
+      gap:10px;align-items:start;
     }
     .quick-reco-panel .recommendation-product-builder{flex:1 1 100%}
     .recommendation-field{min-width:0}
@@ -630,16 +642,16 @@
       font-size:.68rem;text-transform:uppercase;letter-spacing:.09em;font-weight:800;
     }
     .recommendation-field input,.recommendation-field select{
-      width:100%;min-height:44px;border-radius:13px;border:1px solid rgba(148,163,184,.22);
-      background:rgba(15,23,42,.78);color:var(--text);padding:10px 12px;outline:none;font-weight:750;
+      width:100%;min-height:40px;border-radius:13px;border:1px solid rgba(148,163,184,.22);
+      background:rgba(15,23,42,.78);color:var(--text);padding:9px 11px;outline:none;font-weight:750;
     }
     .recommendation-field input:focus,.recommendation-field select:focus{
       border-color:rgba(56,189,248,.58);box-shadow:0 0 0 3px rgba(56,189,248,.12);
     }
     .recommendation-field-product .product-selected-hint{margin-top:6px}
-    .recommendation-stepper{display:grid;grid-template-columns:42px minmax(52px,1fr) 42px;gap:6px;align-items:center}
+    .recommendation-stepper{display:grid;grid-template-columns:40px minmax(52px,1fr) 40px;gap:6px;align-items:center}
     .recommendation-stepper button,.checklist-stepper button{
-      min-height:42px;border:none;border-radius:13px;cursor:pointer;
+      min-height:40px;border:none;border-radius:13px;cursor:pointer;
       background:rgba(56,189,248,.14);color:#d8f3ff;font-weight:900;font-size:1.08rem;
       border:1px solid rgba(56,189,248,.18);transition:transform .16s ease,background .16s ease,border-color .16s ease;
     }
@@ -647,7 +659,7 @@
       transform:translateY(-1px);background:rgba(56,189,248,.22);border-color:rgba(56,189,248,.32);
     }
     .recommendation-stepper input,.checklist-stepper input{text-align:center;padding-inline:6px}
-    .recommendation-add-btn{min-height:44px;align-self:end}
+    .recommendation-add-btn{min-height:40px;align-self:start;margin-top:22px}
     .top-products-list{display:flex;flex-direction:column;gap:12px;padding-bottom:8px}
     .top-product-item{
       padding:16px;border-radius:20px;
@@ -3234,6 +3246,16 @@
       setRecommendationCartItem(productId, quantityInput.value, checkbox.checked);
     }
 
+    function handleRecommendationHeaderClick(event) {
+      const trigger = event.target.closest("[data-reco-action='increment'][data-reco-product-id]");
+      if (!trigger) return;
+
+      const productId = trigger.dataset.recoProductId;
+      const existing = state.recommendationCart.get(String(productId)) || {};
+      const nextQuantity = parseRecommendationQuantity(existing.quantite) + 1;
+      setRecommendationCartPayload(productId, { quantite: nextQuantity });
+    }
+
     function openVisitModalFromRecommendationCart() {
       const clientId = getSelectedClientId();
       const items = getRecommendationCartItems();
@@ -3351,8 +3373,10 @@
         headHtml += `
           <th class="product-col">
             <div class="table-product-head">
-              <strong>${escapeHtml(produit.nom || "Produit")}</strong>
-              <span>${escapeHtml(produit.reference_produit || "") || "&nbsp;"}</span>
+              <button class="quick-product-tap" type="button" data-reco-action="increment" data-reco-product-id="${escapeHtml(productId)}" title="Ajouter 1 en recommande">
+                <strong>${escapeHtml(produit.nom || "Produit")}</strong>
+                <span>${escapeHtml(produit.reference_produit || "") || "&nbsp;"}</span>
+              </button>
               <div class="quick-product-control">
                 <label class="quick-product-check">
                   <input class="quick-reco-check-input" type="checkbox" data-reco-product-id="${escapeHtml(productId)}" ${cartItem ? "checked" : ""}>
@@ -5159,6 +5183,7 @@
       dom.visitesTableBody.addEventListener("click", handleVisitActionClick);
       dom.visitesTableHead.addEventListener("input", handleRecommendationControlChange);
       dom.visitesTableHead.addEventListener("change", handleRecommendationControlChange);
+      dom.visitesTableHead.addEventListener("click", handleRecommendationHeaderClick);
       dom.topProduitsList.addEventListener("click", handleChecklistListClick);
       dom.topProduitsList.addEventListener("input", handleChecklistListInput);
       document.querySelectorAll("[data-reco-builder][data-reco-target]").forEach(button => {
