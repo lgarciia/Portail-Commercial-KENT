@@ -224,6 +224,9 @@
     .panel h2{margin:0;font-size:21px;letter-spacing:-.03em}
     .sub{margin-top:5px;color:var(--muted);font-size:13px;line-height:1.4}
     .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .toolbar.compact-toolbar{align-items:end;flex-wrap:nowrap}
+    .toolbar.compact-toolbar .field{min-width:150px}
+    .toolbar.compact-toolbar .search{max-width:230px}
     .search{width:100%;max-width:290px}
     .dashboard-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr);gap:14px;align-items:start}
     .dashboard-grid + .panel{margin-top:14px}
@@ -355,13 +358,40 @@
     .daily-client-toggle{color:var(--muted);font-size:18px}
     .daily-client-lines{display:grid;gap:7px;padding:0 12px 12px}
     .daily-line{
-      display:grid;grid-template-columns:76px 96px minmax(120px,.62fr) minmax(180px,1fr) 96px 54px 86px 92px;
+      display:grid;grid-template-columns:76px 92px minmax(110px,.58fr) minmax(170px,1fr) 108px 58px 54px 86px 92px;
       gap:8px;align-items:center;border:1px solid rgba(255,255,255,.08);border-radius:13px;
       background:rgba(3,7,18,.20);padding:8px 10px;font-size:12px;min-width:0;
+    }
+    .daily-line.daily-line-zero{
+      border-color:rgba(148,163,184,.18);
+      background:rgba(148,163,184,.07);
     }
     .daily-line span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.82)}
     .daily-line .muted{color:var(--muted)}
     .daily-line .num{text-align:right;font-variant-numeric:tabular-nums}
+    .daily-line .demo-cell{display:flex;justify-content:center;overflow:visible}
+    .demo-line-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:20px;
+      padding:0 7px;
+      border-radius:999px;
+      border:1px solid rgba(20,184,166,.34);
+      background:rgba(20,184,166,.14);
+      color:#99f6e4;
+      font-size:10px;
+      font-weight:950;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+      vertical-align:middle;
+    }
+    .daily-zero-badge{
+      display:inline-flex!important;align-items:center;justify-content:center;width:max-content;
+      min-height:22px;margin-top:4px;padding:0 8px;border-radius:999px;
+      border:1px solid rgba(148,163,184,.24);background:rgba(148,163,184,.10);
+      color:rgba(226,232,240,.82)!important;font-size:10px!important;font-weight:950;text-transform:uppercase;letter-spacing:.04em;
+    }
     .compact-list{display:grid;gap:8px}
     .compact-row{
       border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.04);padding:10px;
@@ -403,7 +433,7 @@
       .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
       .commercial-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .months{grid-template-columns:repeat(6,minmax(0,1fr))}
-      .daily-line{grid-template-columns:70px 90px minmax(90px,.65fr) minmax(120px,1fr) 80px 44px 72px 78px;font-size:11px}
+      .daily-line{grid-template-columns:70px 86px minmax(90px,.55fr) minmax(120px,1fr) 88px 52px 44px 72px 78px;font-size:11px}
     }
     @media(max-width:780px){
       .wrap{padding:14px}
@@ -418,6 +448,8 @@
       .daily-line span{white-space:normal}
       .months{grid-template-columns:repeat(2,minmax(0,1fr))}
       .search{max-width:none}
+      .toolbar.compact-toolbar{flex-wrap:wrap}
+      .toolbar.compact-toolbar .field,.toolbar.compact-toolbar .search{width:100%;max-width:none}
     }
   </style>
 </head>
@@ -427,13 +459,13 @@
       <div class="identity-left">
         <span class="avatar" aria-hidden="true">R</span>
         <span class="identity-copy">
-          <small data-session-eyebrow>Connecte en responsable</small>
+          <small data-session-eyebrow>Connecté en responsable</small>
           <strong data-session-name>Responsable</strong>
-          <span data-session-role>Role responsable actif</span>
+          <span data-session-role>Rôle responsable actif</span>
         </span>
       </div>
       <div class="top-actions">
-        <span class="btn ghost small" data-session-source>Session securisee</span>
+        <span class="btn ghost small" data-session-source>Session sécurisée</span>
         <a class="btn small" href="requete-commerce.html?scope=equipe">Requête commerce</a>
         <button class="btn small" type="button" data-open-team>Équipe</button>
         <button class="btn small" type="button" data-refresh-top>Synchroniser</button>
@@ -447,9 +479,9 @@
         <h1>Pilotage équipe commerciale</h1>
         <p>
           Vision responsable en lecture seule : CA saisi, budgets actifs, réel importé, documents BDC/devis
-          et activite terrain pour les commerciaux rattaches.
+          et activité terrain pour les commerciaux rattachés.
         </p>
-        <div class="notice" data-scope-message>Chargement du perimetre responsable...</div>
+        <div class="notice" data-scope-message>Chargement du périmètre responsable...</div>
       </div>
       <div class="controls">
         <div class="control-grid">
@@ -489,13 +521,13 @@
     </section>
 
     <nav class="tabs" aria-label="Navigation responsable">
-      <button class="tab active" type="button" data-tab="synthese">Synthese</button>
+      <button class="tab active" type="button" data-tab="synthese">Synthèse</button>
       <button class="tab" type="button" data-tab="equipe">Équipe</button>
-      <button class="tab" type="button" data-tab="ca">CA detaille</button>
+      <button class="tab" type="button" data-tab="ca">CA détaillé</button>
       <button class="tab" type="button" data-tab="budgets">Budgets</button>
-      <button class="tab" type="button" data-tab="ecarts">Ecarts</button>
+      <button class="tab" type="button" data-tab="ecarts">Écarts</button>
       <button class="tab" type="button" data-tab="documents">Documents</button>
-      <button class="tab" type="button" data-tab="activite">Activite terrain</button>
+      <button class="tab" type="button" data-tab="activite">Activité terrain</button>
     </nav>
 
     <section class="view active" data-view="synthese">
@@ -515,7 +547,7 @@
         <aside class="panel">
           <div class="panel-head">
             <div>
-              <h2>Points a suivre</h2>
+              <h2>Points à suivre</h2>
               <div class="sub">Alertes simples pour piloter sans fouiller partout.</div>
             </div>
           </div>
@@ -528,7 +560,7 @@
         <div class="panel-head">
           <div>
             <h2>Top clients du mois</h2>
-            <div class="sub">Clients qui construisent le CA du mois sur le perimetre visible.</div>
+            <div class="sub">Clients qui construisent le CA du mois sur le périmètre visible.</div>
           </div>
         </div>
         <div class="table-wrap">
@@ -588,26 +620,41 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>CA detaille du mois</h2>
+            <h2>CA détaillé du mois</h2>
             <div class="sub">Toutes les lignes vendues sur le mois sélectionné, Auto et Industrie.</div>
           </div>
-          <div class="toolbar">
-            <select data-sector-filter>
-              <option value="">Auto + Industrie</option>
-              <option value="auto">Automobile</option>
-              <option value="industrie">Industrie</option>
-            </select>
-            <select data-type-filter>
-              <option value="">Terrain + telephone</option>
-              <option value="terrain">Visite terrain</option>
-              <option value="telephone">Commande telephone</option>
-            </select>
-            <input class="search" type="search" placeholder="Client, produit, reference..." data-sales-search>
+          <div class="toolbar compact-toolbar">
+            <label class="field">
+              <span>Commercial</span>
+              <select data-sales-commercial-filter>
+                <option value="">Tous</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Secteur</span>
+              <select data-sector-filter>
+                <option value="">Auto + Industrie</option>
+                <option value="auto">Automobile</option>
+                <option value="industrie">Industrie</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Type</span>
+              <select data-type-filter>
+                <option value="">Terrain + téléphone</option>
+                <option value="terrain">Visite terrain</option>
+                <option value="telephone">Commande téléphone</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Recherche</span>
+              <input class="search" type="search" placeholder="Client, produit, référence..." data-sales-search>
+            </label>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Date</th><th>Commercial</th><th>Secteur</th><th>Client</th><th>Reference</th><th>Produit</th><th>Type</th><th class="num">Qte</th><th class="num">PU HT</th><th class="num">Total HT</th></tr></thead>
+            <thead><tr><th>Date</th><th>Commercial</th><th>Secteur</th><th>Client</th><th>Référence</th><th>Produit</th><th>Type</th><th class="num">Qté</th><th class="num">PU HT</th><th class="num">Total HT</th></tr></thead>
             <tbody data-sales-rows><tr><td colspan="10" class="empty">Chargement...</td></tr></tbody>
           </table>
         </div>
@@ -626,10 +673,10 @@
       </section>
       <div class="split">
         <section class="panel">
-          <div class="panel-head"><div><h2>Budgets par commercial</h2><div class="sub">Budget annuel et budget a date.</div></div></div>
+          <div class="panel-head"><div><h2>Budgets par commercial</h2><div class="sub">Budget annuel et budget à date.</div></div></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Commercial</th><th class="num">Réel à date</th><th class="num">Budget à date</th><th class="num">Ecart</th><th class="num">Budget annuel</th></tr></thead>
+              <thead><tr><th>Commercial</th><th class="num">Réel à date</th><th class="num">Budget à date</th><th class="num">Écart</th><th class="num">Budget annuel</th></tr></thead>
               <tbody data-budget-commercials></tbody>
             </table>
           </div>
@@ -656,13 +703,13 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>Ecarts réel importé vs budget</h2>
-            <div class="sub">Lecture a date : réel importé actif compare au budget actif Supabase.</div>
+            <h2>Écarts réel importé vs budget</h2>
+            <div class="sub">Lecture à date : réel importé actif comparé au budget actif Supabase.</div>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Commercial</th><th class="num">Réel à date</th><th class="num">Budget à date</th><th class="num">Ecart</th><th class="num">Atteinte</th><th class="num">CA saisi mois</th></tr></thead>
+            <thead><tr><th>Commercial</th><th class="num">Réel à date</th><th class="num">Budget à date</th><th class="num">Écart</th><th class="num">Atteinte</th><th class="num">CA saisi mois</th></tr></thead>
             <tbody data-gap-rows></tbody>
           </table>
         </div>
@@ -679,7 +726,15 @@
             <h2>Documents équipe</h2>
             <div class="sub">BDC, devis et campagnes promo des commerciaux visibles. Vue responsable en lecture seule.</div>
           </div>
-          <span class="chip chip-blue">Lecture seule</span>
+          <div class="toolbar compact-toolbar">
+            <label class="field">
+              <span>Commercial</span>
+              <select data-document-commercial-filter>
+                <option value="">Tous</option>
+              </select>
+            </label>
+            <span class="chip chip-blue">Lecture seule</span>
+          </div>
         </div>
         <div class="doc-tabs" aria-label="Type de documents">
           <button class="doc-tab active" type="button" data-doc-tab="documents">BDC / Devis</button>
@@ -721,7 +776,7 @@
         <div class="panel-head">
           <div>
             <h2>CA du jour équipe</h2>
-            <div class="sub">Clique sur un commercial, puis sur un client, pour voir les lignes vendues du jour sélectionné.</div>
+            <div class="sub">Clique sur un commercial, puis sur un client, pour voir les visites du jour et les lignes vendues quand il y en a.</div>
           </div>
           <button class="btn small green" type="button" data-build-daily-report>Générer rapport journée</button>
         </div>
@@ -755,7 +810,7 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>Activite mensuelle</h2>
+            <h2>Activité mensuelle</h2>
             <div class="sub">Visites terrain, commandes téléphone et clients visités sur le mois sélectionné.</div>
           </div>
         </div>
@@ -800,6 +855,7 @@
         search: "",
         salesSearch: "",
         commercialFilter: "",
+        salesCommercialFilter: "",
         sectorFilter: "",
         typeFilter: "",
         selectedBudgetCommercialId: "",
@@ -809,12 +865,13 @@
         selectedDayClientKey: "",
         activeDocumentTab: "documents",
         campaignsLoaded: false,
+        documentCommercialFilter: "",
         campaignCommercialFilter: "",
         showDailyReport: false
       };
 
-      const monthLabels = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"];
-      const sourceLabels = { supabase: "Source Supabase", env: "Source Vercel", legacy: "Acces historique" };
+      const monthLabels = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+      const sourceLabels = { supabase: "Source Supabase", env: "Source Vercel", legacy: "Accès historique" };
 
       const els = {
         wrap: document.querySelector(".wrap"),
@@ -829,6 +886,7 @@
         commercialFilter: document.querySelector("[data-commercial-filter]"),
         search: document.querySelector("[data-search]"),
         salesSearch: document.querySelector("[data-sales-search]"),
+        salesCommercialFilter: document.querySelector("[data-sales-commercial-filter]"),
         sectorFilter: document.querySelector("[data-sector-filter]"),
         typeFilter: document.querySelector("[data-type-filter]"),
         commercials: document.querySelector("[data-commercials]"),
@@ -844,6 +902,7 @@
         gapRows: document.querySelector("[data-gap-rows]"),
         gapDetail: document.querySelector("[data-gap-detail]"),
         documentRows: document.querySelector("[data-document-rows]"),
+        documentCommercialFilter: document.querySelector("[data-document-commercial-filter]"),
         docTabs: document.querySelectorAll("[data-doc-tab]"),
         docPanels: document.querySelectorAll("[data-doc-panel]"),
         campaignCommercialFilter: document.querySelector("[data-campaign-commercial-filter]"),
@@ -907,6 +966,10 @@
           state.salesSearch = els.salesSearch.value.trim().toLowerCase();
           renderSalesRows();
         });
+        els.salesCommercialFilter.addEventListener("change", function(){
+          state.salesCommercialFilter = els.salesCommercialFilter.value;
+          renderSalesRows();
+        });
         els.sectorFilter.addEventListener("change", function(){
           state.sectorFilter = els.sectorFilter.value;
           renderSalesRows();
@@ -919,6 +982,11 @@
           button.addEventListener("click", function(){
             setDocumentTab(button.dataset.docTab || "documents");
           });
+        });
+        els.documentCommercialFilter.addEventListener("change", function(){
+          state.documentCommercialFilter = els.documentCommercialFilter.value;
+          renderDocumentRows();
+          renderCampaignRows();
         });
         els.campaignCommercialFilter.addEventListener("change", function(){
           state.campaignCommercialFilter = els.campaignCommercialFilter.value;
@@ -977,7 +1045,7 @@
           if (state.activeDocumentTab === "campaigns") {
             await ensureCampaignsLoaded();
           }
-          showToast("Vue responsable synchronisee.");
+          showToast("Vue responsable synchronisée.");
         }catch(error){
           showToast(error.message || "Chargement impossible.", true);
           showFailure(error.message || "Chargement impossible.");
@@ -1004,16 +1072,16 @@
 
       function renderSession(){
         const user = state.payload?.currentUser || {};
-        els.eyebrow.textContent = user.role === "admin" ? "Connecte en admin" : "Connecte en responsable";
+        els.eyebrow.textContent = user.role === "admin" ? "Connecté en admin" : "Connecté en responsable";
         els.name.textContent = user.name || "Responsable";
-        els.role.textContent = "Role : " + (user.roleLabel || user.role || "responsable");
-        els.source.textContent = sourceLabels[user.source] || "Session securisee";
+        els.role.textContent = "Rôle : " + (user.roleLabel || user.role || "responsable");
+        els.source.textContent = sourceLabels[user.source] || "Session sécurisée";
       }
 
       function renderScope(){
         const scope = state.payload?.dataScope || {};
         const warnings = state.payload?.warnings || [];
-        const warningText = warnings.length ? " A verifier : " + warnings.map(w => w.label).join(", ") + "." : "";
+        const warningText = warnings.length ? " À vérifier : " + warnings.map(w => w.label).join(", ") + "." : "";
         els.scopeMessage.textContent = (scope.title ? scope.title + " : " : "") + (scope.message || "Périmètre charge.") + warningText;
       }
 
@@ -1037,18 +1105,31 @@
 
       function hydrateCommercialOptions(){
         const previous = els.commercialFilter.value;
+        const previousSales = els.salesCommercialFilter.value;
+        const previousDocument = els.documentCommercialFilter.value;
         const previousCampaign = els.campaignCommercialFilter.value;
         const commercials = state.payload?.commercials || [];
-        els.commercialFilter.innerHTML = '<option value="">Toute equipe</option>' + commercials
+        const commercialOptions = commercials
           .map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.displayName || item.identifier)}</option>`)
           .join("");
-        els.campaignCommercialFilter.innerHTML = '<option value="">Tous les commerciaux</option>' + commercials
-          .map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.displayName || item.identifier)}</option>`)
-          .join("");
+        els.commercialFilter.innerHTML = '<option value="">Toute équipe</option>' + commercialOptions;
+        els.salesCommercialFilter.innerHTML = '<option value="">Tous</option>' + commercialOptions;
+        els.documentCommercialFilter.innerHTML = '<option value="">Tous</option>' + commercialOptions;
+        els.campaignCommercialFilter.innerHTML = '<option value="">Tous les commerciaux</option>' + commercialOptions;
         if (previous && commercials.some(item => item.id === previous)) {
           els.commercialFilter.value = previous;
         } else {
           state.commercialFilter = "";
+        }
+        if (previousSales && commercials.some(item => item.id === previousSales)) {
+          els.salesCommercialFilter.value = previousSales;
+        } else {
+          state.salesCommercialFilter = "";
+        }
+        if (previousDocument && commercials.some(item => item.id === previousDocument)) {
+          els.documentCommercialFilter.value = previousDocument;
+        } else {
+          state.documentCommercialFilter = "";
         }
         if (previousCampaign && commercials.some(item => item.id === previousCampaign)) {
           els.campaignCommercialFilter.value = previousCampaign;
@@ -1062,6 +1143,8 @@
         if (state.selectedBudgetCommercialId && !ids.has(state.selectedBudgetCommercialId)) state.selectedBudgetCommercialId = "";
         if (state.selectedGapCommercialId && !ids.has(state.selectedGapCommercialId)) state.selectedGapCommercialId = "";
         if (state.selectedDayCommercialId && !ids.has(state.selectedDayCommercialId)) state.selectedDayCommercialId = "";
+        if (state.salesCommercialFilter && !ids.has(state.salesCommercialFilter)) state.salesCommercialFilter = "";
+        if (state.documentCommercialFilter && !ids.has(state.documentCommercialFilter)) state.documentCommercialFilter = "";
         if (state.campaignCommercialFilter && !ids.has(state.campaignCommercialFilter)) state.campaignCommercialFilter = "";
         const entityIds = new Set((state.payload?.budgets?.entities || []).map(item => item.id));
         if (state.selectedBudgetEntityId && !entityIds.has(state.selectedBudgetEntityId)) state.selectedBudgetEntityId = "";
@@ -1088,7 +1171,7 @@
           });
         }
         if (!list.length) {
-          els.commercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce perimetre.</div>';
+          els.commercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce périmètre.</div>';
           return;
         }
         els.commercials.innerHTML = list.map(function(item){
@@ -1120,12 +1203,12 @@
       function renderAlerts(){
         const alerts = state.payload?.team?.alerts || [];
         if (!alerts.length) {
-          els.alerts.innerHTML = '<div class="empty">Aucune alerte prioritaire sur ce perimetre.</div>';
+          els.alerts.innerHTML = '<div class="empty">Aucune alerte prioritaire sur ce périmètre.</div>';
           return;
         }
         els.alerts.innerHTML = alerts.map(function(alert){
           const cls = alert.level === "danger" ? "chip-red" : "chip-principal";
-          return `<article class="mini-row"><strong>${escapeHtml(alert.title)}</strong><span>${escapeHtml(alert.message)}</span><span class="chip ${cls}">${escapeHtml(alert.level === "danger" ? "A traiter" : "Suivi")}</span></article>`;
+          return `<article class="mini-row"><strong>${escapeHtml(alert.title)}</strong><span>${escapeHtml(alert.message)}</span><span class="chip ${cls}">${escapeHtml(alert.level === "danger" ? "À traiter" : "Suivi")}</span></article>`;
         }).join("");
       }
 
@@ -1144,7 +1227,7 @@
       function renderTeamRows(){
         const rows = scopedCommercials().slice().sort((a,b) => String(a.displayName || "").localeCompare(String(b.displayName || ""), "fr"));
         if (!rows.length) {
-          els.teamRows.innerHTML = '<tr><td colspan="17"><div class="empty">Aucun commercial visible dans cette equipe.</div></td></tr>';
+          els.teamRows.innerHTML = '<tr><td colspan="17"><div class="empty">Aucun commercial visible dans cette équipe.</div></td></tr>';
           return;
         }
         els.teamRows.innerHTML = rows.map(function(item){
@@ -1177,6 +1260,7 @@
       function renderSalesRows(){
         let rows = state.payload?.sales?.monthlyRows || [];
         rows = filterCommercialRows(rows, "commercialUserId");
+        if (state.salesCommercialFilter) rows = rows.filter(row => row.commercialUserId === state.salesCommercialFilter);
         if (state.sectorFilter) rows = rows.filter(row => row.secteur === state.sectorFilter);
         if (state.typeFilter === "terrain") rows = rows.filter(row => !row.isPhoneOrder);
         if (state.typeFilter === "telephone") rows = rows.filter(row => row.isPhoneOrder);
@@ -1203,7 +1287,7 @@
         const commercials = scopedCommercials().slice().sort((a,b) => Number(b.metrics?.budgetAnnuel || 0) - Number(a.metrics?.budgetAnnuel || 0));
         const stats = state.payload?.stats || {};
         const teamRow = state.commercialFilter ? "" : `<tr class="clickable-row ${state.selectedBudgetCommercialId === "" ? "active" : ""}" data-budget-commercial="">
-          <td><div class="row-title"><strong>Cumul equipe</strong><span>Tous les commerciaux visibles</span></div></td>
+          <td><div class="row-title"><strong>Cumul équipe</strong><span>Tous les commerciaux visibles</span></div></td>
           <td class="num">${money(stats.reelReportingADate)}</td>
           <td class="num">${money(stats.budgetADate)}</td>
           <td class="num">${gapChip(stats.ecartADate)}</td>
@@ -1222,7 +1306,7 @@
 
         let entities = state.payload?.budgets?.entities || [];
         if (!entities.length) {
-          els.budgetEntities.innerHTML = '<tr><td colspan="4"><div class="empty">Aucune entite budget active.</div></td></tr>';
+          els.budgetEntities.innerHTML = '<tr><td colspan="4"><div class="empty">Aucune entité budget active.</div></td></tr>';
           renderBudgetCommercialDetail();
           renderBudgetEntityDetail();
           return;
@@ -1243,7 +1327,7 @@
 
       function renderBudgetCommercialDetail(){
         const id = state.selectedBudgetCommercialId || "";
-        const label = id ? commercialName(id) : "Cumul equipe";
+        const label = id ? commercialName(id) : "Cumul équipe";
         const budgetMonthly = getBudgetMonthlyForCommercial(id);
         const realMonthly = getRealMonthlyForCommercial(id);
         els.budgetCommercialDetail.innerHTML = buildMonthlyComparisonHtml({
@@ -1263,7 +1347,7 @@
         const entity = (state.payload?.budgets?.entities || []).find(item => item.id === entityId);
         const rows = aggregateBudgetEntityByCommercial(entityId);
         if (!entity || !rows.length) {
-          els.budgetEntityDetail.innerHTML = '<div class="empty">Aucun detail disponible pour cette entite.</div>';
+          els.budgetEntityDetail.innerHTML = '<div class="empty">Aucun détail disponible pour cette entité.</div>';
           return;
         }
         const body = rows.map(function(row){
@@ -1271,14 +1355,14 @@
           return `<tr><td>${escapeHtml(commercialName(row.commercialUserId))}</td><td class="num">${money(row.toDate)}</td><td class="num">${money(row.total)}</td><td class="num">${percent(share)}</td><td class="num">${integer(row.lignes)}</td></tr>`;
         }).join("");
         els.budgetEntityDetail.innerHTML = [
-          '<div class="panel-head"><div><h2>Detail entite - ' + escapeHtml(entity.libelle) + '</h2><div class="sub">Repartition du budget par commercial pour cette entite.</div></div></div>',
+          '<div class="panel-head"><div><h2>Détail entité - ' + escapeHtml(entity.libelle) + '</h2><div class="sub">Répartition du budget par commercial pour cette entité.</div></div></div>',
           '<div class="detail-kpis">',
             detailKpi("Budget à date", money(entity.toDate)),
             detailKpi("Budget annuel", money(entity.total)),
             detailKpi("Commerciaux", integer(rows.length)),
             detailKpi("Lignes", integer(entity.lignes)),
           '</div>',
-          '<div class="table-wrap"><table><thead><tr><th>Commercial</th><th class="num">A date</th><th class="num">Annuel</th><th class="num">Part</th><th class="num">Lignes</th></tr></thead><tbody>',
+          '<div class="table-wrap"><table><thead><tr><th>Commercial</th><th class="num">À date</th><th class="num">Annuel</th><th class="num">Part</th><th class="num">Lignes</th></tr></thead><tbody>',
           body,
           '</tbody></table></div>'
         ].join("");
@@ -1312,8 +1396,8 @@
           return;
         }
         els.gapDetail.innerHTML = buildMonthlyComparisonHtml({
-          title: "Detail ecart - " + commercialName(id),
-          subtitle: "Ce detail permet de voir quel mois cree l'avance ou le retard.",
+          title: "Détail écart - " + commercialName(id),
+          subtitle: "Ce détail permet de voir quel mois crée l'avance ou le retard.",
           budgetMonthly: getBudgetMonthlyForCommercial(id),
           realMonthly: getRealMonthlyForCommercial(id)
         });
@@ -1322,8 +1406,9 @@
       function renderDocumentRows(){
         let rows = state.payload?.documents?.recent || [];
         rows = filterCommercialRows(rows, "commercialUserId");
+        if (state.documentCommercialFilter) rows = rows.filter(row => row.commercialUserId === state.documentCommercialFilter);
         if (!rows.length) {
-          els.documentRows.innerHTML = '<tr><td colspan="8"><div class="empty">Aucun document sur cette annee.</div></td></tr>';
+          els.documentRows.innerHTML = '<tr><td colspan="8"><div class="empty">Aucun document sur cette année.</div></td></tr>';
           return;
         }
         els.documentRows.innerHTML = rows.slice(0, 80).map(function(row){
@@ -1334,6 +1419,9 @@
       function renderCampaignRows(){
         let rows = state.payload?.campaigns?.recent || [];
         rows = filterCommercialRows(rows, "commercialUserId");
+        if (state.documentCommercialFilter) {
+          rows = rows.filter(row => row.commercialUserId === state.documentCommercialFilter);
+        }
         if (state.campaignCommercialFilter) {
           rows = rows.filter(row => row.commercialUserId === state.campaignCommercialFilter);
         }
@@ -1404,7 +1492,7 @@
       function renderDailyActivity(){
         const groups = groupDailyByCommercial();
         if (!groups.length) {
-          els.dayCommercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce perimetre.</div>';
+          els.dayCommercials.innerHTML = '<div class="empty">Aucun commercial visible dans ce périmètre.</div>';
           els.dayClients.innerHTML = '<div class="empty">Aucun commercial sélectionné.</div>';
           els.dayClientTitle.textContent = "Clients du commercial sélectionné";
           return;
@@ -1424,7 +1512,7 @@
               '<span>' + escapeHtml(group.name) + '</span>',
               '<strong>' + money(group.amount) + '</strong>',
               '<span>' + integer(group.lineCount) + ' ligne(s) - ' + integer(group.clientCount) + ' client(s)</span>',
-              '<span>' + integer(group.terrainCount) + ' terrain - ' + integer(group.phoneCount) + ' telephone</span>',
+              '<span>' + integer(group.terrainCount) + ' terrain - ' + integer(group.phoneCount) + ' téléphone</span>',
             '</article>'
           ].join("");
         }).join("");
@@ -1436,9 +1524,9 @@
           });
         });
 
-        const clientGroups = groupDailyClients(selectedCommercial.rows || []);
+        const clientGroups = groupDailyClients(selectedCommercial.rows || [], selectedCommercial.visitRows || []);
         if (!clientGroups.length) {
-          els.dayClients.innerHTML = '<div class="empty">Aucun client vendu pour ce commercial ce jour.</div>';
+          els.dayClients.innerHTML = '<div class="empty">Aucun client visité pour ce commercial ce jour.</div>';
           state.selectedDayClientKey = "";
         } else {
           if (!state.selectedDayClientKey || !clientGroups.some(group => group.key === state.selectedDayClientKey)) {
@@ -1446,14 +1534,19 @@
           }
           els.dayClients.innerHTML = clientGroups.map(function(group){
             const isOpen = group.key === state.selectedDayClientKey;
+            const visitOnlyHtml = (group.visitRows || [])
+              .filter(function(visit){ return !group.saleVisitKeys.has(dailyVisitKey(visit)); })
+              .map(dailyVisitOnlyHtml)
+              .join("");
+            const detailHtml = [group.rows.map(dailyLineHtml).join(""), visitOnlyHtml].filter(Boolean).join("");
             return [
               '<article class="daily-client-card ' + (isOpen ? "active" : "") + '">',
                 '<button class="daily-client-head" type="button" data-day-client="' + escapeHtml(group.key) + '">',
-                  '<span class="daily-client-title"><strong>' + escapeHtml(group.name) + '</strong><span>' + escapeHtml(group.account || "-") + ' - ' + integer(group.lineCount) + ' ligne(s)</span></span>',
+                  '<span class="daily-client-title"><strong>' + escapeHtml(group.name) + '</strong><span>' + escapeHtml(group.account || "-") + ' - ' + integer(group.visitCount) + ' visite(s) - ' + integer(group.lineCount) + ' ligne(s)</span>' + (Number(group.amount || 0) === 0 ? '<span class="daily-zero-badge">Sans vente</span>' : '') + '</span>',
                   '<strong class="daily-client-amount">' + money(group.amount) + '</strong>',
                   '<span class="daily-client-toggle" aria-hidden="true">' + (isOpen ? "−" : "+") + '</span>',
                 '</button>',
-                isOpen ? '<div class="daily-client-lines">' + group.rows.map(dailyLineHtml).join("") + '</div>' : '',
+                isOpen ? '<div class="daily-client-lines">' + (detailHtml || '<div class="empty">Aucune ligne vendue pour ce client.</div>') + '</div>' : '',
               '</article>'
             ].join("");
           }).join("");
@@ -1477,7 +1570,7 @@
         els.reportPanel.hidden = false;
         els.reportSubtitle.textContent = "Jour " + formatDateShort(state.payload?.period?.day) + " - " + integer(rows.length) + " ligne(s) vendue(s).";
         if (!rows.length) {
-          els.reportBody.innerHTML = '<div class="empty">Aucune vente saisie sur cette journee.</div>';
+          els.reportBody.innerHTML = '<div class="empty">Aucune vente saisie sur cette journée.</div>';
           return;
         }
         const total = rows.reduce((sum, row) => sum + Number(row.montant || 0), 0);
@@ -1490,13 +1583,13 @@
             return `<tr><td>${escapeHtml(client.name)}</td><td>${escapeHtml(client.account || "-")}</td><td class="num">${integer(client.lineCount)}</td><td class="num">${money(client.amount)}</td></tr>`;
           }).join("");
           const lineRows = (group.rows || []).map(function(row){
-            return `<tr><td>${escapeHtml(formatDateShort(row.date))}</td><td>${sectorBadge(row.secteur)}</td><td>${escapeHtml(row.clientNom || "-")}</td><td>${escapeHtml(row.numeroCompte || "-")}</td><td>${escapeHtml(row.reference || "-")}</td><td>${escapeHtml(row.designation || "-")}</td><td>${escapeHtml(row.typeLabel || "-")}</td><td class="num">${number(row.quantite)}</td><td class="num">${money(row.montant)}</td></tr>`;
+            return `<tr><td>${escapeHtml(formatDateShort(row.date))}</td><td>${sectorBadge(row.secteur)}</td><td>${escapeHtml(row.clientNom || "-")}</td><td>${escapeHtml(row.numeroCompte || "-")}</td><td>${escapeHtml(row.reference || "-")}</td><td>${escapeHtml(row.designation || "-")}</td><td>${escapeHtml(row.typeLabel || "-")}</td><td>${row.demoEffectuee ? '<span class="chip demo">Démo</span>' : ""}</td><td class="num">${number(row.quantite)}</td><td class="num">${money(row.montant)}</td></tr>`;
           }).join("");
           return [
             '<section class="report-section">',
               '<h3>' + escapeHtml(group.name) + ' - ' + money(group.amount) + '</h3>',
               '<div class="table-wrap"><table><thead><tr><th>Client</th><th>Compte</th><th class="num">Lignes</th><th class="num">CA HT</th></tr></thead><tbody>' + clientRows + '</tbody></table></div>',
-              '<div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>Date</th><th>Secteur</th><th>Client</th><th>Compte</th><th>Reference</th><th>Produit</th><th>Type</th><th class="num">Qte</th><th class="num">Total HT</th></tr></thead><tbody>' + lineRows + '</tbody></table></div>',
+              '<div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>Date</th><th>Secteur</th><th>Client</th><th>Compte</th><th>Référence</th><th>Produit</th><th>Type</th><th>Démo</th><th class="num">Qté</th><th class="num">Total HT</th></tr></thead><tbody>' + lineRows + '</tbody></table></div>',
             '</section>'
           ].join("");
         }).join("");
@@ -1507,7 +1600,7 @@
             detailKpi("Clients", integer(new Set(rows.map(row => dailyClientKey(row))).size)),
             detailKpi("Lignes", integer(rows.length)),
           '</div>',
-          '<section class="report-section"><h3>Synthese par commercial</h3><div class="table-wrap"><table><thead><tr><th>Commercial</th><th class="num">Lignes</th><th class="num">Clients</th><th class="num">CA HT</th></tr></thead><tbody>',
+          '<section class="report-section"><h3>Synthèse par commercial</h3><div class="table-wrap"><table><thead><tr><th>Commercial</th><th class="num">Lignes</th><th class="num">Clients</th><th class="num">CA HT</th></tr></thead><tbody>',
           summaryRows,
           '</tbody></table></div></section>',
           detailSections
@@ -1519,6 +1612,10 @@
         return filterCommercialRows(state.payload?.sales?.dailyRows || [], "commercialUserId");
       }
 
+      function getDailyVisits(){
+        return filterCommercialRows(state.payload?.sales?.dailyVisits || [], "commercialUserId");
+      }
+
       function groupDailyByCommercial(){
         const map = new Map(scopedCommercials().map(function(commercial){
           return [commercial.id, {
@@ -1528,19 +1625,39 @@
             lineCount: 0,
             clientSet: new Set(),
             clientCount: 0,
+            phoneVisitSet: new Set(),
+            terrainVisitSet: new Set(),
             phoneCount: 0,
             terrainCount: 0,
-            rows: []
+            rows: [],
+            visitRows: []
           }];
         }));
+        const dailyVisits = getDailyVisits();
+        const hasVisitDetails = dailyVisits.length > 0;
+        dailyVisits.forEach(function(row){
+          if (!map.has(row.commercialUserId)) return;
+          const group = map.get(row.commercialUserId);
+          const visitKey = dailyVisitKey(row);
+          group.visitRows.push(row);
+          if (row.isPhoneOrder) {
+            group.phoneVisitSet.add(visitKey);
+          } else {
+            group.terrainVisitSet.add(visitKey);
+            group.clientSet.add(dailyClientKey(row));
+          }
+        });
         getDailyRows().forEach(function(row){
           if (!map.has(row.commercialUserId)) return;
           const group = map.get(row.commercialUserId);
           group.amount += Number(row.montant || 0);
           group.lineCount += 1;
           group.clientSet.add(dailyClientKey(row));
-          group.phoneCount += row.isPhoneOrder ? 1 : 0;
-          group.terrainCount += row.isPhoneOrder ? 0 : 1;
+          if (!hasVisitDetails) {
+            const visitKey = dailyVisitKey(row);
+            if (row.isPhoneOrder) group.phoneVisitSet.add(visitKey);
+            else group.terrainVisitSet.add(visitKey);
+          }
           group.rows.push(row);
         });
         return Array.from(map.values()).map(function(group){
@@ -1548,6 +1665,8 @@
             ...group,
             amount: round2(group.amount),
             clientCount: group.clientSet.size,
+            phoneCount: group.phoneVisitSet.size,
+            terrainCount: group.terrainVisitSet.size,
             rows: group.rows.slice().sort((a,b) => String(a.clientNom || "").localeCompare(String(b.clientNom || ""), "fr"))
           };
         }).sort(function(a,b){
@@ -1556,37 +1675,64 @@
         });
       }
 
-      function groupDailyClients(rows){
+      function groupDailyClients(rows, visitRows){
         const map = new Map();
+        (visitRows || []).forEach(function(row){
+          if (row.isPhoneOrder) return;
+          const key = dailyClientKey(row);
+          const current = ensureDailyClientGroup(map, key, row);
+          current.visitRows.push(row);
+          current.visitSet.add(dailyVisitKey(row));
+        });
         (rows || []).forEach(function(row){
           const key = dailyClientKey(row);
-          const current = map.get(key) || {
-            key,
-            name: row.clientNom || "Client sans nom",
-            account: row.numeroCompte || "",
-            amount: 0,
-            lineCount: 0,
-            rows: []
-          };
+          const current = ensureDailyClientGroup(map, key, row);
           current.amount += Number(row.montant || 0);
           current.lineCount += 1;
           current.rows.push(row);
-          map.set(key, current);
+          current.visitSet.add(dailyVisitKey(row));
+          current.saleVisitKeys.add(dailyVisitKey(row));
         });
         return Array.from(map.values()).map(function(group){
           return {
             ...group,
             amount: round2(group.amount),
+            visitCount: group.visitSet.size || (group.lineCount ? 1 : 0),
             rows: group.rows.slice().sort((a,b) => Number(b.montant || 0) - Number(a.montant || 0))
           };
-        }).sort((a,b) => Number(b.amount || 0) - Number(a.amount || 0));
+        }).sort(function(a,b){
+          if (Number(b.amount || 0) !== Number(a.amount || 0)) return Number(b.amount || 0) - Number(a.amount || 0);
+          return String(a.name || "").localeCompare(String(b.name || ""), "fr");
+        });
+      }
+
+      function ensureDailyClientGroup(map, key, row){
+        const current = map.get(key) || {
+          key,
+          name: row.clientNom || "Client sans nom",
+          account: row.numeroCompte || "",
+          amount: 0,
+          lineCount: 0,
+          visitCount: 0,
+          visitSet: new Set(),
+          saleVisitKeys: new Set(),
+          visitRows: [],
+          rows: []
+        };
+        map.set(key, current);
+        return current;
       }
 
       function dailyClientKey(row){
         return [row.commercialUserId || "", row.secteur || "", row.clientId || row.clientNom || "", row.numeroCompte || ""].join("::");
       }
 
+      function dailyVisitKey(row){
+        return [row.commercialUserId || "", row.secteur || "", row.visitId || row.id || row.clientId || row.clientNom || ""].join("::");
+      }
+
       function dailyLineHtml(row){
+        const demoBadge = row.demoEffectuee ? '<b class="demo-line-badge">Démo</b>' : '';
         return [
           '<div class="daily-line">',
             '<span class="muted">' + escapeHtml(formatDateShort(row.date)) + '</span>',
@@ -1594,9 +1740,27 @@
             '<span>' + escapeHtml(row.reference || "-") + '</span>',
             '<span>' + escapeHtml(row.designation || "-") + '</span>',
             '<span>' + escapeHtml(row.typeLabel || "-") + '</span>',
+            '<span class="demo-cell">' + demoBadge + '</span>',
             '<span class="num">' + number(row.quantite) + '</span>',
             '<span class="num">' + money(row.prixUnitaire) + '</span>',
             '<span class="num">' + money(row.montant) + '</span>',
+          '</div>'
+        ].join("");
+      }
+
+      function dailyVisitOnlyHtml(row){
+        const note = String(row.note || "").trim();
+        return [
+          '<div class="daily-line daily-line-zero">',
+            '<span class="muted">' + escapeHtml(formatDateShort(row.date)) + '</span>',
+            '<span>' + escapeHtml(row.secteur === "industrie" ? "Industrie" : "Auto") + '</span>',
+            '<span>-</span>',
+            '<span>' + escapeHtml(note || "Aucune ligne vendue") + '</span>',
+            '<span>' + escapeHtml(row.typeLabel || "Passage sans vente") + '</span>',
+            '<span class="demo-cell"></span>',
+            '<span class="num">0</span>',
+            '<span class="num">-</span>',
+            '<span class="num">' + money(0) + '</span>',
           '</div>'
         ].join("");
       }
@@ -1612,12 +1776,12 @@
         }
         const popup = window.open("", "_blank");
         if (!popup) {
-          showToast("Ouverture du rapport bloquee par le navigateur.", true);
+          showToast("Ouverture du rapport bloquée par le navigateur.", true);
           return;
         }
         popup.document.write([
           '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rapport journalier équipe</title>',
-          '<style>body{font-family:Arial,sans-serif;margin:24px;color:#111827}h1{margin:0 0 6px}h2,h3{margin:18px 0 8px}.muted{color:#6b7280}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #d1d5db;padding:7px;text-align:left;font-size:12px}th{background:#f3f4f6}.num{text-align:right}.chip{display:inline-block;border-radius:999px;border:1px solid #cbd5e1;padding:2px 7px}.detail-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.detail-kpi{border:1px solid #d1d5db;border-radius:10px;padding:10px}.detail-kpi span{display:block;color:#6b7280;font-size:10px;text-transform:uppercase}.detail-kpi strong{display:block;margin-top:4px;font-size:16px}.report-section{break-inside:avoid;margin-top:14px}</style>',
+          '<style>body{font-family:Arial,sans-serif;margin:24px;color:#111827}h1{margin:0 0 6px}h2,h3{margin:18px 0 8px}.muted{color:#6b7280}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #d1d5db;padding:7px;text-align:left;font-size:12px}th{background:#f3f4f6}.num{text-align:right}.chip{display:inline-block;border-radius:999px;border:1px solid #cbd5e1;padding:2px 7px}.demo{border-color:#0f766e;color:#0f766e;background:#ecfdf5;font-weight:700}.detail-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.detail-kpi{border:1px solid #d1d5db;border-radius:10px;padding:10px}.detail-kpi span{display:block;color:#6b7280;font-size:10px;text-transform:uppercase}.detail-kpi strong{display:block;margin-top:4px;font-size:16px}.report-section{break-inside:avoid;margin-top:14px}</style>',
           '</head><body><h1>Rapport journalier équipe</h1><div class="muted">' + escapeHtml(els.reportSubtitle.textContent || "") + '</div>',
           els.reportBody.innerHTML,
           '<script>window.onload=function(){window.print();};<\/script></body></html>'
@@ -1763,7 +1927,7 @@
             detailKpi("Écart à date", money(toDateReal - toDateBudget)),
             detailKpi("Budget annuel", money(totalBudget)),
           '</div>',
-          '<div class="table-wrap"><table><thead><tr><th>Mois</th><th class="num">Reel</th><th class="num">Budget</th><th class="num">Ecart</th><th class="num">Atteinte</th></tr></thead><tbody>',
+          '<div class="table-wrap"><table><thead><tr><th>Mois</th><th class="num">Réel</th><th class="num">Budget</th><th class="num">Écart</th><th class="num">Atteinte</th></tr></thead><tbody>',
           body,
           '<tr><td><strong>Total annuel</strong></td><td class="num"><strong>' + money(totalReal) + '</strong></td><td class="num"><strong>' + money(totalBudget) + '</strong></td><td class="num">' + gapChip(totalReal - totalBudget) + '</td><td class="num">' + (totalBudget ? percent((totalReal / totalBudget) * 100) : "-") + '</td></tr>',
           '</tbody></table></div>'

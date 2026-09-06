@@ -81,7 +81,7 @@ const CAMPAIGN_CLIENT_SELECT = [
 ].join(",");
 
 const MONTH_KEYS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-const MONTH_LABELS = ["Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"];
+const MONTH_LABELS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const PAGE_SIZE = 1000;
 const CHUNK_CONCURRENCY = 6;
 const PARIS_TIMEZONE = "Europe/Paris";
@@ -174,7 +174,7 @@ async function buildDashboard(session, request) {
       ? safeBlock(() => buildBudgetBlock(commercialIds, period, options), emptyBudgetBlock(), warnings, "budgets")
       : Promise.resolve(emptyBudgetBlock()),
     includeMainData
-      ? safeBlock(() => buildRealBlock(commercialIds, period, options), emptyRealBlock(), warnings, "reel importe")
+      ? safeBlock(() => buildRealBlock(commercialIds, period, options), emptyRealBlock(), warnings, "réel importé")
       : Promise.resolve(emptyRealBlock()),
     includeDocuments
       ? safeBlock(() => buildDocumentsBlock(commercialIds, period, options), emptyDocumentsBlock(), warnings, "BDC / devis")
@@ -452,7 +452,7 @@ async function buildSalesBlockFast(commercialIds, period, options = {}) {
     "montant"
   ].join(",");
 
-  const [dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows] = await Promise.all([
+  const [dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows, dailyVisits] = await Promise.all([
     fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.salesDaily, "commercial_user_id,secteur,date,annee,mois,montant,lignes,ventes", commercialIds, {
       annee: `eq.${period.year}`,
       order: "date.asc"
@@ -468,10 +468,17 @@ async function buildSalesBlockFast(commercialIds, period, options = {}) {
           date_lte: `lte.${detailEnd}`,
           order: "date.desc,client_nom.asc"
         }, { date_lte: "date" })
+      : Promise.resolve([]),
+    options.includeSalesDetails
+      ? buildDailyVisitsBlock(commercialIds, period)
       : Promise.resolve([])
   ]);
 
-  return summarizeSalesFastRows(dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows, period, options);
+  const dailyLineDemos = options.includeSalesDetails ? await buildDailyLineDemosBlock(dailyVisits) : [];
+  return summarizeSalesFastRows(dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows, {
+    visits: dailyVisits,
+    lineDemos: dailyLineDemos
+  }, period, options);
 }
 
 async function buildSalesBlockLegacy(commercialIds, period, options = {}) {
@@ -538,6 +545,7 @@ async function loadSalesSource(source, commercialIds, period, options = {}) {
       clientNom: client?.nom || "Client sans nom",
       numeroCompte: client?.numero_compte || "",
       date: normalizeText(visit.date_visite),
+      note: visit.note || "",
       typeVisite: normalizeVisitType(visit),
       isPhoneOrder: isPhoneOrderVisit(visit),
       totalCommande: toNumber(visit.total_commande)
@@ -547,10 +555,7 @@ async function loadSalesSource(source, commercialIds, period, options = {}) {
 
   const visitById = new Map(enrichedVisits.map((visit) => [String(visit.id), visit]));
   const visitIds = enrichedVisits.map((visit) => visit.id).filter(Boolean);
-  const lineSelect = options.includeSalesDetails
-    ? "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire"
-    : "id,visite_id,produit_id,quantite,prix_unitaire";
-  const lines = await fetchByChunks(source.lignes, lineSelect, "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
+  const lines = await fetchLinesByVisitsWithOptionalDemo(source, visitIds);
 
   const rowShells = lines.map((line) => {
     const visit = visitById.get(String(line.visite_id));
@@ -570,8 +575,9 @@ async function loadSalesSource(source, commercialIds, period, options = {}) {
       numeroCompte: visit.numeroCompte || "",
       date: normalizeText(visit.date),
       typeVisite: visit.typeVisite,
-      typeLabel: visit.isPhoneOrder ? "Commande telephone" : "Visite terrain",
+      typeLabel: visit.isPhoneOrder ? "Commande téléphone" : "Visite terrain",
       isPhoneOrder: visit.isPhoneOrder,
+      demoEffectuee: isTruthyFlag(line.demo_effectuee),
       quantite: quantity,
       prixUnitaire: unitPrice,
       montant: roundMoney(quantity * unitPrice)
@@ -590,12 +596,97 @@ async function loadSalesSource(source, commercialIds, period, options = {}) {
     return {
       ...row,
       reference: product?.reference_produit || "",
-      designation: product?.nom || "Produit sans designation",
+      designation: product?.nom || "Produit sans désignation",
       productId: undefined
     };
   });
 
   return { rows, visits: enrichedVisits, clients: scopedClients };
+}
+
+async function buildDailyVisitsBlock(commercialIds, period) {
+  if (!commercialIds.length) return [];
+  const sourceResults = await Promise.all(
+    SALES_SOURCES.map((source) => loadDailyVisitsSource(source, commercialIds, period.day))
+  );
+  return sortRows(sourceResults.flat()).slice(0, 2500);
+}
+
+async function buildDailyLineDemosBlock(dailyVisits) {
+  const visits = Array.isArray(dailyVisits) ? dailyVisits : [];
+  if (!visits.length) return [];
+  const results = await Promise.all(
+    SALES_SOURCES.map(async (source) => {
+      const sourceVisits = visits.filter((visit) => visit.secteur === source.secteur);
+      if (!sourceVisits.length) return [];
+      const visitById = new Map(sourceVisits.map((visit) => [String(visit.id || visit.visitId), visit]));
+      const lines = await fetchLinesByVisitsWithOptionalDemo(source, sourceVisits.map((visit) => visit.id || visit.visitId).filter(Boolean));
+      return lines.map((line) => normalizeDailyLineDemo(source, line, visitById.get(String(line.visite_id)))).filter(Boolean);
+    })
+  );
+  return results.flat();
+}
+
+function normalizeDailyLineDemo(source, line, visit) {
+  if (!line || !visit) return null;
+  return {
+    key: `${source.secteur}:${line.id || ""}`,
+    lineId: line.id || "",
+    visitId: line.visite_id || "",
+    source: source.secteur,
+    commercialUserId: visit.commercialUserId || "",
+    demoEffectuee: isTruthyFlag(line.demo_effectuee)
+  };
+}
+
+async function loadDailyVisitsSource(source, commercialIds, day) {
+  const allowedCommercialIds = new Set((commercialIds || []).map((id) => String(id || "").trim()).filter(Boolean));
+  const visitSelect = "id,client_id,date_visite,note,type_visite,total_commande,commercial_user_id";
+  const clientSelect = "id,nom,numero_compte,commercial_user_id";
+  const [ownedClients, visitsByCommercial] = await Promise.all([
+    fetchByCommercialChunks(source.clients, clientSelect, commercialIds, { order: "nom.asc" }),
+    fetchByCommercialChunks(source.visites, visitSelect, commercialIds, {
+      date_visite: `eq.${day}`,
+      order: "date_visite.desc,id.asc"
+    })
+  ]);
+  const ownedClientIds = unique(ownedClients.map((client) => client.id).filter(Boolean));
+  const visitsByClient = ownedClientIds.length
+    ? await fetchByChunks(source.visites, visitSelect, "client_id", ownedClientIds, {
+        date_visite: `eq.${day}`,
+        commercial_user_id: "is.null",
+        order: "date_visite.desc,id.asc"
+      })
+    : [];
+  const visits = mergeRowsById([...visitsByCommercial, ...visitsByClient]);
+  if (!visits.length) return [];
+
+  const clientIds = unique([
+    ...ownedClientIds,
+    ...visits.map((visit) => visit.client_id).filter(Boolean)
+  ]);
+  const clients = await fetchByChunks(source.clients, clientSelect, "id", clientIds);
+  const clientById = new Map([...ownedClients, ...clients].map((client) => [String(client.id), client]));
+
+  return visits.map((visit) => {
+    const client = clientById.get(String(visit.client_id));
+    const ownerId = resolveSaleOwnerId(visit, client);
+    if (!ownerId || !allowedCommercialIds.has(ownerId)) return null;
+    return normalizeDailyVisitDetail({
+      id: visit.id,
+      secteur: source.secteur,
+      secteurLabel: source.label,
+      commercialUserId: ownerId,
+      clientId: visit.client_id || "",
+      clientNom: client?.nom || "Client sans nom",
+      numeroCompte: client?.numero_compte || "",
+      date: normalizeText(visit.date_visite),
+      note: visit.note || "",
+      typeVisite: normalizeVisitType(visit),
+      isPhoneOrder: isPhoneOrderVisit(visit),
+      totalCommande: toNumber(visit.total_commande)
+    });
+  }).filter(Boolean);
 }
 
 async function buildQualityBlock(commercialIds, period) {
@@ -747,15 +838,46 @@ async function fetchClientsByIdsWithOptionalSize(source, clientIds) {
 
 async function fetchLinesByVisitsWithOptionalDemo(source, visitIds) {
   try {
-    return await fetchByChunks(source.lignes, "id,visite_id,quantite,prix_unitaire,demo_effectuee", "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
+    return await fetchByChunks(source.lignes, "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire,demo_effectuee", "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
   } catch (error) {
     if (!isMissingColumnError(error, "demo_effectuee")) throw error;
-    const rows = await fetchByChunks(source.lignes, "id,visite_id,quantite,prix_unitaire", "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
+    const rows = await fetchByChunks(source.lignes, "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire", "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
     return rows.map((row) => ({ ...row, demo_effectuee: false }));
   }
 }
 
-function summarizeSalesFastRows(dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows, period, options = {}) {
+function normalizeDailyVisitDetail(visit) {
+  const typeVisite = normalizeVisitType(visit.typeVisite || visit.type_visite);
+  const isPhoneOrder = Boolean(visit.isPhoneOrder) || isPhoneOrderVisit({
+    type_visite: typeVisite,
+    note: visit.note || ""
+  });
+  return {
+    id: visit.id,
+    visitId: visit.id,
+    source: visit.source || visit.secteur || "",
+    secteur: visit.secteur || "",
+    secteurLabel: visit.secteurLabel || (visit.secteur === "industrie" ? "Industrie" : "Automobile"),
+    commercialUserId: visit.commercialUserId || "",
+    clientId: visit.clientId || "",
+    clientNom: visit.clientNom || "Client sans nom",
+    numeroCompte: visit.numeroCompte || "",
+    date: normalizeText(visit.date),
+    note: visit.note || "",
+    typeVisite,
+    typeLabel: isPhoneOrder ? "Commande téléphone" : getTerrainVisitLabel(typeVisite),
+    isPhoneOrder,
+    totalCommande: roundMoney(visit.totalCommande || 0)
+  };
+}
+
+function getTerrainVisitLabel(typeVisite) {
+  if (typeVisite === "passage_sans_vente") return "Passage sans vente";
+  if (typeVisite === "client_ferme") return "Client fermé";
+  return "Visite terrain";
+}
+
+function summarizeSalesFastRows(dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows, dailyContext, period, options = {}) {
   const byCommercial = new Map();
   const totals = {
     day: 0,
@@ -847,7 +969,13 @@ function summarizeSalesFastRows(dailyRows, visitsMonthlyRows, clientsTotalRows, 
   const normalizedDetails = options.includeSalesDetails
     ? (detailRows || []).map(normalizeFastSalesDetailRow)
     : [];
-  const dailyDetails = normalizedDetails.filter((row) => row.date === period.day);
+  const dailyLineDemoMap = new Map(((dailyContext && dailyContext.lineDemos) || []).map((item) => [item.key, item]));
+  const dailyDetails = normalizedDetails
+    .filter((row) => row.date === period.day)
+    .map((row) => {
+      const demoInfo = dailyLineDemoMap.get(`${row.source || row.secteur}:${row.id || ""}`);
+      return demoInfo ? { ...row, demoEffectuee: Boolean(demoInfo.demoEffectuee) } : row;
+    });
   const weeklyDetails = normalizedDetails.filter((row) => row.date >= period.weekStart && row.date <= period.weekEnd);
   const monthlyDetails = normalizedDetails.filter((row) => sameMonth(row.date, period.year, period.month));
   const topClientsMonth = buildTopClientsFromSalesRows(monthlyDetails);
@@ -863,6 +991,7 @@ function summarizeSalesFastRows(dailyRows, visitsMonthlyRows, clientsTotalRows, 
     }),
     byCommercial: byCommercialObject,
     dailyRows: sortRows(dailyDetails).slice(0, 2500),
+    dailyVisits: options.includeSalesDetails ? sortRows((dailyContext && dailyContext.visits) || []).slice(0, 2500) : [],
     weeklyRows: sortRows(weeklyDetails).slice(0, 2500),
     monthlyRows: sortRows(monthlyDetails).slice(0, 1200),
     yearlyRows: [],
@@ -886,10 +1015,11 @@ function normalizeFastSalesDetailRow(row) {
     numeroCompte: row.numero_compte || "",
     date: normalizeText(row.date),
     typeVisite: normalizeVisitType(row.type_visite),
-    typeLabel: isPhoneOrder ? "Commande telephone" : "Visite terrain",
+    typeLabel: isPhoneOrder ? "Commande téléphone" : "Visite terrain",
     isPhoneOrder,
+    demoEffectuee: false,
     reference: row.reference || "",
-    designation: row.designation || "Produit sans designation",
+    designation: row.designation === "Produit sans designation" ? "Produit sans désignation" : (row.designation || "Produit sans désignation"),
     quantite: quantity,
     prixUnitaire: unitPrice,
     montant: roundMoney(row.montant ?? quantity * unitPrice)
@@ -1024,6 +1154,9 @@ function summarizeSalesRows(rows, visits, period, clients = [], options = {}) {
     totals,
     byCommercial: byCommercialObject,
     dailyRows: options.includeSalesDetails ? sortRows(dayRows).slice(0, 2500) : [],
+    dailyVisits: options.includeSalesDetails
+      ? sortRows(visits.filter((visit) => visit.date === period.day).map(normalizeDailyVisitDetail)).slice(0, 2500)
+      : [],
     weeklyRows: options.includeSalesDetails ? sortRows(weekRows).slice(0, 2500) : [],
     monthlyRows: options.includeSalesDetails ? sortRows(monthRows).slice(0, 1200) : [],
     yearlyRows: options.includeSalesDetails ? sortRows(yearRows).slice(0, 1500) : [],
@@ -1160,7 +1293,7 @@ async function buildBudgetBlockFast(commercialIds, period, options = {}) {
       byEntity[entiteId] = {
         id: entiteId,
         key: sourceRow.entite_key || "",
-        libelle: sourceRow.entite_libelle || "Entite",
+        libelle: sourceRow.entite_libelle || "Entité",
         total: 0,
         toDate: 0,
         lignes: 0,
@@ -1184,7 +1317,7 @@ async function buildBudgetBlockFast(commercialIds, period, options = {}) {
       commercialName: sourceRow.commercial_name || "",
       entiteId,
       entiteKey: sourceRow.entite_key || "",
-      entiteLibelle: sourceRow.entite_libelle || "Entite",
+      entiteLibelle: sourceRow.entite_libelle || "Entité",
       clientNom: "Budget consolidé",
       numeroClient: "",
       monthly,
@@ -1251,7 +1384,7 @@ async function buildBudgetBlockLegacy(commercialIds, period, options = {}) {
       commercialName: budget?.commercial_name || "",
       entiteId: budget?.entite_id || "",
       entiteKey: entity?.key || "",
-      entiteLibelle: entity?.libelle || "Entite",
+      entiteLibelle: entity?.libelle || "Entité",
       clientNom: line.client_nom || "Client sans nom",
       numeroClient: line.numero_client || "",
       monthly,
@@ -1374,7 +1507,7 @@ async function buildRealBlockFast(commercialIds, period, options = {}) {
       byEntity[entityId] = {
         id: entityId,
         key: row.entite_key || "",
-        libelle: row.entite_libelle || "Entite",
+        libelle: row.entite_libelle || "Entité",
         total: 0,
         toDate: 0,
         lignes: 0,
@@ -1469,7 +1602,7 @@ async function buildRealBlockLegacy(commercialIds, period, options = {}) {
       byEntity[entityId] = {
         id: entityId,
         key: row.entite_key || "",
-        libelle: row.entite_libelle || "Entite",
+        libelle: row.entite_libelle || "Entité",
         total: 0,
         toDate: 0,
         lignes: 0,
@@ -1682,15 +1815,15 @@ function buildDataScope(session, currentPortalUser, warnings) {
       title: warnings.length ? "Vue admin partielle" : "Vue admin globale",
       message: warnings.length
         ? "Certaines briques n'ont pas pu charger, mais les donnees disponibles restent affichees."
-        : "Tu vois tous les commerciaux actifs. Les donnees sont separees par commercial_user_id."
+        : "Tu vois tous les commerciaux actifs. Les données sont séparées par commercial_user_id."
     };
   }
   return {
     status: warnings.length ? "partial" : "ready",
     title: warnings.length ? "Vue responsable partielle" : "Vue responsable active",
     message: currentPortalUser
-      ? "Tu vois uniquement tes commerciaux principaux et tes acces exceptionnels. Vue en lecture seule."
-      : "Compte responsable non retrouve dans portal_users : aucun perimetre ne sera affiche."
+      ? "Tu vois uniquement tes commerciaux principaux et tes accès exceptionnels. Vue en lecture seule."
+      : "Compte responsable non retrouvé dans portal_users : aucun périmètre ne sera affiché."
   };
 }
 
@@ -1703,8 +1836,8 @@ function buildAlerts(commercials) {
   negative.forEach((item) => alerts.push({
     type: "gap",
     level: "danger",
-    title: `${item.displayName} sous budget a date`,
-    message: `Ecart a date ${roundMoney(item.metrics.ecartADate)} EUR. A verifier avec le detail budget / reel.`
+    title: `${item.displayName} sous budget à date`,
+    message: `Écart à date ${roundMoney(item.metrics.ecartADate)} EUR. À vérifier avec le détail budget / réel.`
   }));
 
   const docs = commercials
@@ -1732,8 +1865,8 @@ function buildAdminCommercialScope(activeUsers, relations, allUsers, sectorMap) 
       responsables: commercialRelations.map((relation) => findUser(allUsers, relation.responsable_user_id)),
       scopeLabel: representative
         ? representative.relation_type === "principal"
-          ? "Rattache principal"
-          : "Acces exceptionnel"
+          ? "Rattaché principal"
+          : "Accès exceptionnel"
         : "Sans responsable actif",
       sectorMap
     });
@@ -1755,7 +1888,7 @@ function buildResponsableCommercialScope(currentPortalUser, activeUsers, relatio
         scopeLabel:
           relation.relation_type === "principal"
             ? "Responsable principal"
-            : "Acces exceptionnel",
+            : "Accès exceptionnel",
         sectorMap
       });
     })
@@ -2042,7 +2175,7 @@ function normalizeRealRow(row) {
     commercialUserId: row.commercial_user_id || "",
     entiteId: row.entite_id || "",
     entiteKey: row.entite_key || "",
-    entiteLibelle: row.entite_libelle || "Entite",
+    entiteLibelle: row.entite_libelle || "Entité",
     annee: Number(row.annee || 0),
     mois: Number(row.mois || 0),
     clientCode: row.client_code || "",
@@ -2061,7 +2194,7 @@ function normalizeRealSummaryRow(row) {
     commercialUserId: row.commercial_user_id || "",
     entiteId: row.entite_id || "",
     entiteKey: row.entite_key || "",
-    entiteLibelle: row.entite_libelle || "Entite",
+    entiteLibelle: row.entite_libelle || "Entité",
     annee: Number(row.annee || 0),
     mois: Number(row.mois || 0),
     clientCode: "",
@@ -2359,6 +2492,7 @@ function emptySalesBlock() {
     totals: { day: 0, week: 0, month: 0, year: 0, monthly: emptyMonthlyArray(), monthAuto: 0, monthIndustrie: 0, visitsMonth: 0, phoneMonth: 0, clientsMonth: 0, clientsTotal: 0, ventesAnnee: 0, lignesAnnee: 0 },
     byCommercial: {},
     dailyRows: [],
+    dailyVisits: [],
     weeklyRows: [],
     monthlyRows: [],
     yearlyRows: [],
