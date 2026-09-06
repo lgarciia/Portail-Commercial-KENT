@@ -82,6 +82,8 @@
     .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
     .btn.primary{background:linear-gradient(135deg,var(--blue),#2563eb);border:none;box-shadow:0 14px 30px rgba(37,99,235,.24)}
     .btn.green{background:linear-gradient(135deg,var(--green),#047857);border:none;box-shadow:0 14px 30px rgba(16,185,129,.20)}
+    .btn.compact{min-height:36px;padding:8px 11px;border-radius:12px;font-size:.84rem}
+    .btn.editing{border-color:rgba(56,189,248,.38);background:rgba(56,189,248,.15);color:#d8f3ff}
     .card{padding:16px;margin-top:14px}
     .source-note{
       display:flex;
@@ -132,57 +134,83 @@
     .stat span{display:block;color:var(--muted);font-size:.72rem;font-weight:950;text-transform:uppercase;letter-spacing:.07em}
     .stat strong{display:block;margin-top:6px;font-size:1.2rem;letter-spacing:-.02em}
     .table-wrap{overflow:auto;border-radius:17px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.30);max-height:66vh}
-    table{border-collapse:collapse;width:100%;min-width:1240px}
-    th,td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;vertical-align:middle;white-space:nowrap}
+    table{border-collapse:collapse;width:100%;min-width:0;table-layout:fixed}
+    th,td{
+      padding:8px 7px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      text-align:left;
+      vertical-align:middle;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
     th{
       position:sticky;
       top:0;
       z-index:1;
       background:rgba(8,15,28,.97);
       color:var(--muted);
-      font-size:.72rem;
+      font-size:.66rem;
       text-transform:uppercase;
       letter-spacing:.06em;
       user-select:none;
     }
     th.sortable{cursor:pointer}
     th.sortable:hover{color:#fff}
-    td{font-size:.86rem;font-weight:780}
+    td{font-size:.78rem;font-weight:780}
     .right{text-align:right}
     .muted{color:var(--muted)}
     .sort-icon{opacity:.66;margin-left:6px}
+    .col-source{width:82px}
+    .col-size{width:78px;text-align:center}
+    .col-client{width:155px}
+    .col-account{width:86px}
+    .col-address{width:142px}
+    .col-plaque{width:128px}
+    .col-money{width:98px}
+    .col-date{width:100px}
+    .truncate{overflow:hidden;text-overflow:ellipsis}
     .size-badge{
       display:inline-flex;align-items:center;justify-content:center;
-      min-width:38px;padding:7px 10px;border-radius:999px;
+      min-width:34px;padding:6px 8px;border-radius:999px;
       border:1px solid rgba(148,163,184,.18);
       background:rgba(148,163,184,.10);color:#e2e8f0;
-      font-weight:950;letter-spacing:.05em;
+      font-size:.75rem;font-weight:950;letter-spacing:.05em;
     }
     .size-badge.size-s{border-color:rgba(148,163,184,.24);background:rgba(148,163,184,.12)}
     .size-badge.size-m{border-color:rgba(56,189,248,.25);background:rgba(56,189,248,.13);color:#d8f3ff}
     .size-badge.size-l{border-color:rgba(245,158,11,.30);background:rgba(245,158,11,.14);color:#fde68a}
+    .size-edit-select{
+      width:58px;
+      min-width:58px;
+      padding:7px 8px;
+      border-radius:11px;
+      text-align:center;
+      font-size:.78rem;
+      background:rgba(56,189,248,.10);
+      border-color:rgba(56,189,248,.32);
+    }
     .source-pill{
       display:inline-flex;align-items:center;justify-content:center;
-      padding:6px 9px;border-radius:999px;border:1px solid rgba(56,189,248,.18);
-      background:rgba(56,189,248,.10);color:#d8f3ff;font-size:.78rem;font-weight:900;
+      padding:5px 7px;border-radius:999px;border:1px solid rgba(56,189,248,.18);
+      background:rgba(56,189,248,.10);color:#d8f3ff;font-size:.72rem;font-weight:900;
     }
     .source-pill.industry{border-color:rgba(16,185,129,.22);background:rgba(16,185,129,.12);color:#d1fae5}
-    .empty{
-      min-height:190px;
+    .query-hint{
       display:flex;
-      flex-direction:column;
       align-items:center;
-      justify-content:center;
-      text-align:center;
-      gap:6px;
+      gap:8px;
       color:var(--muted);
-      border:1px dashed rgba(148,163,184,.24);
-      border-radius:17px;
-      background:rgba(2,6,23,.20);
-      padding:24px;
+      border:1px solid rgba(148,163,184,.15);
+      border-radius:13px;
+      background:rgba(2,6,23,.18);
+      padding:9px 11px;
+      font-size:.78rem;
+      line-height:1.35;
     }
-    .empty b{color:var(--text);font-size:1.08rem}
-    .status-line{color:var(--muted);font-size:.86rem;font-weight:800;line-height:1.45}
+    .query-hint b{color:var(--text);font-size:.78rem}
+    .query-hint span{color:var(--muted)}
+    .status-line{color:var(--muted);font-size:.78rem;font-weight:800;line-height:1.45}
     @media(max-width:1180px){
       .filters{grid-template-columns:repeat(2,minmax(0,1fr))}
       .filters .btn{width:100%}
@@ -208,7 +236,7 @@
       <div class="top-actions">
         <a class="btn" id="homeLink" href="index.html">Portail</a>
         <a class="btn" href="requete-commerce.html">Requête Commerce</a>
-        <button class="btn" id="reloadBtn" type="button">Recharger</button>
+        <button class="btn compact" id="editSizesBtn" type="button" disabled>Modification</button>
         <button class="btn green" id="exportBtn" type="button" disabled>Exporter CSV</button>
       </div>
     </header>
@@ -263,7 +291,7 @@
     </section>
 
     <section class="card" id="resultCard">
-      <div id="idlePanel" class="empty">
+      <div id="idlePanel" class="query-hint">
         <b>Aucune requête générée</b>
         <span>Choisis une taille, une plaque ou une recherche, puis clique sur Générer.</span>
       </div>
@@ -303,6 +331,8 @@
       generatedRows: [],
       visibleRows: [],
       recentClosedMonths: [],
+      pendingSizes: new Map(),
+      editingSizes: false,
       currentMonth: new Date().getMonth() + 1,
       currentToolMonth: new Date().getMonth() + 1,
       closedMonthLimit: Math.max(0, new Date().getMonth()),
@@ -367,6 +397,15 @@
     function renderSizeBadge(value){
       const size = normalizeClientSize(value);
       return `<span class="size-badge size-${escapeHtml(size.toLowerCase())}">${escapeHtml(size)}</span>`;
+    }
+
+    function renderSizeEditor(row){
+      const currentValue = state.pendingSizes.get(row.rowKey) || row.tailleClient;
+      const options = CLIENT_SIZE_OPTIONS.map(size => {
+        const selected = size === normalizeClientSize(currentValue) ? " selected" : "";
+        return `<option value="${escapeHtml(size)}"${selected}>${escapeHtml(size)}</option>`;
+      }).join("");
+      return `<select class="size-edit-select" data-size-key="${escapeHtml(row.rowKey)}" title="Modifier la taille client">${options}</select>`;
     }
 
     function isMissingColumnError(error, columnName){
@@ -452,8 +491,10 @@
         const joinedPlaque = row.plaques?.nom || row.industrie_plaques?.nom || "";
         return {
           id: String(row.id),
+          rowKey: `${source.key}|${row.id}`,
           source: source.key,
           sourceLabel: source.label,
+          sourceShortLabel: source.shortLabel,
           nom: row.nom || "Client sans nom",
           numeroCompte: row.numero_compte || "",
           adresse: row.adresse || "",
@@ -746,7 +787,7 @@
 
     function sortValue(row, key){
       if (key === "source") return row.sourceLabel;
-      if (key === "taille") return row.tailleClient;
+      if (key === "taille") return state.pendingSizes.get(row.rowKey) || row.tailleClient;
       if (key === "client") return row.nom;
       if (key === "compte") return row.numeroCompte;
       if (key === "adresse") return row.adresse;
@@ -777,20 +818,20 @@
 
     function renderHeader(){
       const headers = [
-        { key:"source", label:"Source" },
-        { key:"taille", label:"Taille" },
-        { key:"client", label:"Client" },
-        { key:"compte", label:"Compte" },
-        { key:"adresse", label:"Adresse" },
-        { key:"plaque", label:"Plaque" },
-        { key:"caToDate", label:"CA à date", right:true },
-        ...state.recentClosedMonths.map(month => ({ key:`month:${month}`, label:MONTHS_FR[month - 1], right:true })),
-        ...(state.currentToolMonth ? [{ key:"currentMonthCa", label:MONTHS_FR[state.currentToolMonth - 1] || "Mois en cours", right:true }] : []),
-        { key:"lastSaleDate", label:"Dernière vente" }
+        { key:"source", label:"Source", className:"col-source" },
+        { key:"taille", label:"Taille", className:"col-size" },
+        { key:"client", label:"Client", className:"col-client" },
+        { key:"compte", label:"Compte", className:"col-account" },
+        { key:"adresse", label:"Adresse", className:"col-address" },
+        { key:"plaque", label:"Plaque", className:"col-plaque" },
+        { key:"caToDate", label:"CA à date", right:true, className:"col-money" },
+        ...state.recentClosedMonths.map(month => ({ key:`month:${month}`, label:MONTHS_FR[month - 1], right:true, className:"col-money" })),
+        ...(state.currentToolMonth ? [{ key:"currentMonthCa", label:MONTHS_FR[state.currentToolMonth - 1] || "Mois en cours", right:true, className:"col-money" }] : []),
+        { key:"lastSaleDate", label:"Dernière vente", className:"col-date" }
       ];
       const icon = key => state.sortKey === key ? (state.sortAsc ? "▲" : "▼") : "↕";
       $("thead").innerHTML = `<tr>${headers.map(header => `
-        <th class="sortable ${header.right ? "right" : ""}" data-sort="${escapeHtml(header.key)}">
+        <th class="sortable ${header.right ? "right" : ""} ${header.className || ""}" data-sort="${escapeHtml(header.key)}">
           ${escapeHtml(header.label)}<span class="sort-icon">${icon(header.key)}</span>
         </th>
       `).join("")}</tr>`;
@@ -817,28 +858,30 @@
       } else {
         $("tbody").innerHTML = filtered.map(row => {
           const sourceClass = row.source === "industrie" ? " industry" : "";
-          const monthCells = state.recentClosedMonths.map(month => `<td class="right">${escapeHtml(eur.format(row.caByMonth[month - 1] || 0))}</td>`).join("");
+          const monthCells = state.recentClosedMonths.map(month => `<td class="right col-money">${escapeHtml(eur.format(row.caByMonth[month - 1] || 0))}</td>`).join("");
           const currentMonthCell = state.currentToolMonth
-            ? `<td class="right">${escapeHtml(eur.format(row.currentMonthCa || 0))}</td>`
+            ? `<td class="right col-money">${escapeHtml(eur.format(row.currentMonthCa || 0))}</td>`
             : "";
+          const sizeCell = state.editingSizes ? renderSizeEditor(row) : renderSizeBadge(row.tailleClient);
           return `
             <tr>
-              <td><span class="source-pill${sourceClass}">${escapeHtml(row.sourceLabel)}</span></td>
-              <td>${renderSizeBadge(row.tailleClient)}</td>
-              <td title="${escapeHtml(row.nom)}">${escapeHtml(row.nom)}</td>
-              <td>${escapeHtml(row.numeroCompte || "-")}</td>
-              <td title="${escapeHtml(row.adresse || "")}">${escapeHtml(row.adresse || "-")}</td>
-              <td title="${escapeHtml(row.plaqueNom || "")}">${escapeHtml(row.plaqueNom || "-")}</td>
-              <td class="right">${escapeHtml(eur.format(row.caToDate || 0))}</td>
+              <td class="col-source"><span class="source-pill${sourceClass}">${escapeHtml(row.sourceShortLabel || row.sourceLabel)}</span></td>
+              <td class="col-size">${sizeCell}</td>
+              <td class="col-client truncate" title="${escapeHtml(row.nom)}">${escapeHtml(row.nom)}</td>
+              <td class="col-account">${escapeHtml(row.numeroCompte || "-")}</td>
+              <td class="col-address truncate" title="${escapeHtml(row.adresse || "")}">${escapeHtml(row.adresse || "-")}</td>
+              <td class="col-plaque truncate" title="${escapeHtml(row.plaqueNom || "")}">${escapeHtml(row.plaqueNom || "-")}</td>
+              <td class="right col-money">${escapeHtml(eur.format(row.caToDate || 0))}</td>
               ${monthCells}
               ${currentMonthCell}
-              <td>${escapeHtml(formatDate(row.lastSaleDate))}</td>
+              <td class="col-date">${escapeHtml(formatDate(row.lastSaleDate))}</td>
             </tr>
           `;
         }).join("");
       }
       updateStats(filtered);
       $("exportBtn").disabled = filtered.length === 0;
+      $("editSizesBtn").disabled = state.generatedRows.length === 0;
       $("statusLine").textContent = `${filtered.length.toLocaleString("fr-FR")} client(s) affiché(s) sur ${state.generatedRows.length.toLocaleString("fr-FR")} client(s) chargé(s).`;
     }
 
@@ -852,11 +895,126 @@
       $("statLastSale").textContent = formatDate(lastSale);
     }
 
-    async function generate(){
+    function setHint(title, message, hidden = false){
+      $("idlePanel").hidden = hidden;
+      $("idlePanel").innerHTML = `<b>${escapeHtml(title)}</b><span>${escapeHtml(message)}</span>`;
+    }
+
+    function updateEditButtonLabel(){
+      const btn = $("editSizesBtn");
+      const pendingCount = state.pendingSizes.size;
+      btn.textContent = state.editingSizes
+        ? pendingCount ? `Valider (${pendingCount})` : "Valider"
+        : "Modification";
+      btn.classList.toggle("editing", state.editingSizes);
+      btn.disabled = state.generatedRows.length === 0;
+    }
+
+    function findGeneratedRow(rowKey){
+      return state.generatedRows.find(row => row.rowKey === rowKey) || null;
+    }
+
+    function handleSizeChange(event){
+      const select = event.target.closest("[data-size-key]");
+      if (!select) return;
+      const row = findGeneratedRow(select.dataset.sizeKey);
+      if (!row) return;
+      const nextSize = normalizeClientSize(select.value);
+      if (nextSize === row.tailleClient) state.pendingSizes.delete(row.rowKey);
+      else state.pendingSizes.set(row.rowKey, nextSize);
+      updateEditButtonLabel();
+    }
+
+    async function updateClientSize(row, size){
+      const source = SOURCES.find(item => item.key === row.source);
+      if (!source) throw new Error(`Source client inconnue : ${row.source || "-"}`);
+
+      let query = supabaseClient
+        .from(source.clients)
+        .update({ taille_client:size })
+        .eq("id", row.id);
+      query = applyCommercialScope(source.clients, query);
+      const { data, error } = await query.select("id");
+      if (error) throw error;
+      if (!Array.isArray(data) || !data.length) {
+        throw new Error(`Aucun client modifié pour ${row.nom}. Vérifie les droits ou le commercial connecté.`);
+      }
+    }
+
+    async function saveSizeChanges(){
+      if (!state.pendingSizes.size) {
+        state.editingSizes = false;
+        updateEditButtonLabel();
+        renderRows();
+        $("statusLine").textContent = "Aucune modification de taille à enregistrer.";
+        return;
+      }
+
+      const changes = [...state.pendingSizes.entries()]
+        .map(([rowKey, size]) => ({ row:findGeneratedRow(rowKey), size:normalizeClientSize(size) }))
+        .filter(change => change.row && change.size !== change.row.tailleClient);
+
+      if (!changes.length) {
+        state.pendingSizes.clear();
+        state.editingSizes = false;
+        updateEditButtonLabel();
+        renderRows();
+        $("statusLine").textContent = "Aucune modification de taille à enregistrer.";
+        return;
+      }
+
+      $("editSizesBtn").disabled = true;
       $("generateBtn").disabled = true;
+      $("statusLine").textContent = `Enregistrement de ${changes.length} taille(s) client...`;
+
+      try {
+        for (const change of changes) {
+          await updateClientSize(change.row, change.size);
+          change.row.tailleClient = change.size;
+          const cachedClient = state.clients.find(client => client.rowKey === change.row.rowKey);
+          if (cachedClient) cachedClient.tailleClient = change.size;
+        }
+        state.pendingSizes.clear();
+        state.editingSizes = false;
+        renderRows();
+        $("statusLine").textContent = `${changes.length} taille(s) client enregistrée(s).`;
+      } catch (error) {
+        console.error("Erreur modification taille client:", error);
+        const columnMessage = isMissingColumnError(error, "taille_client")
+          ? " Lance d'abord le SQL taille_client dans Supabase."
+          : "";
+        $("statusLine").textContent = `Impossible d'enregistrer les tailles client.${columnMessage} ${error.message || ""}`.trim();
+      } finally {
+        $("generateBtn").disabled = false;
+        updateEditButtonLabel();
+      }
+    }
+
+    async function toggleSizeEdition(){
+      if (!state.generatedRows.length) {
+        setHint("Modification indisponible", "Génère d'abord la requête client avant de modifier les tailles.");
+        return;
+      }
+      if (state.editingSizes) {
+        await saveSizeChanges();
+        return;
+      }
+      state.pendingSizes.clear();
+      state.editingSizes = true;
+      updateEditButtonLabel();
+      renderRows();
+      $("statusLine").textContent = "Mode modification actif : ajuste les tailles S / M / L, puis clique sur Valider.";
+    }
+
+    async function generate(){
+      state.editingSizes = false;
+      state.pendingSizes.clear();
+      updateEditButtonLabel();
+      $("generateBtn").disabled = true;
+      $("editSizesBtn").disabled = true;
       $("resultContent").hidden = true;
       $("idlePanel").hidden = false;
-      $("idlePanel").innerHTML = "<b>Calcul en cours</b><span>Lecture clients, ventes clôturées et ventes saisies du mois en cours...</span>";
+      setHint("Calcul en cours", "Lecture clients, ventes clôturées et ventes saisies du mois en cours...");
       try {
         state.generatedRows = await buildRows();
         $("idlePanel").hidden = true;
@@ -868,9 +1026,10 @@
         console.error("Erreur requête client:", error);
         $("idlePanel").hidden = false;
         $("resultContent").hidden = true;
-        $("idlePanel").innerHTML = `<b>Impossible de générer la requête</b><span>${escapeHtml(error.message || "Erreur inconnue")}</span>`;
+        setHint("Impossible de générer la requête", error.message || "Erreur inconnue");
       } finally {
         $("generateBtn").disabled = false;
+        updateEditButtonLabel();
       }
     }
 
@@ -930,19 +1089,28 @@
       $("homeLink").href = homePathForUser(state.user);
       updateSourceNote();
       await loadClients();
+      state.editingSizes = false;
+      state.pendingSizes.clear();
+      updateEditButtonLabel();
       $("statClients").textContent = state.clients.length.toLocaleString("fr-FR");
       $("statCa").textContent = "-";
       $("statLarge").textContent = "-";
       $("statLastSale").textContent = "-";
-      $("idlePanel").innerHTML = "<b>Prêt</b><span>Clients chargés. Clique sur Générer pour calculer le CA à date.</span>";
+      setHint("Prêt", "Clients chargés. Clique sur Générer pour calculer le CA à date.");
     }
 
     $("generateBtn").addEventListener("click", generate);
-    $("reloadBtn").addEventListener("click", init);
+    $("editSizesBtn").addEventListener("click", toggleSizeEdition);
     $("exportBtn").addEventListener("click", exportCSV);
+    $("tbody").addEventListener("change", handleSizeChange);
     ["sourceFilter","sizeFilter","plaqueFilter","searchInput","yearSelect"].forEach(id => {
       $(id).addEventListener(id === "searchInput" ? "input" : "change", () => {
         if (id === "yearSelect") {
+          if (state.editingSizes && state.pendingSizes.size) {
+            $("yearSelect").value = String(state.currentYear);
+            $("statusLine").textContent = "Valide les changements de taille avant de changer d'année.";
+            return;
+          }
           if (state.generatedRows.length) generate();
           else {
             configureYearWindow(Number($("yearSelect").value || state.currentYear));
@@ -956,7 +1124,7 @@
 
     init().catch(error => {
       console.error("Erreur init requête client:", error);
-      $("idlePanel").innerHTML = `<b>Erreur de chargement</b><span>${escapeHtml(error.message || "Erreur inconnue")}</span>`;
+      setHint("Erreur de chargement", error.message || "Erreur inconnue");
     });
   </script>
 </body>
