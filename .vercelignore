@@ -1,13 +1,3 @@
-# Fichiers de donnees lourds ou historiques non necessaires au runtime Vercel.
+# Fichiers de donnees lourds non necessaires au runtime Vercel.
 data.xlsx
 requetespsadata.xlsx
-base client.xlsx
-budgetgueudet .xlsx
-
-# Fichiers techniques utiles au developpement, mais pas a publier.
-*.sql
-tools/
-__check_*.js
-temp_check_*.js
-tmp_*.js
-.codex-*/

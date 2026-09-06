@@ -38,7 +38,12 @@ const ROLE_GUARDS = [
   { path: "/action-promo-campagnes.html", roles: CAMPAIGN_HISTORY_ROLES }
 ];
 
-export default async function proxy(request) {
+export const config = {
+  runtime: "nodejs",
+  matcher: "/:path*"
+};
+
+export default async function middleware(request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   const authConfig = getAuthConfig();
