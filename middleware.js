@@ -18,16 +18,24 @@ const ROLE_LABELS = {
   responsable: "Responsable",
   admin: "Admin"
 };
+const ALL_ROLES = new Set(["commercial", "responsable", "admin"]);
+const COMMERCIAL_ROLES = new Set(["commercial"]);
+const RESPONSABLE_ROLES = new Set(["admin", "responsable"]);
+const ADMIN_ROLES = new Set(["admin"]);
+const CAMPAIGN_HISTORY_ROLES = new Set(["commercial", "responsable"]);
 const PUBLIC_PATHS = new Set([
   ACCESS_PAGE,
   "/kent-logo.svg",
   "/reporting-hero.png"
 ]);
 const ROLE_GUARDS = [
-  { path: "/", roles: new Set(["commercial"]) },
-  { path: "/index.html", roles: new Set(["commercial"]) },
-  { path: "/admin.html", roles: new Set(["admin"]) },
-  { path: "/responsable.html", roles: new Set(["admin", "responsable"]) }
+  { path: "/", roles: COMMERCIAL_ROLES },
+  { path: "/index.html", roles: COMMERCIAL_ROLES },
+  { path: "/admin.html", roles: ADMIN_ROLES },
+  { path: "/parametrage.html", roles: ADMIN_ROLES },
+  { path: "/responsable.html", roles: RESPONSABLE_ROLES },
+  { path: "/requete-commerce.html", roles: ALL_ROLES },
+  { path: "/action-promo-campagnes.html", roles: CAMPAIGN_HISTORY_ROLES }
 ];
 
 export const config = {
@@ -425,9 +433,29 @@ function resolveRoleRedirect(user, nextPath) {
 
 function getRoleDeniedRedirect(pathname, user) {
   const role = normalizeRole(user?.role);
-  const guard = ROLE_GUARDS.find((item) => pathname === item.path);
+  const guard = getRouteGuard(pathname);
   if (!guard) return "";
   return guard.roles.has(role) ? "" : ROLE_HOME[role] || "/";
+}
+
+function getRouteGuard(pathname) {
+  const normalizedPath = normalizeGuardPath(pathname);
+  const explicitGuard = ROLE_GUARDS.find((item) => normalizedPath === item.path);
+  if (explicitGuard) return explicitGuard;
+
+  if (normalizedPath.endsWith(".html")) {
+    return { path: normalizedPath, roles: COMMERCIAL_ROLES };
+  }
+
+  return null;
+}
+
+function normalizeGuardPath(value) {
+  const raw = String(value || "/").trim();
+  const withoutHash = raw.split("#")[0];
+  const withoutQuery = withoutHash.split("?")[0];
+  if (!withoutQuery || withoutQuery === "/") return "/";
+  return withoutQuery.startsWith("/") ? withoutQuery : `/${withoutQuery}`;
 }
 
 async function signValue(value, secret) {
