@@ -307,21 +307,10 @@
     </section>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./commercial-scope.js"></script>
   <script>
-    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const PAGE_SIZE = 1000;
-    const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
-    const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
+    const CLIENT_QUERY_API_URL = "/api/requete-client";
     const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
     const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR" });
-    const SOURCES = [
-      { key:"auto", label:"Automobile", shortLabel:"Auto", clients:"clients", plaques:"plaques", visites:"visites", lignes:"visite_commandes" },
-      { key:"industrie", label:"Industrie", shortLabel:"Industrie", clients:"industrie_clients", plaques:"industrie_plaques", visites:"industrie_visites", lignes:"industrie_visite_commandes" }
-    ];
     const CLIENT_SIZE_OPTIONS = ["S","M","L"];
     const $ = id => document.getElementById(id);
 
@@ -408,111 +397,44 @@
       return `<select class="size-edit-select" data-size-key="${escapeHtml(row.rowKey)}" title="Modifier la taille client">${options}</select>`;
     }
 
-    function isMissingColumnError(error, columnName){
-      const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ").toLowerCase();
-      return message.includes(String(columnName || "").toLowerCase());
-    }
-
-    function currentCommercialId(){
-      return state.user?.role === "commercial" && state.user?.dbUserId ? String(state.user.dbUserId) : "";
-    }
-
-    function shouldScopeTable(table){
-      return ["clients","industrie_clients","visites","industrie_visites","v_reel_lignes_actives","v_kent_dashboard_sales_lines"].includes(table);
-    }
-
-    function applyCommercialScope(table, query){
-      const commercialId = currentCommercialId();
-      return commercialId && shouldScopeTable(table) ? query.eq("commercial_user_id", commercialId) : query;
-    }
-
-    async function fetchPaged(table, select, options = {}){
-      let from = 0;
-      const all = [];
-      while (true) {
-        let query = supabaseClient.from(table).select(select).range(from, from + PAGE_SIZE - 1);
-        query = applyCommercialScope(table, query);
-        (options.filters || []).forEach(filter => {
-          query = query[filter.op](filter.column, filter.value);
-        });
-        (Array.isArray(options.order) ? options.order : []).forEach(order => {
-          query = query.order(order.column, { ascending: order.ascending ?? true });
-        });
-        const { data, error } = await query;
-        if (error) throw error;
-        const batch = data || [];
-        all.push(...batch);
-        if (batch.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
-      }
-      return all;
-    }
-
-    async function fetchWithSelectFallback(table, selects, options = {}){
-      let data = [];
-      let error = null;
-      for (const select of selects) {
-        try {
-          data = await fetchPaged(table, select, options);
-          error = null;
-          break;
-        } catch (err) {
-          error = err;
-          const canRetry = isMissingColumnError(err, "taille_client") || isMissingColumnError(err, "email");
-          if (!canRetry) break;
-        }
-      }
-      if (error) throw error;
-      return data || [];
-    }
-
-    async function fetchPlaquesForSource(source){
-      const rows = await fetchPaged(source.plaques, "id, nom", { order:[{ column:"nom", ascending:true }] });
-      return rows.map(row => ({ ...row, source:source.key, sourceLabel:source.label }));
-    }
-
-    async function fetchClientsForSource(source, plaqueByKey){
-      const selects = source.key === "auto"
-        ? [
-            "id, nom, numero_compte, adresse, telephone, email, plaque_id, taille_client, plaques ( id, nom )",
-            "id, nom, numero_compte, adresse, telephone, email, plaque_id, plaques ( id, nom )",
-            "id, nom, numero_compte, adresse, telephone, plaque_id, taille_client, plaques ( id, nom )",
-            "id, nom, numero_compte, adresse, telephone, plaque_id, plaques ( id, nom )"
-          ]
-        : [
-            "id, nom, numero_compte, adresse, telephone, email, plaque_id, taille_client",
-            "id, nom, numero_compte, adresse, telephone, email, plaque_id",
-            "id, nom, numero_compte, adresse, telephone, plaque_id, taille_client",
-            "id, nom, numero_compte, adresse, telephone, plaque_id"
-          ];
-      const rows = await fetchWithSelectFallback(source.clients, selects, { order:[{ column:"nom", ascending:true }] });
-      return rows.map(row => {
-        const plaqueKey = `${source.key}|${row.plaque_id || ""}`;
-        const joinedPlaque = row.plaques?.nom || row.industrie_plaques?.nom || "";
-        return {
-          id: String(row.id),
-          rowKey: `${source.key}|${row.id}`,
-          source: source.key,
-          sourceLabel: source.label,
-          sourceShortLabel: source.shortLabel,
-          nom: row.nom || "Client sans nom",
-          numeroCompte: row.numero_compte || "",
-          adresse: row.adresse || "",
-          plaqueId: row.plaque_id || "",
-          plaqueKey,
-          plaqueNom: joinedPlaque || plaqueByKey.get(plaqueKey)?.nom || "Sans plaque",
-          tailleClient: normalizeClientSize(row.taille_client)
-        };
+    async function fetchClientQueryPayload(year, mode = "query") {
+      const params = new URLSearchParams();
+      if (mode) params.set("mode", mode);
+      if (year) params.set("year", String(year));
+      const response = await fetch(CLIENT_QUERY_API_URL + "?" + params.toString(), {
+        method: "GET",
+        credentials: "same-origin",
+        headers: { Accept: "application/json" }
       });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.ok === false) {
+        throw new Error(payload?.error || "Impossible de charger la requête client.");
+      }
+      return payload;
+    }
+
+    async function sendClientSizeChanges(changes) {
+      const response = await fetch(CLIENT_QUERY_API_URL, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ changes })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.ok === false) {
+        throw new Error(payload?.error || "Impossible d'enregistrer les tailles client.");
+      }
+      return payload;
     }
 
     async function loadClients(){
-      const plaquesByKey = new Map();
-      const allPlaques = (await Promise.all(SOURCES.map(fetchPlaquesForSource))).flat();
-      allPlaques.forEach(plaque => plaquesByKey.set(`${plaque.source}|${plaque.id}`, plaque));
-      const clientGroups = await Promise.all(SOURCES.map(source => fetchClientsForSource(source, plaquesByKey)));
-      state.plaques = allPlaques;
-      state.clients = clientGroups.flat();
+      const payload = await fetchClientQueryPayload(state.currentYear, "clients");
+      state.user = payload.user || state.user;
+      state.plaques = Array.isArray(payload.plaques) ? payload.plaques : [];
+      state.clients = Array.isArray(payload.clients) ? payload.clients : [];
       buildPlaqueFilterOptions();
     }
 
@@ -597,14 +519,6 @@
         || resolveBestMatch(indexes.byName, nameKey, row);
     }
 
-    function isCurrentMonthOrderRow(row){
-      const type = normalizeText(row.type_visite).replaceAll("-", "_").replaceAll(" ", "_");
-      if (type === "passage_sans_vente" || type === "client_ferme") return false;
-      if (type === VISIT_TYPE_PHONE_ORDER || type === "commande_tel" || type === "telephone") return true;
-      if (String(row.note || "").includes(PHONE_ORDER_NOTE_MARKER)) return true;
-      return !type || type === "vente" || type === "visite" || type === "commande";
-    }
-
     function applyAmount(target, amount, month, dateValue){
       const parsedAmount = roundMoney(amount);
       const monthIndex = Number(month) - 1;
@@ -615,67 +529,6 @@
       const normalizedDate = String(dateValue || "").slice(0, 10);
       if (normalizedDate && (!target.lastSaleDate || normalizedDate > target.lastSaleDate)) {
         target.lastSaleDate = normalizedDate;
-      }
-    }
-
-    async function fetchClosedRealRows(year, closedMonthLimit){
-      if (closedMonthLimit < 1) return [];
-      return fetchPaged("v_reel_lignes_actives", "id, commercial_user_id, annee, mois, client_code, client_nom, montant, date_piece, entite_key, entite_libelle", {
-        filters:[
-          { op:"eq", column:"annee", value:Number(year) },
-          { op:"lte", column:"mois", value:Number(closedMonthLimit) }
-        ],
-        order:[{ column:"mois", ascending:true }, { column:"client_nom", ascending:true }]
-      });
-    }
-
-    async function fetchCurrentSalesRowsFast(year, month){
-      const rows = await fetchPaged("v_kent_dashboard_sales_lines", "source, client_id, client_nom, numero_compte, date, annee, mois, type_visite, note, montant", {
-        filters:[
-          { op:"eq", column:"annee", value:Number(year) },
-          { op:"eq", column:"mois", value:Number(month) }
-        ],
-        order:[{ column:"date", ascending:false }]
-      });
-      return rows.filter(isCurrentMonthOrderRow);
-    }
-
-    async function fetchCurrentSalesRowsLegacy(year, month){
-      const groups = await Promise.all(SOURCES.map(async source => {
-        const start = `${year}-${String(month).padStart(2, "0")}-01`;
-        const end = monthEndIso(year, month);
-        const [visites, lignes] = await Promise.all([
-          fetchPaged(source.visites, "id, client_id, date_visite, type_visite, note, total_commande", {
-            filters:[
-              { op:"gte", column:"date_visite", value:start },
-              { op:"lte", column:"date_visite", value:end }
-            ]
-          }),
-          fetchPaged(source.lignes, "id, visite_id, quantite, prix_unitaire")
-        ]);
-        const visitById = new Map((visites || []).map(visite => [String(visite.id), visite]));
-        return (lignes || []).map(ligne => {
-          const visite = visitById.get(String(ligne.visite_id));
-          if (!visite || !isCurrentMonthOrderRow(visite)) return null;
-          return {
-            source: source.key,
-            client_id: visite.client_id,
-            date: visite.date_visite,
-            annee: year,
-            mois: month,
-            montant: toNumber(ligne.quantite) * toNumber(ligne.prix_unitaire)
-          };
-        }).filter(Boolean);
-      }));
-      return groups.flat();
-    }
-
-    async function fetchCurrentSalesRows(year, month){
-      try {
-        return await fetchCurrentSalesRowsFast(year, month);
-      } catch (error) {
-        if (!/v_kent_dashboard_sales_lines|does not exist|not found|schema cache/i.test(error.message || "")) throw error;
-        return fetchCurrentSalesRowsLegacy(year, month);
       }
     }
 
@@ -744,10 +597,15 @@
       configureYearWindow(year);
       updateSourceNote();
 
-      await loadClients();
+      const payload = await fetchClientQueryPayload(year, "query");
+      state.user = payload.user || state.user;
+      state.plaques = Array.isArray(payload.plaques) ? payload.plaques : [];
+      state.clients = Array.isArray(payload.clients) ? payload.clients : [];
+      buildPlaqueFilterOptions();
+
       const rows = state.clients.map(emptyMetrics);
       const indexes = buildClientIndexes(rows);
-      const closedRows = await fetchClosedRealRows(year, state.closedMonthLimit);
+      const closedRows = Array.isArray(payload.closedRows) ? payload.closedRows : [];
       closedRows.forEach(row => {
         const client = resolveRealRowClient(row, indexes);
         if (!client) return;
@@ -756,7 +614,7 @@
       });
 
       if (state.currentToolMonth) {
-        const currentRows = await fetchCurrentSalesRows(year, state.currentToolMonth);
+        const currentRows = Array.isArray(payload.currentRows) ? payload.currentRows : [];
         currentRows.forEach(row => {
           const key = `${row.source || "auto"}|${row.client_id || ""}`;
           const client = indexes.byId.get(key);
@@ -926,17 +784,13 @@
     }
 
     async function updateClientSize(row, size){
-      const source = SOURCES.find(item => item.key === row.source);
-      if (!source) throw new Error(`Source client inconnue : ${row.source || "-"}`);
-
-      let query = supabaseClient
-        .from(source.clients)
-        .update({ taille_client:size })
-        .eq("id", row.id);
-      query = applyCommercialScope(source.clients, query);
-      const { data, error } = await query.select("id");
-      if (error) throw error;
-      if (!Array.isArray(data) || !data.length) {
+      const payload = await sendClientSizeChanges([{
+        source: row.source,
+        id: row.id,
+        size,
+        name: row.nom
+      }]);
+      if (!Array.isArray(payload.updated) || !payload.updated.length) {
         throw new Error(`Aucun client modifié pour ${row.nom}. Vérifie les droits ou le commercial connecté.`);
       }
     }
@@ -980,10 +834,7 @@
         $("statusLine").textContent = `${changes.length} taille(s) client enregistrée(s).`;
       } catch (error) {
         console.error("Erreur modification taille client:", error);
-        const columnMessage = isMissingColumnError(error, "taille_client")
-          ? " Lance d'abord le SQL taille_client dans Supabase."
-          : "";
-        $("statusLine").textContent = `Impossible d'enregistrer les tailles client.${columnMessage} ${error.message || ""}`.trim();
+        $("statusLine").textContent = `Impossible d'enregistrer les tailles client. ${error.message || ""}`.trim();
       } finally {
         $("generateBtn").disabled = false;
         updateEditButtonLabel();
@@ -1085,10 +936,10 @@
 
     async function init(){
       initYearSelect();
-      state.user = await window.KentCommercialScope.load();
-      $("homeLink").href = homePathForUser(state.user);
+      configureYearWindow(Number($("yearSelect").value || state.currentYear));
       updateSourceNote();
       await loadClients();
+      $("homeLink").href = homePathForUser(state.user);
       state.editingSizes = false;
       state.pendingSizes.clear();
       updateEditButtonLabel();
