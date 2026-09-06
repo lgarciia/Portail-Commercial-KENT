@@ -119,7 +119,7 @@ const DASHBOARD_FAST_VIEWS = {
 };
 
 export default async function handler(request, response) {
-  const guard = requireRole(request, ["admin", "responsable"]);
+  const guard = requireRole(request, parseDashboardMode(request) === "cumul" ? ["admin"] : ["admin", "responsable"]);
   if (!guard.ok) {
     sendJson(response, guard.status, guard.body);
     return;
@@ -163,7 +163,7 @@ async function buildDashboard(session, request) {
 
   const commercialIds = visibleCommercials.map((item) => item.id).filter(Boolean);
   const includeMainData = mode !== "campaigns";
-  const includeDocuments = mode !== "finance" && mode !== "campaigns";
+  const includeDocuments = mode !== "finance" && mode !== "cumul" && mode !== "campaigns";
   const includeCampaigns = mode === "full" || mode === "campaigns";
 
   const [salesBlock, budgetBlock, realBlock, documentsBlock, campaignsBlock, qualityBlock] = await Promise.all([
@@ -182,7 +182,7 @@ async function buildDashboard(session, request) {
     includeCampaigns
       ? safeBlock(() => buildCampaignsBlock(commercialIds, period), emptyCampaignsBlock(), warnings, "campagnes promo")
       : Promise.resolve(emptyCampaignsBlock()),
-    includeMainData
+    includeMainData && mode !== "cumul"
       ? safeBlock(() => buildQualityBlock(commercialIds, period), emptyQualityBlock(), warnings, "taille clients / demos")
       : Promise.resolve(emptyQualityBlock())
   ]);
@@ -195,6 +195,33 @@ async function buildDashboard(session, request) {
     campaignsBlock,
     qualityBlock
   }));
+
+  // Reuse the validated aggregates, without loading activity details for this read-only view.
+  if (mode === "cumul") {
+    return {
+      mode,
+      period,
+      commercials: enrichedCommercials.map((commercial) => ({
+        id: commercial.id,
+        identifier: commercial.identifier,
+        displayName: commercial.displayName,
+        active: commercial.active,
+        hidden: commercial.hidden,
+        relationType: commercial.relationType,
+        responsableId: commercial.responsableId,
+        responsables: commercial.responsables.map((manager) => ({
+          id: manager.id,
+          displayName: manager.displayName || manager.display_name || manager.identifier
+        })),
+        sectorName: commercial.sectorName,
+        metrics: Object.fromEntries([
+          "caMensuel", "reelMensuel", "budgetMensuel", "budgetAnnuel", "budgetsActifs", "reelMoisImportes"
+        ].map((key) => [key, commercial.metrics[key]]))
+      })),
+      warnings,
+      errors: [salesBlock, budgetBlock, realBlock].map((block) => block.error).filter(Boolean)
+    };
+  }
 
   const principalRelations = enrichedCommercials.filter((item) => item.relationType === "principal");
   const exceptionalRelations = enrichedCommercials.filter((item) => item.relationType === "exceptionnel");
@@ -303,6 +330,7 @@ function parseDashboardMode(request) {
   const url = new URL(request.url, "http://localhost");
   const mode = normalizeText(url.searchParams.get("mode")).toLowerCase();
   if (mode === "finance") return "finance";
+  if (mode === "cumul") return "cumul";
   if (mode === "control") return "control";
   if (mode === "campaigns") return "campaigns";
   return "full";
@@ -312,9 +340,10 @@ function parseDashboardOptions(request, mode) {
   const url = new URL(request.url, "http://localhost");
   const detailParam = normalizeText(url.searchParams.get("detail")).toLowerCase();
   const compactRequested = ["0", "false", "compact", "summary"].includes(detailParam);
-  const compact = mode === "finance" || compactRequested;
+  const compact = mode === "finance" || mode === "cumul" || compactRequested;
   return {
     compact,
+    includeActivityCounts: mode !== "cumul",
     includeSalesDetails: !compact,
     includeBudgetRows: !compact,
     includeDocumentRows: !compact
@@ -457,11 +486,13 @@ async function buildSalesBlockFast(commercialIds, period, options = {}) {
       annee: `eq.${period.year}`,
       order: "date.asc"
     }),
-    fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.visitsMonthly, "commercial_user_id,secteur,annee,mois,visites_total,visites_terrain,commandes_telephone,clients_terrain", commercialIds, {
+    options.includeActivityCounts !== false ? fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.visitsMonthly, "commercial_user_id,secteur,annee,mois,visites_total,visites_terrain,commandes_telephone,clients_terrain", commercialIds, {
       annee: `eq.${period.year}`,
       mois: `eq.${period.month}`
-    }),
-    fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.clientsTotal, "commercial_user_id,secteur,clients_total", commercialIds),
+    }) : Promise.resolve([]),
+    options.includeActivityCounts !== false
+      ? fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.clientsTotal, "commercial_user_id,secteur,clients_total", commercialIds)
+      : Promise.resolve([]),
     options.includeSalesDetails
       ? fetchByCommercialChunks(DASHBOARD_FAST_VIEWS.salesLines, detailSelect, commercialIds, {
           date: `gte.${detailStart}`,

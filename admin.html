@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./reel-supabase.js"></script>
   <link rel="stylesheet" href="./shared-theme.css">
+  <link rel="stylesheet" href="./admin-reporting-cumul.css">
   <style>
     :root{
       --bg:#0d1422;
@@ -1980,7 +1981,7 @@
     </section>
 
     <section class="admin-view" data-admin-view="reporting-cumul">
-      <section class="reporting-cumul-shell">
+      <section class="reporting-cumul-shell" data-cumul-app>
         <div class="finance-workspace-tabs" aria-label="Navigation finance admin">
           <button class="finance-workspace-tab" type="button" data-finance-section-target="pilotage">Accueil</button>
           <button class="finance-workspace-tab" type="button" data-finance-section-target="finance">Reporting</button>
@@ -1993,7 +1994,7 @@
             <span class="badge">Analyse groupe</span>
             <h2>Reporting cumul</h2>
             <p>
-              Espace pr&eacute;par&eacute; pour les vues consolid&eacute;es : projection annuelle, classements Top 100 et analyse de marge.
+              Le chiffre d’affaires de l’équipe, ses objectifs et sa trajectoire annuelle.
             </p>
           </div>
         </div>
@@ -2001,36 +2002,43 @@
         <div class="reporting-cumul-nav" aria-label="Vues reporting cumul">
           <button class="finance-pill active" type="button" data-reporting-cumul-view="projection">Projection</button>
           <button class="finance-pill" type="button" data-reporting-cumul-view="top-ca">Top 100 CA</button>
-          <button class="finance-pill" type="button" data-reporting-cumul-view="top-marge">Top 100 marge</button>
-          <button class="finance-pill" type="button" data-reporting-cumul-view="marge-nette">Marge nette</button>
-          <button class="finance-pill" type="button" data-reporting-cumul-view="marge-brute">Marge brute</button>
+          <button class="finance-pill" type="button" data-reporting-cumul-view="top-marge" disabled title="En attente d’une source de marge validée">Top 100 marge · À venir</button>
+          <button class="finance-pill" type="button" data-reporting-cumul-view="marge-nette" disabled title="En attente d’une source de marge validée">Marge nette · À venir</button>
+          <button class="finance-pill" type="button" data-reporting-cumul-view="marge-brute" disabled title="En attente d’une source de marge validée">Marge brute · À venir</button>
         </div>
 
+        <form class="cumul-toolbar" data-cumul-filters>
+          <label>Année<select name="year" aria-label="Année du reporting cumul"></select></label>
+          <label>Cumul à fin<select name="month" aria-label="Mois de fin du cumul"></select></label>
+          <label>Responsable<select name="manager"><option value="">Tous les responsables</option></select></label>
+          <label class="cumul-search">Rechercher<input name="search" type="search" placeholder="Commercial, identifiant, secteur…" autocomplete="off"></label>
+          <button class="cumul-button" type="button" data-cumul-refresh>Actualiser</button>
+          <button class="cumul-button" type="button" data-cumul-export disabled title="Exporter tous les commerciaux du périmètre filtré">Excel</button>
+        </form>
+        <div class="cumul-status" data-cumul-status role="status" aria-live="polite">Les données seront chargées à l’ouverture de cette vue.</div>
+        <div class="cumul-result" data-cumul-result hidden>
+          <div class="cumul-period" data-cumul-period></div>
+          <div class="cumul-kpis" data-cumul-kpis></div>
+          <details class="cumul-method">
+            <summary>Sources et règles de calcul <span data-cumul-check></span></summary>
+            <div data-cumul-method></div>
+          </details>
+        </div>
         <div class="reporting-cumul-card">
           <section class="reporting-cumul-panel active" data-reporting-cumul-panel="projection">
-            <div>
-              <h3>Projection du CA annuel</h3>
-              <p>Vue pr&eacute;vue pour projeter le chiffre d'affaires annuel &agrave; partir du r&eacute;el cumul&eacute; et du budget restant.</p>
+            <div class="cumul-section-head">
+              <div><h3>Projection annuelle</h3><p>Ouvre un responsable, puis un commercial pour consulter ses mois.</p></div>
+              <button class="cumul-button" type="button" data-cumul-expand disabled>Déplier les équipes</button>
             </div>
-            <div class="reporting-cumul-grid">
-              <article class="reporting-cumul-kpi"><span>R&eacute;el cumul&eacute;</span><strong>-</strong></article>
-              <article class="reporting-cumul-kpi"><span>Budget cumul&eacute;</span><strong>-</strong></article>
-              <article class="reporting-cumul-kpi"><span>&Eacute;cart cumul&eacute;</span><strong>-</strong></article>
-              <article class="reporting-cumul-kpi"><span>Projection annuelle</span><strong>-</strong></article>
-            </div>
-            <div class="reporting-cumul-roadmap">
-              Prochaine &eacute;tape : brancher cette vue sur les agr&eacute;gats finance d&eacute;j&agrave; valid&eacute;s, sans changer les calculs existants.
-            </div>
+            <div data-cumul-projection></div>
           </section>
 
           <section class="reporting-cumul-panel" data-reporting-cumul-panel="top-ca">
-            <div>
-              <h3>Top 100 CA</h3>
-              <p>Vue pr&eacute;vue pour classer les meilleurs clients, produits ou lignes commerciales par chiffre d'affaires.</p>
+            <div class="cumul-section-head">
+              <div><h3>Top 100 CA</h3><p>Commerciaux classés par CA cumulé décroissant, dans le périmètre filtré.</p></div>
+              <label class="cumul-limit">Afficher<select data-cumul-limit aria-label="Nombre de commerciaux à afficher"><option value="100">100 premiers</option><option value="all">Tous les commerciaux</option></select></label>
             </div>
-            <div class="reporting-cumul-roadmap">
-              Le tableau sera pens&eacute; pour filtrer par mois, ann&eacute;e, responsable, commercial et secteur.
-            </div>
+            <div data-cumul-ranking></div>
           </section>
 
           <section class="reporting-cumul-panel" data-reporting-cumul-panel="top-marge">
@@ -3309,6 +3317,7 @@
         if (state.activeView === "imports" && !state.adminImportPayload) {
           loadAdminImports();
         }
+        document.dispatchEvent(new CustomEvent("kent:admin-view", { detail: { view: state.activeView } }));
       }
 
       async function loadFinanceData(){
@@ -6431,5 +6440,6 @@
     })();
   </script>
   <script src="./admin-referentiels.js"></script>
+  <script type="module" src="./admin-reporting-cumul.js"></script>
 </body>
 </html>

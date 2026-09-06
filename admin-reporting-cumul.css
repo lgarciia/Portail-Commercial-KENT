@@ -1,0 +1,131 @@
+[data-cumul-app] {
+  --cumul-ink: #17263a;
+  --cumul-muted: #526479;
+  --cumul-line: #d7e0e9;
+  --cumul-soft: #f4f7fa;
+  --cumul-accent: #125e64;
+  color: var(--cumul-ink);
+  min-width: 0;
+}
+[data-cumul-app] [hidden] { display: none !important; }
+[data-cumul-app] .finance-pill:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+[data-cumul-app] .cumul-toolbar {
+  display: flex; align-items: end; gap: 12px; flex-wrap: wrap;
+  background: var(--cumul-soft); padding: 16px; border: 1px solid var(--cumul-line); border-radius: 14px;
+}
+[data-cumul-app] .cumul-toolbar label,
+[data-cumul-app] .cumul-limit { display: grid; gap: 6px; font-size: 12px; font-weight: 650; color: var(--cumul-muted); min-width: 0; }
+[data-cumul-app] .cumul-toolbar label:nth-child(3) { flex: 1 1 200px; max-width: 280px; }
+[data-cumul-app] .cumul-toolbar .cumul-search { flex: 2 1 220px; }
+[data-cumul-app] .cumul-toolbar select,
+[data-cumul-app] .cumul-toolbar input,
+[data-cumul-app] .cumul-limit select {
+  width: 100%; max-width: 100%; height: 40px; margin: 0; padding: 0 12px;
+  border: 1px solid #b5c3d1; border-radius: 8px; background: #fff;
+  color: var(--cumul-ink); font-size: 13px; font-weight: 500; box-shadow: none;
+}
+[data-cumul-app] .cumul-toolbar select { min-width: 95px; padding-right: 26px; }
+[data-cumul-app] .cumul-button {
+  min-height: 40px; padding: 8px 13px; border: 1px solid #b5c3d1; border-radius: 8px;
+  color: var(--cumul-ink); background: #fff; font-weight: 650; font-size: 12px;
+  white-space: nowrap; box-shadow: none;
+}
+[data-cumul-app] .cumul-button:hover:not(:disabled) { background: #eaf0f5; border-color: #70849a; }
+[data-cumul-app] .cumul-button:disabled { opacity: .5; cursor: not-allowed; }
+[data-cumul-app] :is(button, select, input, summary, .cumul-table-wrap):focus-visible {
+  outline: 2px solid #166975; outline-offset: 3px; box-shadow: none;
+}
+[data-cumul-app] .cumul-status { font-size: 12px; color: var(--cumul-muted); padding: 12px 2px; min-height: 38px; }
+[data-cumul-app] .cumul-status.cumul-error { color: #a12332; }
+[data-cumul-app] .cumul-period { display: flex; align-items: center; gap: 9px 20px; flex-wrap: wrap; margin: 4px 0 14px; }
+[data-cumul-app] .cumul-period strong { font-size: 17px; color: var(--cumul-ink); }
+[data-cumul-app] .cumul-period span { font-size: 12px; color: var(--cumul-muted); }
+[data-cumul-app] .cumul-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+[data-cumul-app] .cumul-kpi { border: 1px solid var(--cumul-line); border-radius: 12px; background: #fff; padding: 17px 16px; min-width: 0; }
+[data-cumul-app] .cumul-kpi > span { color: var(--cumul-muted); display: block; font-size: 12px; font-weight: 600; }
+[data-cumul-app] .cumul-kpi > strong { display: block; color: var(--cumul-ink); margin: 9px 0 7px; font-size: clamp(18px, 1.7vw, 28px); letter-spacing: -.035em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+[data-cumul-app] .cumul-kpi small { display: block; font-size: 11px; color: var(--cumul-muted); }
+[data-cumul-app] .cumul-kpi.cumul-accent { background: #edf6f5; border-color: #a8ccc9; }
+[data-cumul-app] .cumul-kpi.cumul-accent > strong { color: #12585e; }
+[data-cumul-app] .cumul-positive,
+[data-cumul-app] .cumul-positive > strong { color: #176b4c; }
+[data-cumul-app] .cumul-negative,
+[data-cumul-app] .cumul-negative > strong { color: #aa2938; }
+[data-cumul-app] .cumul-warning { color: #8c520e !important; }
+[data-cumul-app] .cumul-method { margin: 13px 0 22px; font-size: 12px; color: var(--cumul-muted); }
+[data-cumul-app] .cumul-method summary { cursor: pointer; width: fit-content; padding: 7px 0; }
+[data-cumul-app] .cumul-method summary span { margin-left: 8px; }
+[data-cumul-app] .cumul-method p { margin: 10px 0; font-size: 12px; line-height: 1.65; color: var(--cumul-muted); }
+[data-cumul-app] .cumul-method > div { padding: 4px 16px 12px; border-left: 2px solid var(--cumul-line); }
+[data-cumul-app] .cumul-sources { display: flex; flex-wrap: wrap; gap: 6px; }
+[data-cumul-app] .cumul-sources span { padding: 6px 8px; background: var(--cumul-soft); border: 1px solid var(--cumul-line); border-radius: 6px; }
+[data-cumul-app] .cumul-notes { color: #8c520e; padding-left: 20px; line-height: 1.6; }
+[data-cumul-app] .cumul-notes li + li { margin-top: 6px; }
+[data-cumul-app] .reporting-cumul-card { min-width: 0; padding: 0; border: 0; box-shadow: none; background: #fff; }
+[data-cumul-app] .reporting-cumul-panel.active { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+[data-cumul-app] .cumul-section-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
+[data-cumul-app] .cumul-section-head h3 { font-size: 19px; margin: 0 0 5px; letter-spacing: -.02em; }
+[data-cumul-app] .cumul-section-head p { margin: 0; font-size: 12px; color: var(--cumul-muted); }
+[data-cumul-app] .cumul-limit { display: flex; align-items: center; gap: 8px; }
+[data-cumul-app] .cumul-limit select { width: auto; }
+[data-cumul-app] .cumul-table-wrap { width: 100%; overflow: auto; border: 1px solid var(--cumul-line); border-radius: 12px; max-height: 72vh; }
+[data-cumul-app] .cumul-table { font-family: inherit; }
+[data-cumul-app] .cumul-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1040px; background: #fff; }
+[data-cumul-app] .cumul-table th,
+[data-cumul-app] .cumul-table td { padding: 12px 10px; border: 0; border-bottom: 1px solid var(--cumul-line); color: var(--cumul-ink); font-size: 12px; line-height: 1.4; }
+[data-cumul-app] .cumul-table thead th { text-align: right; position: sticky; top: 0; z-index: 2; background: #e9eff5; color: #42566e; font-size: 10px; font-weight: 750; letter-spacing: .035em; text-transform: uppercase; }
+[data-cumul-app] .cumul-table thead th:first-child { text-align: left; }
+[data-cumul-app] .cumul-name-col { width: 23%; min-width: 205px; }
+[data-cumul-app] .cumul-table tbody th { position: static; background: transparent; letter-spacing: normal; text-transform: none; text-align: left; font-weight: 650; }
+[data-cumul-app] .cumul-table tbody tr:last-child td { border-bottom: 1px solid var(--cumul-line); }
+[data-cumul-app] .cumul-table td.cumul-number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+[data-cumul-app] .cumul-table td.cumul-positive { color: #176b4c; }
+[data-cumul-app] .cumul-table td.cumul-negative { color: #aa2938; }
+[data-cumul-app] .cumul-table .cumul-strong { font-weight: 750; }
+[data-cumul-app] .cumul-table small { display: block; font-size: 10px; font-weight: 450; color: var(--cumul-muted); margin-top: 4px; }
+[data-cumul-app] .cumul-group { background: #f0f5f8; }
+[data-cumul-app] .cumul-row-button { display: flex; gap: 9px; align-items: center; width: 100%; min-height: 40px; padding: 0; border: 0; text-align: left; color: inherit; background: transparent; font-weight: 650; font-size: 12px; }
+[data-cumul-app] .cumul-row-button:hover { color: var(--cumul-accent); }
+[data-cumul-app] .cumul-chevron { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: 0 0 24px; border: 1px solid #b9c7d3; border-radius: 6px; background: #fff; font-size: 15px; }
+[data-cumul-app] .cumul-seller .cumul-row-button { padding-left: 14px; }
+[data-cumul-app] .cumul-seller:hover,
+[data-cumul-app] .cumul-ranking-table tbody > tr:not(.cumul-detail):hover { background: #f8fafc; }
+[data-cumul-app] .cumul-table tfoot { font-weight: 750; }
+[data-cumul-app] .cumul-table tfoot td,
+[data-cumul-app] .cumul-table tfoot th { position: static; background: #e5eef3; border-top: 2px solid #b3c5d3; border-bottom: 0; text-transform: none; letter-spacing: normal; font-size: 12px; }
+[data-cumul-app] .cumul-ranking-count { color: var(--cumul-muted); font-size: 11px; margin: 0 0 12px; }
+[data-cumul-app] .cumul-rank { display: inline-grid; place-items: center; min-width: 28px; height: 28px; border-radius: 6px; background: #e9eff5; color: #334d66; font-variant-numeric: tabular-nums; font-weight: 700; }
+[data-cumul-app] .cumul-manager-name { max-width: 175px; overflow-wrap: anywhere; }
+[data-cumul-app] .cumul-ranking-table thead th:nth-child(2),
+[data-cumul-app] .cumul-ranking-table thead th:nth-child(3) { text-align: left; }
+[data-cumul-app] .cumul-detail > td { background: #f8fafc; padding: 18px 28px 24px; }
+[data-cumul-app] .cumul-detail-head { display: flex; align-items: center; gap: 15px; margin: 0 0 12px; }
+[data-cumul-app] .cumul-detail-head span { font-size: 11px; color: var(--cumul-muted); }
+[data-cumul-app] .cumul-month-table { width: 100%; border-collapse: collapse; }
+[data-cumul-app] .cumul-month-table thead th { position: static; background: #eaf0f5; z-index: auto; text-align: left; }
+[data-cumul-app] .cumul-month-table thead th:nth-child(n+3) { text-align: right; }
+[data-cumul-app] .cumul-month-table th,
+[data-cumul-app] .cumul-month-table td { font-size: 11px; padding: 8px 12px; }
+[data-cumul-app] .cumul-month-table .cumul-future td,
+[data-cumul-app] .cumul-month-table .cumul-future th { color: #66768a; }
+[data-cumul-app] .cumul-empty { padding: 30px 16px; border: 1px dashed var(--cumul-line); border-radius: 12px; color: var(--cumul-muted); font-size: 13px; text-align: center; }
+[data-cumul-app] .cumul-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 1050px) {
+  [data-cumul-app] .cumul-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-cumul-app] .cumul-kpi > strong { font-size: 23px; }
+  [data-cumul-app] .cumul-section-head::after { content: "Fais défiler le tableau horizontalement pour voir tous les montants."; font-size: 11px; color: var(--cumul-muted); width: 100%; }
+}
+@media (max-width: 600px) {
+  [data-cumul-app] .cumul-toolbar { gap: 10px; padding: 12px; }
+  [data-cumul-app] .cumul-toolbar label { flex: 1 1 calc(50% - 10px); }
+  [data-cumul-app] .cumul-toolbar label:nth-child(3),
+  [data-cumul-app] .cumul-toolbar .cumul-search { flex-basis: 100%; max-width: none; }
+  [data-cumul-app] .cumul-kpi { padding: 12px; }
+  [data-cumul-app] .cumul-kpi > strong { font-size: 16px; }
+  [data-cumul-app] .cumul-period { gap: 7px; flex-direction: column; align-items: start; }
+  [data-cumul-app] .cumul-kpis { gap: 8px; }
+  [data-cumul-app] .cumul-method summary span { display: block; margin-left: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-cumul-app] .reporting-cumul-panel.active { animation: none; }
+}
