@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <link rel="icon" type="image/svg+xml" href="./kent-logo.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Requête client - KENT</title>
+  <script src="./shared-ui.js"></script>
+  <link rel="stylesheet" href="./shared-theme.css">
+  <style>
+    :root{
+      --bg:#07111f;
+      --panel:rgba(15,23,42,.84);
+      --panel-soft:rgba(15,23,42,.58);
+      --line:rgba(148,163,184,.18);
+      --text:#e8f0ff;
+      --muted:#9fb1ca;
+      --muted-2:#74859d;
+      --blue:#38bdf8;
+      --green:#10b981;
+      --gold:#f59e0b;
+      --red:#ef4444;
+      --shadow:0 24px 70px rgba(0,0,0,.34);
+      --radius:20px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:"Aptos","Segoe UI",Tahoma,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 15% 0%,rgba(56,189,248,.18),transparent 30%),
+        radial-gradient(circle at 90% 8%,rgba(16,185,129,.13),transparent 28%),
+        linear-gradient(135deg,#06111f 0%,#081827 52%,#04101c 100%);
+      padding:18px;
+    }
+    .wrap{max-width:1500px;margin:0 auto}
+    .topbar,.card{
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:linear-gradient(180deg,rgba(15,23,42,.88),rgba(8,15,28,.82));
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(14px);
+    }
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:14px;
+      padding:16px;
+      flex-wrap:wrap;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:42px;height:42px;border-radius:15px;
+      background:linear-gradient(135deg,rgba(56,189,248,.95),rgba(16,185,129,.78));
+      box-shadow:0 16px 34px rgba(56,189,248,.20);
+      flex:0 0 auto;
+    }
+    .title b{display:block;font-size:18px;letter-spacing:-.02em}
+    .title span{display:block;color:var(--muted);font-size:12px;margin-top:4px;line-height:1.35}
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      border:1px solid rgba(255,255,255,.11);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      min-height:40px;
+      padding:10px 13px;
+      border-radius:14px;
+      font-weight:900;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      white-space:nowrap;
+      transition:transform .18s ease,background .18s ease,opacity .18s ease;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.11)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .btn.primary{background:linear-gradient(135deg,var(--blue),#2563eb);border:none;box-shadow:0 14px 30px rgba(37,99,235,.24)}
+    .btn.green{background:linear-gradient(135deg,var(--green),#047857);border:none;box-shadow:0 14px 30px rgba(16,185,129,.20)}
+    .card{padding:16px;margin-top:14px}
+    .source-note{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:13px 14px;
+      border-radius:16px;
+      border:1px solid rgba(245,158,11,.26);
+      background:rgba(245,158,11,.10);
+      color:#fde68a;
+      font-size:13px;
+      line-height:1.45;
+      font-weight:800;
+    }
+    .source-note .dot{width:10px;height:10px;border-radius:99px;background:var(--gold);margin-top:4px;flex:0 0 auto}
+    .filters{
+      display:grid;
+      grid-template-columns:120px 160px 160px minmax(180px,.8fr) minmax(260px,1.2fr) auto;
+      gap:10px;
+      align-items:end;
+    }
+    .field{display:flex;flex-direction:column;gap:7px}
+    label{color:var(--muted);font-size:.78rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+    input,select{
+      width:100%;
+      border:1px solid rgba(148,163,184,.18);
+      background:rgba(2,6,23,.38);
+      color:var(--text);
+      border-radius:14px;
+      padding:11px 12px;
+      font-size:.92rem;
+      font-weight:800;
+      outline:none;
+    }
+    input:focus,select:focus{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 3px rgba(56,189,248,.13)}
+    select option{color:#0f172a;background:#fff}
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+    }
+    .stat{
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:17px;
+      background:rgba(2,6,23,.28);
+      padding:13px;
+    }
+    .stat span{display:block;color:var(--muted);font-size:.72rem;font-weight:950;text-transform:uppercase;letter-spacing:.07em}
+    .stat strong{display:block;margin-top:6px;font-size:1.2rem;letter-spacing:-.02em}
+    .table-wrap{overflow:auto;border-radius:17px;border:1px solid rgba(148,163,184,.16);background:rgba(2,6,23,.30);max-height:66vh}
+    table{border-collapse:collapse;width:100%;min-width:1240px}
+    th,td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;vertical-align:middle;white-space:nowrap}
+    th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      background:rgba(8,15,28,.97);
+      color:var(--muted);
+      font-size:.72rem;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      user-select:none;
+    }
+    th.sortable{cursor:pointer}
+    th.sortable:hover{color:#fff}
+    td{font-size:.86rem;font-weight:780}
+    .right{text-align:right}
+    .muted{color:var(--muted)}
+    .sort-icon{opacity:.66;margin-left:6px}
+    .size-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:38px;padding:7px 10px;border-radius:999px;
+      border:1px solid rgba(148,163,184,.18);
+      background:rgba(148,163,184,.10);color:#e2e8f0;
+      font-weight:950;letter-spacing:.05em;
+    }
+    .size-badge.size-s{border-color:rgba(148,163,184,.24);background:rgba(148,163,184,.12)}
+    .size-badge.size-m{border-color:rgba(56,189,248,.25);background:rgba(56,189,248,.13);color:#d8f3ff}
+    .size-badge.size-l{border-color:rgba(245,158,11,.30);background:rgba(245,158,11,.14);color:#fde68a}
+    .source-pill{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:6px 9px;border-radius:999px;border:1px solid rgba(56,189,248,.18);
+      background:rgba(56,189,248,.10);color:#d8f3ff;font-size:.78rem;font-weight:900;
+    }
+    .source-pill.industry{border-color:rgba(16,185,129,.22);background:rgba(16,185,129,.12);color:#d1fae5}
+    .empty{
+      min-height:190px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      gap:6px;
+      color:var(--muted);
+      border:1px dashed rgba(148,163,184,.24);
+      border-radius:17px;
+      background:rgba(2,6,23,.20);
+      padding:24px;
+    }
+    .empty b{color:var(--text);font-size:1.08rem}
+    .status-line{color:var(--muted);font-size:.86rem;font-weight:800;line-height:1.45}
+    @media(max-width:1180px){
+      .filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .filters .btn{width:100%}
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:720px){
+      body{padding:12px}
+      .filters,.stats{grid-template-columns:1fr}
+      .topbar{align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="title">
+          <b>Requête client</b>
+          <span>Classement S / M / L, CA à date, trois derniers mois clôturés et dernière vente.</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a class="btn" id="homeLink" href="index.html">Portail</a>
+        <a class="btn" href="requete-commerce.html">Requête Commerce</a>
+        <button class="btn" id="reloadBtn" type="button">Recharger</button>
+        <button class="btn green" id="exportBtn" type="button" disabled>Exporter CSV</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="source-note">
+        <span class="dot"></span>
+        <span id="sourceNote">Source chiffre d'affaires : de janvier à M-1, lecture des ventes clôturées importées ; sur le mois en cours, ajout des ventes saisies par le vendeur dans l'outil.</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="filters">
+        <div class="field">
+          <label for="yearSelect">Année</label>
+          <select id="yearSelect"></select>
+        </div>
+        <div class="field">
+          <label for="sourceFilter">Source</label>
+          <select id="sourceFilter">
+            <option value="">Auto + Industrie</option>
+            <option value="auto">Automobile</option>
+            <option value="industrie">Industrie</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sizeFilter">Taille</label>
+          <select id="sizeFilter">
+            <option value="">Toutes les tailles</option>
+            <option value="S">S - Petit client</option>
+            <option value="M">M - Client moyen</option>
+            <option value="L">L - Grand client</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="plaqueFilter">Plaque</label>
+          <select id="plaqueFilter"></select>
+        </div>
+        <div class="field">
+          <label for="searchInput">Recherche</label>
+          <input id="searchInput" type="search" placeholder="Client, compte, adresse ou plaque..." />
+        </div>
+        <button class="btn primary" id="generateBtn" type="button">Générer</button>
+      </div>
+    </section>
+
+    <section class="stats card">
+      <div class="stat"><span>Clients affichés</span><strong id="statClients">-</strong></div>
+      <div class="stat"><span>CA à date</span><strong id="statCa">-</strong></div>
+      <div class="stat"><span>Clients L</span><strong id="statLarge">-</strong></div>
+      <div class="stat"><span>Dernière vente</span><strong id="statLastSale">-</strong></div>
+    </section>
+
+    <section class="card" id="resultCard">
+      <div id="idlePanel" class="empty">
+        <b>Aucune requête générée</b>
+        <span>Choisis une taille, une plaque ou une recherche, puis clique sur Générer.</span>
+      </div>
+      <div id="resultContent" hidden>
+        <div class="status-line" id="statusLine">Prêt.</div>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table>
+            <thead id="thead"></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./commercial-scope.js"></script>
+  <script>
+    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const PAGE_SIZE = 1000;
+    const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
+    const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
+    const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+    const eur = new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR" });
+    const SOURCES = [
+      { key:"auto", label:"Automobile", shortLabel:"Auto", clients:"clients", plaques:"plaques", visites:"visites", lignes:"visite_commandes" },
+      { key:"industrie", label:"Industrie", shortLabel:"Industrie", clients:"industrie_clients", plaques:"industrie_plaques", visites:"industrie_visites", lignes:"industrie_visite_commandes" }
+    ];
+    const CLIENT_SIZE_OPTIONS = ["S","M","L"];
+    const $ = id => document.getElementById(id);
+
+    const state = {
+      clients: [],
+      plaques: [],
+      generatedRows: [],
+      visibleRows: [],
+      recentClosedMonths: [],
+      currentMonth: new Date().getMonth() + 1,
+      currentToolMonth: new Date().getMonth() + 1,
+      closedMonthLimit: Math.max(0, new Date().getMonth()),
+      currentYear: new Date().getFullYear(),
+      user: null,
+      sortKey: "caToDate",
+      sortAsc: false
+    };
+
+    function escapeHtml(value){
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function normalizeText(value){
+      return String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function normalizeAccount(value){
+      return normalizeText(value).replace(/[^a-z0-9]/g, "");
+    }
+
+    function toNumber(value){
+      if (value === null || value === undefined) return 0;
+      if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+      const parsed = Number(String(value).replace(/\s/g, "").replace(",", "."));
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function roundMoney(value){
+      return Math.round(toNumber(value) * 100) / 100;
+    }
+
+    function formatDate(value){
+      if (!value) return "-";
+      const parsed = new Date(String(value).slice(0, 10));
+      if (Number.isNaN(parsed.getTime())) return "-";
+      return parsed.toLocaleDateString("fr-FR", { day:"2-digit", month:"2-digit", year:"numeric" });
+    }
+
+    function monthEndIso(year, month){
+      const date = new Date(Number(year), Number(month), 0);
+      if (Number.isNaN(date.getTime())) return "";
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${date.getFullYear()}-${m}-${d}`;
+    }
+
+    function normalizeClientSize(value){
+      const size = String(value || "S").trim().toUpperCase();
+      return CLIENT_SIZE_OPTIONS.includes(size) ? size : "S";
+    }
+
+    function renderSizeBadge(value){
+      const size = normalizeClientSize(value);
+      return `<span class="size-badge size-${escapeHtml(size.toLowerCase())}">${escapeHtml(size)}</span>`;
+    }
+
+    function isMissingColumnError(error, columnName){
+      const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ").toLowerCase();
+      return message.includes(String(columnName || "").toLowerCase());
+    }
+
+    function currentCommercialId(){
+      return state.user?.role === "commercial" && state.user?.dbUserId ? String(state.user.dbUserId) : "";
+    }
+
+    function shouldScopeTable(table){
+      return ["clients","industrie_clients","visites","industrie_visites","v_reel_lignes_actives","v_kent_dashboard_sales_lines"].includes(table);
+    }
+
+    function applyCommercialScope(table, query){
+      const commercialId = currentCommercialId();
+      return commercialId && shouldScopeTable(table) ? query.eq("commercial_user_id", commercialId) : query;
+    }
+
+    async function fetchPaged(table, select, options = {}){
+      let from = 0;
+      const all = [];
+      while (true) {
+        let query = supabaseClient.from(table).select(select).range(from, from + PAGE_SIZE - 1);
+        query = applyCommercialScope(table, query);
+        (options.filters || []).forEach(filter => {
+          query = query[filter.op](filter.column, filter.value);
+        });
+        (Array.isArray(options.order) ? options.order : []).forEach(order => {
+          query = query.order(order.column, { ascending: order.ascending ?? true });
+        });
+        const { data, error } = await query;
+        if (error) throw error;
+        const batch = data || [];
+        all.push(...batch);
+        if (batch.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      return all;
+    }
+
+    async function fetchWithSelectFallback(table, selects, options = {}){
+      let data = [];
+      let error = null;
+      for (const select of selects) {
+        try {
+          data = await fetchPaged(table, select, options);
+          error = null;
+          break;
+        } catch (err) {
+          error = err;
+          const canRetry = isMissingColumnError(err, "taille_client") || isMissingColumnError(err, "email");
+          if (!canRetry) break;
+        }
+      }
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function fetchPlaquesForSource(source){
+      const rows = await fetchPaged(source.plaques, "id, nom", { order:[{ column:"nom", ascending:true }] });
+      return rows.map(row => ({ ...row, source:source.key, sourceLabel:source.label }));
+    }
+
+    async function fetchClientsForSource(source, plaqueByKey){
+      const selects = source.key === "auto"
+        ? [
+            "id, nom, numero_compte, adresse, telephone, email, plaque_id, taille_client, plaques ( id, nom )",
+            "id, nom, numero_compte, adresse, telephone, email, plaque_id, plaques ( id, nom )",
+            "id, nom, numero_compte, adresse, telephone, plaque_id, taille_client, plaques ( id, nom )",
+            "id, nom, numero_compte, adresse, telephone, plaque_id, plaques ( id, nom )"
+          ]
+        : [
+            "id, nom, numero_compte, adresse, telephone, email, plaque_id, taille_client",
+            "id, nom, numero_compte, adresse, telephone, email, plaque_id",
+            "id, nom, numero_compte, adresse, telephone, plaque_id, taille_client",
+            "id, nom, numero_compte, adresse, telephone, plaque_id"
+          ];
+      const rows = await fetchWithSelectFallback(source.clients, selects, { order:[{ column:"nom", ascending:true }] });
+      return rows.map(row => {
+        const plaqueKey = `${source.key}|${row.plaque_id || ""}`;
+        const joinedPlaque = row.plaques?.nom || row.industrie_plaques?.nom || "";
+        return {
+          id: String(row.id),
+          source: source.key,
+          sourceLabel: source.label,
+          nom: row.nom || "Client sans nom",
+          numeroCompte: row.numero_compte || "",
+          adresse: row.adresse || "",
+          plaqueId: row.plaque_id || "",
+          plaqueKey,
+          plaqueNom: joinedPlaque || plaqueByKey.get(plaqueKey)?.nom || "Sans plaque",
+          tailleClient: normalizeClientSize(row.taille_client)
+        };
+      });
+    }
+
+    async function loadClients(){
+      const plaquesByKey = new Map();
+      const allPlaques = (await Promise.all(SOURCES.map(fetchPlaquesForSource))).flat();
+      allPlaques.forEach(plaque => plaquesByKey.set(`${plaque.source}|${plaque.id}`, plaque));
+      const clientGroups = await Promise.all(SOURCES.map(source => fetchClientsForSource(source, plaquesByKey)));
+      state.plaques = allPlaques;
+      state.clients = clientGroups.flat();
+      buildPlaqueFilterOptions();
+    }
+
+    function buildPlaqueFilterOptions(){
+      const used = new Map();
+      state.clients.forEach(client => {
+        if (!client.plaqueId) return;
+        used.set(client.plaqueKey, {
+          key: client.plaqueKey,
+          label: `${client.plaqueNom} (${client.sourceLabel})`
+        });
+      });
+      const rows = [...used.values()].sort((a,b) => a.label.localeCompare(b.label, "fr", { sensitivity:"base" }));
+      $("plaqueFilter").innerHTML = '<option value="">Toutes les plaques</option>' + rows
+        .map(row => `<option value="${escapeHtml(row.key)}">${escapeHtml(row.label)}</option>`)
+        .join("");
+    }
+
+    function emptyMetrics(client){
+      return {
+        ...client,
+        caToDate: 0,
+        currentMonthCa: 0,
+        caByMonth: Array.from({ length: 12 }, () => 0),
+        lastSaleDate: ""
+      };
+    }
+
+    function addIndex(map, key, value){
+      if (!key) return;
+      const current = map.get(key);
+      if (current) current.push(value);
+      else map.set(key, [value]);
+    }
+
+    function resolveUnique(map, key){
+      const rows = key ? map.get(key) : null;
+      return rows && rows.length === 1 ? rows[0] : null;
+    }
+
+    function realEntityMatchesClient(row, client){
+      const realEntity = normalizeText(`${row.entite_libelle || ""} ${row.entite_key || ""}`);
+      const plaque = normalizeText(client?.plaqueNom || "");
+      if (!realEntity || !plaque) return false;
+      if (plaque.includes(realEntity) || realEntity.includes(plaque)) return true;
+      return realEntity
+        .split(/\s+/)
+        .filter(token => token.length >= 3)
+        .some(token => plaque.includes(token));
+    }
+
+    function resolveBestMatch(map, key, row){
+      const rows = key ? map.get(key) : null;
+      if (!rows || !rows.length) return null;
+      if (rows.length === 1) return rows[0];
+      const plaqueMatches = rows.filter(client => realEntityMatchesClient(row, client));
+      return plaqueMatches.length === 1 ? plaqueMatches[0] : null;
+    }
+
+    function buildClientIndexes(rows){
+      const byId = new Map();
+      const byAccount = new Map();
+      const byName = new Map();
+      const byAccountAndName = new Map();
+      rows.forEach(row => {
+        const idKey = `${row.source}|${row.id}`;
+        byId.set(idKey, row);
+        const accountKey = normalizeAccount(row.numeroCompte);
+        const nameKey = normalizeText(row.nom);
+        addIndex(byAccount, accountKey, row);
+        addIndex(byName, nameKey, row);
+        addIndex(byAccountAndName, `${accountKey}|${nameKey}`, row);
+      });
+      return { byId, byAccount, byName, byAccountAndName };
+    }
+
+    function resolveRealRowClient(row, indexes){
+      const accountKey = normalizeAccount(row.client_code);
+      const nameKey = normalizeText(row.client_nom);
+      return resolveBestMatch(indexes.byAccountAndName, `${accountKey}|${nameKey}`, row)
+        || resolveBestMatch(indexes.byAccount, accountKey, row)
+        || resolveBestMatch(indexes.byName, nameKey, row);
+    }
+
+    function isCurrentMonthOrderRow(row){
+      const type = normalizeText(row.type_visite).replaceAll("-", "_").replaceAll(" ", "_");
+      if (type === "passage_sans_vente" || type === "client_ferme") return false;
+      if (type === VISIT_TYPE_PHONE_ORDER || type === "commande_tel" || type === "telephone") return true;
+      if (String(row.note || "").includes(PHONE_ORDER_NOTE_MARKER)) return true;
+      return !type || type === "vente" || type === "visite" || type === "commande";
+    }
+
+    function applyAmount(target, amount, month, dateValue){
+      const parsedAmount = roundMoney(amount);
+      const monthIndex = Number(month) - 1;
+      if (monthIndex >= 0 && monthIndex < 12) {
+        target.caByMonth[monthIndex] = roundMoney(target.caByMonth[monthIndex] + parsedAmount);
+      }
+      target.caToDate = roundMoney(target.caToDate + parsedAmount);
+      const normalizedDate = String(dateValue || "").slice(0, 10);
+      if (normalizedDate && (!target.lastSaleDate || normalizedDate > target.lastSaleDate)) {
+        target.lastSaleDate = normalizedDate;
+      }
+    }
+
+    async function fetchClosedRealRows(year, closedMonthLimit){
+      if (closedMonthLimit < 1) return [];
+      return fetchPaged("v_reel_lignes_actives", "id, commercial_user_id, annee, mois, client_code, client_nom, montant, date_piece, entite_key, entite_libelle", {
+        filters:[
+          { op:"eq", column:"annee", value:Number(year) },
+          { op:"lte", column:"mois", value:Number(closedMonthLimit) }
+        ],
+        order:[{ column:"mois", ascending:true }, { column:"client_nom", ascending:true }]
+      });
+    }
+
+    async function fetchCurrentSalesRowsFast(year, month){
+      const rows = await fetchPaged("v_kent_dashboard_sales_lines", "source, client_id, client_nom, numero_compte, date, annee, mois, type_visite, note, montant", {
+        filters:[
+          { op:"eq", column:"annee", value:Number(year) },
+          { op:"eq", column:"mois", value:Number(month) }
+        ],
+        order:[{ column:"date", ascending:false }]
+      });
+      return rows.filter(isCurrentMonthOrderRow);
+    }
+
+    async function fetchCurrentSalesRowsLegacy(year, month){
+      const groups = await Promise.all(SOURCES.map(async source => {
+        const start = `${year}-${String(month).padStart(2, "0")}-01`;
+        const end = monthEndIso(year, month);
+        const [visites, lignes] = await Promise.all([
+          fetchPaged(source.visites, "id, client_id, date_visite, type_visite, note, total_commande", {
+            filters:[
+              { op:"gte", column:"date_visite", value:start },
+              { op:"lte", column:"date_visite", value:end }
+            ]
+          }),
+          fetchPaged(source.lignes, "id, visite_id, quantite, prix_unitaire")
+        ]);
+        const visitById = new Map((visites || []).map(visite => [String(visite.id), visite]));
+        return (lignes || []).map(ligne => {
+          const visite = visitById.get(String(ligne.visite_id));
+          if (!visite || !isCurrentMonthOrderRow(visite)) return null;
+          return {
+            source: source.key,
+            client_id: visite.client_id,
+            date: visite.date_visite,
+            annee: year,
+            mois: month,
+            montant: toNumber(ligne.quantite) * toNumber(ligne.prix_unitaire)
+          };
+        }).filter(Boolean);
+      }));
+      return groups.flat();
+    }
+
+    async function fetchCurrentSalesRows(year, month){
+      try {
+        return await fetchCurrentSalesRowsFast(year, month);
+      } catch (error) {
+        if (!/v_kent_dashboard_sales_lines|does not exist|not found|schema cache/i.test(error.message || "")) throw error;
+        return fetchCurrentSalesRowsLegacy(year, month);
+      }
+    }
+
+    function recentClosedMonths(currentMonth){
+      const months = [];
+      for (let month = Math.max(1, currentMonth - 3); month < currentMonth; month += 1) {
+        months.push(month);
+      }
+      return months;
+    }
+
+    function recentMonthsFromClosedLimit(closedMonthLimit){
+      const months = [];
+      const limit = Math.max(0, Math.min(12, Number(closedMonthLimit) || 0));
+      for (let month = Math.max(1, limit - 2); month <= limit; month += 1) {
+        if (month >= 1) months.push(month);
+      }
+      return months;
+    }
+
+    function configureYearWindow(year){
+      const now = new Date();
+      const nowYear = now.getFullYear();
+      const nowMonth = now.getMonth() + 1;
+      state.currentYear = Number(year) || nowYear;
+
+      if (state.currentYear === nowYear) {
+        state.currentMonth = nowMonth;
+        state.currentToolMonth = nowMonth;
+        state.closedMonthLimit = Math.max(0, nowMonth - 1);
+        state.recentClosedMonths = recentClosedMonths(nowMonth);
+        return;
+      }
+
+      state.currentToolMonth = null;
+      if (state.currentYear < nowYear) {
+        state.currentMonth = 12;
+        state.closedMonthLimit = 12;
+        state.recentClosedMonths = recentMonthsFromClosedLimit(12);
+        return;
+      }
+
+      state.currentMonth = 1;
+      state.closedMonthLimit = 0;
+      state.recentClosedMonths = [];
+    }
+
+    function updateSourceNote(){
+      if (state.currentToolMonth) {
+        const currentMonthLabel = MONTHS_FR[state.currentToolMonth - 1] || "mois en cours";
+        const closedLabel = state.closedMonthLimit > 0
+          ? `janvier à fin ${MONTHS_FR[state.closedMonthLimit - 1]}`
+          : "aucun mois clôturé sur l'année en cours";
+        $("sourceNote").textContent = `Source chiffre d'affaires ${state.currentYear} : de ${closedLabel}, lecture des ventes clôturées importées ; sur ${currentMonthLabel}, ajout des ventes saisies par le vendeur dans l'outil.`;
+        return;
+      }
+      if (state.closedMonthLimit === 12) {
+        $("sourceNote").textContent = `Source chiffre d'affaires ${state.currentYear} : lecture des ventes clôturées importées de janvier à décembre.`;
+        return;
+      }
+      $("sourceNote").textContent = `Source chiffre d'affaires ${state.currentYear} : aucune vente clôturée disponible pour une année future, et aucune vente saisie dans l'outil n'est ajoutée.`;
+    }
+
+    async function buildRows(){
+      const year = Number($("yearSelect").value || state.currentYear);
+      configureYearWindow(year);
+      updateSourceNote();
+
+      await loadClients();
+      const rows = state.clients.map(emptyMetrics);
+      const indexes = buildClientIndexes(rows);
+      const closedRows = await fetchClosedRealRows(year, state.closedMonthLimit);
+      closedRows.forEach(row => {
+        const client = resolveRealRowClient(row, indexes);
+        if (!client) return;
+        const fallbackDate = monthEndIso(year, row.mois);
+        applyAmount(client, row.montant, row.mois, row.date_piece || fallbackDate);
+      });
+
+      if (state.currentToolMonth) {
+        const currentRows = await fetchCurrentSalesRows(year, state.currentToolMonth);
+        currentRows.forEach(row => {
+          const key = `${row.source || "auto"}|${row.client_id || ""}`;
+          const client = indexes.byId.get(key);
+          if (!client) return;
+          const amount = toNumber(row.montant);
+          client.currentMonthCa = roundMoney(client.currentMonthCa + amount);
+          applyAmount(client, amount, state.currentToolMonth, row.date);
+        });
+      }
+
+      return rows;
+    }
+
+    function applyFilters(rows){
+      const source = $("sourceFilter").value;
+      const size = $("sizeFilter").value;
+      const plaque = $("plaqueFilter").value;
+      const search = normalizeText($("searchInput").value);
+      return rows.filter(row => {
+        if (source && row.source !== source) return false;
+        if (size && row.tailleClient !== size) return false;
+        if (plaque && row.plaqueKey !== plaque) return false;
+        if (!search) return true;
+        return [row.nom, row.numeroCompte, row.adresse, row.plaqueNom, row.sourceLabel, row.tailleClient]
+          .some(value => normalizeText(value).includes(search));
+      });
+    }
+
+    function sortValue(row, key){
+      if (key === "source") return row.sourceLabel;
+      if (key === "taille") return row.tailleClient;
+      if (key === "client") return row.nom;
+      if (key === "compte") return row.numeroCompte;
+      if (key === "adresse") return row.adresse;
+      if (key === "plaque") return row.plaqueNom;
+      if (key === "caToDate") return row.caToDate;
+      if (key === "currentMonthCa") return row.currentMonthCa;
+      if (key === "lastSaleDate") return row.lastSaleDate || "";
+      if (key && key.startsWith("month:")) {
+        const month = Number(key.split(":")[1]);
+        return row.caByMonth[month - 1] || 0;
+      }
+      return "";
+    }
+
+    function isNumericSort(key){
+      return key === "caToDate" || key === "currentMonthCa" || String(key || "").startsWith("month:");
+    }
+
+    function compareRows(a, b){
+      const av = sortValue(a, state.sortKey);
+      const bv = sortValue(b, state.sortKey);
+      const base = isNumericSort(state.sortKey)
+        ? toNumber(av) - toNumber(bv)
+        : String(av || "").localeCompare(String(bv || ""), "fr", { numeric:true, sensitivity:"base" });
+      if (base) return state.sortAsc ? base : -base;
+      return String(a.nom).localeCompare(String(b.nom), "fr", { numeric:true, sensitivity:"base" });
+    }
+
+    function renderHeader(){
+      const headers = [
+        { key:"source", label:"Source" },
+        { key:"taille", label:"Taille" },
+        { key:"client", label:"Client" },
+        { key:"compte", label:"Compte" },
+        { key:"adresse", label:"Adresse" },
+        { key:"plaque", label:"Plaque" },
+        { key:"caToDate", label:"CA à date", right:true },
+        ...state.recentClosedMonths.map(month => ({ key:`month:${month}`, label:MONTHS_FR[month - 1], right:true })),
+        ...(state.currentToolMonth ? [{ key:"currentMonthCa", label:MONTHS_FR[state.currentToolMonth - 1] || "Mois en cours", right:true }] : []),
+        { key:"lastSaleDate", label:"Dernière vente" }
+      ];
+      const icon = key => state.sortKey === key ? (state.sortAsc ? "▲" : "▼") : "↕";
+      $("thead").innerHTML = `<tr>${headers.map(header => `
+        <th class="sortable ${header.right ? "right" : ""}" data-sort="${escapeHtml(header.key)}">
+          ${escapeHtml(header.label)}<span class="sort-icon">${icon(header.key)}</span>
+        </th>
+      `).join("")}</tr>`;
+      $("thead").querySelectorAll("th[data-sort]").forEach(th => {
+        th.addEventListener("click", () => {
+          const key = th.dataset.sort;
+          if (state.sortKey === key) state.sortAsc = !state.sortAsc;
+          else {
+            state.sortKey = key;
+            state.sortAsc = !isNumericSort(key);
+          }
+          renderRows();
+        });
+      });
+    }
+
+    function renderRows(){
+      const filtered = applyFilters(state.generatedRows).sort(compareRows);
+      state.visibleRows = filtered;
+      renderHeader();
+      if (!filtered.length) {
+        const columnCount = 8 + state.recentClosedMonths.length + (state.currentToolMonth ? 1 : 0);
+        $("tbody").innerHTML = `<tr><td colspan="${columnCount}" class="muted">Aucun client trouvé avec ces filtres.</td></tr>`;
+      } else {
+        $("tbody").innerHTML = filtered.map(row => {
+          const sourceClass = row.source === "industrie" ? " industry" : "";
+          const monthCells = state.recentClosedMonths.map(month => `<td class="right">${escapeHtml(eur.format(row.caByMonth[month - 1] || 0))}</td>`).join("");
+          const currentMonthCell = state.currentToolMonth
+            ? `<td class="right">${escapeHtml(eur.format(row.currentMonthCa || 0))}</td>`
+            : "";
+          return `
+            <tr>
+              <td><span class="source-pill${sourceClass}">${escapeHtml(row.sourceLabel)}</span></td>
+              <td>${renderSizeBadge(row.tailleClient)}</td>
+              <td title="${escapeHtml(row.nom)}">${escapeHtml(row.nom)}</td>
+              <td>${escapeHtml(row.numeroCompte || "-")}</td>
+              <td title="${escapeHtml(row.adresse || "")}">${escapeHtml(row.adresse || "-")}</td>
+              <td title="${escapeHtml(row.plaqueNom || "")}">${escapeHtml(row.plaqueNom || "-")}</td>
+              <td class="right">${escapeHtml(eur.format(row.caToDate || 0))}</td>
+              ${monthCells}
+              ${currentMonthCell}
+              <td>${escapeHtml(formatDate(row.lastSaleDate))}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+      updateStats(filtered);
+      $("exportBtn").disabled = filtered.length === 0;
+      $("statusLine").textContent = `${filtered.length.toLocaleString("fr-FR")} client(s) affiché(s) sur ${state.generatedRows.length.toLocaleString("fr-FR")} client(s) chargé(s).`;
+    }
+
+    function updateStats(rows){
+      const totalCa = rows.reduce((sum, row) => sum + toNumber(row.caToDate), 0);
+      const largeCount = rows.filter(row => row.tailleClient === "L").length;
+      const lastSale = rows.reduce((max, row) => row.lastSaleDate && row.lastSaleDate > max ? row.lastSaleDate : max, "");
+      $("statClients").textContent = rows.length.toLocaleString("fr-FR");
+      $("statCa").textContent = eur.format(totalCa);
+      $("statLarge").textContent = largeCount.toLocaleString("fr-FR");
+      $("statLastSale").textContent = formatDate(lastSale);
+    }
+
+    async function generate(){
+      $("generateBtn").disabled = true;
+      $("resultContent").hidden = true;
+      $("idlePanel").hidden = false;
+      $("idlePanel").innerHTML = "<b>Calcul en cours</b><span>Lecture clients, ventes clôturées et ventes saisies du mois en cours...</span>";
+      try {
+        state.generatedRows = await buildRows();
+        $("idlePanel").hidden = true;
+        $("resultContent").hidden = false;
+        state.sortKey = "caToDate";
+        state.sortAsc = false;
+        renderRows();
+      } catch (error) {
+        console.error("Erreur requête client:", error);
+        $("idlePanel").hidden = false;
+        $("resultContent").hidden = true;
+        $("idlePanel").innerHTML = `<b>Impossible de générer la requête</b><span>${escapeHtml(error.message || "Erreur inconnue")}</span>`;
+      } finally {
+        $("generateBtn").disabled = false;
+      }
+    }
+
+    function exportCSV(){
+      if (!state.visibleRows.length) return;
+      const headers = [
+        "Source","Taille","Client","Compte","Adresse","Plaque","CA à date",
+        ...state.recentClosedMonths.map(month => MONTHS_FR[month - 1]),
+        ...(state.currentToolMonth ? [MONTHS_FR[state.currentToolMonth - 1] || "Mois en cours"] : []),
+        "Dernière vente"
+      ];
+      const lines = [headers.map(value => `"${String(value).replaceAll('"','""')}"`).join(";")];
+      state.visibleRows.forEach(row => {
+        const values = [
+          row.sourceLabel,
+          row.tailleClient,
+          row.nom,
+          row.numeroCompte,
+          row.adresse,
+          row.plaqueNom,
+          row.caToDate,
+          ...state.recentClosedMonths.map(month => row.caByMonth[month - 1] || 0),
+          ...(state.currentToolMonth ? [row.currentMonthCa || 0] : []),
+          formatDate(row.lastSaleDate)
+        ];
+        lines.push(values.map(value => `"${String(value ?? "").replaceAll('"','""')}"`).join(";"));
+      });
+      const blob = new Blob([lines.join("\n")], { type:"text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `requete_client_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function initYearSelect(){
+      const nowYear = new Date().getFullYear();
+      const options = [];
+      for (let year = nowYear - 2; year <= nowYear + 1; year += 1) {
+        options.push(`<option value="${year}"${year === nowYear ? " selected" : ""}>${year}</option>`);
+      }
+      $("yearSelect").innerHTML = options.join("");
+    }
+
+    function homePathForUser(user){
+      if (user?.role === "admin") return "admin.html";
+      if (user?.role === "responsable") return "responsable.html";
+      return "index.html";
+    }
+
+    async function init(){
+      initYearSelect();
+      state.user = await window.KentCommercialScope.load();
+      $("homeLink").href = homePathForUser(state.user);
+      updateSourceNote();
+      await loadClients();
+      $("statClients").textContent = state.clients.length.toLocaleString("fr-FR");
+      $("statCa").textContent = "-";
+      $("statLarge").textContent = "-";
+      $("statLastSale").textContent = "-";
+      $("idlePanel").innerHTML = "<b>Prêt</b><span>Clients chargés. Clique sur Générer pour calculer le CA à date.</span>";
+    }
+
+    $("generateBtn").addEventListener("click", generate);
+    $("reloadBtn").addEventListener("click", init);
+    $("exportBtn").addEventListener("click", exportCSV);
+    ["sourceFilter","sizeFilter","plaqueFilter","searchInput","yearSelect"].forEach(id => {
+      $(id).addEventListener(id === "searchInput" ? "input" : "change", () => {
+        if (id === "yearSelect") {
+          if (state.generatedRows.length) generate();
+          else {
+            configureYearWindow(Number($("yearSelect").value || state.currentYear));
+            updateSourceNote();
+          }
+          return;
+        }
+        if (state.generatedRows.length) renderRows();
+      });
+    });
+
+    init().catch(error => {
+      console.error("Erreur init requête client:", error);
+      $("idlePanel").innerHTML = `<b>Erreur de chargement</b><span>${escapeHtml(error.message || "Erreur inconnue")}</span>`;
+    });
+  </script>
+</body>
+</html>

@@ -598,7 +598,7 @@
     }
     .last-accounts-list{display:flex;flex-direction:column;gap:8px;max-height:min(56vh,520px);overflow:auto;padding-right:4px}
     .last-account-row,.last-account-head{
-      display:grid;grid-template-columns:1.15fr .8fr .9fr .75fr;gap:12px;align-items:center;
+      display:grid;grid-template-columns:minmax(0,1.15fr) .72fr .88fr .68fr .78fr;gap:12px;align-items:center;
     }
     .last-account-head{
       padding:0 14px 6px;color:var(--muted-2);font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
@@ -614,10 +614,20 @@
       color:#d8f3ff;font-size:.76rem;font-weight:800;line-height:1.2;
     }
     .last-account-date{color:#cbd5e1;font-weight:700;font-size:.82rem}
+    .last-account-action{display:flex;justify-content:flex-end}
+    .last-account-use-btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;
+      min-height:34px;padding:8px 10px;border-radius:999px;border:1px solid rgba(56,189,248,.22);
+      background:rgba(56,189,248,.11);color:#d8f3ff;font-size:.75rem;font-weight:900;cursor:pointer;
+      transition:transform .16s ease,border-color .16s ease,background .16s ease,opacity .16s ease;
+    }
+    .last-account-use-btn:hover{transform:translateY(-1px);border-color:rgba(56,189,248,.44);background:rgba(56,189,248,.18)}
+    .last-account-use-btn:disabled{cursor:not-allowed;opacity:.45;transform:none}
     .last-account-empty{
       padding:26px 18px;border-radius:18px;background:rgba(255,255,255,.035);border:1px dashed rgba(148,163,184,.18);
       color:var(--muted);text-align:center;line-height:1.55;
     }
+    .client-size-help{color:var(--muted-2);font-size:.74rem;line-height:1.35;margin-top:4px}
     #clientModalOverlay .modal-header{
       position:relative;
       padding-right:56px;
@@ -1174,6 +1184,12 @@
             <select id="clientPlaqueSelect"></select>
           </div>
 
+          <div class="field-group">
+            <label for="clientTailleSelect">Taille client</label>
+            <select id="clientTailleSelect"></select>
+            <div class="client-size-help">S petit, M moyen, L grand client.</div>
+          </div>
+
           <div class="field-group full-width">
             <label for="clientAdresseInput">Adresse</label>
             <textarea id="clientAdresseInput" placeholder="Adresse du client"></textarea>
@@ -1217,6 +1233,7 @@
         <span>Compte</span>
         <span>Plaque</span>
         <span>Ajout</span>
+        <span>Action</span>
       </div>
       <div class="last-accounts-list" id="lastAccountsList"></div>
     </div>
@@ -1521,6 +1538,7 @@
       dom.clientEmailInput = document.getElementById("clientEmailInput");
       dom.clientAdresseInput = document.getElementById("clientAdresseInput");
       dom.clientPlaqueSelect = document.getElementById("clientPlaqueSelect");
+      dom.clientTailleSelect = document.getElementById("clientTailleSelect");
       dom.saveClientBtn = document.getElementById("saveClientBtn");
       dom.openLastAccountsBtn = document.getElementById("openLastAccountsBtn");
       dom.lastAccountsOverlay = document.getElementById("lastAccountsOverlay");
@@ -1580,6 +1598,25 @@
       return String(value ?? "").trim().toLowerCase();
     }
 
+    const CLIENT_SIZE_OPTIONS = [
+      { value: "S", label: "S - Petit client" },
+      { value: "M", label: "M - Client moyen" },
+      { value: "L", label: "L - Grand client" }
+    ];
+
+    function normalizeClientSize(value) {
+      const normalized = String(value || "S").trim().toUpperCase();
+      return CLIENT_SIZE_OPTIONS.some(option => option.value === normalized) ? normalized : "S";
+    }
+
+    function buildClientSizeOptions(selectedValue = "S") {
+      const selected = normalizeClientSize(selectedValue);
+      return CLIENT_SIZE_OPTIONS.map(option => {
+        const isSelected = option.value === selected ? " selected" : "";
+        return `<option value="${escapeHtml(option.value)}"${isSelected}>${escapeHtml(option.label)}</option>`;
+      }).join("");
+    }
+
     function isValidEmail(value) {
       const email = normalizeEmail(value);
       if (!email) return true;
@@ -1613,6 +1650,19 @@
     function getClientCreatedTimestamp(client) {
       const parsed = client?.created_at ? new Date(client.created_at) : null;
       return parsed && !Number.isNaN(parsed.getTime()) ? parsed.getTime() : 0;
+    }
+
+    function getNextClientAccountNumber(value) {
+      const raw = String(value ?? "").trim();
+      if (!raw) return "";
+      const matches = [...raw.matchAll(/\d+/g)];
+      if (!matches.length) return "";
+      const match = matches[matches.length - 1];
+      const current = match[0];
+      const numeric = Number.parseInt(current, 10);
+      if (!Number.isFinite(numeric)) return "";
+      const next = String(numeric + 1).padStart(current.length, "0");
+      return `${raw.slice(0, match.index)}${next}${raw.slice((match.index || 0) + current.length)}`;
     }
 
     function renderLastAccountsPlaqueOptions(selectedValue = "") {
@@ -1670,7 +1720,13 @@
         return;
       }
 
-      dom.lastAccountsList.innerHTML = rows.map(client => `
+      dom.lastAccountsList.innerHTML = rows.map(client => {
+        const nextAccount = getNextClientAccountNumber(client.numero_compte);
+        const disabled = nextAccount ? "" : " disabled";
+        const title = nextAccount
+          ? `Utiliser ${nextAccount}`
+          : "Numéro non calculable automatiquement";
+        return `
         <div class="last-account-row">
           <div>
             <strong>${escapeHtml(client.nom || "Client sans nom")}</strong>
@@ -1679,8 +1735,12 @@
           <div><strong>${escapeHtml(client.numero_compte || "Non renseigné")}</strong></div>
           <div><span class="last-account-pill">${escapeHtml(getClientPlaqueLabel(client))}</span></div>
           <div class="last-account-date">${escapeHtml(formatDateTime(client.created_at))}</div>
+          <div class="last-account-action">
+            <button class="last-account-use-btn" type="button" data-next-account="${escapeHtml(nextAccount)}" title="${escapeHtml(title)}"${disabled}>Utiliser +1</button>
+          </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
     }
 
     function openLastAccountsModal() {
@@ -1694,6 +1754,17 @@
 
     function closeLastAccountsModal() {
       dom.lastAccountsOverlay.classList.remove("active");
+    }
+
+    function handleLastAccountsClick(event) {
+      const button = event.target.closest("[data-next-account]");
+      if (!button || button.disabled) return;
+      const nextAccount = String(button.dataset.nextAccount || "").trim();
+      if (!nextAccount) return;
+      dom.clientNumeroCompteInput.value = nextAccount;
+      closeLastAccountsModal();
+      dom.clientNumeroCompteInput.focus();
+      showToast(`Numéro ${nextAccount} appliqué.`, "success");
     }
 
     function saveLocalCache(key, value) {
@@ -2327,6 +2398,16 @@
         plaque_id,
         plaques ( id, nom )
       `;
+      const sizeSelect = `
+        id,
+        nom,
+        numero_compte,
+        adresse,
+        telephone,
+        plaque_id,
+        taille_client,
+        plaques ( id, nom )
+      `;
       const datedSelect = `
         id,
         nom,
@@ -2334,6 +2415,17 @@
         adresse,
         telephone,
         plaque_id,
+        created_at,
+        plaques ( id, nom )
+      `;
+      const fullSelect = `
+        id,
+        nom,
+        numero_compte,
+        adresse,
+        telephone,
+        plaque_id,
+        taille_client,
         created_at,
         plaques ( id, nom )
       `;
@@ -2347,13 +2439,21 @@
         return query;
       };
 
-      let { data, error } = await runQuery(datedSelect);
-      if (error && isMissingColumnError(error, "created_at")) {
-        ({ data, error } = await runQuery(baseSelect));
+      let data = [];
+      let error = null;
+      const selects = [fullSelect, datedSelect, sizeSelect, baseSelect];
+      for (const selectColumns of selects) {
+        ({ data, error } = await runQuery(selectColumns));
+        if (!error) break;
+        const canRetry = isMissingColumnError(error, "created_at") || isMissingColumnError(error, "taille_client");
+        if (!canRetry) break;
       }
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(client => ({
+        ...client,
+        taille_client: normalizeClientSize(client.taille_client)
+      }));
     }
 
     async function fetchProduitsWithSelect(selectColumns) {
@@ -2772,6 +2872,7 @@
       dom.clientEmailInput.value = "";
       dom.clientAdresseInput.value = "";
       dom.clientPlaqueSelect.innerHTML = buildPlaqueOptions();
+      dom.clientTailleSelect.innerHTML = buildClientSizeOptions("S");
       dom.saveClientBtn.textContent = "Enregistrer client";
     }
 
@@ -2801,6 +2902,7 @@
       const email = normalizeEmail(dom.clientEmailInput.value);
       const adresse = String(dom.clientAdresseInput.value || "").trim();
       const plaqueId = dom.clientPlaqueSelect.value;
+      const tailleClient = normalizeClientSize(dom.clientTailleSelect?.value || "S");
 
       if (!nom) return showToast("Renseigne le nom du client.", "warning");
       if (!numeroCompte) return showToast("Renseigne le numero client / compte.", "warning");
@@ -2824,6 +2926,7 @@
         numero_compte: numeroCompte,
         telephone: telephone || null,
         adresse: adresse || null,
+        taille_client: tailleClient,
         plaque_id: plaqueId,
         ...getCommercialOwnershipPayload()
       };
@@ -2833,11 +2936,20 @@
         dom.saveClientBtn.disabled = true;
         setStatus("Enregistrement du client...", "info");
 
-        const { data, error } = await supabaseClient
+        let { data, error } = await supabaseClient
           .from("clients")
           .insert(payload)
           .select("id")
           .single();
+        if (error && isMissingColumnError(error, "taille_client")) {
+          const { taille_client, ...legacyPayload } = payload;
+          ({ data, error } = await supabaseClient
+            .from("clients")
+            .insert(legacyPayload)
+            .select("id")
+            .single());
+          if (!error) showToast("Client ajouté. Lance le SQL pour enregistrer aussi la taille client.", "warning");
+        }
         if (error) throw error;
 
         const insertedClientId = data?.id ? String(data.id) : "";
@@ -5207,6 +5319,7 @@
       dom.closeLastAccountsBtn.addEventListener("click", closeLastAccountsModal);
       dom.lastAccountsSearchInput.addEventListener("input", renderLastAccounts);
       dom.lastAccountsPlaqueSelect.addEventListener("change", renderLastAccounts);
+      dom.lastAccountsList.addEventListener("click", handleLastAccountsClick);
       dom.addClientAccountBtn.addEventListener("click", openClientAccountModal);
       dom.clientAccountsList.addEventListener("click", handleClientAccountsClick);
       dom.closeClientAccountModalBtn.addEventListener("click", closeClientAccountModal);

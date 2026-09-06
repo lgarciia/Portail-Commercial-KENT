@@ -304,6 +304,20 @@
       background: rgba(15, 23, 42, 0.82);
     }
     .week.active { box-shadow: 0 18px 38px rgba(37,99,235,.18); }
+    .week.month-recap {
+      border-color: rgba(245, 158, 11, 0.42);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.86));
+    }
+    .week.month-recap:hover {
+      border-color: rgba(245, 158, 11, 0.62);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(15, 23, 42, 0.9));
+    }
+    .week.month-recap .week-label {
+      min-width: 92px;
+      background: rgba(245, 158, 11, 0.18);
+      border-color: rgba(245, 158, 11, 0.28);
+      color: #fde68a;
+    }
     .week-top { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
     .week-label {
       min-width: 42px;
@@ -393,6 +407,10 @@
       border-bottom-color: rgba(253, 230, 138, .72);
     }
     .top-row span { display: block; color: var(--muted); font-size: .78rem; margin-top: 4px; }
+    .top-row .client-date-line {
+      color: #bae6fd;
+      font-weight: 850;
+    }
     .amount { font-weight: 900; white-space: nowrap; text-align: right; }
     .empty { padding: 18px; border-radius: 16px; background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid rgba(255,255,255,.08); line-height: 1.5; }
     .client-detail-panel {
@@ -828,7 +846,7 @@
           <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Fermer">x</button>
         </div>
         <div class="detail-grid" id="modalDetailGrid"></div>
-        <h3 class="modal-section-title">Top clients periode</h3>
+        <h3 class="modal-section-title">Clients de la période</h3>
         <div class="top-list" id="modalTopClientsList"></div>
       </div>
     </div>
@@ -1346,17 +1364,47 @@
         lines: rows.length
       };
     }
+    function formatDateList(dates, maxDates = 6) {
+      const sortedDates = [...new Set(dates || [])].filter(Boolean).sort();
+      if (!sortedDates.length) return "-";
+      const visibleDates = sortedDates.slice(0, maxDates).map(formatShortDate);
+      const remaining = sortedDates.length - visibleDates.length;
+      return remaining > 0
+        ? `${visibleDates.join(", ")} + ${remaining} autre(s)`
+        : visibleDates.join(", ");
+    }
     function aggregateTopClients(rows, limit = 5) {
       const map = new Map();
       rows.forEach(row => {
-        if (!map.has(row.client_key)) map.set(row.client_key, { key: row.client_key, clientId: row.client_id || "", nom: row.client_nom, compte: row.numero_compte, source: row.source, sourceLabel: row.sourceLabel, ca: 0, lines: 0, orders: new Set() });
+        if (!map.has(row.client_key)) {
+          map.set(row.client_key, {
+            key: row.client_key,
+            clientId: row.client_id || "",
+            nom: row.client_nom,
+            compte: row.numero_compte,
+            source: row.source,
+            sourceLabel: row.sourceLabel,
+            ca: 0,
+            lines: 0,
+            orders: new Set(),
+            dates: new Set()
+          });
+        }
         const item = map.get(row.client_key);
         if (!item.clientId && row.client_id) item.clientId = row.client_id;
         item.ca += row.total_ligne;
         item.lines += 1;
         item.orders.add(`${row.source}:${row.visite_id}`);
+        if (row.date_visite) item.dates.add(row.date_visite);
       });
-      return [...map.values()].map(item => ({ ...item, ordersCount: item.orders.size })).sort((a, b) => b.ca - a.ca).slice(0, limit);
+      const clients = [...map.values()]
+        .map(item => ({
+          ...item,
+          ordersCount: item.orders.size,
+          visitDates: [...item.dates].sort()
+        }))
+        .sort((a, b) => b.ca - a.ca || a.nom.localeCompare(b.nom));
+      return Number.isFinite(limit) ? clients.slice(0, limit) : clients;
     }
     function getClientFichePage(source) {
       return source === "industrie" ? "ficherclt-industrie.html" : "ficherclt.html";
@@ -1374,6 +1422,7 @@
         <div>
           ${clientName}
           <span>Compte ${escapeHtml(client.compte)} - ${formatNumber(client.ordersCount)} commande(s) - ${formatNumber(client.lines)} ligne(s)</span>
+          <span class="client-date-line">Date(s) visite : ${escapeHtml(formatDateList(client.visitDates))}</span>
           <span class="pill ${client.source === "auto" ? "auto" : "indus"}">${escapeHtml(client.sourceLabel)}</span>
         </div>
         <div class="amount">${formatCurrency(client.ca)}<span>Voir detail</span></div>
@@ -1449,7 +1498,7 @@
     }
     function renderWeeks(rows) {
       if (!state.weeks[state.selectedWeekIndex]) state.selectedWeekIndex = 0;
-      dom.weekGrid.innerHTML = state.weeks.map(week => {
+      const weekCards = state.weeks.map(week => {
         const summary = summarizeRows(rowsForWeek(rows, week));
         const total = summary.auto + summary.industrie;
         const autoPct = total ? (summary.auto / total) * 100 : 50;
@@ -1461,7 +1510,20 @@
           <div class="week-split"><span>Auto ${formatCurrency(summary.auto)}</span><span>Indus ${formatCurrency(summary.industrie)}</span></div>
         </article>`;
       }).join("");
-      dom.weekGrid.querySelectorAll(".week").forEach(card => card.addEventListener("click", () => openWeekModal(rows, Number(card.dataset.weekIndex || 0))));
+      const monthBounds = getMonthBounds(dom.monthSelect.value);
+      const monthSummary = summarizeRows(rows);
+      const monthTotal = monthSummary.auto + monthSummary.industrie;
+      const monthAutoPct = monthTotal ? (monthSummary.auto / monthTotal) * 100 : 50;
+      const monthCard = `<article class="week month-recap" data-month-recap="true">
+        <div class="week-top"><span class="week-label">Récap mois</span><span class="week-date">${escapeHtml(formatShortDate(monthBounds.startStr))}<br>${escapeHtml(formatShortDate(monthBounds.endStr))}</span></div>
+        <strong>${formatCurrency(monthSummary.total)}</strong>
+        <div class="meter"><div class="auto-fill" style="width:${monthAutoPct}%"></div><div class="indus-fill" style="width:${100 - monthAutoPct}%"></div></div>
+        <div class="week-split"><span>${formatNumber(monthSummary.clients)} client(s)</span><span>${formatNumber(monthSummary.lines)} ligne(s)</span></div>
+      </article>`;
+      dom.weekGrid.innerHTML = weekCards + monthCard;
+      dom.weekGrid.querySelectorAll(".week[data-week-index]").forEach(card => card.addEventListener("click", () => openWeekModal(rows, Number(card.dataset.weekIndex || 0))));
+      const recapCard = dom.weekGrid.querySelector(".week[data-month-recap]");
+      if (recapCard) recapCard.addEventListener("click", () => openMonthRecapModal(rows));
     }
     function openModal() {
       dom.weekModal.classList.add("open");
@@ -1558,11 +1620,11 @@
     function fillPeriodModal(rows, period, title) {
       const periodRows = period ? rowsForPeriod(rows, period) : [];
       const summary = summarizeRows(periodRows);
-      const topClients = aggregateTopClients(periodRows, 5);
+      const topClients = aggregateTopClients(periodRows, Infinity);
       dom.modalTitle.textContent = title || "Detail";
       dom.modalSubtitle.textContent = period ? `${formatShortDate(period.startStr)} au ${formatShortDate(period.endStr)}` : "Aucune période sélectionnée.";
       dom.modalDetailGrid.innerHTML = `<div class="chip"><span>CA total</span><strong>${formatCurrency(summary.total)}</strong></div><div class="chip"><span>CA Auto</span><strong>${formatCurrency(summary.auto)}</strong></div><div class="chip"><span>CA Industrie</span><strong>${formatCurrency(summary.industrie)}</strong></div><div class="chip"><span>Clients</span><strong>${formatNumber(summary.clients)}</strong></div><div class="chip"><span>Commandes</span><strong>${formatNumber(summary.orders)}</strong></div><div class="chip"><span>Telephone</span><strong>${formatNumber(summary.phoneOrders)}</strong></div>`;
-      dom.modalTopClientsList.innerHTML = topClients.length ? topClients.map(buildTopClientButton).join("") : '<div class="empty">Aucun client avec CA sur cette periode.</div>';
+      dom.modalTopClientsList.innerHTML = topClients.length ? topClients.map(buildTopClientButton).join("") : '<div class="empty">Aucun client avec CA sur cette période.</div>';
       attachTopClientHandlers(periodRows);
       openModal();
     }
@@ -1571,6 +1633,12 @@
       renderWeeks(rows);
       const week = state.weeks[state.selectedWeekIndex] || state.weeks[0];
       fillPeriodModal(rows, week, week ? `Detail ${week.label}` : "Detail semaine");
+    }
+    function openMonthRecapModal(rows) {
+      const monthBounds = getMonthBounds(dom.monthSelect.value);
+      const [year, month] = String(dom.monthSelect.value || getCurrentMonthValue()).split("-");
+      const monthLabel = MONTH_LABELS[Number(month) - 1] || "Mois";
+      fillPeriodModal(rows, monthBounds, `Récap ${monthLabel} ${year || ""}`.trim());
     }
     function openYearMonthModal(rows, monthIndex) {
       state.selectedMonthIndex = monthIndex;

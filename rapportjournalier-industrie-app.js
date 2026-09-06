@@ -51,6 +51,16 @@
       : query;
   }
 
+  function isMissingDemoColumnError(error) {
+    var text = [
+      error && error.code,
+      error && error.message,
+      error && error.details,
+      error && error.hint
+    ].filter(Boolean).join(" ");
+    return /demo_effectuee/i.test(text) && /(column|schema|cache|exist|introuvable|trouve)/i.test(text);
+  }
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replaceAll("&", "&amp;")
@@ -173,7 +183,13 @@
     return normalizeNumber(cmd && cmd.quantite) * getCommandUnitPrice(cmd);
   }
 
+  function getLineRevenue(visite, cmd) {
+    return isSaleVisit(visite) ? getCommandAmount(cmd) : 0;
+  }
+
   function getVisitRevenue(visite) {
+    if (!isSaleVisit(visite)) return 0;
+
     var totalCommande = normalizeNumber(visite && visite.total_commande);
     if (totalCommande) return totalCommande;
 
@@ -351,13 +367,24 @@
     var visiteIds = uniqueStringIds(visites, "id");
     var clientIds = uniqueStringIds(visites, "client_id");
 
-    var commandes = visiteIds.length
-      ? await fetchAllRapportRows(
+    var commandes = [];
+    if (visiteIds.length) {
+      try {
+        commandes = await fetchAllRapportRows(
           "industrie_visite_commandes",
-          "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire, demo_effectuee",
+          "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire,demo_effectuee",
           { in: { column: "visite_id", values: visiteIds } }
-        )
-      : [];
+        );
+      } catch (error) {
+        if (!isMissingDemoColumnError(error)) throw error;
+        console.warn("Colonne demo_effectuee indisponible, rapport Industrie chargé sans démos:", error.message);
+        commandes = await fetchAllRapportRows(
+          "industrie_visite_commandes",
+          "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire",
+          { in: { column: "visite_id", values: visiteIds } }
+        );
+      }
+    }
 
     var produitIds = uniqueStringIds(commandes, "produit_id");
 
@@ -845,6 +872,9 @@
           '<span class="visit-stat-chip">Stock : ' +
           formatNumber(client.stock) +
           "</span>" +
+          '<span class="visit-stat-chip">Démos : ' +
+          formatNumber(client.demos) +
+          "</span>" +
           '<span class="visit-stat-chip">Rouges : ' +
           formatNumber(client.reds) +
           "</span>" +
@@ -1183,13 +1213,16 @@
               formatNumber(client.stock) +
               "</td>" +
               "<td class=\"num\">" +
+              formatNumber(client.demos) +
+              "</td>" +
+              "<td class=\"num\">" +
               escapeHtml(formatCurrency(client.ca)) +
               "</td>" +
               "</tr>"
             );
           })
           .join("")
-      : '<tr><td colspan="6">Aucune visite chargée pour cette date.</td></tr>';
+      : '<tr><td colspan="7">Aucune visite chargée pour cette date.</td></tr>';
     var notesHtml = groupedClients
       .filter(function (client) {
         return client.notes && client.notes.length;
@@ -1299,7 +1332,7 @@
       "</ul>" +
       "</section>" +
       '<section class="section"><div class="section-title">Récapitulatif par client</div>' +
-      '<table class="client-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantité</th><th>Stock</th><th>CA</th></tr></thead><tbody>' +
+      '<table class="client-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantité</th><th>Stock</th><th>Démos</th><th>CA</th></tr></thead><tbody>' +
       clientRowsHtml +
       "</tbody></table>" +
       "</section>" +
@@ -1488,6 +1521,9 @@
           '<span class="pdf-stat">Stock : ' +
           formatNumber(client.stock) +
           "</span>" +
+          '<span class="pdf-stat">Démos : ' +
+          formatNumber(client.demos) +
+          "</span>" +
           '<span class="pdf-stat">Rouges : ' +
           formatNumber(client.reds) +
           "</span>" +
@@ -1536,6 +1572,9 @@
               "</td>" +
               '<td class="num">' +
               formatNumber(client.stock) +
+              "</td>" +
+              '<td class="num">' +
+              formatNumber(client.demos) +
               "</td>" +
               '<td class="num">' +
               escapeHtml(formatCurrency(client.ca)) +
@@ -1601,7 +1640,7 @@
       '<div class="pdf-section"><div class="pdf-section-title">Lecture commerciale</div><ul class="pdf-bullets">' +
       executiveHtml +
       "</ul></div>" +
-      '<div class="pdf-section"><div class="pdf-section-title">Récapitulatif par client</div><table class="pdf-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantité</th><th>Stock</th><th>CA</th></tr></thead><tbody>' +
+      '<div class="pdf-section"><div class="pdf-section-title">Récapitulatif par client</div><table class="pdf-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantité</th><th>Stock</th><th>Démos</th><th>CA</th></tr></thead><tbody>' +
       clientRowsHtml +
       "</tbody></table></div>" +
       (notesHtml

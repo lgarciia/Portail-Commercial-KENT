@@ -1129,7 +1129,7 @@
       const commandes = visiteIds.length
         ? await fetchRapportRows(
             "industrie_visite_commandes",
-            "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire, demo_effectuee",
+            "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire,demo_effectuee",
             { in: { column: "visite_id", values: visiteIds } }
           )
         : [];

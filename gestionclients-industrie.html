@@ -153,7 +153,7 @@
       overflow:auto;
       background:rgba(255,255,255,.02);
     }
-    table{width:100%;border-collapse:collapse;min-width:1050px}
+    table{width:100%;border-collapse:collapse;min-width:1120px}
     th,td{padding:11px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:middle}
     th{
       position:sticky;
@@ -199,6 +199,17 @@
     .btn-sm{padding:8px 11px;border-radius:12px;font-size:.79rem}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
     .action-cell{display:flex;gap:8px;flex-wrap:wrap}
+    .client-size-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:38px;padding:7px 10px;border-radius:999px;
+      border:1px solid rgba(148,163,184,.18);
+      background:rgba(148,163,184,.10);color:#e2e8f0;
+      font-size:.78rem;font-weight:900;letter-spacing:.04em;
+    }
+    .client-size-badge.size-s{border-color:rgba(148,163,184,.24);background:rgba(148,163,184,.12)}
+    .client-size-badge.size-m{border-color:rgba(56,189,248,.25);background:rgba(56,189,248,.13);color:#d8f3ff}
+    .client-size-badge.size-l{border-color:rgba(245,158,11,.30);background:rgba(245,158,11,.14);color:#fde68a}
+    .client-size-help{color:var(--muted-2);font-size:.78rem;line-height:1.35;margin-top:2px}
     .modal-overlay{
       position:fixed;
       inset:0;
@@ -360,6 +371,7 @@
               <th>Telephone</th>
               <th>Adresse</th>
               <th>Plaque</th>
+              <th>Taille</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -407,6 +419,12 @@
           <div class="field">
             <label for="clientPlaqueSelect">Plaque</label>
             <select id="clientPlaqueSelect"></select>
+          </div>
+
+          <div class="field">
+            <label for="clientTailleSelect">Taille client</label>
+            <select id="clientTailleSelect"></select>
+            <div class="client-size-help">S petit, M moyen, L grand client.</div>
           </div>
 
           <div class="field full">
@@ -502,6 +520,7 @@
       dom.clientEmailInput = document.getElementById("clientEmailInput");
       dom.clientAdresseInput = document.getElementById("clientAdresseInput");
       dom.clientPlaqueSelect = document.getElementById("clientPlaqueSelect");
+      dom.clientTailleSelect = document.getElementById("clientTailleSelect");
       dom.saveClientBtn = document.getElementById("saveClientBtn");
       dom.deleteModalOverlay = document.getElementById("deleteModalOverlay");
       dom.deleteModalMessage = document.getElementById("deleteModalMessage");
@@ -542,6 +561,30 @@
 
     function normalizeEmail(value) {
       return String(value ?? "").trim().toLowerCase();
+    }
+
+    const CLIENT_SIZE_OPTIONS = [
+      { value: "S", label: "S - Petit client" },
+      { value: "M", label: "M - Client moyen" },
+      { value: "L", label: "L - Grand client" }
+    ];
+
+    function normalizeClientSize(value) {
+      const normalized = String(value || "S").trim().toUpperCase();
+      return CLIENT_SIZE_OPTIONS.some(option => option.value === normalized) ? normalized : "S";
+    }
+
+    function buildClientSizeOptions(selectedValue = "S") {
+      const selected = normalizeClientSize(selectedValue);
+      return CLIENT_SIZE_OPTIONS.map(option => {
+        const isSelected = option.value === selected ? " selected" : "";
+        return `<option value="${escapeHtml(option.value)}"${isSelected}>${escapeHtml(option.label)}</option>`;
+      }).join("");
+    }
+
+    function renderClientSizeBadge(value) {
+      const size = normalizeClientSize(value);
+      return `<span class="client-size-badge size-${escapeHtml(size.toLowerCase())}">${escapeHtml(size)}</span>`;
     }
 
     function isValidEmail(value) {
@@ -610,8 +653,9 @@
       return plaque?.nom || "—";
     }
 
-    function isMissingEmailColumnError(error) {
-      return Boolean(error && /email/i.test(error.message || ""));
+    function isMissingColumnError(error, columnName) {
+      const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ").toLowerCase();
+      return message.includes(String(columnName || "").toLowerCase());
     }
 
     async function fetchClientsWithSelect(selectColumns) {
@@ -624,6 +668,25 @@
     }
 
     async function fetchClients() {
+      const selectWithEmailAndSize = `
+        id,
+        nom,
+        numero_compte,
+        adresse,
+        telephone,
+        email,
+        taille_client,
+        plaque_id
+      `;
+      const selectWithSize = `
+        id,
+        nom,
+        numero_compte,
+        adresse,
+        telephone,
+        taille_client,
+        plaque_id
+      `;
       const selectWithEmail = `
         id,
         nom,
@@ -641,12 +704,20 @@
         telephone,
         plaque_id
       `;
-      let { data, error } = await fetchClientsWithSelect(selectWithEmail);
-      if (isMissingEmailColumnError(error)) {
-        ({ data, error } = await fetchClientsWithSelect(selectWithoutEmail));
+      let data = [];
+      let error = null;
+      const selects = [selectWithEmailAndSize, selectWithSize, selectWithEmail, selectWithoutEmail];
+      for (const selectColumns of selects) {
+        ({ data, error } = await fetchClientsWithSelect(selectColumns));
+        if (!error) break;
+        const canRetry = isMissingColumnError(error, "email") || isMissingColumnError(error, "taille_client");
+        if (!canRetry) break;
       }
       if (error) throw error;
-      return data || [];
+      return (data || []).map(client => ({
+        ...client,
+        taille_client: normalizeClientSize(client.taille_client)
+      }));
     }
 
     async function fetchPlaques() {
@@ -702,7 +773,8 @@
           client.telephone,
           client.email,
           client.adresse,
-          getPlaqueName(client)
+          getPlaqueName(client),
+          client.taille_client
         ];
         return candidates.some(value => normalizeText(value).includes(query));
       });
@@ -713,8 +785,8 @@
       if (!clients.length) {
         dom.clientsTableBody.innerHTML = `
           <tr>
-            <td colspan="6">
-              <div class="empty">Aucun client industrie industrie trouvé avec ces filtres.</div>
+            <td colspan="7">
+              <div class="empty">Aucun client industrie trouvé avec ces filtres.</div>
             </td>
           </tr>
         `;
@@ -728,6 +800,7 @@
           <td>${escapeHtml(client.telephone || "—")}</td>
           <td>${escapeHtml(client.adresse || "—")}</td>
           <td>${escapeHtml(getPlaqueName(client))}</td>
+          <td>${renderClientSizeBadge(client.taille_client)}</td>
           <td class="action-cell">
             <button class="btn btn-info btn-sm" type="button" data-action="edit" data-client-id="${escapeHtml(client.id)}">Modifier</button>
             <button class="btn btn-danger btn-sm" type="button" data-action="delete" data-client-id="${escapeHtml(client.id)}">Supprimer</button>
@@ -748,6 +821,7 @@
       dom.clientEmailInput.value = "";
       dom.clientAdresseInput.value = "";
       buildPlaqueSelectOptions();
+      dom.clientTailleSelect.innerHTML = buildClientSizeOptions("S");
       updateClientNumberHint();
     }
 
@@ -763,6 +837,7 @@
         dom.clientEmailInput.value = client.email || "";
         dom.clientAdresseInput.value = client.adresse || "";
         buildPlaqueSelectOptions(client.plaque_id || "");
+        dom.clientTailleSelect.innerHTML = buildClientSizeOptions(client.taille_client || "S");
         updateClientNumberHint();
       } else {
         resetClientForm();
@@ -850,6 +925,7 @@
       const email = normalizeEmail(dom.clientEmailInput.value);
       const adresse = String(dom.clientAdresseInput.value || "").trim();
       const plaqueId = dom.clientPlaqueSelect.value;
+      const tailleClient = normalizeClientSize(dom.clientTailleSelect?.value || "S");
 
       if (!nom) return showToast("Renseigne le nom du client.", "warning");
       if (!numeroCompte) return showToast("Renseigne le numero client / compte.", "warning");
@@ -868,7 +944,8 @@
         telephone: telephone || null,
         email: email || null,
         adresse: adresse || null,
-        plaque_id: plaqueId
+        plaque_id: plaqueId,
+        taille_client: tailleClient
       };
 
       try {
@@ -881,12 +958,29 @@
             .update(payload)
             .eq("id", editingId);
           query = applyCommercialScope(query);
-          const { error } = await query;
+          let { error } = await query;
+          if (error && isMissingColumnError(error, "taille_client")) {
+            const { taille_client, ...legacyPayload } = payload;
+            let retryQuery = supabaseClient
+              .from("industrie_clients")
+              .update(legacyPayload)
+              .eq("id", editingId);
+            retryQuery = applyCommercialScope(retryQuery);
+            ({ error } = await retryQuery);
+            if (!error) showToast("Client industrie modifié. Lance le SQL pour enregistrer aussi la taille client.", "warning");
+          }
           if (error) throw error;
         } else {
-          const { error } = await supabaseClient
+          let { error } = await supabaseClient
             .from("industrie_clients")
             .insert({ ...payload, ...getCommercialOwnershipPayload() });
+          if (error && isMissingColumnError(error, "taille_client")) {
+            const { taille_client, ...legacyPayload } = payload;
+            ({ error } = await supabaseClient
+              .from("industrie_clients")
+              .insert({ ...legacyPayload, ...getCommercialOwnershipPayload() }));
+            if (!error) showToast("Client industrie ajouté. Lance le SQL pour enregistrer aussi la taille client.", "warning");
+          }
           if (error) throw error;
         }
 

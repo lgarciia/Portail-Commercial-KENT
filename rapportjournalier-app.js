@@ -9,6 +9,10 @@
   var currentLoadedDate = "";
   var VISIT_TYPE_PHONE_ORDER = "commande_telephone";
   var PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
+  var REPORT_VISITES_SELECT_WITH_DEMO =
+    "id,client_id,date_visite,note,type_visite,total_commande,clients(id,nom,numero_compte,adresse,telephone),visite_commandes(id,produit_id,quantite,stock_client,couleur,prix_unitaire,demo_effectuee,produits(id,nom,reference_produit,prix_vente))";
+  var REPORT_VISITES_SELECT_LEGACY =
+    "id,client_id,date_visite,note,type_visite,total_commande,clients(id,nom,numero_compte,adresse,telephone),visite_commandes(id,produit_id,quantite,stock_client,couleur,prix_unitaire,produits(id,nom,reference_produit,prix_vente))";
 
   window.__RAPPORT_JOURNALIER_BOOTED__ = true;
 
@@ -45,6 +49,16 @@
     return window.KentCommercialScope
       ? window.KentCommercialScope.applyToQuery(query)
       : query;
+  }
+
+  function isMissingDemoColumnError(error) {
+    var text = [
+      error && error.code,
+      error && error.message,
+      error && error.details,
+      error && error.hint
+    ].filter(Boolean).join(" ");
+    return /demo_effectuee/i.test(text) && /(column|schema|cache|exist|introuvable|trouve)/i.test(text);
   }
 
   function escapeHtml(value) {
@@ -169,7 +183,13 @@
     return normalizeNumber(cmd && cmd.quantite) * getCommandUnitPrice(cmd);
   }
 
+  function getLineRevenue(visite, cmd) {
+    return isSaleVisit(visite) ? getCommandAmount(cmd) : 0;
+  }
+
   function getVisitRevenue(visite) {
+    if (!isSaleVisit(visite)) return 0;
+
     var totalCommande = normalizeNumber(visite && visite.total_commande);
     if (totalCommande) return totalCommande;
 
@@ -295,12 +315,20 @@
     await window.KentCommercialScope.load();
     var query = supabaseClient
       .from("visites")
-      .select(
-        "id, client_id, date_visite, note, type_visite, total_commande, clients ( id, nom, numero_compte, adresse, telephone ), visite_commandes ( id, produit_id, quantite, stock_client, couleur, prix_unitaire, demo_effectuee, produits ( id, nom, reference_produit, prix_vente ) )"
-      )
+      .select(REPORT_VISITES_SELECT_WITH_DEMO)
       .eq("date_visite", reportDate);
     query = applyCommercialScope(query);
     var result = await query.order("date_visite", { ascending: true });
+
+    if (result.error && isMissingDemoColumnError(result.error)) {
+      console.warn("Colonne demo_effectuee indisponible, rapport chargé sans démos:", result.error.message);
+      query = supabaseClient
+        .from("visites")
+        .select(REPORT_VISITES_SELECT_LEGACY)
+        .eq("date_visite", reportDate);
+      query = applyCommercialScope(query);
+      result = await query.order("date_visite", { ascending: true });
+    }
 
     if (result.error) {
       console.error("Erreur fetchRapportVisitesByDate:", result.error);
@@ -1108,6 +1136,9 @@
               formatNumber(client.stock) +
               "</td>" +
               "<td class=\"num\">" +
+              formatNumber(client.demos) +
+              "</td>" +
+              "<td class=\"num\">" +
               escapeHtml(formatCurrency(client.ca)) +
               "</td>" +
               "</tr>"
@@ -1413,6 +1444,9 @@
           '<span class="pdf-stat">Stock : ' +
           formatNumber(client.stock) +
           "</span>" +
+          '<span class="pdf-stat">Démos : ' +
+          formatNumber(client.demos) +
+          "</span>" +
           '<span class="pdf-stat">Rouges : ' +
           formatNumber(client.reds) +
           "</span>" +
@@ -1463,13 +1497,16 @@
               formatNumber(client.stock) +
               "</td>" +
               '<td class="num">' +
+              formatNumber(client.demos) +
+              "</td>" +
+              '<td class="num">' +
               escapeHtml(formatCurrency(client.ca)) +
               "</td>" +
               "</tr>"
             );
           })
           .join("")
-      : '<tr><td colspan="6">Aucune visite trouvée pour cette date.</td></tr>';
+      : '<tr><td colspan="7">Aucune visite trouvée pour cette date.</td></tr>';
 
     var notesHtml = groupedClients
       .filter(function (client) {
@@ -1526,7 +1563,7 @@
       '<div class="pdf-section"><div class="pdf-section-title">Lecture commerciale</div><ul class="pdf-bullets">' +
       executiveHtml +
       "</ul></div>" +
-      '<div class="pdf-section"><div class="pdf-section-title">Récapitulatif par client</div><table class="pdf-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantité</th><th>Stock</th><th>CA</th></tr></thead><tbody>' +
+      '<div class="pdf-section"><div class="pdf-section-title">Récapitulatif par client</div><table class="pdf-table"><thead><tr><th>Client</th><th>Visites</th><th>Lignes</th><th>Quantité</th><th>Stock</th><th>Démos</th><th>CA</th></tr></thead><tbody>' +
       clientRowsHtml +
       "</tbody></table></div>" +
       (notesHtml

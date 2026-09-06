@@ -1092,34 +1092,7 @@
     async function fetchRapportVisitesByDate(reportDate) {
       const { data, error } = await supabaseClient
         .from("visites")
-        .select(`
-          id,
-          client_id,
-          date_visite,
-          note,
-          type_visite,
-          total_commande,
-          clients (
-            id,
-            nom,
-            numero_compte,
-            adresse,
-            telephone
-          ),
-          visite_commandes (
-            id,
-            produit_id,
-            quantite,
-            stock_client,
-            couleur,
-            demo_effectuee,
-            produits (
-              id,
-              nom,
-              reference_produit
-            )
-          )
-        `)
+        .select("id,client_id,date_visite,note,type_visite,total_commande,clients(id,nom,numero_compte,adresse,telephone),visite_commandes(id,produit_id,quantite,stock_client,couleur,demo_effectuee,produits(id,nom,reference_produit))")
         .eq("date_visite", reportDate)
         .order("date_visite", { ascending: true });
 
@@ -1431,4 +1404,3 @@
   <script src="./rapportjournalier-app.js"></script>
 </body>
 </html>
-
