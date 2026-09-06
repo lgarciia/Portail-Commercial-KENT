@@ -360,7 +360,7 @@
           </select>
         </div>
       </div>
-      <div class="status-bar" id="statusBar">Connexion à Supabase...</div>
+      <div class="status-bar" id="statusBar">Connexion à l'espace sécurisé...</div>
       </div>
     </section>
 
@@ -406,12 +406,9 @@
     </section>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./commercial-scope.js"></script>
   <script>
-    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SALES_API_URL = "/api/mes-ventes?secteur=auto";
     const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
     const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
 
@@ -446,16 +443,6 @@
 
     function setStatus(message) {
       dom.statusBar.textContent = message;
-    }
-
-    function shouldScopeTable(table) {
-      return ["clients", "visites", "documents_commerciaux"].includes(table);
-    }
-
-    function applyCommercialScope(table, query) {
-      return shouldScopeTable(table) && window.KentCommercialScope
-        ? window.KentCommercialScope.applyToQuery(query)
-        : query;
     }
 
     function escapeHtml(value) {
@@ -570,43 +557,38 @@
       return { start, end };
     }
 
-    async function fetchPaged(table, select, options = {}) {
-      const pageSize = 1000;
-      let from = 0;
-      const all = [];
-
-      while (true) {
-        const to = from + pageSize - 1;
-        let query = supabaseClient.from(table).select(select).range(from, to);
-        query = applyCommercialScope(table, query);
-        const orders = Array.isArray(options.order) ? options.order : (options.order ? [options.order] : []);
-        orders.forEach(order => {
-          query = query.order(order.column, { ascending: order.ascending ?? true });
-        });
-        const { data, error } = await query;
-        if (error) throw new Error(`${table}: ${error.message}`);
-        const batch = data || [];
-        all.push(...batch);
-        if (batch.length < pageSize) break;
-        from += pageSize;
-      }
-
-      return all;
-    }
-
     async function fetchAllData() {
       await window.KentCommercialScope.load();
-      const [clientsRes, produitsRes, visitesRes, lignesRes] = await Promise.all([
-        fetchPaged("clients", "id, nom, numero_compte, adresse, telephone, plaque_id, plaques(id, nom)", { order: { column: "nom", ascending: true } }),
-        fetchPaged("produits", "id, nom, actif, reference_produit, prix_vente", { order: { column: "nom", ascending: true } }),
-        fetchPaged("visites", "id, client_id, date_visite, note, type_visite, total_commande", { order: [{ column: "date_visite", ascending: false }, { column: "id", ascending: true }] }),
-        fetchPaged("visite_commandes", "id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire", { order: [{ column: "visite_id", ascending: true }, { column: "id", ascending: true }] })
-      ]);
+      const payload = await apiJson(SALES_API_URL);
+      clients = payload.clients || [];
+      produits = payload.produits || [];
+      visites = payload.visites || [];
+      lignesCommandes = payload.lignesCommandes || [];
+    }
 
-      clients = clientsRes || [];
-      produits = produitsRes || [];
-      visites = visitesRes || [];
-      lignesCommandes = lignesRes || [];
+    async function apiJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        cache: "no-store",
+        ...options,
+        headers: {
+          ...(options.body == null ? {} : { "Content-Type": "application/json" }),
+          ...(options.headers || {})
+        }
+      });
+      const text = await response.text();
+      let payload = null;
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          payload = { error: text };
+        }
+      }
+      if (!response.ok) {
+        throw new Error(payload?.error || `Erreur API ${response.status}`);
+      }
+      return payload || {};
     }
 
     function getClientById(id) {

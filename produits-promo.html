@@ -247,12 +247,8 @@
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const PROMO_COLUMNS = "id,nom,reference_produit,prix_vente,actif,origine,created_by_user_id,promo_deleted_at";
+const PROMO_API_URL = "/api/produits-promo";
 const state = {
   user:null,
   items:[],
@@ -284,7 +280,7 @@ function normalizeReference(value){
 
 function isSchemaError(error){
   const message = String(error?.message || error || "");
-  return /(origine|created_by_user_id|promo_deleted_at|schema cache|column)/i.test(message);
+  return /(produits promo non prête|origine|created_by_user_id|promo_deleted_at|schema cache|column)/i.test(message);
 }
 
 function isHiddenProduct(row){
@@ -374,16 +370,8 @@ async function loadSession(){
 }
 
 async function fetchPromoProducts(){
-  if (!state.user?.dbUserId) return [];
-  const { data, error } = await supabaseClient
-    .from("produits")
-    .select(PROMO_COLUMNS)
-    .eq("origine", "promo_manuelle")
-    .eq("created_by_user_id", state.user.dbUserId)
-    .order("reference_produit", { ascending:true });
-
-  if (error) throw error;
-  return data || [];
+  const payload = await apiJson(`${PROMO_API_URL}?limit=500&offset=0`);
+  return Array.isArray(payload.products) ? payload.products : [];
 }
 
 async function refreshProducts(){
@@ -405,58 +393,12 @@ async function refreshProducts(){
   }
 }
 
-async function findProductsByReference(reference){
-  const { data, error } = await supabaseClient
-    .from("produits")
-    .select(PROMO_COLUMNS)
-    .eq("reference_produit", reference)
-    .limit(100);
-  if (error) throw error;
-  return data || [];
-}
-
 async function addPromoProduct(reference, designation){
-  const userId = state.user?.dbUserId;
-  if (!userId) throw new Error("Session commerciale absente.");
-
-  const existingRows = await findProductsByReference(reference);
-  const official = existingRows.find(row => row.origine !== "promo_manuelle");
-  if (official) {
-    await kentAlert("Cette référence existe déjà dans le référentiel produits. Utilise directement le produit existant dans la fiche client.", { title:"Référence déjà existante", tone:"warning" });
-    return;
-  }
-
-  const ownPromo = existingRows.find(row => row.origine === "promo_manuelle" && String(row.created_by_user_id || "") === String(userId));
-  if (ownPromo && !isHiddenProduct(ownPromo)) {
-    await kentAlert("Cette référence promo existe déjà dans ta liste.", { title:"Produit déjà présent", tone:"warning" });
-    return;
-  }
-
-  if (ownPromo && isHiddenProduct(ownPromo)) {
-    const { error } = await supabaseClient
-      .from("produits")
-      .update({ nom:designation, prix_vente:0, actif:true, promo_deleted_at:null })
-      .eq("id", ownPromo.id)
-      .eq("created_by_user_id", userId)
-      .eq("origine", "promo_manuelle");
-    if (error) throw error;
-    setStatus("Produit promo réactivé.", "success");
-    return;
-  }
-
-  const { error } = await supabaseClient
-    .from("produits")
-    .insert({
-      reference_produit:reference,
-      nom:designation,
-      prix_vente:0,
-      actif:true,
-      origine:"promo_manuelle",
-      created_by_user_id:userId,
-      promo_deleted_at:null
-    });
-  if (error) throw error;
-  setStatus("Produit promo ajouté.", "success");
+  const payload = await apiJson(PROMO_API_URL, {
+    method:"POST",
+    body:JSON.stringify({ reference, designation })
+  });
+  setStatus(payload.action === "restored" ? "Produit promo réactivé." : "Produit promo ajouté.", "success");
 }
 
 async function handleSubmit(event){
@@ -492,13 +434,10 @@ async function editPromoProduct(row){
 
   setLoading(true);
   try {
-    const { error } = await supabaseClient
-      .from("produits")
-      .update({ nom:cleanName })
-      .eq("id", row.id)
-      .eq("created_by_user_id", state.user.dbUserId)
-      .eq("origine", "promo_manuelle");
-    if (error) throw error;
+    await apiJson(PROMO_API_URL, {
+      method:"PATCH",
+      body:JSON.stringify({ id:row.id, designation:cleanName })
+    });
     setStatus("Produit promo modifié.", "success");
     await refreshProducts();
   } catch (error) {
@@ -518,13 +457,10 @@ async function deletePromoProduct(row){
 
   setLoading(true);
   try {
-    const { error } = await supabaseClient
-      .from("produits")
-      .update({ actif:false, promo_deleted_at:new Date().toISOString() })
-      .eq("id", row.id)
-      .eq("created_by_user_id", state.user.dbUserId)
-      .eq("origine", "promo_manuelle");
-    if (error) throw error;
+    await apiJson(PROMO_API_URL, {
+      method:"DELETE",
+      body:JSON.stringify({ id:row.id })
+    });
     setStatus("Produit promo supprimé de ta liste.", "success");
     await refreshProducts();
   } catch (error) {
@@ -544,13 +480,10 @@ async function restorePromoProduct(row){
 
   setLoading(true);
   try {
-    const { error } = await supabaseClient
-      .from("produits")
-      .update({ actif:true, promo_deleted_at:null })
-      .eq("id", row.id)
-      .eq("created_by_user_id", state.user.dbUserId)
-      .eq("origine", "promo_manuelle");
-    if (error) throw error;
+    await apiJson(PROMO_API_URL, {
+      method:"PATCH",
+      body:JSON.stringify({ id:row.id, action:"restore" })
+    });
     setStatus("Produit promo réactivé.", "success");
     await refreshProducts();
   } catch (error) {
@@ -559,6 +492,31 @@ async function restorePromoProduct(row){
   } finally {
     setLoading(false);
   }
+}
+
+async function apiJson(url, options = {}){
+  const response = await fetch(url, {
+    credentials:"same-origin",
+    cache:"no-store",
+    ...options,
+    headers:{
+      ...(options.body == null ? {} : { "Content-Type":"application/json" }),
+      ...(options.headers || {})
+    }
+  });
+  const text = await response.text();
+  let payload = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = { error:text };
+    }
+  }
+  if (!response.ok) {
+    throw new Error(payload?.error || `Erreur API ${response.status}`);
+  }
+  return payload || {};
 }
 
 function attachEvents(){
