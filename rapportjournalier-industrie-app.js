@@ -1,7 +1,5 @@
 (function () {
-  var SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-  var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  var REPORT_API_URL = "/api/rapport-journalier?secteur=industrie";
 
   var rapportVisites = [];
   var groupedClients = [];
@@ -42,31 +40,6 @@
   function setStatus(message) {
     var node = document.getElementById("statusBar");
     if (node) node.textContent = message;
-  }
-
-  function shouldScopeTable(tableName) {
-    return ["industrie_clients", "industrie_visites"].includes(tableName);
-  }
-
-  function applyCommercialScope(tableName, query) {
-    return shouldScopeTable(tableName) && window.KentCommercialScope
-      ? window.KentCommercialScope.applyToQuery(query)
-      : query;
-  }
-
-  function isMissingDemoColumnError(error) {
-    return isMissingColumnError(error, "demo_effectuee");
-  }
-
-  function isMissingColumnError(error, columnName) {
-    var text = [
-      error && error.code,
-      error && error.message,
-      error && error.details,
-      error && error.hint
-    ].filter(Boolean).join(" ");
-    var escapedColumn = String(columnName || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return new RegExp(escapedColumn, "i").test(text) && /(column|schema|cache|exist|introuvable|trouve|find)/i.test(text);
   }
 
   function normalizeClientSize(value) {
@@ -324,148 +297,17 @@
     return points;
   }
 
-  async function fetchAllRapportRows(tableName, columns, options) {
-    var pageSize = 1000;
-    var from = 0;
-    var all = [];
-    options = options || {};
-
-    while (true) {
-      var query = supabaseClient
-        .from(tableName)
-        .select(columns)
-        .range(from, from + pageSize - 1);
-      query = applyCommercialScope(tableName, query);
-
-      if (options.eq) query = query.eq(options.eq.column, options.eq.value);
-      if (options.in && options.in.values.length) query = query.in(options.in.column, options.in.values);
-      if (options.orderBy) query = query.order(options.orderBy, { ascending: options.ascending !== false });
-
-      var result = await query;
-      if (result.error) {
-        console.error("Erreur " + tableName + ":", result.error);
-        throw result.error;
-      }
-
-      var batch = Array.isArray(result.data) ? result.data : [];
-      all = all.concat(batch);
-      if (batch.length < pageSize) break;
-      from += pageSize;
-    }
-
-    return all;
-  }
-
-  function uniqueStringIds(rows, key) {
-    var ids = [];
-    var seen = new Set();
-    rows.forEach(function (row) {
-      var value = row && row[key] !== undefined && row[key] !== null ? String(row[key]) : "";
-      if (value && !seen.has(value)) {
-        seen.add(value);
-        ids.push(value);
-      }
-    });
-    return ids;
-  }
-
   async function fetchRapportVisitesByDate(reportDate) {
-    await window.KentCommercialScope.load();
-    var visites = await fetchAllRapportRows(
-      "industrie_visites",
-      "id, client_id, date_visite, note, type_visite, total_commande",
-      { eq: { column: "date_visite", value: reportDate }, orderBy: "date_visite", ascending: true }
-    );
-
-    var visiteIds = uniqueStringIds(visites, "id");
-    var clientIds = uniqueStringIds(visites, "client_id");
-
-    var commandes = [];
-    if (visiteIds.length) {
-      try {
-        commandes = await fetchAllRapportRows(
-          "industrie_visite_commandes",
-          "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire,demo_effectuee",
-          { in: { column: "visite_id", values: visiteIds } }
-        );
-      } catch (error) {
-        if (!isMissingDemoColumnError(error)) throw error;
-        console.warn("Colonne demo_effectuee indisponible, rapport Industrie chargé sans démos:", error.message);
-        commandes = await fetchAllRapportRows(
-          "industrie_visite_commandes",
-          "id,visite_id,produit_id,quantite,stock_client,couleur,prix_unitaire",
-          { in: { column: "visite_id", values: visiteIds } }
-        );
-      }
-    }
-
-    var produitIds = uniqueStringIds(commandes, "produit_id");
-
-    var clients = [];
-    if (clientIds.length) {
-      try {
-        clients = await fetchAllRapportRows(
-          "industrie_clients",
-          "id, nom, numero_compte, adresse, telephone, taille_client",
-          { in: { column: "id", values: clientIds } }
-        );
-      } catch (error) {
-        if (!isMissingColumnError(error, "taille_client")) throw error;
-        console.warn("Colonne taille_client indisponible, rapport Industrie chargé avec taille S par défaut:", error.message);
-        clients = (await fetchAllRapportRows(
-          "industrie_clients",
-          "id, nom, numero_compte, adresse, telephone",
-          { in: { column: "id", values: clientIds } }
-        )).map(function (client) {
-          return Object.assign({}, client, { taille_client: "S" });
-        });
-      }
-    }
-
-    var produits = produitIds.length
-      ? await fetchAllRapportRows(
-          "industrie_produits",
-          "id, nom, reference_produit, prix_vente",
-          { in: { column: "id", values: produitIds } }
-        )
-      : [];
-
-    var clientsById = new Map(clients.map(function (client) { return [String(client.id), client]; }));
-    var produitsById = new Map(produits.map(function (produit) { return [String(produit.id), produit]; }));
-    var commandesByVisiteId = new Map();
-
-    commandes.forEach(function (cmd) {
-      var key = String(cmd.visite_id);
-      if (!commandesByVisiteId.has(key)) commandesByVisiteId.set(key, []);
-      commandesByVisiteId.get(key).push(cmd);
+    var response = await fetch(REPORT_API_URL + "&date=" + encodeURIComponent(reportDate), {
+      method: "GET",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
     });
-
-    return visites.map(function (visite) {
-      return {
-        id: visite.id,
-        client_id: visite.client_id,
-        date_visite: visite.date_visite,
-        note: visite.note,
-        type_visite: normalizeVisitType(visite.type_visite),
-        total_commande: visite.total_commande,
-        client: clientsById.get(String(visite.client_id)) || null,
-        commandes: (commandesByVisiteId.get(String(visite.id)) || []).map(function (cmd) {
-          var produit = produitsById.get(String(cmd.produit_id)) || null;
-          var unitPrice = normalizeNumber(cmd.prix_unitaire) || normalizeNumber(produit && produit.prix_vente);
-          return {
-            id: cmd.id,
-            produit_id: cmd.produit_id,
-            quantite: normalizeNumber(cmd.quantite),
-            stock_client: normalizeNumber(cmd.stock_client),
-            couleur: normalizeColor(cmd.couleur),
-            demo_effectuee: Boolean(cmd.demo_effectuee),
-            prix_unitaire: unitPrice,
-            montant_ligne: normalizeNumber(cmd.quantite) * unitPrice,
-            produit: produit
-          };
-        })
-      };
-    });
+    var payload = await response.json().catch(function () { return {}; });
+    if (!response.ok || payload.ok === false) {
+      throw new Error(payload.error || "Impossible de charger les visites.");
+    }
+    return Array.isArray(payload.visites) ? payload.visites : [];
   }
 
   function calculateReportData(visites) {
@@ -1768,7 +1610,7 @@
       renderInsights(reportStats);
       renderPreview([]);
       setStatus("Erreur de chargement du rapport journalier.");
-      alert("Impossible de charger les visites depuis Supabase.");
+      alert("Impossible de charger les visites.");
       return false;
     }
   }

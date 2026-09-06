@@ -466,7 +466,7 @@
         <div class="brand-mark">MT</div>
         <div>
           <div class="brand-title">Mes tarifs Industrie</div>
-          <div class="brand-subtitle">Visualisation Supabase en lecture seule</div>
+          <div class="brand-subtitle">Visualisation sécurisée en lecture seule</div>
         </div>
       </div>
       <div class="top-actions">
@@ -481,7 +481,7 @@
         <div>
           <div class="kicker">Tarifs clients</div>
           <h1>Mes tarifs Industrie</h1>
-          <p>Choisis une plaque industrie, puis visualise les lignes remontees depuis Supabase avec les colonnes tarif et produit industrie associees.</p>
+          <p>Choisis une plaque industrie, puis visualise les lignes remontées depuis les données serveur avec les colonnes tarif et produit industrie associées.</p>
         </div>
         <div class="status-pill">
           <span class="status-dot"></span>
@@ -529,7 +529,7 @@
           <h2 id="currentTariffTitle">Aucun tarif sélectionné</h2>
           <div class="muted" id="currentTariffMeta">Selection automatique du premier tarif disponible.</div>
         </div>
-        <div class="status-bar" id="statusBar">Connexion à Supabase...</div>
+        <div class="status-bar" id="statusBar">Chargement sécurisé...</div>
       </div>
       <div class="table-wrapper">
         <table>
@@ -551,12 +551,8 @@
     </section>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const PAGE_SIZE = 1000;
+    const TARIFFS_API_URL = "/api/mes-tarifs?secteur=industrie";
 
     const state = {
       plaques: [],
@@ -689,36 +685,17 @@
       return normalizeText(a.nom).localeCompare(normalizeText(b.nom), "fr");
     }
 
-    async function fetchAllRows(table, select = "*", options = {}) {
-      const rows = [];
-      let from = 0;
-
-      while (true) {
-        let query = supabaseClient
-          .from(table)
-          .select(select)
-          .range(from, from + PAGE_SIZE - 1);
-
-        if (options.order) {
-          query = query.order(options.order, { ascending: options.ascending !== false });
-        }
-
-        if (Array.isArray(options.eq)) {
-          options.eq.forEach(filter => {
-            query = query.eq(filter[0], filter[1]);
-          });
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        const page = Array.isArray(data) ? data : [];
-        rows.push(...page);
-        if (page.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
+    async function fetchTariffsData() {
+      const response = await fetch(TARIFFS_API_URL, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: { Accept: "application/json" }
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.ok === false) {
+        throw new Error(payload?.error || "Tarifs indisponibles.");
       }
-
-      return rows;
+      return payload;
     }
 
     function buildProductIndex(products) {
@@ -797,10 +774,10 @@
     }
 
     function renderTabs() {
-      dom.tabsMeta.textContent = `${state.plaques.length.toLocaleString("fr-FR")} tarif(s) industrie charges depuis Supabase`;
+      dom.tabsMeta.textContent = `${state.plaques.length.toLocaleString("fr-FR")} tarif(s) industrie chargé(s) depuis les données serveur`;
 
       if (!state.plaques.length) {
-        dom.tariffTabs.innerHTML = '<div class="empty-state">Aucun tarif industrie trouve dans la table industrie_plaques.</div>';
+        dom.tariffTabs.innerHTML = '<div class="empty-state">Aucun tarif industrie trouvé.</div>';
         return;
       }
 
@@ -926,7 +903,7 @@
         if (!tab) return;
         loadTariff(tab.dataset.plaqueId).catch(error => {
           console.error("Erreur loadTariff:", error);
-          setStatus(`Erreur Supabase: ${error.message || error}`);
+          setStatus(`Erreur de chargement: ${error.message || error}`);
           renderTableLoading("Impossible de charger ce tarif.");
         });
       });
@@ -936,15 +913,11 @@
       cacheDom();
       attachEvents();
 
-      renderTableLoading("Chargement des donnees Supabase...");
-      setStatus("Connexion à Supabase...");
+      renderTableLoading("Chargement des données...");
+      setStatus("Chargement sécurisé des tarifs industrie...");
 
       try {
-        const [plaques, produits, tarifs] = await Promise.all([
-          fetchAllRows("industrie_plaques", "*", { order: "nom" }),
-          fetchAllRows("industrie_produits", "*", { order: "reference_produit" }),
-          fetchAllRows("industrie_tarifs_plaques", "*", { order: "produit_id" })
-        ]);
+        const { plaques = [], produits = [], tarifs = [] } = await fetchTariffsData();
 
         state.plaques = plaques.sort(sortByName);
         state.produits = produits;
@@ -958,16 +931,16 @@
 
         if (!state.activePlaqueId) {
           renderTableLoading("Aucun tarif disponible.");
-          setStatus("Aucun tarif industrie trouve dans Supabase.");
+          setStatus("Aucun tarif industrie trouvé.");
           return;
         }
 
         await loadTariff(state.activePlaqueId);
       } catch (error) {
         console.error("Erreur init mes tarifs industrie:", error);
-        setStatus(`Erreur Supabase: ${error.message || error}`);
+        setStatus(`Erreur de chargement: ${error.message || error}`);
         dom.tabsMeta.textContent = "Chargement impossible.";
-        renderTableLoading("Impossible de charger les tarifs industrie Supabase.");
+        renderTableLoading("Impossible de charger les tarifs industrie.");
       }
     }
 

@@ -1,7 +1,5 @@
 (function () {
-  var SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-  var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  var REPORT_API_URL = "/api/rapport-journalier?secteur=auto";
 
   var rapportVisites = [];
   var groupedClients = [];
@@ -331,62 +329,16 @@
   }
 
   async function fetchRapportVisitesByDate(reportDate) {
-    await window.KentCommercialScope.load();
-    var attempts = [
-      { select: REPORT_VISITES_SELECT_WITH_DEMO, hasDemo: true, hasSize: true },
-      { select: REPORT_VISITES_SELECT_WITH_DEMO_LEGACY_SIZE, hasDemo: true, hasSize: false },
-      { select: REPORT_VISITES_SELECT_WITH_SIZE_LEGACY_DEMO, hasDemo: false, hasSize: true },
-      { select: REPORT_VISITES_SELECT_LEGACY, hasDemo: false, hasSize: false }
-    ];
-    var result = null;
-    var selectedAttempt = attempts[0];
-
-    for (var index = 0; index < attempts.length; index += 1) {
-      selectedAttempt = attempts[index];
-      var query = supabaseClient
-        .from("visites")
-        .select(selectedAttempt.select)
-        .eq("date_visite", reportDate);
-      query = applyCommercialScope(query);
-      result = await query.order("date_visite", { ascending: true });
-      if (!result.error) break;
-      var canFallback =
-        isMissingColumnError(result.error, "demo_effectuee") ||
-        isMissingColumnError(result.error, "taille_client");
-      if (!canFallback || index === attempts.length - 1) break;
-      console.warn("Colonne rapport indisponible, nouvel essai avec une lecture compatible:", result.error.message);
-    }
-
-    if (result.error) {
-      console.error("Erreur fetchRapportVisitesByDate:", result.error);
-      throw result.error;
-    }
-
-    return (result.data || []).map(function (visite) {
-      return {
-        id: visite.id,
-        client_id: visite.client_id,
-        date_visite: visite.date_visite,
-        note: visite.note,
-        type_visite: normalizeVisitType(visite.type_visite),
-        total_commande: visite.total_commande,
-        client: visite.clients || null,
-        commandes: (visite.visite_commandes || []).map(function (cmd) {
-          var unitPrice = normalizeNumber(cmd.prix_unitaire) || normalizeNumber(cmd.produits && cmd.produits.prix_vente);
-          return {
-            id: cmd.id,
-            produit_id: cmd.produit_id,
-            quantite: normalizeNumber(cmd.quantite),
-            stock_client: normalizeNumber(cmd.stock_client),
-            couleur: normalizeColor(cmd.couleur),
-            demo_effectuee: Boolean(selectedAttempt.hasDemo && cmd.demo_effectuee),
-            prix_unitaire: unitPrice,
-            montant_ligne: normalizeNumber(cmd.quantite) * unitPrice,
-            produit: cmd.produits || null
-          };
-        })
-      };
+    var response = await fetch(REPORT_API_URL + "&date=" + encodeURIComponent(reportDate), {
+      method: "GET",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
     });
+    var payload = await response.json().catch(function () { return {}; });
+    if (!response.ok || payload.ok === false) {
+      throw new Error(payload.error || "Impossible de charger les visites.");
+    }
+    return Array.isArray(payload.visites) ? payload.visites : [];
   }
 
   function calculateReportData(visites) {
@@ -1687,7 +1639,7 @@
       renderInsights(reportStats);
       renderPreview([]);
       setStatus("Erreur de chargement du rapport journalier.");
-      alert("Impossible de charger les visites depuis Supabase.");
+      alert("Impossible de charger les visites.");
       return false;
     }
   }
