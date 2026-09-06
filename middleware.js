@@ -39,7 +39,6 @@ const ROLE_GUARDS = [
 ];
 
 export const config = {
-  runtime: "nodejs",
   matcher: "/:path*"
 };
 
