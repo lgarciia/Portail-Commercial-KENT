@@ -5,7 +5,7 @@ Portail statique en HTML/CSS/JS avec fichiers de donnees Excel servis directemen
 ## Deploiement
 
 - Point d'entree metier : `index.html`
-- Point d'entree public protege : `acces.html` via `middleware.js`
+- Point d'entree public protege : `acces.html` via `proxy.js`
 - Type de projet : site statique, sans build Node obligatoire
 - Hebergement cible : Vercel via import GitHub
 
