@@ -720,7 +720,8 @@ function normalizeSelect(value, action, table) {
   if (!text) return "";
   if (text.length > 5000) throw badRequest("Sélection trop longue.");
   validateSelectTokens(text, table);
-  return text;
+  // Like the browser SDK, remove layout whitespace before sending a PostgREST select.
+  return text.replace(/"[^"]*"|\s+/g, (part) => part.startsWith('"') ? part : "");
 }
 
 function validateSelectTokens(select, table) {
