@@ -637,15 +637,8 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="./commercial-scope.js"></script>
   <script>
-    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const DOCUMENTS_BUCKET = "documents-commerciaux";
-    const DOCUMENTS_TABLE = "documents_commerciaux";
     const DOCUMENT_STATUS = {
       TRANSMIS: "transmis",
       VALIDE: "valide",
@@ -722,12 +715,6 @@
     function setStatus(message, tone = "info") {
       dom.statusBar.textContent = message;
       dom.statusBar.className = `status ${tone === "info" ? "" : tone}`.trim();
-    }
-
-    function applyCommercialScope(query) {
-      return window.KentCommercialScope
-        ? window.KentCommercialScope.applyToQuery(query)
-        : query;
     }
 
     function getSortTimestamp(value) {
@@ -829,52 +816,48 @@
       dom.devisList.innerHTML = devisDocs.length ? devisDocs.map(renderDocumentCard).join("") : '<div class="empty">Aucun devis trouve pour ces filtres.</div>';
     }
 
+    async function apiJson(url, options = {}) {
+      const response = await fetch(url, {
+        cache: "no-store",
+        credentials: "same-origin",
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        }
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || payload.message || "Action documents indisponible.");
+      }
+      return payload;
+    }
+
     async function loadDocuments() {
       setStatus("Chargement des documents...");
-      await window.KentCommercialScope.load();
-      let query = supabaseClient
-        .from(DOCUMENTS_TABLE)
-        .select("*")
-        .order("date_document", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(1000);
-      query = applyCommercialScope(query);
-      const { data, error } = await query;
-
-      if (error) {
+      try {
+        const payload = await apiJson("/api/documents-commerciaux?limit=1000&offset=0");
+        state.documents = Array.isArray(payload.documents) ? payload.documents : [];
+        render();
+        setStatus(`${state.documents.length} document(s) charge(s).`);
+      } catch (error) {
         state.documents = [];
         render();
-        setStatus(`Impossible de charger les documents. Lance le SQL Supabase si ce n'est pas encore fait. Detail: ${error.message}`, "warn");
-        return;
+        setStatus(`Impossible de charger les documents : ${error.message}`, "warn");
       }
-
-      state.documents = data || [];
-      render();
-      setStatus(`${state.documents.length} document(s) charge(s).`);
     }
 
     async function fetchAllDocumentsForExport() {
-      await window.KentCommercialScope.load();
       const pageSize = 1000;
-      let from = 0;
+      let offset = 0;
       const all = [];
 
       while (true) {
-        const to = from + pageSize - 1;
-        let query = supabaseClient
-          .from(DOCUMENTS_TABLE)
-          .select("*")
-          .order("date_document", { ascending: true })
-          .order("created_at", { ascending: true })
-          .range(from, to);
-        query = applyCommercialScope(query);
-        const { data, error } = await query;
-
-        if (error) throw error;
-        const batch = data || [];
+        const payload = await apiJson(`/api/documents-commerciaux?limit=${pageSize}&offset=${offset}`);
+        const batch = Array.isArray(payload.documents) ? payload.documents : [];
         all.push(...batch);
-        if (batch.length < pageSize) break;
-        from += pageSize;
+        if (!payload.meta?.hasMore || batch.length < pageSize) break;
+        offset += pageSize;
       }
 
       return all;
@@ -947,20 +930,17 @@
           setStatus(`Export ${index + 1}/${docs.length} : ${label}`);
 
           try {
-            if (!doc.storage_path) throw new Error("storage_path manquant");
-            const { data, error } = await supabaseClient.storage
-              .from(doc.storage_bucket || DOCUMENTS_BUCKET)
-              .createSignedUrl(doc.storage_path, 300);
-            if (error || !data?.signedUrl) throw new Error(error?.message || "lien signe indisponible");
+            const linkPayload = await apiJson(`/api/documents-commerciaux?action=download&id=${encodeURIComponent(doc.id)}&expiresIn=300`);
+            if (!linkPayload.signedUrl) throw new Error("lien signe indisponible");
 
-            const response = await fetch(data.signedUrl);
+            const response = await fetch(linkPayload.signedUrl);
             if (!response.ok) throw new Error(`telechargement impossible (${response.status})`);
 
             const blob = await response.blob();
             zip.file(buildArchivePath(doc, usedPaths), await blob.arrayBuffer());
             exported += 1;
           } catch (error) {
-            errors.push(`${label} | ${doc.storage_path || "chemin inconnu"} | ${error?.message || "erreur inconnue"}`);
+            errors.push(`${label} | ${error?.message || "erreur inconnue"}`);
           }
         }
 
@@ -999,18 +979,18 @@
       const doc = findDocument(id);
       if (!doc) return;
       setStatus(`Preparation du telechargement : ${doc.nom_fichier || "document.pdf"}...`);
-      const { data, error } = await supabaseClient.storage
-        .from(doc.storage_bucket || DOCUMENTS_BUCKET)
-        .createSignedUrl(doc.storage_path, 60);
-      if (error || !data?.signedUrl) {
-        setStatus(`Impossible de preparer le telechargement : ${error?.message || "lien indisponible"}`, "error");
+      let payload;
+      try {
+        payload = await apiJson(`/api/documents-commerciaux?action=download&id=${encodeURIComponent(id)}&expiresIn=60`);
+      } catch (error) {
+        setStatus(`Impossible de preparer le telechargement : ${error.message}`, "error");
         return;
       }
       const link = document.createElement("a");
-      link.href = data.signedUrl;
+      link.href = payload.signedUrl;
       link.target = "_blank";
       link.rel = "noopener";
-      link.download = doc.nom_fichier || "document.pdf";
+      link.download = payload.filename || doc.nom_fichier || "document.pdf";
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1041,18 +1021,10 @@
       setStatus(`Suppression de ${doc.nom_fichier || "document.pdf"}...`);
 
       try {
-        const { error: storageError } = await supabaseClient.storage
-          .from(doc.storage_bucket || DOCUMENTS_BUCKET)
-          .remove([doc.storage_path]);
-        if (storageError) throw new Error(`PDF non supprime du stockage : ${storageError.message}`);
-
-        let tableQuery = supabaseClient
-          .from(DOCUMENTS_TABLE)
-          .delete()
-          .eq("id", doc.id);
-        tableQuery = applyCommercialScope(tableQuery);
-        const { error: tableError } = await tableQuery;
-        if (tableError) throw new Error(`PDF supprime, mais ligne historique non supprimee : ${tableError.message}`);
+        await apiJson("/api/documents-commerciaux", {
+          method: "DELETE",
+          body: JSON.stringify({ id: doc.id })
+        });
 
         state.documents = state.documents.filter(item => String(item.id) !== String(id));
         render();
@@ -1077,21 +1049,21 @@
       render();
       setStatus(`Document marqu\u00e9 : ${STATUS_LABELS[status]}.`);
 
-      let query = supabaseClient
-        .from(DOCUMENTS_TABLE)
-        .update({
-          statut_validation: status,
-          valide: status === DOCUMENT_STATUS.VALIDE
-        })
-        .eq("id", id);
-      query = applyCommercialScope(query);
-      const { error } = await query;
-
-      if (error) {
+      try {
+        const payload = await apiJson("/api/documents-commerciaux", {
+          method: "PATCH",
+          body: JSON.stringify({ id, status })
+        });
+        if (payload.document) {
+          const index = state.documents.findIndex(item => String(item.id) === String(id));
+          if (index >= 0) state.documents[index] = payload.document;
+          render();
+        }
+      } catch (error) {
         doc.statut_validation = previousStatus;
         doc.valide = previousValide;
         render();
-        setStatus(`Impossible d'enregistrer le statut. Lance la mise a jour SQL si besoin. Detail: ${error.message}`, "error");
+        setStatus(`Impossible d'enregistrer le statut : ${error.message}`, "error");
       }
     }
 
