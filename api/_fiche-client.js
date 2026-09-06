@@ -886,20 +886,49 @@ function isMissingAccessTable(error) {
 }
 
 async function readBody(request) {
-  if (request.body && typeof request.body === "object" && !Buffer.isBuffer(request.body)) return request.body;
+  if (isParsedJsonBody(request.body)) return request.body;
   if (typeof request.body === "string") return parseJsonBody(request.body);
   if (Buffer.isBuffer(request.body)) return parseJsonBody(request.body.toString("utf8"));
+  if (request.body) return parseJsonBody(await readStreamText(request.body));
   if (!request[Symbol.asyncIterator]) return {};
 
+  return parseJsonBody(await readStreamText(request));
+}
+
+async function readStreamText(stream) {
   const chunks = [];
   let size = 0;
-  for await (const chunk of request) {
-    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-    size += buffer.length;
-    if (size > MAX_STORAGE_UPLOAD_BYTES * 2) throw badRequest("Requête trop volumineuse.");
-    chunks.push(buffer);
+  if (stream && stream[Symbol.asyncIterator]) {
+    for await (const chunk of stream) {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      size += buffer.length;
+      if (size > MAX_STORAGE_UPLOAD_BYTES * 2) throw badRequest("Requête trop volumineuse.");
+      chunks.push(buffer);
+    }
+    return Buffer.concat(chunks).toString("utf8");
   }
-  return parseJsonBody(Buffer.concat(chunks).toString("utf8"));
+
+  if (stream && typeof stream.getReader === "function") {
+    const reader = stream.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const buffer = Buffer.isBuffer(value) ? value : Buffer.from(value);
+      size += buffer.length;
+      if (size > MAX_STORAGE_UPLOAD_BYTES * 2) throw badRequest("Requête trop volumineuse.");
+      chunks.push(buffer);
+    }
+    return Buffer.concat(chunks).toString("utf8");
+  }
+
+  return "";
+}
+
+function isParsedJsonBody(value) {
+  if (!value || typeof value !== "object" || Buffer.isBuffer(value)) return false;
+  if (typeof value.pipe === "function" || typeof value.on === "function") return false;
+  if (typeof value.getReader === "function" || value[Symbol.asyncIterator]) return false;
+  return Array.isArray(value) || Object.getPrototypeOf(value) === Object.prototype;
 }
 
 function parseJsonBody(raw) {
