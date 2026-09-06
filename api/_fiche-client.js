@@ -53,7 +53,7 @@ export default async function handler(request, response) {
       return;
     }
 
-    const commercialId = normalizeUuid(guard.session.dbUserId);
+    const commercialId = await resolveCommercialId(guard.session);
     if (!commercialId) {
       throw forbidden("Compte commercial non rattaché. Reconnecte-toi avec un utilisateur commercial valide.");
     }
@@ -561,6 +561,44 @@ async function getCommercialClientIds(config, commercialId) {
   return rows.map((row) => normalizeText(row.id)).filter(Boolean);
 }
 
+async function resolveCommercialId(session) {
+  const directId = normalizeUuid(session?.dbUserId);
+  if (directId) return directId;
+
+  const lookupValues = uniqueValues([
+    session?.userId,
+    session?.name
+  ].map(normalizeLookupValue)).filter(Boolean);
+  if (!lookupValues.length) return "";
+
+  const rows = await fetchPortalCommercials();
+
+  const found = rows.find((row) => {
+    const candidates = [
+      row?.id,
+      row?.identifier,
+      row?.identifier_lookup,
+      row?.display_name
+    ].map(normalizeLookupValue);
+    return candidates.some((candidate) => candidate && lookupValues.includes(candidate));
+  });
+
+  return normalizeUuid(found?.id);
+}
+
+async function fetchPortalCommercials() {
+  try {
+    return await fetchAllRows("portal_users", "id,identifier,identifier_lookup,display_name,role", {
+      filters: ["role=eq.commercial"]
+    });
+  } catch (error) {
+    if (!isMissingColumn(error, "identifier_lookup")) throw error;
+    return fetchAllRows("portal_users", "id,identifier,display_name,role", {
+      filters: ["role=eq.commercial"]
+    });
+  }
+}
+
 async function getPlaqueAccess(config, commercialId) {
   const id = normalizeUuid(commercialId);
   if (!id) return { ready: false, ids: [] };
@@ -808,6 +846,13 @@ function normalizeUuid(value) {
   return UUID_RE.test(text) ? text : "";
 }
 
+function normalizeLookupValue(value) {
+  return normalizeText(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function normalizeScalar(value) {
   return normalizeText(value);
 }
@@ -890,21 +935,43 @@ function isMissingAccessTable(error) {
     message.includes("42p01");
 }
 
+function isMissingColumn(error, columnName) {
+  const column = normalizeText(columnName).toLowerCase();
+  const message = normalizeText(`${error?.message || ""} ${error?.payload?.message || ""} ${error?.payload?.code || ""}`).toLowerCase();
+  return Boolean(column) && (
+    message.includes(column) ||
+    message.includes("42703") ||
+    message.includes("schema cache")
+  );
+}
+
 async function readBody(request) {
-  if (request.body && typeof request.body === "object" && !Buffer.isBuffer(request.body)) return request.body;
+  if (isParsedJsonBody(request.body)) return request.body;
   if (typeof request.body === "string") return parseJsonBody(request.body);
   if (Buffer.isBuffer(request.body)) return parseJsonBody(request.body.toString("utf8"));
+  if (request.body && request.body[Symbol.asyncIterator]) return parseJsonBody(await readStreamText(request.body));
   if (!request[Symbol.asyncIterator]) return {};
 
+  return parseJsonBody(await readStreamText(request));
+}
+
+async function readStreamText(stream) {
   const chunks = [];
   let size = 0;
-  for await (const chunk of request) {
+  for await (const chunk of stream) {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     size += buffer.length;
     if (size > MAX_STORAGE_UPLOAD_BYTES * 2) throw badRequest("Requête trop volumineuse.");
     chunks.push(buffer);
   }
-  return parseJsonBody(Buffer.concat(chunks).toString("utf8"));
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+function isParsedJsonBody(value) {
+  if (!value || typeof value !== "object" || Buffer.isBuffer(value)) return false;
+  if (typeof value.pipe === "function" || typeof value.on === "function") return false;
+  if (typeof value.getReader === "function" || value[Symbol.asyncIterator]) return false;
+  return Array.isArray(value) || Object.getPrototypeOf(value) === Object.prototype;
 }
 
 function parseJsonBody(raw) {
