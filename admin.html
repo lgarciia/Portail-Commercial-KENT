@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Espace Admin</title>
   <script src="./shared-ui.js"></script>
+  <script src="./kent-modal.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./reel-supabase.js"></script>
   <link rel="stylesheet" href="./shared-theme.css">
@@ -686,6 +687,33 @@
       border:1px solid rgba(245,158,11,.25);border-radius:16px;background:rgba(245,158,11,.08);
       color:#fde68a;padding:10px 12px;font-size:12px;line-height:1.45;font-weight:850;margin-top:10px;
     }
+    .ref-admin-grid{display:grid;grid-template-columns:minmax(360px,.86fr) minmax(560px,1.14fr);gap:12px;align-items:start}
+    .ref-admin-grid.single{grid-template-columns:1fr}
+    .ref-admin-stack{display:grid;gap:12px}
+    .ref-admin-row{
+      display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;
+      border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(255,255,255,.04);padding:10px 12px;
+    }
+    .ref-admin-row strong,.ref-admin-row span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ref-admin-row span{margin-top:3px;color:var(--muted);font-size:12px}
+    .plaque-access-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
+    .plaque-access-option{
+      display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.10);border-radius:16px;
+      background:rgba(255,255,255,.04);padding:10px 12px;min-width:0;cursor:pointer;
+    }
+    .plaque-access-option input{width:18px;height:18px;accent-color:#0f766e;flex:0 0 auto}
+    .plaque-access-option span{min-width:0}
+    .plaque-access-option strong,.plaque-access-option small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .plaque-access-option small{margin-top:2px;color:var(--muted);font-size:11px}
+    .ref-admin-warning{
+      border:1px solid rgba(245,158,11,.28);border-radius:16px;background:rgba(245,158,11,.09);
+      color:#fde68a;padding:10px 12px;font-size:12px;font-weight:850;line-height:1.45;
+    }
+    .ref-admin-table-wrap{overflow:auto;max-height:330px;border:1px solid rgba(255,255,255,.09);border-radius:16px;margin-top:10px}
+    .ref-admin-preview-table{min-width:680px}
+    .ref-admin-preview-table th,.ref-admin-preview-table td{font-size:12px;padding:8px 9px}
+    .ref-admin-metrics{margin-top:8px}
+    .field.compact-row{grid-template-columns:minmax(130px,.45fr) minmax(0,1fr);align-items:end}
     .layout{
       display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,.95fr);gap:16px;
     }
@@ -1409,6 +1437,17 @@
       border-color:#b8c6d9;
       background:#eef3f8;
     }
+    .ref-admin-row,
+    .plaque-access-option,
+    .ref-admin-table-wrap{
+      border-color:#d6e1ee;
+      background:#f8fafc;
+    }
+    .ref-admin-warning{
+      border-color:#fed7aa;
+      background:#fff7ed;
+      color:#9a3412;
+    }
     dialog{
       border-color:var(--line-strong);
       background:#fff;
@@ -1603,9 +1642,9 @@
         <div class="admin-section-tabs" aria-label="Navigation donn&eacute;es admin">
           <button class="admin-section-tab active" type="button" data-admin-subtab="imports">Imports r&eacute;els</button>
           <button class="admin-section-tab" type="button" data-admin-subtab="data-control">Contr&ocirc;le donn&eacute;es</button>
-          <button class="admin-section-tab" type="button" disabled>Tarifs <em>Bient&ocirc;t</em></button>
-          <button class="admin-section-tab" type="button" disabled>Conditionnements <em>Bient&ocirc;t</em></button>
-          <button class="admin-section-tab" type="button" disabled>R&eacute;f&eacute;rentiels <em>Bient&ocirc;t</em></button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="tarifs-admin">Tarifs</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="conditionnements-admin">Conditionnements</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="referentiels-admin">R&eacute;f&eacute;rentiels</button>
         </div>
 
         <div class="import-admin-grid">
@@ -1664,6 +1703,218 @@
             </div>
             <div class="import-history" data-admin-import-history>
               <div class="empty">Ouvre la vue Import pour charger l'historique.</div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="tarifs-admin">
+      <section class="import-admin-shell">
+        <div class="import-admin-head">
+          <div>
+            <span class="badge">Tarifs</span>
+            <h2>Import tarifs par plaque</h2>
+            <p>
+              Choisis une plaque tarifaire, pr&eacute;visualise le fichier Excel, puis remplace uniquement les tarifs de cette plaque.
+              Les clients, visites, budgets et historiques restent inchang&eacute;s.
+            </p>
+          </div>
+          <div class="import-admin-controls">
+            <button class="btn green" type="button" data-ref-admin-refresh>Synchroniser</button>
+          </div>
+        </div>
+
+        <div class="admin-section-tabs" aria-label="Navigation donn&eacute;es admin">
+          <button class="admin-section-tab" type="button" data-admin-subtab="imports">Imports r&eacute;els</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="data-control">Contr&ocirc;le donn&eacute;es</button>
+          <button class="admin-section-tab active" type="button" data-admin-subtab="tarifs-admin">Tarifs</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="conditionnements-admin">Conditionnements</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="referentiels-admin">R&eacute;f&eacute;rentiels</button>
+        </div>
+
+        <div class="ref-admin-grid">
+          <article class="import-card">
+            <h3>Nouvel import tarif</h3>
+            <p>Format par d&eacute;faut : <b>R&eacute;f&eacute;rence</b>, <b>D&eacute;signation produit</b>, <b>Tarif</b>. PSA Revente garde sa lecture sp&eacute;cifique.</p>
+            <div class="import-form-grid">
+              <div class="field">
+                <label>Secteur</label>
+                <select data-tariff-sector>
+                  <option value="auto">Automobile</option>
+                  <option value="industrie">Industrie</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Plaque tarif</label>
+                <select data-tariff-plaque>
+                  <option value="">Chargement...</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label>Fichier Excel</label>
+                <input class="import-file" type="file" accept=".xlsx,.xls,.csv" data-tariff-file>
+              </div>
+            </div>
+            <div class="import-actions">
+              <button class="btn small" type="button" data-tariff-template>Mod&egrave;le Excel</button>
+              <button class="btn small primary" type="button" data-tariff-preview>Pr&eacute;visualiser</button>
+              <button class="btn small green" type="button" data-tariff-save disabled>Importer</button>
+            </div>
+            <div class="import-note" data-tariff-hint>
+              S&eacute;lectionne une plaque pour afficher la m&eacute;thode de lecture.
+            </div>
+          </article>
+
+          <article class="import-card">
+            <div class="panel-head" style="margin-bottom:8px">
+              <div>
+                <h3>Pr&eacute;visualisation tarif</h3>
+                <p>Contr&ocirc;le les lignes reconnues avant de remplacer les tarifs de la plaque.</p>
+              </div>
+            </div>
+            <div class="import-preview" data-tariff-preview-box></div>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="conditionnements-admin">
+      <section class="import-admin-shell">
+        <div class="import-admin-head">
+          <div>
+            <span class="badge">Conditionnements</span>
+            <h2>Import conditionnements BDC</h2>
+            <p>
+              Les conditionnements sont communs &agrave; tous les commerciaux. Le module lit toutes les feuilles utiles et cherche les colonnes
+              <b>Ref.</b> et <b>Embal.</b>.
+            </p>
+          </div>
+          <div class="import-admin-controls">
+            <button class="btn green" type="button" data-ref-admin-refresh>Synchroniser</button>
+          </div>
+        </div>
+
+        <div class="admin-section-tabs" aria-label="Navigation donn&eacute;es admin">
+          <button class="admin-section-tab" type="button" data-admin-subtab="imports">Imports r&eacute;els</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="data-control">Contr&ocirc;le donn&eacute;es</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="tarifs-admin">Tarifs</button>
+          <button class="admin-section-tab active" type="button" data-admin-subtab="conditionnements-admin">Conditionnements</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="referentiels-admin">R&eacute;f&eacute;rentiels</button>
+        </div>
+
+        <div class="ref-admin-grid">
+          <article class="import-card">
+            <h3>Nouvel import conditionnement</h3>
+            <p>Choisis le secteur &agrave; remplacer. L'import ne touche pas aux clients, visites, produits, tarifs ou budgets.</p>
+            <div class="import-form-grid">
+              <div class="field full">
+                <label>Secteur</label>
+                <select data-cond-sector>
+                  <option value="auto">Automobile</option>
+                  <option value="industrie">Industrie</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label>Fichier Excel</label>
+                <input class="import-file" type="file" accept=".xlsx,.xls,.csv" data-cond-file>
+              </div>
+            </div>
+            <div class="import-actions">
+              <button class="btn small" type="button" data-cond-template>Mod&egrave;le Excel</button>
+              <button class="btn small primary" type="button" data-cond-preview>Pr&eacute;visualiser</button>
+              <button class="btn small green" type="button" data-cond-save disabled>Importer</button>
+            </div>
+            <div class="import-note">
+              En cas d'erreur pendant l'import, l'API tente de restaurer les anciennes lignes de conditionnement.
+            </div>
+          </article>
+
+          <article class="import-card">
+            <div class="panel-head" style="margin-bottom:8px">
+              <div>
+                <h3>Pr&eacute;visualisation conditionnement</h3>
+                <p>Les doublons de r&eacute;f&eacute;rence gardent la derni&egrave;re ligne lue, comme dans l'ancien import.</p>
+              </div>
+            </div>
+            <div class="import-preview" data-cond-preview-box></div>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section class="admin-view" data-admin-view="referentiels-admin">
+      <section class="import-admin-shell">
+        <div class="import-admin-head">
+          <div>
+            <span class="badge">R&eacute;f&eacute;rentiels</span>
+            <h2>Plaques et droits commerciaux</h2>
+            <p>
+              Cr&eacute;e les plaques tarifaires puis d&eacute;finis quelles plaques chaque commercial peut utiliser dans ses fiches clients et ses tarifs.
+            </p>
+          </div>
+          <div class="import-admin-controls">
+            <button class="btn green" type="button" data-ref-admin-refresh>Synchroniser</button>
+          </div>
+        </div>
+
+        <div class="admin-section-tabs" aria-label="Navigation donn&eacute;es admin">
+          <button class="admin-section-tab" type="button" data-admin-subtab="imports">Imports r&eacute;els</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="data-control">Contr&ocirc;le donn&eacute;es</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="tarifs-admin">Tarifs</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="conditionnements-admin">Conditionnements</button>
+          <button class="admin-section-tab active" type="button" data-admin-subtab="referentiels-admin">R&eacute;f&eacute;rentiels</button>
+        </div>
+
+        <div class="ref-admin-grid">
+          <article class="import-card">
+            <h3>Créer une plaque</h3>
+            <p>Une nouvelle plaque utilise le format d'import standard : R&eacute;f&eacute;rence, D&eacute;signation produit, Tarif.</p>
+            <div class="import-form-grid">
+              <div class="field">
+                <label>Secteur</label>
+                <select data-ref-plaque-sector>
+                  <option value="auto">Automobile</option>
+                  <option value="industrie">Industrie</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Nom de plaque</label>
+                <input type="text" placeholder="Ex : PSA Tarif Revente" data-ref-plaque-name>
+              </div>
+            </div>
+            <div class="import-actions">
+              <button class="btn small green" type="button" data-ref-create-plaque>Créer la plaque</button>
+            </div>
+            <div class="ref-admin-stack" data-ref-plaque-list style="margin-top:12px">
+              <div class="empty">Chargement des plaques...</div>
+            </div>
+          </article>
+
+          <article class="import-card">
+            <h3>Droits plaques par commercial</h3>
+            <p>Guillaume conserve toutes les plaques actuelles via le SQL initial. Les nouveaux commerciaux restent vides tant que l'admin ne les configure pas.</p>
+            <div class="import-form-grid">
+              <div class="field">
+                <label>Commercial</label>
+                <select data-ref-access-commercial>
+                  <option value="">Chargement...</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Secteur</label>
+                <select data-ref-access-sector>
+                  <option value="auto">Automobile</option>
+                  <option value="industrie">Industrie</option>
+                </select>
+              </div>
+            </div>
+            <div class="ref-admin-warning" data-ref-access-warning hidden></div>
+            <div class="plaque-access-list" data-ref-access-list>
+              <div class="empty">Sélectionne un commercial pour gérer ses plaques.</div>
+            </div>
+            <div class="import-actions">
+              <button class="btn small green" type="button" data-ref-save-access disabled>Enregistrer les droits</button>
             </div>
           </article>
         </div>
@@ -1819,9 +2070,9 @@
         <div class="admin-section-tabs" aria-label="Navigation donn&eacute;es admin">
           <button class="admin-section-tab" type="button" data-admin-subtab="imports">Imports r&eacute;els</button>
           <button class="admin-section-tab active" type="button" data-admin-subtab="data-control">Contr&ocirc;le donn&eacute;es</button>
-          <button class="admin-section-tab" type="button" disabled>Tarifs <em>Bient&ocirc;t</em></button>
-          <button class="admin-section-tab" type="button" disabled>Conditionnements <em>Bient&ocirc;t</em></button>
-          <button class="admin-section-tab" type="button" disabled>R&eacute;f&eacute;rentiels <em>Bient&ocirc;t</em></button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="tarifs-admin">Tarifs</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="conditionnements-admin">Conditionnements</button>
+          <button class="admin-section-tab" type="button" data-admin-subtab="referentiels-admin">R&eacute;f&eacute;rentiels</button>
         </div>
         <div class="control-head">
           <div>
@@ -3023,10 +3274,11 @@
         state.activeView = view || "pilotage";
         const financeViews = ["finance", "budgets-global", "reporting-cumul"];
         const organizationViews = ["utilisateurs", "rattachements", "secteurs"];
-        els.wrap.classList.toggle("finance-mode", ["finance", "imports", "budgets-global", "data-control", "reporting-cumul", "utilisateurs", "rattachements", "secteurs"].includes(state.activeView));
+        const importViews = ["imports", "data-control", "tarifs-admin", "conditionnements-admin", "referentiels-admin"];
+        els.wrap.classList.toggle("finance-mode", ["finance", ...importViews, "budgets-global", "reporting-cumul", "utilisateurs", "rattachements", "secteurs"].includes(state.activeView));
         els.wrap.classList.toggle("finance-workspace-mode", financeViews.includes(state.activeView));
         els.wrap.classList.toggle("organization-workspace-mode", organizationViews.includes(state.activeView));
-        const primaryView = state.activeView === "data-control"
+        const primaryView = importViews.includes(state.activeView)
           ? "imports"
           : (financeViews.includes(state.activeView) ? "finance" : (organizationViews.includes(state.activeView) ? "organisation" : state.activeView));
         els.tabs.forEach(function(tab){
@@ -6177,5 +6429,6 @@
       }
     })();
   </script>
+  <script src="./admin-referentiels.js"></script>
 </body>
 </html>

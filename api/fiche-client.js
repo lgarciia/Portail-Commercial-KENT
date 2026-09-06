@@ -12,6 +12,7 @@ const MAX_STORAGE_UPLOAD_BYTES = 8 * 1024 * 1024;
 const DOCUMENTS_TABLE = "documents_commerciaux";
 const DOCUMENTS_BUCKET = "documents-commerciaux";
 const PROMO_ORIGIN = "promo_manuelle";
+const ACCESS_TABLE = "commercial_plaque_access";
 
 const SECTORS = {
   auto: {
@@ -116,6 +117,22 @@ async function handleDataRequest(body, config, commercialId, session) {
 }
 
 async function runSelect({ table, select, filters, orders, range, config, commercialId }) {
+  if (table.kind === "plaques") {
+    const access = await getPlaqueAccess(config, commercialId);
+    if (access.ready) {
+      if (!access.ids.length) return [];
+      filters = [...filters, { op: "in", column: "id", value: access.ids }];
+    }
+  }
+
+  if (table.kind === "tariffs") {
+    const access = await getPlaqueAccess(config, commercialId);
+    if (access.ready) {
+      if (!access.ids.length) return [];
+      filters = [...filters, { op: "in", column: "plaque_id", value: access.ids }];
+    }
+  }
+
   if (table.kind === "accounts") {
     const clientIds = await getCommercialClientIds(config, commercialId);
     if (!clientIds.length) return [];
@@ -148,7 +165,8 @@ async function runInsert({ table, select, payload, single, config, commercialId,
 
   let sanitizedRows = rows;
   if (table.kind === "clients") {
-    sanitizedRows = rows.map((row) => sanitizeClientPayload(row, config, commercialId, session));
+    sanitizedRows = [];
+    for (const row of rows) sanitizedRows.push(await sanitizeClientPayload(row, config, commercialId, session));
   } else if (table.kind === "visits") {
     sanitizedRows = [];
     for (const row of rows) sanitizedRows.push(await sanitizeVisitPayload(row, config, commercialId, session));
@@ -201,6 +219,10 @@ async function runUpdate({ table, select, filters, payload, single, config, comm
     if (!ids.length) throw forbidden("Modification client limitée à un client précis.");
     await ensureClientsBelongToCommercial(config, commercialId, ids);
     payload = sanitizeClientUpdatePayload(payload);
+    if (hasOwn(payload, "plaque_id")) {
+      if (!payload.plaque_id) throw badRequest("Plaque client invalide.");
+      await ensurePlaqueAllowed(config, commercialId, payload.plaque_id);
+    }
     filters = [...filters, { op: "eq", column: "commercial_user_id", value: commercialId }];
   } else if (table.kind === "accounts") {
     payload = sanitizeAccountUpdatePayload(payload);
@@ -340,12 +362,13 @@ function finalizeReturnedData(data, table, commercialId, config) {
   });
 }
 
-function sanitizeClientPayload(row, config, commercialId, session) {
+async function sanitizeClientPayload(row, config, commercialId, session) {
   const payload = sanitizeClientUpdatePayload(row);
   payload.nom = normalizeRequiredText(row?.nom, "Nom client obligatoire.");
   payload.numero_compte = normalizeRequiredText(row?.numero_compte, "Numéro client obligatoire.");
   payload.plaque_id = normalizeUuid(row?.plaque_id);
   if (!payload.plaque_id) throw badRequest("Plaque client invalide.");
+  await ensurePlaqueAllowed(config, commercialId, payload.plaque_id);
   payload.commercial_user_id = commercialId;
   payload.commercial_identifier = normalizeText(session?.userId) || null;
   payload.commercial_name = normalizeText(session?.name) || null;
@@ -531,6 +554,37 @@ async function getCommercialClientIds(config, commercialId) {
     filters: [`commercial_user_id=eq.${encodeURIComponent(commercialId)}`]
   });
   return rows.map((row) => normalizeText(row.id)).filter(Boolean);
+}
+
+async function getPlaqueAccess(config, commercialId) {
+  const id = normalizeUuid(commercialId);
+  if (!id) return { ready: false, ids: [] };
+
+  try {
+    const rows = await fetchAllRows(ACCESS_TABLE, "plaque_id", {
+      filters: [
+        `commercial_user_id=eq.${encodeURIComponent(id)}`,
+        `secteur=eq.${encodeURIComponent(config.key)}`
+      ]
+    });
+    return {
+      ready: true,
+      ids: uniqueValues(rows.map((row) => normalizeText(row.plaque_id))).map(normalizeUuid).filter(Boolean)
+    };
+  } catch (error) {
+    if (isMissingAccessTable(error)) return { ready: false, ids: [] };
+    throw error;
+  }
+}
+
+async function ensurePlaqueAllowed(config, commercialId, plaqueId) {
+  const id = normalizeUuid(plaqueId);
+  if (!id) throw badRequest("Plaque client invalide.");
+  const access = await getPlaqueAccess(config, commercialId);
+  if (!access.ready) return;
+  if (!access.ids.includes(id)) {
+    throw forbidden("Plaque non autorisée pour ce commercial.");
+  }
 }
 
 async function getAuthorizedVisitIds(config, commercialId, visitIds) {
@@ -821,6 +875,14 @@ function normalizeConflictColumns(value) {
 
 function hasOwn(object, key) {
   return Object.prototype.hasOwnProperty.call(object || {}, key);
+}
+
+function isMissingAccessTable(error) {
+  const message = normalizeText(`${error?.message || ""} ${error?.payload?.message || ""} ${error?.payload?.code || ""}`).toLowerCase();
+  return message.includes("commercial_plaque_access") ||
+    message.includes("does not exist") ||
+    message.includes("schema cache") ||
+    message.includes("42p01");
 }
 
 async function readBody(request) {

@@ -618,7 +618,7 @@ async function loadPlaqueCatalog(force = false){
 
   const rows = await Promise.all(SOURCES.filter(sourceAllowed).map(async source => {
     try {
-      const plaques = await fetchPaged(source.tables.plaques, "id,nom", { order:{ column:"nom", ascending:true } });
+      const plaques = await fetchAllowedPlaquesForSource(source);
       return plaques.map(plaque => ({
         key: plaqueKey(source.key, plaque.id),
         id: String(plaque.id || ""),
@@ -636,6 +636,21 @@ async function loadPlaqueCatalog(force = false){
   plaqueCatalogKey = key;
   renderPlaqueOptions();
   return plaqueCatalog;
+}
+
+async function fetchAllowedPlaquesForSource(source){
+  const response = await fetch(`/api/mes-tarifs?secteur=${encodeURIComponent(source.key)}`, {
+    credentials:"same-origin",
+    cache:"no-store"
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload?.ok === false) {
+    throw new Error(payload?.error || `Plaques ${source.label} indisponibles`);
+  }
+  return (payload.plaques || []).map(plaque => ({
+    id:String(plaque.id || ""),
+    nom:plaque.nom || plaque.name || "Plaque"
+  }));
 }
 
 function renderPlaqueOptions(){
