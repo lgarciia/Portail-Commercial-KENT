@@ -124,7 +124,7 @@
           <h2>Table industrie_conditionnements_produits</h2>
           <div class="muted" id="tableMeta">Chargement des données...</div>
         </div>
-        <div class="status-bar" id="statusBar">Connexion à Supabase...</div>
+        <div class="status-bar" id="statusBar">Connexion à l'espace sécurisé...</div>
       </div>
       <div class="table-wrapper">
         <table>
@@ -154,14 +154,8 @@
       </div>
     </section>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const PAGE_SIZE = 1000;
-    const TABLE_NAME = "industrie_conditionnements_produits";
+<script>
+    const CONDITIONNEMENTS_API_URL = "/api/mes-conditionnements?secteur=industrie";
 
     const state = {
       rows: []
@@ -218,23 +212,33 @@
     }
 
     async function fetchAllRows() {
-      const rows = [];
-      let from = 0;
+      const payload = await apiJson(CONDITIONNEMENTS_API_URL);
+      return Array.isArray(payload.rows) ? payload.rows : [];
+    }
 
-      while (true) {
-        const { data, error } = await supabaseClient
-          .from(TABLE_NAME)
-          .select("*")
-          .order("ref_5", { ascending: true })
-          .range(from, from + PAGE_SIZE - 1);
-        if (error) throw error;
-        const page = Array.isArray(data) ? data : [];
-        rows.push(...page);
-        if (page.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
+    async function apiJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        cache: "no-store",
+        ...options,
+        headers: {
+          ...(options.body == null ? {} : { "Content-Type": "application/json" }),
+          ...(options.headers || {})
+        }
+      });
+      const text = await response.text();
+      let payload = null;
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          payload = { error: text };
+        }
       }
-
-      return rows;
+      if (!response.ok) {
+        throw new Error(payload?.error || `Erreur API ${response.status}`);
+      }
+      return payload || {};
     }
 
     function uniqueCount(key) {
@@ -255,7 +259,7 @@
       dom.statCategories.textContent = uniqueCount("categorie").toLocaleString("fr-FR");
       dom.statEmballages.textContent = uniqueCount("emballage").toLocaleString("fr-FR");
       dom.statLastImport.textContent = formatDateTime(getLastImport());
-      dom.tableMeta.textContent = `${state.rows.length.toLocaleString("fr-FR")} ligne(s) chargee(s) depuis Supabase.`;
+      dom.tableMeta.textContent = `${state.rows.length.toLocaleString("fr-FR")} ligne(s) chargée(s) depuis l'espace sécurisé.`;
     }
 
     function renderTable() {
@@ -289,13 +293,13 @@
         state.rows = await fetchAllRows();
         renderStats();
         renderTable();
-        setStatus(`${state.rows.length.toLocaleString("fr-FR")} ligne(s) chargee(s).`);
+        setStatus(`${state.rows.length.toLocaleString("fr-FR")} ligne(s) chargée(s).`);
       } catch (error) {
-        console.error("Erreur conditionnements Industrie:", error);
+        console.error("Erreur conditionnements:", error);
         state.rows = [];
         renderStats();
         dom.tableBody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Impossible de charger la table industrie_conditionnements_produits.</div></td></tr>';
-        setStatus(`Erreur Supabase: ${error.message || error}`);
+        setStatus(`Erreur chargement: ${error.message || error}`);
       }
     }
 

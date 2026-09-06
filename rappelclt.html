@@ -6,10 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mes rappels clients</title>
   <script src="./shared-ui.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./commercial-scope.js"></script>
-
-  <style>
+<style>
     * {
       box-sizing: border-box;
       margin: 0;
@@ -376,9 +373,7 @@
     </div>
   </div>
 <script>
-  const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const REMINDERS_API_URL = "/api/mes-rappels";
 
   const tableBody = document.getElementById("rappelTableBody");
   const searchInput = document.getElementById("searchInput");
@@ -435,16 +430,6 @@
     if (debugInfo) {
       debugInfo.textContent = text;
     }
-  }
-
-  function shouldScopeTable(tableName) {
-    return ["clients", "visites", "industrie_clients", "industrie_visites"].includes(tableName);
-  }
-
-  function applyCommercialScope(tableName, query) {
-    return shouldScopeTable(tableName) && window.KentCommercialScope
-      ? window.KentCommercialScope.applyToQuery(query)
-      : query;
   }
 
   function renderRows(rows, colorValue = "red") {
@@ -512,74 +497,13 @@
     renderRows(filtered, selectedColor);
     setStatus(
       filtered.length
-        ? `${filtered.length} resultat${filtered.length > 1 ? "s" : ""} (${getColorFilterLabel(selectedColor)})`
-        : `Aucun resultat (${getColorFilterLabel(selectedColor)})`
+        ? `${filtered.length} résultat${filtered.length > 1 ? "s" : ""} (${getColorFilterLabel(selectedColor)})`
+        : `Aucun résultat (${getColorFilterLabel(selectedColor)})`
     );
-  }
-
-  function mapById(array) {
-    const map = new Map();
-    for (const item of array) {
-      if (item && item.id !== undefined && item.id !== null) {
-        map.set(String(item.id), item);
-      }
-    }
-    return map;
   }
 
   function escapeJsArg(value) {
     return String(value || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-  }
-
-  async function fetchAllRows(tableName, columns = "*", options = {}) {
-    const pageSize = 1000;
-    let from = 0;
-    const all = [];
-
-    while (true) {
-      let query = supabaseClient
-        .from(tableName)
-        .select(columns)
-        .range(from, from + pageSize - 1);
-      query = applyCommercialScope(tableName, query);
-
-      if (options.orderBy) {
-        query = query.order(options.orderBy, {
-          ascending: options.ascending !== false
-        });
-      }
-
-      const { data, error } = await query;
-      if (error) throw new Error(`${tableName} : ${error.message}`);
-
-      const batch = Array.isArray(data) ? data : [];
-      all.push(...batch);
-
-      if (batch.length < pageSize) break;
-      from += pageSize;
-    }
-
-    return all;
-  }
-
-  function buildProductDisplay(produit, cmd) {
-    if (produit) {
-      const ref = String(produit.reference_produit || "").trim();
-      const nom = String(produit.nom || "").trim();
-      if (ref && nom) return `${ref} - ${nom}`;
-      return nom || ref || `[produit introuvable: ${String(cmd?.produit_id || "-")}]`;
-    }
-
-    const fallback =
-      cmd?.produit_nom ||
-      cmd?.nom_produit ||
-      cmd?.reference_produit ||
-      cmd?.reference ||
-      "";
-
-    return fallback
-      ? String(fallback)
-      : `[produit introuvable: ${String(cmd?.produit_id || "-")}]`;
   }
 
   function normalizeColor(value) {
@@ -595,36 +519,9 @@
     return colorValue === selectedColor;
   }
 
-  function buildReminderRows({ commandes, visites, clients, produits, sourceLabel, targetPage }) {
-    const visitesById = mapById(visites);
-    const clientsById = mapById(clients);
-    const produitsById = mapById(produits);
-
-    return commandes.map(cmd => {
-      const visite = visitesById.get(String(cmd.visite_id)) || null;
-      if (!visite) return null;
-      const client = clientsById.get(String(visite.client_id)) || null;
-      const produit = produitsById.get(String(cmd.produit_id)) || null;
-      const couleurNorm = normalizeColor(cmd.couleur);
-
-      return {
-        client_id: visite?.client_id || "",
-        client_nom: client?.nom || "[client introuvable]",
-        numero_compte: client?.numero_compte || "-",
-        produit_nom: buildProductDisplay(produit, cmd),
-        source_label: sourceLabel,
-        target_page: targetPage,
-        date_visite: visite?.date_visite || "",
-        note: visite?.note || "",
-        couleur_norm: couleurNorm
-      };
-    }).filter(row => row && TRACKED_COLORS.has(row.couleur_norm));
-  }
-
   async function loadRappels() {
     try {
       setStatus("Chargement...");
-      await window.KentCommercialScope.load();
 
       tableBody.innerHTML = `
         <tr>
@@ -632,50 +529,8 @@
         </tr>
       `;
 
-      const [
-        commandesAuto,
-        visitesAuto,
-        clientsAuto,
-        produitsAuto,
-        commandesIndustrie,
-        visitesIndustrie,
-        clientsIndustrie,
-        produitsIndustrie
-      ] = await Promise.all([
-        fetchAllRows("visite_commandes", "*"),
-        fetchAllRows("visites", "*"),
-        fetchAllRows("clients", "*"),
-        fetchAllRows("produits", "*"),
-        fetchAllRows("industrie_visite_commandes", "*"),
-        fetchAllRows("industrie_visites", "*"),
-        fetchAllRows("industrie_clients", "*"),
-        fetchAllRows("industrie_produits", "*")
-      ]);
-
-      allRows = [
-        ...buildReminderRows({
-          commandes: commandesAuto,
-          visites: visitesAuto,
-          clients: clientsAuto,
-          produits: produitsAuto,
-          sourceLabel: "Automobile",
-          targetPage: "ficherclt.html"
-        }),
-        ...buildReminderRows({
-          commandes: commandesIndustrie,
-          visites: visitesIndustrie,
-          clients: clientsIndustrie,
-          produits: produitsIndustrie,
-          sourceLabel: "Industrie",
-          targetPage: "ficherclt-industrie.html"
-        })
-      ]
-      .sort((a, b) => {
-        const da = a.date_visite ? new Date(a.date_visite).getTime() : 0;
-        const db = b.date_visite ? new Date(b.date_visite).getTime() : 0;
-        return db - da;
-      });
-
+      const payload = await apiJson(REMINDERS_API_URL);
+      allRows = Array.isArray(payload.rows) ? payload.rows : [];
       applyFilter();
 
     } catch (err) {
@@ -690,6 +545,31 @@
       updateCount(0, getColorFilterValue());
       setStatus("Erreur de chargement");
     }
+  }
+
+  async function apiJson(url, options = {}) {
+    const response = await fetch(url, {
+      credentials: "same-origin",
+      cache: "no-store",
+      ...options,
+      headers: {
+        ...(options.body == null ? {} : { "Content-Type": "application/json" }),
+        ...(options.headers || {})
+      }
+    });
+    const text = await response.text();
+    let payload = null;
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = { error: text };
+      }
+    }
+    if (!response.ok) {
+      throw new Error(payload?.error || `Erreur API ${response.status}`);
+    }
+    return payload || {};
   }
 
   function goToClient(clientId, targetPage = "ficherclt.html") {
