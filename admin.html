@@ -2023,12 +2023,19 @@
             <summary>Sources et règles de calcul <span data-cumul-check></span></summary>
             <div data-cumul-method></div>
           </details>
+          <div class="cumul-display-controls">
+            <label class="cumul-limit">Colonnes mensuelles<select data-cumul-columns aria-label="Colonnes mensuelles"><option value="detail">CA / Budget / Atteinte</option><option value="ca">CA uniquement</option></select></label>
+            <span>Montants en euros · Noms et en-têtes figés pendant le défilement.</span>
+          </div>
         </div>
         <div class="reporting-cumul-card">
           <section class="reporting-cumul-panel active" data-reporting-cumul-panel="projection">
             <div class="cumul-section-head">
-              <div><h3>Projection annuelle</h3><p>Ouvre un responsable, puis un commercial pour consulter ses mois.</p></div>
-              <button class="cumul-button" type="button" data-cumul-expand disabled>Déplier les équipes</button>
+              <div><h3>Projection annuelle</h3><p>Compare les commerciaux ligne par ligne, de janvier à décembre. Cumuls et projection à droite.</p></div>
+              <div class="cumul-table-actions">
+                <label class="cumul-limit">Lignes<select data-cumul-layout aria-label="Organisation des commerciaux"><option value="all">Tous les commerciaux</option><option value="groups">Par responsable</option></select></label>
+                <button class="cumul-button" type="button" data-cumul-expand disabled hidden>Replier les équipes</button>
+              </div>
             </div>
             <div data-cumul-projection></div>
           </section>
@@ -2036,7 +2043,7 @@
           <section class="reporting-cumul-panel" data-reporting-cumul-panel="top-ca">
             <div class="cumul-section-head">
               <div><h3>Top 100 CA</h3><p>Commerciaux classés par CA cumulé décroissant, dans le périmètre filtré.</p></div>
-              <label class="cumul-limit">Afficher<select data-cumul-limit aria-label="Nombre de commerciaux à afficher"><option value="100">100 premiers</option><option value="all">Tous les commerciaux</option></select></label>
+              <label class="cumul-limit">Afficher<select data-cumul-limit aria-label="Nombre de commerciaux à afficher"><option value="all">Tous les commerciaux</option><option value="100">100 premiers</option></select></label>
             </div>
             <div data-cumul-ranking></div>
           </section>

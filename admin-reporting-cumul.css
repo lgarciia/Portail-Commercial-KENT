@@ -68,6 +68,13 @@
 [data-cumul-app] .cumul-section-head p { margin: 0; font-size: 12px; color: var(--cumul-muted); }
 [data-cumul-app] .cumul-limit { display: flex; align-items: center; gap: 8px; }
 [data-cumul-app] .cumul-limit select { width: auto; }
+[data-cumul-app] .cumul-display-controls { display: flex; gap: 12px 24px; align-items: center; flex-wrap: wrap; padding: 0 0 18px; }
+[data-cumul-app] .cumul-display-controls > span { color: var(--cumul-muted); font-size: 11px; }
+[data-cumul-app] .cumul-table-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+[data-cumul-app] .cumul-matrix-shell { min-width: 0; }
+[data-cumul-app] .cumul-matrix-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 9px; color: var(--cumul-muted); font-size: 11px; }
+[data-cumul-app] .cumul-matrix-nav > div { display: flex; gap: 7px; }
+[data-cumul-app] .cumul-matrix-nav .cumul-button { min-height: 32px; padding: 5px 10px; }
 [data-cumul-app] .cumul-table-wrap { width: 100%; overflow: auto; border: 1px solid var(--cumul-line); border-radius: 12px; max-height: 72vh; }
 [data-cumul-app] .cumul-table { font-family: inherit; }
 [data-cumul-app] .cumul-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1040px; background: #fff; }
@@ -84,7 +91,7 @@
 [data-cumul-app] .cumul-table .cumul-strong { font-weight: 750; }
 [data-cumul-app] .cumul-table small { display: block; font-size: 10px; font-weight: 450; color: var(--cumul-muted); margin-top: 4px; }
 [data-cumul-app] .cumul-group { background: #f0f5f8; }
-[data-cumul-app] .cumul-row-button { display: flex; gap: 9px; align-items: center; width: 100%; min-height: 40px; padding: 0; border: 0; text-align: left; color: inherit; background: transparent; font-weight: 650; font-size: 12px; }
+[data-cumul-app] .cumul-row-button { position: relative; display: flex; gap: 9px; align-items: center; width: 100%; min-height: 40px; padding: 0; border: 0; text-align: left; color: inherit; background: transparent; font-weight: 650; font-size: 12px; }
 [data-cumul-app] .cumul-row-button:hover { color: var(--cumul-accent); }
 [data-cumul-app] .cumul-chevron { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: 0 0 24px; border: 1px solid #b9c7d3; border-radius: 6px; background: #fff; font-size: 15px; }
 [data-cumul-app] .cumul-seller .cumul-row-button { padding-left: 14px; }
@@ -98,22 +105,38 @@
 [data-cumul-app] .cumul-manager-name { max-width: 175px; overflow-wrap: anywhere; }
 [data-cumul-app] .cumul-ranking-table thead th:nth-child(2),
 [data-cumul-app] .cumul-ranking-table thead th:nth-child(3) { text-align: left; }
-[data-cumul-app] .cumul-detail > td { background: #f8fafc; padding: 18px 28px 24px; }
-[data-cumul-app] .cumul-detail-head { display: flex; align-items: center; gap: 15px; margin: 0 0 12px; }
-[data-cumul-app] .cumul-detail-head span { font-size: 11px; color: var(--cumul-muted); }
-[data-cumul-app] .cumul-month-table { width: 100%; border-collapse: collapse; }
-[data-cumul-app] .cumul-month-table thead th { position: static; background: #eaf0f5; z-index: auto; text-align: left; }
-[data-cumul-app] .cumul-month-table thead th:nth-child(n+3) { text-align: right; }
-[data-cumul-app] .cumul-month-table th,
-[data-cumul-app] .cumul-month-table td { font-size: 11px; padding: 8px 12px; }
-[data-cumul-app] .cumul-month-table .cumul-future td,
-[data-cumul-app] .cumul-month-table .cumul-future th { color: #66768a; }
+[data-cumul-app] .cumul-matrix { --cumul-name-width: 252px; --cumul-header-height: 60px; width: max-content; min-width: 100%; }
+[data-cumul-app] .cumul-matrix td { min-width: 110px; padding: 9px 10px; }
+[data-cumul-app] .cumul-matrix td[data-metric="achievement"] { min-width: 78px; }
+[data-cumul-app] .cumul-matrix .cumul-month-start,
+[data-cumul-app] .cumul-matrix .cumul-month-head { border-left: 1px solid #bdcbd8; }
+[data-cumul-app] .cumul-matrix thead tr:first-child th { height: var(--cumul-header-height); text-align: center; top: 0; z-index: 4; }
+[data-cumul-app] .cumul-matrix thead tr:nth-child(2) th { height: 30px; top: var(--cumul-header-height); z-index: 4; padding: 7px 10px; }
+[data-cumul-app] .cumul-matrix thead .cumul-month-head { font-size: 12px; text-transform: none; letter-spacing: 0; background: #e6edf4; }
+[data-cumul-app] .cumul-matrix thead .cumul-summary-head,
+[data-cumul-app] .cumul-matrix thead .cumul-summary-sub { background: #dcecea; color: #215b5c; }
+[data-cumul-app] .cumul-matrix .cumul-future { color: #68798a; background: #f5f7f9; }
+[data-cumul-app] .cumul-matrix th.cumul-fixed-name {
+  position: sticky; left: 0; top: auto; z-index: 3; width: var(--cumul-name-width); min-width: var(--cumul-name-width); max-width: var(--cumul-name-width);
+  background: #fff; border-right: 1px solid #b8c8d7; box-shadow: 3px 0 5px rgba(30, 55, 75, .06);
+}
+[data-cumul-app] .cumul-matrix thead tr:first-child th.cumul-fixed-name { z-index: 6; top: 0; text-align: left; background: #e6edf4; }
+[data-cumul-app] .cumul-matrix .cumul-group th.cumul-fixed-name { background: #eaf1f6; }
+[data-cumul-app] .cumul-matrix tfoot th.cumul-fixed-name { background: #e5eef3; }
+[data-cumul-app] .cumul-matrix tbody th.cumul-fixed-name { padding: 7px 10px; }
+[data-cumul-app] .cumul-matrix .cumul-seller:hover th.cumul-fixed-name { background: #f3f7fa; }
+/* Position clipped labels with their sticky cell when Chromium scrolls the wide table. */
+[data-cumul-app] .cumul-seller-label { position: relative; display: flex; align-items: center; gap: 9px; min-width: 0; }
+[data-cumul-app] .cumul-seller-label > span:not(.cumul-rank) { min-width: 0; }
+[data-cumul-app] .cumul-seller-label strong,
+[data-cumul-app] .cumul-seller-label small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-cumul-app] .cumul-seller-label strong { font-size: 12px; font-weight: 650; }
+[data-cumul-app] .cumul-seller-label .cumul-rank { flex-shrink: 0; }
 [data-cumul-app] .cumul-empty { padding: 30px 16px; border: 1px dashed var(--cumul-line); border-radius: 12px; color: var(--cumul-muted); font-size: 13px; text-align: center; }
 [data-cumul-app] .cumul-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (max-width: 1050px) {
   [data-cumul-app] .cumul-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   [data-cumul-app] .cumul-kpi > strong { font-size: 23px; }
-  [data-cumul-app] .cumul-section-head::after { content: "Fais défiler le tableau horizontalement pour voir tous les montants."; font-size: 11px; color: var(--cumul-muted); width: 100%; }
 }
 @media (max-width: 600px) {
   [data-cumul-app] .cumul-toolbar { gap: 10px; padding: 12px; }
@@ -125,6 +148,12 @@
   [data-cumul-app] .cumul-period { gap: 7px; flex-direction: column; align-items: start; }
   [data-cumul-app] .cumul-kpis { gap: 8px; }
   [data-cumul-app] .cumul-method summary span { display: block; margin-left: 16px; }
+  [data-cumul-app] .cumul-matrix { --cumul-name-width: 156px; }
+  [data-cumul-app] .cumul-matrix td { min-width: 104px; }
+  [data-cumul-app] .cumul-display-controls .cumul-limit { flex-wrap: wrap; }
+  [data-cumul-app] .cumul-matrix-nav { align-items: start; flex-direction: column; }
+  [data-cumul-app] .cumul-table-actions { width: 100%; }
+  [data-cumul-app] .cumul-table-actions .cumul-limit { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-cumul-app] .reporting-cumul-panel.active { animation: none; }

@@ -10,7 +10,7 @@ function initCumul(root) {
   const monthInput = form.elements.month;
   const managerInput = form.elements.manager;
   const searchInput = form.elements.search;
-  const state = { payload: null, settings: null, model: null, expanded: new Set(), details: new Set(), request: 0, controller: null };
+  const state = { payload: null, settings: null, model: null, collapsed: new Set(), request: 0, controller: null };
   const euro = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const percent = new Intl.NumberFormat("fr-FR", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const integer = new Intl.NumberFormat("fr-FR");
@@ -38,24 +38,31 @@ function initCumul(root) {
   searchInput.addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(render, 120); });
   $("[data-cumul-refresh]").addEventListener("click", load);
   $("[data-cumul-limit]").addEventListener("change", renderTables);
+  $("[data-cumul-layout]").addEventListener("change", renderTables);
+  $("[data-cumul-columns]").addEventListener("change", renderTables);
   $("[data-cumul-export]").addEventListener("click", exportExcel);
   $("[data-cumul-expand]").addEventListener("click", () => {
     if (!state.model) return;
-    const allOpen = state.model.groups.every(group => state.expanded.has(group.id));
-    state.model.groups.forEach(group => allOpen ? state.expanded.delete(group.id) : state.expanded.add(group.id));
+    const allOpen = state.model.groups.every(group => !state.collapsed.has(group.id));
+    state.model.groups.forEach(group => allOpen ? state.collapsed.add(group.id) : state.collapsed.delete(group.id));
     renderTables();
   });
   root.addEventListener("click", event => {
-    const button = event.target.closest("[data-cumul-group], [data-cumul-seller]");
+    const jump = event.target.closest("[data-cumul-jump]");
+    if (jump) {
+      const wrap = jump.closest(".cumul-matrix-shell").querySelector(".cumul-table-wrap");
+      const summary = wrap.querySelector("[data-cumul-summary-head]");
+      const nameWidth = wrap.querySelector(".cumul-fixed-name").getBoundingClientRect().width;
+      wrap.scrollLeft = jump.dataset.cumulJump === "start" ? 0 : summary.getBoundingClientRect().left - wrap.getBoundingClientRect().left + wrap.scrollLeft - nameWidth;
+      return;
+    }
+    const button = event.target.closest("[data-cumul-group]");
     if (!button || !state.model) return;
-    const isGroup = button.hasAttribute("data-cumul-group");
-    const id = isGroup ? button.dataset.cumulGroup : button.dataset.cumulSeller;
-    const set = isGroup ? state.expanded : state.details;
-    set.has(id) ? set.delete(id) : set.add(id);
+    const id = button.dataset.cumulGroup;
+    state.collapsed.has(id) ? state.collapsed.delete(id) : state.collapsed.add(id);
     const origin = button.closest("[data-reporting-cumul-panel]");
     renderTables();
-    const attribute = isGroup ? "data-cumul-group" : "data-cumul-seller";
-    [...origin.querySelectorAll(`[${attribute}]`)].find(item => item.getAttribute(attribute) === id)?.focus({ preventScroll: true });
+    [...origin.querySelectorAll("[data-cumul-group]")].find(item => item.dataset.cumulGroup === id)?.focus({ preventScroll: true });
   });
   if (root.closest("[data-admin-view]").classList.contains("active")) load();
 
@@ -204,59 +211,79 @@ function initCumul(root) {
   function renderTables() {
     const model = state.model;
     if (!model) return;
+    const positions = ["[data-cumul-projection]", "[data-cumul-ranking]"].map(selector => {
+      const wrap = $(selector).querySelector(".cumul-table-wrap");
+      return { selector, left: wrap?.scrollLeft || 0, top: wrap?.scrollTop || 0 };
+    });
+    const grouped = $("[data-cumul-layout]").value === "groups";
+    $("[data-cumul-expand]").hidden = !grouped;
     if (!model.rows.length) {
       const empty = '<div class="cumul-empty">Aucun commercial dans ce périmètre. Modifie le responsable ou la recherche.</div>';
       $("[data-cumul-projection]").innerHTML = empty;
       $("[data-cumul-ranking]").innerHTML = empty;
       return;
     }
-    $("[data-cumul-expand]").textContent = model.groups.every(group => state.expanded.has(group.id)) ? "Replier les équipes" : "Déplier les équipes";
-    const projectionBody = model.groups.map((group, groupIndex) => {
-      const open = state.expanded.has(group.id);
-      return `<tbody><tr class="cumul-group"><th scope="row"><button class="cumul-row-button" data-cumul-group="${escapeHtml(group.id)}" aria-expanded="${open}" aria-controls="cumul-team-${groupIndex}">
-        <span class="cumul-chevron" aria-hidden="true">${open ? "−" : "+"}</span><span>${escapeHtml(group.name)}<small>${group.rows.length} commercial(aux)</small></span></button></th>${valuesCells(group.values)}</tr></tbody>
-        <tbody id="cumul-team-${groupIndex}" ${open ? "" : "hidden"}>${open ? group.rows.map((row, index) => `<tr class="cumul-seller"><th scope="row">${sellerButton(row, `projection-${groupIndex}-${index}`)}</th>${valuesCells(row.values)}</tr>${sellerDetail(row, 8, `projection-${groupIndex}-${index}`)}`).join("") : ""}</tbody>`;
-    }).join("");
-    $("[data-cumul-projection]").innerHTML = `<div class="cumul-table-wrap" tabindex="0" role="region" aria-label="Projection par responsable et commercial"><table class="cumul-table">
-      <caption class="cumul-sr-only">Projection annuelle, cumul de janvier à ${MONTH_NAMES[model.month - 1]} ${model.year}</caption>
-      <thead><tr><th scope="col" class="cumul-name-col">Responsable / Commercial</th><th scope="col">CA cumulé</th><th scope="col">Budget cumulé</th><th scope="col">Atteinte</th><th scope="col">Écart €</th><th scope="col">Objectif annuel</th><th scope="col">Projection annuelle</th><th scope="col">Reste objectif</th></tr></thead>
-      ${projectionBody}<tfoot><tr><th scope="row">Total du périmètre</th>${valuesCells(model.total)}</tr></tfoot></table></div>`;
+    $("[data-cumul-expand]").textContent = model.groups.every(group => !state.collapsed.has(group.id)) ? "Replier les équipes" : "Déplier les équipes";
+    const sellerRow = row => `<tr class="cumul-seller" data-cumul-seller="${escapeHtml(row.id)}"><th scope="row" class="cumul-fixed-name">${sellerLabel(row)}</th>${monthCells(row.values, row.missingImports)}${valuesCells(row.values)}</tr>`;
+    const projectionBody = grouped ? model.groups.map((group, groupIndex) => {
+      const open = !state.collapsed.has(group.id);
+      return `<tbody><tr class="cumul-group"><th scope="row" class="cumul-fixed-name"><button class="cumul-row-button" data-cumul-group="${escapeHtml(group.id)}" aria-expanded="${open}" aria-controls="cumul-team-${groupIndex}">
+        <span class="cumul-chevron" aria-hidden="true">${open ? "−" : "+"}</span><span>${escapeHtml(group.name)}<small>${group.rows.length} commercial(aux)</small></span></button></th>${monthCells(group.values)}${valuesCells(group.values)}</tr></tbody>
+        <tbody id="cumul-team-${groupIndex}" ${open ? "" : "hidden"}>${open ? group.rows.map(sellerRow).join("") : ""}</tbody>`;
+    }).join("") : `<tbody>${model.rows.map(sellerRow).join("")}</tbody>`;
+    $("[data-cumul-projection]").innerHTML = matrix("Projection par commercial, mois en colonnes", projectionBody,
+      ["CA cumulé", "Budget cumulé", "Atteinte", "Écart €", "Objectif annuel", "Projection annuelle", "Reste objectif"],
+      `<th scope="row" class="cumul-fixed-name">Total du périmètre<small>${model.rows.length} commerciaux</small></th>${monthCells(model.total)}${valuesCells(model.total)}`);
     renderRanking(model);
+    for (const position of positions) {
+      const wrap = $(position.selector).querySelector(".cumul-table-wrap");
+      if (wrap) { wrap.scrollLeft = position.left; wrap.scrollTop = position.top; }
+    }
   }
 
-  function sellerButton(row, key) {
-    return `<button class="cumul-row-button" data-cumul-seller="${escapeHtml(row.id)}" aria-expanded="${state.details.has(row.id)}" aria-controls="cumul-detail-${key}">
-      <span class="cumul-chevron" aria-hidden="true">${state.details.has(row.id) ? "−" : "+"}</span><span>${escapeHtml(row.name)}<small>${escapeHtml(row.identifier)}${row.missingImports.length ? ' <span class="cumul-warning" title="Un import manque sur au moins un mois du cumul">· Import à vérifier</span>' : ""}</small></span></button>`;
+  function sellerLabel(row, ranked = false) {
+    return `<div class="cumul-seller-label">${ranked ? `<span class="cumul-rank">${integer.format(row.rank)}</span>` : ""}<span><strong title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</strong><small title="${escapeHtml(row.identifier + ' · ' + row.managerName)}">${escapeHtml(row.identifier)} · ${escapeHtml(row.managerName)}</small>${row.missingImports.length ? '<small class="cumul-warning">Import à vérifier</small>' : ""}</span></div>`;
   }
 
-  function sellerDetail(row, colspan, key) {
-    if (!state.details.has(row.id)) return `<tr id="cumul-detail-${key}" hidden><td colspan="${colspan}"></td></tr>`;
+  function monthCells(values, missingImports = []) {
     const model = state.model;
-    return `<tr class="cumul-detail" id="cumul-detail-${key}"><td colspan="${colspan}"><div class="cumul-detail-head"><strong>Détail mensuel · ${escapeHtml(row.name)}</strong><span>${escapeHtml(row.managerName)}${row.sector ? ` · ${escapeHtml(row.sector)}` : ""}</span></div>
-      <table class="cumul-month-table"><caption class="cumul-sr-only">CA et budget mensuels de ${escapeHtml(row.name)}</caption>
-        <thead><tr><th scope="col">Mois ${model.year}</th><th scope="col">Source du CA</th><th scope="col">CA</th><th scope="col">Budget</th><th scope="col">Écart €</th><th scope="col">Atteinte</th></tr></thead>
-        <tbody>${MONTH_NAMES.map((name, index) => {
-          const included = index < model.month;
-          const actual = row.values.monthlyActual[index];
-          const budget = row.values.monthlyBudget[index];
-          return `<tr ${included ? "" : 'class="cumul-future"'}><th scope="row">${name}${included ? "" : " · hors cumul"}</th>
-            <td>${included ? model.sources[index] === "real" ? row.missingImports.includes(index + 1) ? '<span class="cumul-warning">Aucun import actif</span>' : "Réel importé" : "Ventes saisies" : "Hors période"}</td>
-            <td class="cumul-number">${included ? euro.format(actual) : "—"}</td><td class="cumul-number">${euro.format(budget)}</td>
-            <td class="cumul-number ${included ? tone(actual - budget) : ""}">${included ? signed(actual - budget) : "—"}</td><td class="cumul-number">${included ? rate(budget > 0 ? actual / budget : null) : "—"}</td></tr>`;
-        }).join("")}</tbody></table></td></tr>`;
+    const detailed = $("[data-cumul-columns]").value === "detail";
+    return MONTH_NAMES.map((name, index) => {
+      const included = index < model.month;
+      const actual = values.monthlyActual[index];
+      const budget = values.monthlyBudget[index];
+      const missing = missingImports.includes(index + 1);
+      const className = included ? "" : "cumul-future";
+      const actualTitle = !included ? "Hors cumul : le CA de ce mois n’est pas inclus" : missing ? "Aucun import actif pour ce mois : montant compté pour 0 €, à vérifier" : `${name} : ${model.sources[index] === "real" ? "réel importé" : "ventes saisies"}`;
+      return `<td data-month="${index + 1}" data-metric="actual" class="cumul-number cumul-month-start ${className} ${missing ? "cumul-warning" : ""}" title="${escapeHtml(actualTitle)}">${included ? euro.format(actual) : "—"}</td>`
+        + (detailed ? `<td data-month="${index + 1}" data-metric="budget" class="cumul-number ${className}">${euro.format(budget)}</td><td data-month="${index + 1}" data-metric="achievement" class="cumul-number ${className} ${included && budget > 0 ? tone(actual - budget) : ""}">${included ? rate(budget > 0 ? actual / budget : null) : "—"}</td>` : "");
+    }).join("");
+  }
+
+  function matrix(label, body, totalsHeaders, footer) {
+    const model = state.model;
+    const detailed = $("[data-cumul-columns]").value === "detail";
+    const monthSpan = detailed ? 3 : 1;
+    const subHeaders = detailed ? ["CA", "Budget", "Atteinte"] : ["CA"];
+    return `<div class="cumul-matrix-shell"><div class="cumul-matrix-nav"><span>Janvier → Décembre · CA arrêté à fin ${MONTH_NAMES[model.month - 1].toLowerCase()}</span><div><button type="button" class="cumul-button" data-cumul-jump="start">Janvier</button><button type="button" class="cumul-button" data-cumul-jump="summary">Cumuls →</button></div></div>
+      <div class="cumul-table-wrap" tabindex="0" role="region" aria-label="${escapeHtml(label)}"><table class="cumul-table cumul-matrix ${detailed ? "" : "cumul-matrix-compact"}">
+      <caption class="cumul-sr-only">${escapeHtml(label)}, ${model.year}, cumul à fin ${MONTH_NAMES[model.month - 1]}</caption>
+      <thead><tr><th scope="col" rowspan="2" class="cumul-fixed-name">Commercial / Responsable</th>
+        ${MONTH_NAMES.map((name, index) => `<th data-cumul-month-head="${index + 1}" scope="colgroup" colspan="${monthSpan}" class="cumul-month-head ${index >= model.month ? "cumul-future" : ""}">${name}<small>${index < model.month ? model.sources[index] === "real" ? "Réel importé" : "Ventes saisies" : "Hors cumul"}</small></th>`).join("")}
+        <th scope="colgroup" colspan="${totalsHeaders.length}" class="cumul-summary-head" data-cumul-summary-head>Cumuls à fin ${MONTH_NAMES[model.month - 1]} ${model.year}</th></tr>
+        <tr>${MONTH_NAMES.map(() => subHeaders.map((name, index) => `<th scope="col" class="${index === 0 ? "cumul-month-start" : ""}">${name}</th>`).join("")).join("")}${totalsHeaders.map((name, index) => `<th scope="col" class="cumul-summary-sub ${index === 0 ? "cumul-month-start" : ""}">${name}</th>`).join("")}</tr></thead>
+        ${body}<tfoot><tr>${footer}</tr></tfoot></table></div></div>`;
   }
 
   function renderRanking(model) {
     const shown = $("[data-cumul-limit]").value === "all" ? model.rows : model.rows.slice(0, 100);
     const subtotal = aggregateRows(shown, model.month);
     const totalPositive = model.total.actual > 0;
-    $("[data-cumul-ranking]").innerHTML = `<p class="cumul-ranking-count">${shown.length} / ${model.rows.length} commerciaux affichés. Les indicateurs du haut portent sur tout le périmètre filtré, pas seulement le Top 100.</p>
-      <div class="cumul-table-wrap" tabindex="0" role="region" aria-label="Classement des commerciaux par CA"><table class="cumul-table cumul-ranking-table">
-      <caption class="cumul-sr-only">Classement CA cumulé de janvier à ${MONTH_NAMES[model.month - 1]} ${model.year}</caption>
-      <thead><tr><th scope="col">Rang</th><th scope="col" class="cumul-name-col">Commercial</th><th scope="col">Responsable</th><th scope="col">CA cumulé</th><th scope="col">Budget cumulé</th><th scope="col">Atteinte</th><th scope="col">Écart €</th><th scope="col">Part du CA</th></tr></thead>
-      <tbody>${shown.map((row, index) => `<tr><td><span class="cumul-rank">${integer.format(row.rank)}</span></td><th scope="row">${sellerButton(row, `rank-${index}`)}</th>
-        <td class="cumul-manager-name">${escapeHtml(row.managerName)}</td><td class="cumul-number cumul-strong">${euro.format(row.values.actual)}</td><td class="cumul-number">${euro.format(row.values.budget)}</td><td class="cumul-number">${rate(row.values.achievement)}</td><td class="cumul-number ${tone(row.values.gap)}">${signed(row.values.gap)}</td><td class="cumul-number">${rate(totalPositive ? row.values.actual / model.total.actual : null)}</td></tr>${sellerDetail(row, 8, `rank-${index}`)}`).join("")}</tbody>
-      <tfoot><tr><th colspan="3" scope="row">Total des ${shown.length} commerciaux affichés</th><td class="cumul-number">${euro.format(subtotal.actual)}</td><td class="cumul-number">${euro.format(subtotal.budget)}</td><td class="cumul-number">${rate(subtotal.achievement)}</td><td class="cumul-number ${tone(subtotal.gap)}">${signed(subtotal.gap)}</td><td class="cumul-number">${rate(totalPositive ? subtotal.actual / model.total.actual : null)}</td></tr></tfoot></table></div>`;
+    const summaryCells = values => `<td class="cumul-number cumul-strong">${euro.format(values.actual)}</td><td class="cumul-number">${euro.format(values.budget)}</td><td class="cumul-number">${rate(values.achievement)}</td><td class="cumul-number ${tone(values.gap)}">${signed(values.gap)}</td><td class="cumul-number">${rate(totalPositive ? values.actual / model.total.actual : null)}</td>`;
+    const body = `<tbody>${shown.map(row => `<tr class="cumul-seller" data-cumul-seller="${escapeHtml(row.id)}"><th scope="row" class="cumul-fixed-name">${sellerLabel(row, true)}</th>${monthCells(row.values, row.missingImports)}${summaryCells(row.values)}</tr>`).join("")}</tbody>`;
+    $("[data-cumul-ranking]").innerHTML = `<p class="cumul-ranking-count">${shown.length} / ${model.rows.length} commerciaux affichés. Les indicateurs du haut portent sur tout le périmètre filtré, pas seulement le Top 100.</p>`
+      + matrix("Classement CA des commerciaux, mois en colonnes", body, ["CA cumulé", "Budget cumulé", "Atteinte", "Écart €", "Part du CA"],
+        `<th scope="row" class="cumul-fixed-name">Total des ${shown.length} commerciaux affichés</th>${monthCells(subtotal)}${summaryCells(subtotal)}`);
   }
 
   function exportExcel() {
@@ -272,12 +299,16 @@ function initCumul(root) {
       const data = [headings, ...model.rows.map(row => [row.rank, row.identifier, row.name, row.managerName, row.sector, ...toValues(row.values)]), [null, null, "Total du périmètre", null, null, ...toValues(model.total)]];
       addSheet("Commerciaux", data, [7, 11], [5, 6, 8, 9, 10, 12]);
       addSheet("Responsables", [["Responsable", "Commerciaux", ...headings.slice(5)], ...model.groups.map(group => [group.name, group.rows.length, ...toValues(group.values)]), ["Total du périmètre", model.rows.length, ...toValues(model.total)]], [4, 8], [2, 3, 5, 6, 7, 9]);
-      addSheet("Mensuel", [["Identifiant", "Commercial", "Responsable", "Mois", "Inclus dans le cumul", "Source", "CA", "Budget", "Écart €", "Atteinte"], ...model.rows.flatMap(row => MONTH_NAMES.map((name, index) => {
-        const included = index < model.month;
-        const actual = row.values.monthlyActual[index];
-        const budget = row.values.monthlyBudget[index];
-        return [row.identifier, row.name, row.managerName, name, included ? "Oui" : "Non", included ? model.sources[index] === "real" ? "Réel importé" : "Ventes saisies" : "Hors période", included ? actual : null, budget, included ? actual - budget : null, included && budget > 0 ? actual / budget : null];
-      }))], [9], [6, 7, 8]);
+      const monthlyValues = values => MONTH_NAMES.flatMap((_, index) => {
+        const actual = values.monthlyActual[index];
+        const budget = values.monthlyBudget[index];
+        return [index < model.month ? actual : null, budget, index < model.month && budget > 0 ? actual / budget : null];
+      });
+      addSheet("Mensuel", [
+        ["Identifiant", "Commercial", "Responsable", ...MONTH_NAMES.flatMap(name => [`${name} · CA`, `${name} · Budget`, `${name} · Atteinte`]), ...headings.slice(5)],
+        ...model.rows.map(row => [row.identifier, row.name, row.managerName, ...monthlyValues(row.values), ...toValues(row.values)]),
+        [null, "Total du périmètre", null, ...monthlyValues(model.total), ...toValues(model.total)]
+      ], [...MONTH_NAMES.map((_, index) => 5 + index * 3), 41, 45], [...MONTH_NAMES.flatMap((_, index) => [3 + index * 3, 4 + index * 3]), 39, 40, 42, 43, 44, 46]);
       addSheet("Méthode", [
         ["Reporting cumul", `Janvier à ${MONTH_NAMES[model.month - 1]} ${model.year}`],
         ["Responsable", managerInput.selectedOptions[0].textContent], ["Recherche", searchInput.value],
@@ -302,7 +333,7 @@ function initCumul(root) {
           for (const col of amounts) if (sheet[XLSX.utils.encode_cell({ r: row, c: col })]) sheet[XLSX.utils.encode_cell({ r: row, c: col })].z = '#,##0.00 "€"';
         }
         sheet["!cols"] = rows[0].map((_, index) => ({ wch: name === "Méthode" ? index ? 110 : 24 : index < 5 ? 24 : 19 }));
-        sheet["!autofilter"] = { ref: XLSX.utils.encode_range({ r: 0, c: 0 }, { r: name === "Commerciaux" || name === "Responsables" ? rows.length - 2 : rows.length - 1, c: rows[0].length - 1 }) };
+        sheet["!autofilter"] = { ref: XLSX.utils.encode_range({ r: 0, c: 0 }, { r: ["Commerciaux", "Responsables", "Mensuel"].includes(name) ? rows.length - 2 : rows.length - 1, c: rows[0].length - 1 }) };
         XLSX.utils.book_append_sheet(workbook, sheet, name);
       }
     } catch (error) { status(error.message, true); }

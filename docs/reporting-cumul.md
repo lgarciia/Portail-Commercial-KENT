@@ -68,8 +68,15 @@ array shape, amounts and duplicate seller IDs are validated before calculation.
 
 The ranking is descending actual CA with shared ranks for exact ties; names
 and UUIDs provide stable ordering. Zero/negative-CA sellers are retained.
-The Top 100 display can be expanded to all sellers. KPI totals always cover
+All sellers are shown by default, with an optional first-100 display. KPI totals always cover
 the full filter; the ranking footer explicitly totals the displayed rows.
+
+Both views use a matrix: one seller per row and January to December in columns,
+with CA, budget and achievement subcolumns. A compact CA-only mode is available.
+Sellers and month headers stay frozen while scrolling. Projection defaults to
+all sellers compared together; optional manager grouping starts expanded.
+Monthly actuals beyond the cutoff stay blank, but annual budget months remain
+visible. Cumulative results appear on the right, with a direct scroll shortcut.
 
 ## Reliability and performance
 
@@ -89,6 +96,8 @@ The Excel export contains Commerciaux, Responsables, Mensuel and Methode
 (the visible sheet title uses the French accent). It includes every seller
 in the current filter, even beyond the first 100 displayed rows, and records
 the cutoff, source choices, calculation rules and data-quality notices.
+Mensuel has one row per seller, horizontal monthly CA/budget/achievement
+columns, cumulative columns and a total row using aggregated amounts.
 
 ## Verification
 
@@ -115,5 +124,6 @@ desktop/mobile overflow and complete XLSX totals. The separate client-sheet
 suite verifies order entry for automobile and industry using fake data only.
 
 After deployment, compare one chosen month with Finance using the same
-source settings; open a manager and a seller, and verify the same totals in
-Excel. Real production data were not queried or modified by the tests.
+source settings; compare the monthly columns for several sellers, switch to
+manager grouping and verify the same totals in Excel. Real production data
+were not queried or modified by the tests.
