@@ -352,6 +352,15 @@
     th.sortable{cursor:pointer}
     th.sortable:hover{color:rgba(255,255,255,.90)}
     .sortIcon{opacity:.65;margin-left:6px}
+    .client-size-badge,.demo-badge{
+      display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:23px;padding:0 8px;
+      border-radius:999px;border:1px solid rgba(148,163,184,.24);font-size:10px;font-weight:950;letter-spacing:.04em;
+    }
+    .client-size-badge.size-s{background:rgba(148,163,184,.12);color:#cbd5e1}
+    .client-size-badge.size-m{background:rgba(56,189,248,.13);border-color:rgba(56,189,248,.26);color:#bae6fd}
+    .client-size-badge.size-l{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.28);color:#fde68a}
+    .demo-badge.demo-yes{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.28);color:#bbf7d0}
+    .demo-badge.demo-no{background:rgba(148,163,184,.10);color:#cbd5e1}
     .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
     .kpi{flex:1;min-width:220px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:rgba(2,6,23,.28);padding:12px}
     .kpi .k{color:var(--muted);font-size:12px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
@@ -381,7 +390,7 @@
     <div class="statusDrawerBody">
       <div class="meta">
         <span class="chip"><span class="dot ok"></span><span>Source : <b>Supabase Auto + Industrie</b></span></span>
-        <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes : commercial + 9 filtres + quantité + CA</span></span>
+        <span class="chip"><span class="dot"></span><span id="colsDebug">Colonnes : commercial + 11 filtres + quantité + CA</span></span>
       </div>
       <div class="small">Les ventes téléphone sont incluses. Le CA est calculé comme dans Mes ventes et Reporting global : quantité x prix unitaire.</div>
     </div>
@@ -403,6 +412,8 @@
       <div class="fbox" id="boxMonth"></div>
       <div class="fbox" id="boxDate"></div>
       <div class="fbox" id="boxType"></div>
+      <div class="fbox" id="boxDemo"></div>
+      <div class="fbox" id="boxSize"></div>
       <div class="fbox" id="boxClientInt"></div>
       <div class="fbox" id="boxClient"></div>
       <div class="fbox" id="boxRef"></div>
@@ -456,6 +467,8 @@ const COLS = {
   MONTH:"Mois",
   DATE:"Date",
   TYPE:"Type de vente",
+  DEMO:"Démo",
+  SIZE:"Taille client",
   CLIENT_INT:"N client",
   CLIENT:"Client",
   REF:"Reference Produits",
@@ -510,6 +523,20 @@ function normalizeVisitType(value){
   if (["client_ferme", "ferme"].includes(v)) return "client_ferme";
   return v || "vente";
 }
+function normalizeClientSize(value){
+  const size = String(value || "").trim().toUpperCase();
+  return ["S","M","L"].includes(size) ? size : "S";
+}
+function demoLabel(value){
+  if (value === true || value === 1) return "Oui";
+  const text = String(value ?? "").trim().toLowerCase();
+  return ["true","1","oui","yes","y"].includes(text) ? "Oui" : "Non";
+}
+function isMissingColumnError(error, columnName){
+  const text = String(error?.message || error || "");
+  const escapedColumn = String(columnName || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(escapedColumn, "i").test(text) && /(schema|cache|column|exist|find|introuvable|existe)/i.test(text);
+}
 function resolveVisitTypeFromRecord(visite){
   const type = normalizeVisitType(visite?.type_visite);
   if (type === "vente" && String(visite?.note || "").includes(PHONE_ORDER_NOTE_MARKER)) return VISIT_TYPE_PHONE_ORDER;
@@ -544,6 +571,24 @@ async function fetchPaged(table, select, options = {}){
     from += PAGE_SIZE;
   }
   return all;
+}
+async function fetchClientsWithOptionalSize(table, options = {}){
+  try{
+    return await fetchPaged(table, "id, nom, numero_compte, taille_client", options);
+  }catch(error){
+    if (!isMissingColumnError(error, "taille_client")) throw error;
+    const clients = await fetchPaged(table, "id, nom, numero_compte", options);
+    return clients.map(client => ({ ...client, taille_client:"S" }));
+  }
+}
+async function fetchLinesWithOptionalDemo(table, options = {}){
+  try{
+    return await fetchPaged(table, "id, visite_id, produit_id, quantite, prix_unitaire, demo_effectuee", options);
+  }catch(error){
+    if (!isMissingColumnError(error, "demo_effectuee")) throw error;
+    const lignes = await fetchPaged(table, "id, visite_id, produit_id, quantite, prix_unitaire", options);
+    return lignes.map(ligne => ({ ...ligne, demo_effectuee:false }));
+  }
 }
 function buildListBox(mountId, title){
   const mount = $(mountId);
@@ -636,6 +681,8 @@ const boxYear = buildListBox("boxYear", "Année");
 const boxMonth = buildListBox("boxMonth", "Mois");
 const boxDate = buildListBox("boxDate", "Date");
 const boxType = buildListBox("boxType", "Type");
+const boxDemo = buildListBox("boxDemo", "Démo");
+const boxSize = buildListBox("boxSize", "Taille client");
 const boxClientInt = buildListBox("boxClientInt", "N client");
 const boxClient = buildListBox("boxClient", "Client");
 const boxRef = buildListBox("boxRef", "Référence");
@@ -647,6 +694,8 @@ const chain = [
   { box:boxMonth, key:"MONTH", labelFn:monthLabel, sortFn:(a,b)=>Number(a)-Number(b) },
   { box:boxDate, key:"DATE", labelFn:null, sortFn:null },
   { box:boxType, key:"TYPE", labelFn:null, sortFn:null },
+  { box:boxDemo, key:"DEMO", labelFn:null, sortFn:null },
+  { box:boxSize, key:"SIZE", labelFn:null, sortFn:function(a,b){ return ["S","M","L"].indexOf(a) - ["S","M","L"].indexOf(b); } },
   { box:boxClientInt, key:"CLIENT_INT", labelFn:null, sortFn:sortNumIfPossible },
   { box:boxClient, key:"CLIENT", labelFn:null, sortFn:null },
   { box:boxRef, key:"REF", labelFn:null, sortFn:null },
@@ -868,6 +917,14 @@ function renderTable(groupCols, colQ, colCA, result, totalQty, totalCA){
   $("tbody").innerHTML = result.map(row => `<tr>${headers.map(header => {
     let value = row[header.col];
     if (header.col === COLS.MONTH) value = monthLabel(value);
+    if (header.col === COLS.SIZE) {
+      const size = normalizeClientSize(value);
+      return `<td title="Taille client ${escapeHtml(size)}"><span class="client-size-badge size-${escapeHtml(size.toLowerCase())}">${escapeHtml(size)}</span></td>`;
+    }
+    if (header.col === COLS.DEMO) {
+      const label = demoLabel(value);
+      return `<td title="Démo ${escapeHtml(label)}"><span class="demo-badge ${label === "Oui" ? "demo-yes" : "demo-no"}">${escapeHtml(label)}</span></td>`;
+    }
     if (header.kind === "num") {
       const formatted = fmtNumber(Math.round((value || 0) * 100) / 100);
       return `<td class="right" title="${escapeHtml(formatted)}">${escapeHtml(formatted)}</td>`;
@@ -928,10 +985,10 @@ function exportCSV(){
 async function loadSourceRows(source){
   const commercialLabel = currentSessionUser?.name || currentSessionUser?.id || "Commercial";
   const [clients, produits, visites, lignes] = await Promise.all([
-    fetchPaged(source.tables.clients, "id, nom, numero_compte", { order:{ column:"nom", ascending:true } }),
+    fetchClientsWithOptionalSize(source.tables.clients, { order:{ column:"nom", ascending:true } }),
     fetchPaged(source.tables.produits, "id, nom, reference_produit", { order:{ column:"nom", ascending:true } }),
     fetchPaged(source.tables.visites, "id, client_id, date_visite, note, type_visite, total_commande", { order:[{ column:"date_visite", ascending:false }, { column:"id", ascending:true }] }),
-    fetchPaged(source.tables.lignes, "id, visite_id, produit_id, quantite, prix_unitaire", { order:[{ column:"visite_id", ascending:true }, { column:"id", ascending:true }] })
+    fetchLinesWithOptionalDemo(source.tables.lignes, { order:[{ column:"visite_id", ascending:true }, { column:"id", ascending:true }] })
   ]);
   const clientsById = new Map((clients || []).map(client => [String(client.id), client]));
   const produitsById = new Map((produits || []).map(produit => [String(produit.id), produit]));
@@ -954,6 +1011,8 @@ async function loadSourceRows(source){
       [COLS.MONTH]: String(Number(month || 0) || ""),
       [COLS.DATE]: date,
       [COLS.TYPE]: getVisitTypeLabel(resolveVisitTypeFromRecord(visite)),
+      [COLS.DEMO]: demoLabel(ligne.demo_effectuee),
+      [COLS.SIZE]: normalizeClientSize(client?.taille_client),
       [COLS.CLIENT_INT]: client?.numero_compte || "-",
       [COLS.CLIENT]: client?.nom || "Client inconnu",
       [COLS.REF]: produit?.reference_produit || "-",
@@ -972,6 +1031,8 @@ function mapTeamApiRow(row){
     [COLS.MONTH]: row.month || "",
     [COLS.DATE]: row.date || "",
     [COLS.TYPE]: row.type || "",
+    [COLS.DEMO]: row.demo || "Non",
+    [COLS.SIZE]: normalizeClientSize(row.clientSize),
     [COLS.CLIENT_INT]: row.clientNumber || "-",
     [COLS.CLIENT]: row.client || "Client inconnu",
     [COLS.REF]: row.reference || "-",
@@ -1011,7 +1072,7 @@ async function loadData(){
     }
     populateFilters();
     setStatus("ok", `${fmtNumber(rows.length)} ligne(s) prête(s). Clique sur Générer pour lancer la requête.`);
-    if (!isTeamQuery) $("colsDebug").textContent = `Auto + Industrie - ${fmtNumber(rows.length)} lignes réelles`;
+    if (!isTeamQuery) $("colsDebug").textContent = `Auto + Industrie - ${fmtNumber(rows.length)} lignes réelles - 11 filtres`;
     renderIdle("Filtres prêts. Aucun tableau n'est calculé tant que tu ne cliques pas sur Générer.");
   }catch(error){
     console.error(error);

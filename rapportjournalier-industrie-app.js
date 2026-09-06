@@ -23,6 +23,9 @@
       nbBleus: 0,
       nbDemos: 0,
       nbVisitesAvecDemo: 0,
+      clientsTailleS: 0,
+      clientsTailleM: 0,
+      clientsTailleL: 0,
       totalQuantite: 0,
       totalStock: 0,
       totalCA: 0,
@@ -52,13 +55,23 @@
   }
 
   function isMissingDemoColumnError(error) {
+    return isMissingColumnError(error, "demo_effectuee");
+  }
+
+  function isMissingColumnError(error, columnName) {
     var text = [
       error && error.code,
       error && error.message,
       error && error.details,
       error && error.hint
     ].filter(Boolean).join(" ");
-    return /demo_effectuee/i.test(text) && /(column|schema|cache|exist|introuvable|trouve)/i.test(text);
+    var escapedColumn = String(columnName || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(escapedColumn, "i").test(text) && /(column|schema|cache|exist|introuvable|trouve|find)/i.test(text);
+  }
+
+  function normalizeClientSize(value) {
+    var size = String(value == null ? "" : value).trim().toUpperCase();
+    return ["S", "M", "L"].includes(size) ? size : "S";
   }
 
   function escapeHtml(value) {
@@ -388,13 +401,26 @@
 
     var produitIds = uniqueStringIds(commandes, "produit_id");
 
-    var clients = clientIds.length
-      ? await fetchAllRapportRows(
+    var clients = [];
+    if (clientIds.length) {
+      try {
+        clients = await fetchAllRapportRows(
+          "industrie_clients",
+          "id, nom, numero_compte, adresse, telephone, taille_client",
+          { in: { column: "id", values: clientIds } }
+        );
+      } catch (error) {
+        if (!isMissingColumnError(error, "taille_client")) throw error;
+        console.warn("Colonne taille_client indisponible, rapport Industrie chargé avec taille S par défaut:", error.message);
+        clients = (await fetchAllRapportRows(
           "industrie_clients",
           "id, nom, numero_compte, adresse, telephone",
           { in: { column: "id", values: clientIds } }
-        )
-      : [];
+        )).map(function (client) {
+          return Object.assign({}, client, { taille_client: "S" });
+        });
+      }
+    }
 
     var produits = produitIds.length
       ? await fetchAllRapportRows(
@@ -458,6 +484,7 @@
       var saleVisit = isSaleVisit(visite);
       var terrainVisit = isTerrainVisit(visite);
       var clientName = visite.client && visite.client.nom ? visite.client.nom : "Client inconnu";
+      var clientSize = normalizeClientSize(visite.client && visite.client.taille_client);
       var clientId =
         (visite.client && visite.client.id) ||
         (visite.client_id ? "client-" + visite.client_id : "client-" + clientName.toLowerCase().replace(/\\s+/g, "-"));
@@ -487,6 +514,7 @@
           account: visite.client && visite.client.numero_compte ? visite.client.numero_compte : "-",
           address: visite.client && visite.client.adresse ? visite.client.adresse : "-",
           phone: visite.client && visite.client.telephone ? visite.client.telephone : "-",
+          size: clientSize,
           visits: 0,
           lines: 0,
           quantity: 0,
@@ -503,6 +531,7 @@
       }
 
       var clientEntry = clientMap.get(String(clientId));
+      clientEntry.size = clientEntry.size || clientSize;
       if (terrainVisit) clientEntry.visits += 1;
       clientEntry.lines += visitMetrics.nbLignes;
       clientEntry.quantity += visitMetrics.totalQuantite;
@@ -588,10 +617,14 @@
     });
 
     stats.nbClients = uniqueClients.size;
+    groupedClients = Array.from(clientMap.values());
+    stats.clientsTailleS = groupedClients.filter(function (client) { return normalizeClientSize(client.size) === "S"; }).length;
+    stats.clientsTailleM = groupedClients.filter(function (client) { return normalizeClientSize(client.size) === "M"; }).length;
+    stats.clientsTailleL = groupedClients.filter(function (client) { return normalizeClientSize(client.size) === "L"; }).length;
     stats.tauxTransformation = stats.nbVisites ? (stats.nbVisitesAvecVente / stats.nbVisites) * 100 : 0;
     stats.avgLinesPerVisit = stats.nbVisites ? terrainLineCount / stats.nbVisites : 0;
 
-    groupedClients = Array.from(clientMap.values())
+    groupedClients = groupedClients
       .map(function (client) {
         return {
           id: client.id,
@@ -599,6 +632,7 @@
           account: client.account,
           address: client.address,
           phone: client.phone,
+          size: normalizeClientSize(client.size),
           visits: client.visits,
           lines: client.lines,
           quantity: client.quantity,
@@ -848,6 +882,8 @@
           escapeHtml(client.account || "-") +
           "<br>Telephone : " +
           escapeHtml(client.phone || "-") +
+          "<br>Taille : " +
+          escapeHtml(normalizeClientSize(client.size)) +
           "<br>Adresse : " +
           escapeHtml(client.address || "-") +
           "</div>" +
@@ -916,6 +952,7 @@
     lines.push("- Visites sans vente : " + formatNumber(reportStats.nbVisitesSansVente));
     lines.push("- Taux transformation : " + formatAverage(reportStats.tauxTransformation) + "%");
     lines.push("- Clients : " + formatNumber(reportStats.nbClients));
+    lines.push("- Clients S/M/L : " + formatNumber(reportStats.clientsTailleS) + " / " + formatNumber(reportStats.clientsTailleM) + " / " + formatNumber(reportStats.clientsTailleL));
     lines.push("- Lignes produits : " + formatNumber(reportStats.nbLignes));
     lines.push("- Quantité totale : " + formatNumber(reportStats.totalQuantite));
     lines.push("- Stock observé : " + formatNumber(reportStats.totalStock));
@@ -952,6 +989,8 @@
             client.name +
             " (Compte " +
             client.account +
+            " - Taille " +
+            normalizeClientSize(client.size) +
             ") : Visites " +
             formatNumber(client.visits) +
             " | Lignes " +
@@ -1004,10 +1043,12 @@
       buildPreviewSummaryCard("Sans vente", formatNumber(reportStats.nbVisitesSansVente)) +
       buildPreviewSummaryCard("Transfo", formatAverage(reportStats.tauxTransformation) + "%") +
       buildPreviewSummaryCard("Clients", formatNumber(reportStats.nbClients)) +
+      buildPreviewSummaryCard("Clients S/M/L", formatNumber(reportStats.clientsTailleS) + " / " + formatNumber(reportStats.clientsTailleM) + " / " + formatNumber(reportStats.clientsTailleL)) +
       buildPreviewSummaryCard("Lignes produits", formatNumber(reportStats.nbLignes)) +
       buildPreviewSummaryCard("Quantité totale", formatNumber(reportStats.totalQuantite)) +
       buildPreviewSummaryCard("Stock observé", formatNumber(reportStats.totalStock)) +
       buildPreviewSummaryCard("Démonstrations", formatNumber(reportStats.nbDemos)) +
+      buildPreviewSummaryCard("Visites avec démo", formatNumber(reportStats.nbVisitesAvecDemo)) +
       buildPreviewSummaryCard("CA du jour", formatCurrency(reportStats.totalCA)) +
       "</div>"
     );
@@ -1036,6 +1077,8 @@
       "</div>" +
       '<div class="preview-client-meta">Compte : ' +
       escapeHtml(client.account || "-") +
+      " · Taille : " +
+      escapeHtml(normalizeClientSize(client.size)) +
       " · Telephone : " +
       escapeHtml(client.phone || "-") +
       "<br>Adresse : " +
@@ -1054,6 +1097,7 @@
       buildPreviewStat("Lignes", formatNumber(client.lines)) +
       buildPreviewStat("Quantité", formatNumber(client.quantity)) +
       buildPreviewStat("Stock", formatNumber(client.stock)) +
+      buildPreviewStat("Démos", formatNumber(client.demos)) +
       buildPreviewStat("Rouges", formatNumber(client.reds)) +
       buildPreviewStat("Verts", formatNumber(client.greens)) +
       "</div>" +
@@ -1113,6 +1157,8 @@
             escapeHtml(product.reference || "-") +
             " · Lignes : " +
             formatNumber(product.lines) +
+            " · Démos : " +
+            formatNumber(product.demos || 0) +
             " · Priorités : " +
             escapeHtml(buildColorSummary(product)) +
             "</div>" +
@@ -1199,6 +1245,8 @@
               escapeHtml(client.name) +
               "</strong><br><span class=\"muted\">Compte : " +
               escapeHtml(client.account || "-") +
+              "<br>Taille : " +
+              escapeHtml(normalizeClientSize(client.size)) +
               "</span></td>" +
               "<td class=\"num\">" +
               formatNumber(client.visits) +
@@ -1314,9 +1362,12 @@
       "<tr><th>Visites sans vente</th><td>" + escapeHtml(formatNumber(reportStats.nbVisitesSansVente)) + "</td></tr>" +
       "<tr><th>Taux transformation</th><td>" + escapeHtml(formatAverage(reportStats.tauxTransformation) + "%") + "</td></tr>" +
       "<tr><th>Clients visités</th><td>" + escapeHtml(formatNumber(reportStats.nbClients)) + "</td></tr>" +
+      "<tr><th>Clients S/M/L</th><td>" + escapeHtml(formatNumber(reportStats.clientsTailleS) + " / " + formatNumber(reportStats.clientsTailleM) + " / " + formatNumber(reportStats.clientsTailleL)) + "</td></tr>" +
       "<tr><th>Lignes produits</th><td>" + escapeHtml(formatNumber(reportStats.nbLignes)) + "</td></tr>" +
       "<tr><th>Quantité totale</th><td>" + escapeHtml(formatNumber(reportStats.totalQuantite)) + "</td></tr>" +
       "<tr><th>Stock observé</th><td>" + escapeHtml(formatNumber(reportStats.totalStock)) + "</td></tr>" +
+      "<tr><th>Démonstrations</th><td>" + escapeHtml(formatNumber(reportStats.nbDemos)) + "</td></tr>" +
+      "<tr><th>Visites avec démo</th><td>" + escapeHtml(formatNumber(reportStats.nbVisitesAvecDemo)) + "</td></tr>" +
       "<tr><th>CA du jour</th><td>" + escapeHtml(formatCurrency(reportStats.totalCA)) + "</td></tr>" +
       "<tr><th>Alertes rouges</th><td>" + escapeHtml(formatNumber(reportStats.nbRouges)) + "</td></tr>" +
       "<tr><th>Vigilances jaunes</th><td>" + escapeHtml(formatNumber(reportStats.nbJaunes)) + "</td></tr>" +
@@ -1397,6 +1448,7 @@
       ["Moyenne lignes / visite", formatAverage(reportStats.avgLinesPerVisit)],
       ["Démonstrations", formatNumber(reportStats.nbDemos)],
       ["Visites avec démo", formatNumber(reportStats.nbVisitesAvecDemo)],
+      ["Clients S/M/L", formatNumber(reportStats.clientsTailleS) + " / " + formatNumber(reportStats.clientsTailleM) + " / " + formatNumber(reportStats.clientsTailleL)],
       ["Alertes rouges", formatNumber(reportStats.nbRouges)],
       ["Vigilances jaunes", formatNumber(reportStats.nbJaunes)],
       ["Opportunités vertes", formatNumber(reportStats.nbVerts)]
@@ -1495,6 +1547,8 @@
           "</div>" +
           '<div class="pdf-client-meta">Compte : ' +
           escapeHtml(client.account || "-") +
+          " · Taille : " +
+          escapeHtml(normalizeClientSize(client.size)) +
           " · Telephone : " +
           escapeHtml(client.phone || "-") +
           "<br>Adresse : " +
@@ -1560,6 +1614,8 @@
               escapeHtml(client.name) +
               "</strong><br>Compte : " +
               escapeHtml(client.account || "-") +
+              "<br>Taille : " +
+              escapeHtml(normalizeClientSize(client.size)) +
               "</td>" +
               '<td class="num">' +
               formatNumber(client.visits) +
@@ -1583,7 +1639,7 @@
             );
           })
           .join("")
-      : '<tr><td colspan="6">Aucune visite trouvée pour cette date.</td></tr>';
+      : '<tr><td colspan="7">Aucune visite trouvée pour cette date.</td></tr>';
 
     var notesHtml = groupedClients
       .filter(function (client) {

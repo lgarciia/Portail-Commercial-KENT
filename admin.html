@@ -528,6 +528,7 @@
     }
     .control-kpi span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:950}
     .control-kpi strong{display:block;margin-top:6px;font-size:24px;letter-spacing:-.04em}
+    .control-kpi.compact strong{font-size:17px;line-height:1.25;letter-spacing:-.02em}
     .control-kpi.good{border-color:rgba(34,197,94,.24);background:rgba(34,197,94,.07)}
     .control-kpi.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08)}
     .control-kpi.danger{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.08)}
@@ -5299,12 +5300,18 @@
         }
 
         const model = buildDataControlModel();
+        const stats = model.stats || {};
         if (els.controlPeriod) els.controlPeriod.textContent = "Ann\u00e9e " + model.year;
         els.controlSummary.innerHTML = [
           renderControlKpi("Commerciaux", model.rows.length, ""),
           renderControlKpi("OK", model.counts.good, "good"),
           renderControlKpi("A contr\u00f4ler", model.counts.warn, "warn"),
-          renderControlKpi("Bloquants", model.counts.danger, "danger")
+          renderControlKpi("Bloquants", model.counts.danger, "danger"),
+          renderControlKpi("Clients S/M/L", formatSizeCounts({ S: stats.clientsS, M: stats.clientsM, L: stats.clientsL }), ""),
+          renderControlKpi("Visit\u00e9s S/M/L", formatSizeCounts({ S: stats.clientsVisitesS, M: stats.clientsVisitesM, L: stats.clientsVisitesL }), ""),
+          renderControlKpi("CA mois S/M/L", formatSizeMoney({ S: stats.caMoisS, M: stats.caMoisM, L: stats.caMoisL }), ""),
+          renderControlKpi("D\u00e9mos / M", stats.demosMois || 0, ""),
+          renderControlKpi("Visites d\u00e9mo / M", stats.visitesAvecDemoMois || 0, "")
         ].join("");
 
         if (!model.rows.length) {
@@ -5349,7 +5356,8 @@
             good: rows.filter(function(row){ return row.diagnostic.level === "good"; }).length,
             warn: rows.filter(function(row){ return row.diagnostic.level === "warn"; }).length,
             danger: rows.filter(function(row){ return row.diagnostic.level === "danger"; }).length
-          }
+          },
+          stats: payload.stats || {}
         };
       }
 
@@ -5390,10 +5398,12 @@
       }
 
       function renderControlKpi(label, value, tone){
+        const displayedValue = formatControlKpiValue(value);
+        const compactClass = String(displayedValue).length > 14 ? " compact" : "";
         return [
-          '<article class="control-kpi ' + escapeHtml(tone || '') + '">',
+          '<article class="control-kpi ' + escapeHtml(tone || '') + compactClass + '">',
             '<span>' + escapeHtml(label) + '</span>',
-            '<strong>' + escapeHtml(formatInteger(value)) + '</strong>',
+            '<strong>' + escapeHtml(displayedValue) + '</strong>',
           '</article>'
         ].join("");
       }
@@ -5430,7 +5440,11 @@
             '<div class="control-detail-grid">',
               renderControlDetailCard("Rattachement", controlManagerName(commercial), commercial.relationLabel || "Non rattaché"),
               renderControlDetailCard("Portefeuille", formatInteger(metrics.clientsTotal || 0) + " client(s)", formatInteger(metrics.clientsMois || 0) + " client(s) travaill\u00e9s ce mois"),
+              renderControlDetailCard("Clients S/M/L", formatSizeCounts(metrics.clientsTailleTotal), "Portefeuille complet du commercial"),
+              renderControlDetailCard("S/M/L visit\u00e9s", formatSizeCounts(metrics.clientsTailleMois), "Clients travaill\u00e9s sur le mois s\u00e9lectionn\u00e9"),
               renderControlDetailCard("Ventes saisies", formatEuro(metrics.caAnnee || 0), formatInteger(metrics.ventesAnnee || 0) + " vente(s), " + formatInteger(metrics.terrainMois || 0) + " visite(s) terrain ce mois"),
+              renderControlDetailCard("D\u00e9monstrations", formatInteger(metrics.demosMois || 0) + " d\u00e9mo(s)", formatInteger(metrics.visitesAvecDemoMois || 0) + " visite(s) avec d\u00e9mo"),
+              renderControlDetailCard("CA mois S/M/L", formatSizeMoney(metrics.caMoisParTaille), "CA saisi du mois par taille client"),
               renderControlDetailCard("Budget actif", formatEuro(metrics.budgetAnnuel || 0), formatInteger(metrics.budgetsActifs || 0) + " budget(s), " + formatInteger(metrics.lignesBudget || 0) + " ligne(s)"),
               renderControlDetailCard("R\u00e9el import\u00e9", controlRealLabel(metrics), formatEuro(metrics.reelReportingAnnee || 0) + " sur l'ann\u00e9e"),
               renderControlDetailCard("Documents", formatInteger(metrics.documentsTotal || 0) + " document(s)", formatInteger(metrics.documentsSansStatut || 0) + " sans statut, " + formatInteger(metrics.documentsEnCours || 0) + " transmis"),
@@ -5452,6 +5466,26 @@
             '<div class="sub">' + escapeHtml(help || "") + '</div>',
           '</article>'
         ].join("");
+      }
+
+      function formatControlKpiValue(value){
+        if (typeof value === "number") return formatInteger(value);
+        if (value === null || typeof value === "undefined" || value === "") return "-";
+        return String(value);
+      }
+
+      function formatSizeCounts(counts){
+        const values = counts || {};
+        return ["S", "M", "L"].map(function(size){
+          return size + " " + formatInteger(values[size] || 0);
+        }).join(" / ");
+      }
+
+      function formatSizeMoney(counts){
+        const values = counts || {};
+        return ["S", "M", "L"].map(function(size){
+          return size + " " + formatEuro(values[size] || 0);
+        }).join(" / ");
       }
 
       function controlManagerName(commercial){

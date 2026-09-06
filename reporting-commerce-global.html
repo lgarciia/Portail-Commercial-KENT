@@ -411,6 +411,13 @@
       color: #bae6fd;
       font-weight: 850;
     }
+    .client-size-badge{
+      display:inline-flex!important;align-items:center;justify-content:center;width:max-content;min-width:27px;height:22px;
+      margin-top:7px!important;padding:0 8px;border-radius:999px;border:1px solid rgba(148,163,184,.22);
+      font-size:.68rem!important;font-weight:950;letter-spacing:.05em;text-transform:uppercase;color:#cbd5e1;background:rgba(148,163,184,.12);
+    }
+    .client-size-badge.size-m{border-color:rgba(56,189,248,.28);background:rgba(56,189,248,.13);color:#bae6fd}
+    .client-size-badge.size-l{border-color:rgba(245,158,11,.30);background:rgba(245,158,11,.13);color:#fde68a}
     .amount { font-weight: 900; white-space: nowrap; text-align: right; }
     .empty { padding: 18px; border-radius: 16px; background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid rgba(255,255,255,.08); line-height: 1.5; }
     .client-detail-panel {
@@ -1210,6 +1217,15 @@
       if (type === "client_ferme") return "Client ferme";
       return type || "Vente";
     }
+    function normalizeClientSize(value) {
+      const size = String(value || "").trim().toUpperCase();
+      return ["S", "M", "L"].includes(size) ? size : "S";
+    }
+    function isMissingColumnError(error, columnName) {
+      const text = String(error?.message || error || "");
+      const escapedColumn = String(columnName || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(escapedColumn, "i").test(text) && /(schema|cache|column|exist|find|introuvable|existe)/i.test(text);
+    }
     async function fetchPaged(table, select, options = {}) {
       let from = 0;
       const all = [];
@@ -1231,6 +1247,16 @@
         from += PAGE_SIZE;
       }
       return all;
+    }
+    async function fetchClientsWithOptionalSize(table, clientIds, options = {}) {
+      if (!clientIds || !clientIds.length) return [];
+      try {
+        return await fetchInChunks(table, "id, nom, numero_compte, taille_client", "id", clientIds, options);
+      } catch (error) {
+        if (!isMissingColumnError(error, "taille_client")) throw error;
+        const clients = await fetchInChunks(table, "id, nom, numero_compte", "id", clientIds, options);
+        return clients.map(client => ({ ...client, taille_client: "S" }));
+      }
     }
     async function fetchInChunks(table, select, column, values, options = {}) {
       const cleanValues = [...new Set((values || [])
@@ -1256,7 +1282,7 @@
       });
       let clients = [];
       try {
-        clients = await fetchInChunks(source.tables.clients, "id, nom, numero_compte", "id", visites.map(v => v.client_id), {
+        clients = await fetchClientsWithOptionalSize(source.tables.clients, visites.map(v => v.client_id), {
           order: { column: "id", ascending: true }
         });
       } catch (error) {
@@ -1300,6 +1326,7 @@
           client_key: `${source.key}:${visite.client_id || client?.nom || "client"}`,
           client_nom: client?.nom || "Client inconnu",
           numero_compte: client?.numero_compte || "-",
+          taille_client: normalizeClientSize(client?.taille_client),
           produit_id: ligne.produit_id || "",
           product_key: `${source.key}:${ligne.produit_id || produit?.reference_produit || produit?.nom || "produit"}`,
           reference_produit: produit?.reference_produit || "-",
@@ -1329,6 +1356,7 @@
             client_key: `${source.key}:${visite.client_id || client?.nom || "client"}`,
             client_nom: client?.nom || "Client inconnu",
             numero_compte: client?.numero_compte || "-",
+            taille_client: normalizeClientSize(client?.taille_client),
             produit_id: "",
             product_key: `${source.key}:${visite.id}:total-commande`,
             reference_produit: "-",
@@ -1382,6 +1410,7 @@
             clientId: row.client_id || "",
             nom: row.client_nom,
             compte: row.numero_compte,
+            tailleClient: normalizeClientSize(row.taille_client),
             source: row.source,
             sourceLabel: row.sourceLabel,
             ca: 0,
@@ -1392,6 +1421,7 @@
         }
         const item = map.get(row.client_key);
         if (!item.clientId && row.client_id) item.clientId = row.client_id;
+        if (!item.tailleClient) item.tailleClient = normalizeClientSize(row.taille_client);
         item.ca += row.total_ligne;
         item.lines += 1;
         item.orders.add(`${row.source}:${row.visite_id}`);
@@ -1418,11 +1448,13 @@
       const clientName = canOpenFiche
         ? `<strong class="client-name-link" data-action="open-client-fiche" title="Ouvrir la fiche client">${escapeHtml(client.nom)}</strong>`
         : `<strong>${escapeHtml(client.nom)}</strong>`;
+      const size = normalizeClientSize(client.tailleClient);
       return `<button class="top-row top-client-button" type="button" data-client-key="${escapeHtml(client.key)}" data-client-id="${escapeHtml(client.clientId || "")}" data-client-source="${escapeHtml(client.source || "")}">
         <div>
           ${clientName}
           <span>Compte ${escapeHtml(client.compte)} - ${formatNumber(client.ordersCount)} commande(s) - ${formatNumber(client.lines)} ligne(s)</span>
           <span class="client-date-line">Date(s) visite : ${escapeHtml(formatDateList(client.visitDates))}</span>
+          <span class="client-size-badge size-${escapeHtml(size.toLowerCase())}">Taille ${escapeHtml(size)}</span>
           <span class="pill ${client.source === "auto" ? "auto" : "indus"}">${escapeHtml(client.sourceLabel)}</span>
         </div>
         <div class="amount">${formatCurrency(client.ca)}<span>Voir detail</span></div>

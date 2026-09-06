@@ -282,7 +282,7 @@
     td{font-size:13px;color:rgba(255,255,255,.86)}
     tr:last-child td{border-bottom:0}
     .num{text-align:right;font-variant-numeric:tabular-nums}
-    .team-table{min-width:1480px}
+    .team-table{min-width:1760px}
     .team-table th,.team-table td{padding:9px 10px}
     .team-table thead tr:first-child th{
       background:rgba(15,23,42,.98);
@@ -297,6 +297,14 @@
     .money-tone.positive{color:#bbf7d0}
     .money-tone.negative{color:#fecaca}
     .money-tone.neutral{color:#e5e7eb}
+    .size-mini-stack{display:flex;justify-content:flex-end;gap:5px;flex-wrap:wrap}
+    .size-mini{
+      display:inline-flex;align-items:center;justify-content:center;gap:4px;
+      min-width:42px;min-height:25px;padding:0 7px;border-radius:999px;
+      border:1px solid rgba(148,163,184,.22);background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.88);font-size:11px;font-weight:950;
+    }
+    .size-mini b{font-size:10px;color:rgba(255,255,255,.56)}
     .row-title{display:grid;gap:2px}
     .row-title strong{font-size:13px}
     .row-title span{font-size:11px;color:var(--muted)}
@@ -548,7 +556,7 @@
                 <th colspan="3">CA / J</th>
                 <th colspan="3">CA / M</th>
                 <th colspan="3">CA / A</th>
-                <th colspan="2">Suivi</th>
+                <th colspan="5">Suivi</th>
               </tr>
               <tr>
                 <th>Commercial</th>
@@ -564,6 +572,9 @@
                 <th class="num">Budget</th>
                 <th class="num">Écart</th>
                 <th class="num team-group-start">Visites / M</th>
+                <th class="num">Clients S/M/L</th>
+                <th class="num">Démos / M</th>
+                <th class="num">Visites démo / M</th>
                 <th>Dernière connexion</th>
               </tr>
             </thead>
@@ -750,7 +761,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Commercial</th><th>Rattachement</th><th class="num">Visites terrain</th><th class="num">Téléphone</th><th class="num">Clients visités</th><th>Dernière connexion</th></tr></thead>
+            <thead><tr><th>Commercial</th><th>Rattachement</th><th class="num">Visites terrain</th><th class="num">Téléphone</th><th class="num">Clients visités</th><th class="num">Démos / M</th><th class="num">Visites démo / M</th><th>Dernière connexion</th></tr></thead>
             <tbody data-activity-rows></tbody>
           </table>
         </div>
@@ -1133,7 +1144,7 @@
       function renderTeamRows(){
         const rows = scopedCommercials().slice().sort((a,b) => String(a.displayName || "").localeCompare(String(b.displayName || ""), "fr"));
         if (!rows.length) {
-          els.teamRows.innerHTML = '<tr><td colspan="14"><div class="empty">Aucun commercial visible dans cette equipe.</div></td></tr>';
+          els.teamRows.innerHTML = '<tr><td colspan="17"><div class="empty">Aucun commercial visible dans cette equipe.</div></td></tr>';
           return;
         }
         els.teamRows.innerHTML = rows.map(function(item){
@@ -1154,6 +1165,9 @@
               '<td class="num">' + money(finance.budgetYear) + '</td>',
               '<td class="num">' + moneyTone(finance.gapYear) + '</td>',
               '<td class="num team-group-start">' + integer(metrics.terrainMois ?? metrics.visitesMois) + '</td>',
+              '<td class="num">' + sizeMiniStack(metrics.clientsTailleMois) + '</td>',
+              '<td class="num">' + integer(metrics.demosMois) + '</td>',
+              '<td class="num">' + integer(metrics.visitesAvecDemoMois) + '</td>',
               '<td>' + escapeHtml(formatDateTime(item.lastLoginAt)) + '</td>',
             '</tr>'
           ].join("");
@@ -1378,12 +1392,12 @@
       function renderActivityRows(){
         const rows = scopedCommercials().slice().sort((a,b) => Number(b.metrics?.visitesMois || 0) - Number(a.metrics?.visitesMois || 0));
         if (!rows.length) {
-          els.activityRows.innerHTML = '<tr><td colspan="6"><div class="empty">Aucun commercial visible.</div></td></tr>';
+          els.activityRows.innerHTML = '<tr><td colspan="8"><div class="empty">Aucun commercial visible.</div></td></tr>';
           return;
         }
         els.activityRows.innerHTML = rows.map(function(item){
           const metrics = item.metrics || {};
-          return `<tr><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.identifier)}</span></div></td><td>${escapeHtml(item.relationLabel)}</td><td class="num">${integer(metrics.visitesMois)}</td><td class="num">${integer(metrics.commandesTelephoneMois)}</td><td class="num">${integer(metrics.clientsMois)}</td><td>${escapeHtml(formatDateTime(item.lastLoginAt))}</td></tr>`;
+          return `<tr><td><div class="row-title"><strong>${escapeHtml(item.displayName)}</strong><span>${escapeHtml(item.identifier)}</span></div></td><td>${escapeHtml(item.relationLabel)}</td><td class="num">${integer(metrics.terrainMois ?? metrics.visitesMois)}</td><td class="num">${integer(metrics.commandesTelephoneMois)}</td><td class="num">${integer(metrics.clientsMois)}</td><td class="num">${integer(metrics.demosMois)}</td><td class="num">${integer(metrics.visitesAvecDemoMois)}</td><td>${escapeHtml(formatDateTime(item.lastLoginAt))}</td></tr>`;
         }).join("");
       }
 
@@ -1773,6 +1787,13 @@
 
       function metricHtml(label, value){
         return `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
+      }
+
+      function sizeMiniStack(counts){
+        const values = counts || {};
+        return ["S", "M", "L"].map(function(size){
+          return '<span class="size-mini"><b>' + size + '</b>' + integer(values[size] || 0) + '</span>';
+        }).join("");
       }
 
       function sectorBadge(value){

@@ -9,10 +9,16 @@
   var currentLoadedDate = "";
   var VISIT_TYPE_PHONE_ORDER = "commande_telephone";
   var PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
+  var REPORT_CLIENT_SELECT_WITH_SIZE = "id,nom,numero_compte,adresse,telephone,taille_client";
+  var REPORT_CLIENT_SELECT_LEGACY = "id,nom,numero_compte,adresse,telephone";
   var REPORT_VISITES_SELECT_WITH_DEMO =
-    "id,client_id,date_visite,note,type_visite,total_commande,clients(id,nom,numero_compte,adresse,telephone),visite_commandes(id,produit_id,quantite,stock_client,couleur,prix_unitaire,demo_effectuee,produits(id,nom,reference_produit,prix_vente))";
+    "id,client_id,date_visite,note,type_visite,total_commande,clients(" + REPORT_CLIENT_SELECT_WITH_SIZE + "),visite_commandes(id,produit_id,quantite,stock_client,couleur,prix_unitaire,demo_effectuee,produits(id,nom,reference_produit,prix_vente))";
+  var REPORT_VISITES_SELECT_WITH_SIZE_LEGACY_DEMO =
+    "id,client_id,date_visite,note,type_visite,total_commande,clients(" + REPORT_CLIENT_SELECT_WITH_SIZE + "),visite_commandes(id,produit_id,quantite,stock_client,couleur,prix_unitaire,produits(id,nom,reference_produit,prix_vente))";
+  var REPORT_VISITES_SELECT_WITH_DEMO_LEGACY_SIZE =
+    "id,client_id,date_visite,note,type_visite,total_commande,clients(" + REPORT_CLIENT_SELECT_LEGACY + "),visite_commandes(id,produit_id,quantite,stock_client,couleur,prix_unitaire,demo_effectuee,produits(id,nom,reference_produit,prix_vente))";
   var REPORT_VISITES_SELECT_LEGACY =
-    "id,client_id,date_visite,note,type_visite,total_commande,clients(id,nom,numero_compte,adresse,telephone),visite_commandes(id,produit_id,quantite,stock_client,couleur,prix_unitaire,produits(id,nom,reference_produit,prix_vente))";
+    "id,client_id,date_visite,note,type_visite,total_commande,clients(" + REPORT_CLIENT_SELECT_LEGACY + "),visite_commandes(id,produit_id,quantite,stock_client,couleur,prix_unitaire,produits(id,nom,reference_produit,prix_vente))";
 
   window.__RAPPORT_JOURNALIER_BOOTED__ = true;
 
@@ -27,6 +33,9 @@
       nbBleus: 0,
       nbDemos: 0,
       nbVisitesAvecDemo: 0,
+      clientsTailleS: 0,
+      clientsTailleM: 0,
+      clientsTailleL: 0,
       totalQuantite: 0,
       totalStock: 0,
       totalCA: 0,
@@ -52,13 +61,23 @@
   }
 
   function isMissingDemoColumnError(error) {
+    return isMissingColumnError(error, "demo_effectuee");
+  }
+
+  function isMissingColumnError(error, columnName) {
     var text = [
       error && error.code,
       error && error.message,
       error && error.details,
       error && error.hint
     ].filter(Boolean).join(" ");
-    return /demo_effectuee/i.test(text) && /(column|schema|cache|exist|introuvable|trouve)/i.test(text);
+    var escapedColumn = String(columnName || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(escapedColumn, "i").test(text) && /(column|schema|cache|exist|introuvable|trouve|find)/i.test(text);
+  }
+
+  function normalizeClientSize(value) {
+    var size = String(value == null ? "" : value).trim().toUpperCase();
+    return ["S", "M", "L"].includes(size) ? size : "S";
   }
 
   function escapeHtml(value) {
@@ -313,21 +332,29 @@
 
   async function fetchRapportVisitesByDate(reportDate) {
     await window.KentCommercialScope.load();
-    var query = supabaseClient
-      .from("visites")
-      .select(REPORT_VISITES_SELECT_WITH_DEMO)
-      .eq("date_visite", reportDate);
-    query = applyCommercialScope(query);
-    var result = await query.order("date_visite", { ascending: true });
+    var attempts = [
+      { select: REPORT_VISITES_SELECT_WITH_DEMO, hasDemo: true, hasSize: true },
+      { select: REPORT_VISITES_SELECT_WITH_DEMO_LEGACY_SIZE, hasDemo: true, hasSize: false },
+      { select: REPORT_VISITES_SELECT_WITH_SIZE_LEGACY_DEMO, hasDemo: false, hasSize: true },
+      { select: REPORT_VISITES_SELECT_LEGACY, hasDemo: false, hasSize: false }
+    ];
+    var result = null;
+    var selectedAttempt = attempts[0];
 
-    if (result.error && isMissingDemoColumnError(result.error)) {
-      console.warn("Colonne demo_effectuee indisponible, rapport chargé sans démos:", result.error.message);
-      query = supabaseClient
+    for (var index = 0; index < attempts.length; index += 1) {
+      selectedAttempt = attempts[index];
+      var query = supabaseClient
         .from("visites")
-        .select(REPORT_VISITES_SELECT_LEGACY)
+        .select(selectedAttempt.select)
         .eq("date_visite", reportDate);
       query = applyCommercialScope(query);
       result = await query.order("date_visite", { ascending: true });
+      if (!result.error) break;
+      var canFallback =
+        isMissingColumnError(result.error, "demo_effectuee") ||
+        isMissingColumnError(result.error, "taille_client");
+      if (!canFallback || index === attempts.length - 1) break;
+      console.warn("Colonne rapport indisponible, nouvel essai avec une lecture compatible:", result.error.message);
     }
 
     if (result.error) {
@@ -352,7 +379,7 @@
             quantite: normalizeNumber(cmd.quantite),
             stock_client: normalizeNumber(cmd.stock_client),
             couleur: normalizeColor(cmd.couleur),
-            demo_effectuee: Boolean(cmd.demo_effectuee),
+            demo_effectuee: Boolean(selectedAttempt.hasDemo && cmd.demo_effectuee),
             prix_unitaire: unitPrice,
             montant_ligne: normalizeNumber(cmd.quantite) * unitPrice,
             produit: cmd.produits || null
@@ -378,6 +405,7 @@
       var saleVisit = isSaleVisit(visite);
       var terrainVisit = isTerrainVisit(visite);
       var clientName = visite.client && visite.client.nom ? visite.client.nom : "Client inconnu";
+      var clientSize = normalizeClientSize(visite.client && visite.client.taille_client);
       var clientId =
         (visite.client && visite.client.id) ||
         (visite.client_id ? "client-" + visite.client_id : "client-" + clientName.toLowerCase().replace(/\\s+/g, "-"));
@@ -407,6 +435,7 @@
           account: visite.client && visite.client.numero_compte ? visite.client.numero_compte : "-",
           address: visite.client && visite.client.adresse ? visite.client.adresse : "-",
           phone: visite.client && visite.client.telephone ? visite.client.telephone : "-",
+          size: clientSize,
           visits: 0,
           lines: 0,
           quantity: 0,
@@ -423,6 +452,7 @@
       }
 
       var clientEntry = clientMap.get(String(clientId));
+      clientEntry.size = clientEntry.size || clientSize;
       if (terrainVisit) clientEntry.visits += 1;
       clientEntry.lines += visitMetrics.nbLignes;
       clientEntry.quantity += visitMetrics.totalQuantite;
@@ -508,10 +538,14 @@
     });
 
     stats.nbClients = uniqueClients.size;
+    groupedClients = Array.from(clientMap.values());
+    stats.clientsTailleS = groupedClients.filter(function (client) { return normalizeClientSize(client.size) === "S"; }).length;
+    stats.clientsTailleM = groupedClients.filter(function (client) { return normalizeClientSize(client.size) === "M"; }).length;
+    stats.clientsTailleL = groupedClients.filter(function (client) { return normalizeClientSize(client.size) === "L"; }).length;
     stats.tauxTransformation = stats.nbVisites ? (stats.nbVisitesAvecVente / stats.nbVisites) * 100 : 0;
     stats.avgLinesPerVisit = stats.nbVisites ? terrainLineCount / stats.nbVisites : 0;
 
-    groupedClients = Array.from(clientMap.values())
+    groupedClients = groupedClients
       .map(function (client) {
         return {
           id: client.id,
@@ -519,6 +553,7 @@
           account: client.account,
           address: client.address,
           phone: client.phone,
+          size: normalizeClientSize(client.size),
           visits: client.visits,
           lines: client.lines,
           quantity: client.quantity,
@@ -838,6 +873,7 @@
     lines.push("- Visites sans vente : " + formatNumber(reportStats.nbVisitesSansVente));
     lines.push("- Taux transformation : " + formatAverage(reportStats.tauxTransformation) + "%");
     lines.push("- Clients : " + formatNumber(reportStats.nbClients));
+    lines.push("- Clients S/M/L : " + formatNumber(reportStats.clientsTailleS) + " / " + formatNumber(reportStats.clientsTailleM) + " / " + formatNumber(reportStats.clientsTailleL));
     lines.push("- Lignes produits : " + formatNumber(reportStats.nbLignes));
     lines.push("- Quantité totale : " + formatNumber(reportStats.totalQuantite));
     lines.push("- Stock observé : " + formatNumber(reportStats.totalStock));
@@ -874,6 +910,8 @@
             client.name +
             " (Compte " +
             client.account +
+            " - Taille " +
+            normalizeClientSize(client.size) +
             ") : Visites " +
             formatNumber(client.visits) +
             " | Lignes " +
@@ -930,6 +968,8 @@
       buildPreviewSummaryCard("Quantité totale", formatNumber(reportStats.totalQuantite)) +
       buildPreviewSummaryCard("Stock observé", formatNumber(reportStats.totalStock)) +
       buildPreviewSummaryCard("Démonstrations", formatNumber(reportStats.nbDemos)) +
+      buildPreviewSummaryCard("Visites avec démo", formatNumber(reportStats.nbVisitesAvecDemo)) +
+      buildPreviewSummaryCard("Clients S/M/L", formatNumber(reportStats.clientsTailleS) + " / " + formatNumber(reportStats.clientsTailleM) + " / " + formatNumber(reportStats.clientsTailleL)) +
       buildPreviewSummaryCard("CA du jour", formatCurrency(reportStats.totalCA)) +
       "</div>"
     );
@@ -958,6 +998,8 @@
       "</div>" +
       '<div class="preview-client-meta">Compte : ' +
       escapeHtml(client.account || "-") +
+      " · Taille : " +
+      escapeHtml(normalizeClientSize(client.size)) +
       " · Telephone : " +
       escapeHtml(client.phone || "-") +
       "<br>Adresse : " +
@@ -1122,6 +1164,8 @@
               escapeHtml(client.name) +
               "</strong><br><span class=\"muted\">Compte : " +
               escapeHtml(client.account || "-") +
+              "<br>Taille : " +
+              escapeHtml(normalizeClientSize(client.size)) +
               "</span></td>" +
               "<td class=\"num\">" +
               formatNumber(client.visits) +
@@ -1237,9 +1281,12 @@
       "<tr><th>Visites sans vente</th><td>" + escapeHtml(formatNumber(reportStats.nbVisitesSansVente)) + "</td></tr>" +
       "<tr><th>Taux transformation</th><td>" + escapeHtml(formatAverage(reportStats.tauxTransformation) + "%") + "</td></tr>" +
       "<tr><th>Clients visités</th><td>" + escapeHtml(formatNumber(reportStats.nbClients)) + "</td></tr>" +
+      "<tr><th>Clients S/M/L</th><td>" + escapeHtml(formatNumber(reportStats.clientsTailleS) + " / " + formatNumber(reportStats.clientsTailleM) + " / " + formatNumber(reportStats.clientsTailleL)) + "</td></tr>" +
       "<tr><th>Lignes produits</th><td>" + escapeHtml(formatNumber(reportStats.nbLignes)) + "</td></tr>" +
       "<tr><th>Quantité totale</th><td>" + escapeHtml(formatNumber(reportStats.totalQuantite)) + "</td></tr>" +
       "<tr><th>Stock observé</th><td>" + escapeHtml(formatNumber(reportStats.totalStock)) + "</td></tr>" +
+      "<tr><th>Démonstrations</th><td>" + escapeHtml(formatNumber(reportStats.nbDemos)) + "</td></tr>" +
+      "<tr><th>Visites avec démo</th><td>" + escapeHtml(formatNumber(reportStats.nbVisitesAvecDemo)) + "</td></tr>" +
       "<tr><th>CA du jour</th><td>" + escapeHtml(formatCurrency(reportStats.totalCA)) + "</td></tr>" +
       "<tr><th>Alertes rouges</th><td>" + escapeHtml(formatNumber(reportStats.nbRouges)) + "</td></tr>" +
       "<tr><th>Vigilances jaunes</th><td>" + escapeHtml(formatNumber(reportStats.nbJaunes)) + "</td></tr>" +
@@ -1320,6 +1367,7 @@
       ["Moyenne lignes / visite", formatAverage(reportStats.avgLinesPerVisit)],
       ["Démonstrations", formatNumber(reportStats.nbDemos)],
       ["Visites avec démo", formatNumber(reportStats.nbVisitesAvecDemo)],
+      ["Clients S/M/L", formatNumber(reportStats.clientsTailleS) + " / " + formatNumber(reportStats.clientsTailleM) + " / " + formatNumber(reportStats.clientsTailleL)],
       ["Alertes rouges", formatNumber(reportStats.nbRouges)],
       ["Vigilances jaunes", formatNumber(reportStats.nbJaunes)],
       ["Opportunités vertes", formatNumber(reportStats.nbVerts)]
@@ -1418,6 +1466,8 @@
           "</div>" +
           '<div class="pdf-client-meta">Compte : ' +
           escapeHtml(client.account || "-") +
+          " · Taille : " +
+          escapeHtml(normalizeClientSize(client.size)) +
           " · Telephone : " +
           escapeHtml(client.phone || "-") +
           "<br>Adresse : " +
@@ -1483,6 +1533,8 @@
               escapeHtml(client.name) +
               "</strong><br>Compte : " +
               escapeHtml(client.account || "-") +
+              "<br>Taille : " +
+              escapeHtml(normalizeClientSize(client.size)) +
               "</td>" +
               '<td class="num">' +
               formatNumber(client.visits) +

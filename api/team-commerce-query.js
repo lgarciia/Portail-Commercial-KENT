@@ -10,6 +10,8 @@ const PAGE_SIZE = 1000;
 const CHUNK_CONCURRENCY = 6;
 const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
 const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
+const CLIENT_SIZE_DEFAULT = "S";
+const CLIENT_SIZE_KEYS = ["S", "M", "L"];
 
 const USER_SELECT = [
   "id",
@@ -169,12 +171,7 @@ function resolveCurrentPortalUser(session, users) {
 async function loadSourceRows(source, commercialScope, commercialIds) {
   const allowedCommercialIds = new Set(commercialIds.map(String));
   const commercialById = new Map(commercialScope.map((item) => [String(item.id), item]));
-  const ownedClients = await fetchByCommercialChunks(
-    source.tables.clients,
-    "id,nom,numero_compte,commercial_user_id",
-    commercialIds,
-    { order: "nom.asc" }
-  );
+  const ownedClients = await fetchClientsByCommercialWithOptionalSize(source, commercialIds, { order: "nom.asc" });
   const ownedClientIds = unique(ownedClients.map((client) => client.id).filter(Boolean));
 
   const [visitsByCommercial, visitsByClient] = await Promise.all([
@@ -208,19 +205,8 @@ async function loadSourceRows(source, commercialScope, commercialIds) {
   ]);
 
   const [lines, clients] = await Promise.all([
-    fetchByChunks(
-      source.tables.lignes,
-      "id,visite_id,produit_id,quantite,prix_unitaire",
-      "visite_id",
-      visitIds,
-      { order: "visite_id.asc,id.asc" }
-    ),
-    fetchByChunks(
-      source.tables.clients,
-      "id,nom,numero_compte,commercial_user_id",
-      "id",
-      clientIds
-    )
+    fetchLinesByVisitsWithOptionalDemo(source, visitIds),
+    fetchClientsByIdsWithOptionalSize(source, clientIds)
   ]);
 
   const productIds = unique(lines.map((line) => line.produit_id).filter(Boolean));
@@ -266,6 +252,8 @@ async function loadSourceRows(source, commercialScope, commercialIds) {
       month: String(Number(month || 0) || ""),
       date,
       type: getVisitTypeLabel(resolveVisitTypeFromRecord(visit)),
+      clientSize: normalizeClientSize(visit.client?.taille_client),
+      demo: isTruthyFlag(line.demo_effectuee) ? "Oui" : "Non",
       clientNumber: visit.client?.numero_compte || "-",
       client: visit.client?.nom || "Client inconnu",
       reference: product?.reference_produit || "-",
@@ -276,6 +264,58 @@ async function loadSourceRows(source, commercialScope, commercialIds) {
   }
 
   return rows;
+}
+
+async function fetchClientsByCommercialWithOptionalSize(source, commercialIds, params = {}) {
+  try {
+    return await fetchByCommercialChunks(
+      source.tables.clients,
+      "id,nom,numero_compte,commercial_user_id,taille_client",
+      commercialIds,
+      params
+    );
+  } catch (error) {
+    if (!isMissingColumnError(error, "taille_client")) throw error;
+    const rows = await fetchByCommercialChunks(
+      source.tables.clients,
+      "id,nom,numero_compte,commercial_user_id",
+      commercialIds,
+      params
+    );
+    return rows.map((row) => ({ ...row, taille_client: CLIENT_SIZE_DEFAULT }));
+  }
+}
+
+async function fetchClientsByIdsWithOptionalSize(source, clientIds) {
+  try {
+    return await fetchByChunks(source.tables.clients, "id,nom,numero_compte,commercial_user_id,taille_client", "id", clientIds);
+  } catch (error) {
+    if (!isMissingColumnError(error, "taille_client")) throw error;
+    const rows = await fetchByChunks(source.tables.clients, "id,nom,numero_compte,commercial_user_id", "id", clientIds);
+    return rows.map((row) => ({ ...row, taille_client: CLIENT_SIZE_DEFAULT }));
+  }
+}
+
+async function fetchLinesByVisitsWithOptionalDemo(source, visitIds) {
+  try {
+    return await fetchByChunks(
+      source.tables.lignes,
+      "id,visite_id,produit_id,quantite,prix_unitaire,demo_effectuee",
+      "visite_id",
+      visitIds,
+      { order: "visite_id.asc,id.asc" }
+    );
+  } catch (error) {
+    if (!isMissingColumnError(error, "demo_effectuee")) throw error;
+    const rows = await fetchByChunks(
+      source.tables.lignes,
+      "id,visite_id,produit_id,quantite,prix_unitaire",
+      "visite_id",
+      visitIds,
+      { order: "visite_id.asc,id.asc" }
+    );
+    return rows.map((row) => ({ ...row, demo_effectuee: false }));
+  }
 }
 
 async function fetchByCommercialChunks(table, select, commercialIds, params = {}) {
@@ -368,6 +408,29 @@ function getVisitTypeLabel(type) {
   if (type === "passage_sans_vente") return "Passage sans vente";
   if (type === "client_ferme") return "Client ferme";
   return type || "Vente";
+}
+
+function normalizeClientSize(value) {
+  const size = normalizeText(value).toUpperCase();
+  return CLIENT_SIZE_KEYS.includes(size) ? size : CLIENT_SIZE_DEFAULT;
+}
+
+function isTruthyFlag(value) {
+  if (value === true || value === 1) return true;
+  const text = normalizeText(value).toLowerCase();
+  return ["true", "1", "oui", "yes", "y"].includes(text);
+}
+
+function isMissingColumnError(error, columnName) {
+  const message = [
+    error?.message,
+    error?.payload?.message,
+    error?.payload?.details,
+    error?.payload?.hint
+  ].filter(Boolean).join(" ");
+  const escapedColumn = String(columnName || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(escapedColumn, "i").test(message)
+    && /(schema cache|column|does not exist|could not find|introuvable|existe pas)/i.test(message);
 }
 
 function isOrderVisit(visit) {

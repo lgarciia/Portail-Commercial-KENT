@@ -87,6 +87,8 @@ const CHUNK_CONCURRENCY = 6;
 const PARIS_TIMEZONE = "Europe/Paris";
 const VISIT_TYPE_PHONE_ORDER = "commande_telephone";
 const PHONE_ORDER_NOTE_MARKER = "[COMMANDE_TELEPHONE]";
+const CLIENT_SIZE_DEFAULT = "S";
+const CLIENT_SIZE_KEYS = ["S", "M", "L"];
 
 const SALES_SOURCES = [
   {
@@ -164,7 +166,7 @@ async function buildDashboard(session, request) {
   const includeDocuments = mode !== "finance" && mode !== "campaigns";
   const includeCampaigns = mode === "full" || mode === "campaigns";
 
-  const [salesBlock, budgetBlock, realBlock, documentsBlock, campaignsBlock] = await Promise.all([
+  const [salesBlock, budgetBlock, realBlock, documentsBlock, campaignsBlock, qualityBlock] = await Promise.all([
     includeMainData
       ? safeBlock(() => buildSalesBlock(commercialIds, period, options), emptySalesBlock(), warnings, "ventes terrain")
       : Promise.resolve(emptySalesBlock()),
@@ -179,7 +181,10 @@ async function buildDashboard(session, request) {
       : Promise.resolve(emptyDocumentsBlock()),
     includeCampaigns
       ? safeBlock(() => buildCampaignsBlock(commercialIds, period), emptyCampaignsBlock(), warnings, "campagnes promo")
-      : Promise.resolve(emptyCampaignsBlock())
+      : Promise.resolve(emptyCampaignsBlock()),
+    includeMainData
+      ? safeBlock(() => buildQualityBlock(commercialIds, period), emptyQualityBlock(), warnings, "taille clients / demos")
+      : Promise.resolve(emptyQualityBlock())
   ]);
 
   const enrichedCommercials = visibleCommercials.map((commercial) => enrichCommercial(commercial, {
@@ -187,7 +192,8 @@ async function buildDashboard(session, request) {
     budgetBlock,
     realBlock,
     documentsBlock,
-    campaignsBlock
+    campaignsBlock,
+    qualityBlock
   }));
 
   const principalRelations = enrichedCommercials.filter((item) => item.relationType === "principal");
@@ -235,7 +241,18 @@ async function buildDashboard(session, request) {
       caCibleCampagnesPromo: campaignsBlock.totals.caCible,
       visitesMois: salesBlock.totals.visitsMonth,
       commandesTelephoneMois: salesBlock.totals.phoneMonth,
-      clientsMois: salesBlock.totals.clientsMonth
+      clientsMois: salesBlock.totals.clientsMonth,
+      clientsS: qualityBlock.totals.clientsTotalBySize.S,
+      clientsM: qualityBlock.totals.clientsTotalBySize.M,
+      clientsL: qualityBlock.totals.clientsTotalBySize.L,
+      clientsVisitesS: qualityBlock.totals.clientsVisitedBySizeMonth.S,
+      clientsVisitesM: qualityBlock.totals.clientsVisitedBySizeMonth.M,
+      clientsVisitesL: qualityBlock.totals.clientsVisitedBySizeMonth.L,
+      caMoisS: qualityBlock.totals.caMonthBySize.S,
+      caMoisM: qualityBlock.totals.caMonthBySize.M,
+      caMoisL: qualityBlock.totals.caMonthBySize.L,
+      demosMois: qualityBlock.totals.demosMonth,
+      visitesAvecDemoMois: qualityBlock.totals.visitsWithDemoMonth
     },
     dataScope: buildDataScope(session, currentPortalUser, warnings),
     team: {
@@ -251,6 +268,7 @@ async function buildDashboard(session, request) {
     real: realBlock,
     documents: documentsBlock,
     campaigns: campaignsBlock,
+    quality: qualityBlock,
     warnings,
     actions: {
       canEditSales: false,
@@ -578,6 +596,163 @@ async function loadSalesSource(source, commercialIds, period, options = {}) {
   });
 
   return { rows, visits: enrichedVisits, clients: scopedClients };
+}
+
+async function buildQualityBlock(commercialIds, period) {
+  if (!commercialIds.length) return emptyQualityBlock();
+  const sourceBlocks = await Promise.all(
+    SALES_SOURCES.map((source) => buildQualitySourceBlock(source, commercialIds, period))
+  );
+
+  const totals = emptyQualityTotals();
+  const byCommercial = {};
+
+  sourceBlocks.forEach((block) => {
+    CLIENT_SIZE_KEYS.forEach((size) => {
+      totals.clientsTotalBySize[size] += block.totals.clientsTotalBySize[size] || 0;
+      totals.clientsVisitedBySizeMonth[size] += block.totals.clientsVisitedBySizeMonth[size] || 0;
+      totals.caMonthBySize[size] += toNumber(block.totals.caMonthBySize[size]);
+    });
+    totals.demosMonth += Number(block.totals.demosMonth || 0);
+    totals.visitsWithDemoMonth += Number(block.totals.visitsWithDemoMonth || 0);
+
+    Object.entries(block.byCommercial || {}).forEach(([commercialId, metrics]) => {
+      if (!byCommercial[commercialId]) byCommercial[commercialId] = emptyQualityCommercialObject();
+      CLIENT_SIZE_KEYS.forEach((size) => {
+        byCommercial[commercialId].clientsTotalBySize[size] += metrics.clientsTotalBySize[size] || 0;
+        byCommercial[commercialId].clientsVisitedBySizeMonth[size] += metrics.clientsVisitedBySizeMonth[size] || 0;
+        byCommercial[commercialId].caMonthBySize[size] += toNumber(metrics.caMonthBySize[size]);
+      });
+      byCommercial[commercialId].demosMonth += Number(metrics.demosMonth || 0);
+      byCommercial[commercialId].visitsWithDemoMonth += Number(metrics.visitsWithDemoMonth || 0);
+    });
+  });
+
+  CLIENT_SIZE_KEYS.forEach((size) => {
+    totals.caMonthBySize[size] = roundMoney(totals.caMonthBySize[size]);
+    Object.keys(byCommercial).forEach((commercialId) => {
+      byCommercial[commercialId].caMonthBySize[size] = roundMoney(byCommercial[commercialId].caMonthBySize[size]);
+    });
+  });
+
+  return { totals: finalizeQualityTotals(totals), byCommercial };
+}
+
+async function buildQualitySourceBlock(source, commercialIds, period) {
+  const allowedCommercialIds = new Set((commercialIds || []).map((id) => String(id || "").trim()).filter(Boolean));
+  const totals = emptyQualityTotals();
+  const byCommercial = new Map();
+  const monthStart = `${period.year}-${String(period.month).padStart(2, "0")}-01`;
+  const monthEnd = `${period.year}-${String(period.month).padStart(2, "0")}-${String(daysInMonth(period.year, period.month)).padStart(2, "0")}`;
+
+  const ownedClients = await fetchClientsByCommercialWithOptionalSize(source, commercialIds, { order: "nom.asc" });
+  const ownedClientIds = unique(ownedClients.map((client) => client.id).filter(Boolean));
+  const clientById = new Map(ownedClients.map((client) => [String(client.id), client]));
+
+  ownedClients.forEach((client) => {
+    const commercialId = normalizeText(client.commercial_user_id);
+    if (!commercialId || !allowedCommercialIds.has(commercialId)) return;
+    const quality = ensureQualityCommercial(byCommercial, commercialId);
+    const size = normalizeClientSize(client.taille_client);
+    quality.clientsTotalBySize[size] += 1;
+    totals.clientsTotalBySize[size] += 1;
+  });
+
+  const visitSelect = "id,client_id,date_visite,note,type_visite,total_commande,commercial_user_id";
+  const visitMonthParams = {
+    date_visite: `gte.${monthStart}`,
+    date_visite_lte: `lte.${monthEnd}`,
+    order: "date_visite.desc,id.asc"
+  };
+  const [visitsByCommercial, visitsByClient] = await Promise.all([
+    fetchByCommercialChunks(source.visites, visitSelect, commercialIds, visitMonthParams, { date_visite_lte: "date_visite" }),
+    ownedClientIds.length
+      ? fetchByChunks(source.visites, visitSelect, "client_id", ownedClientIds, {
+          ...visitMonthParams,
+          commercial_user_id: "is.null"
+        }, { date_visite_lte: "date_visite" })
+      : Promise.resolve([])
+  ]);
+  const visits = mergeRowsById([...visitsByCommercial, ...visitsByClient]);
+  if (!visits.length) {
+    return { totals: finalizeQualityTotals(totals), byCommercial: qualityMapToObject(byCommercial) };
+  }
+
+  const missingClientIds = unique(visits.map((visit) => visit.client_id).filter((id) => id && !clientById.has(String(id))));
+  if (missingClientIds.length) {
+    const visitedClients = await fetchClientsByIdsWithOptionalSize(source, missingClientIds);
+    visitedClients.forEach((client) => clientById.set(String(client.id), client));
+  }
+
+  const scopedVisits = [];
+  visits.forEach((visit) => {
+    const client = clientById.get(String(visit.client_id));
+    const ownerId = resolveSaleOwnerId(visit, client);
+    if (!ownerId || !allowedCommercialIds.has(ownerId)) return;
+    const quality = ensureQualityCommercial(byCommercial, ownerId);
+    const size = normalizeClientSize(client?.taille_client);
+    const visitKey = `${source.secteur}:${visit.id}`;
+    const clientKey = `${source.secteur}:${visit.client_id || client?.numero_compte || client?.nom || visit.id}`;
+    if (!isPhoneOrderVisit(visit)) {
+      quality.clientsVisitedBySizeMonthSets[size].add(clientKey);
+      totals.clientsVisitedBySizeMonthSets[size].add(`${ownerId}:${clientKey}`);
+    }
+    scopedVisits.push({
+      id: visit.id,
+      ownerId,
+      size,
+      key: visitKey
+    });
+  });
+
+  const visitById = new Map(scopedVisits.map((visit) => [String(visit.id), visit]));
+  const lines = await fetchLinesByVisitsWithOptionalDemo(source, scopedVisits.map((visit) => visit.id).filter(Boolean));
+  lines.forEach((line) => {
+    const visit = visitById.get(String(line.visite_id));
+    if (!visit) return;
+    const quality = ensureQualityCommercial(byCommercial, visit.ownerId);
+    const amount = roundMoney(toNumber(line.quantite) * toNumber(line.prix_unitaire));
+    quality.caMonthBySize[visit.size] += amount;
+    totals.caMonthBySize[visit.size] += amount;
+    if (isTruthyFlag(line.demo_effectuee)) {
+      quality.demosMonth += 1;
+      totals.demosMonth += 1;
+      quality.visitsWithDemoMonthSet.add(visit.key);
+      totals.visitsWithDemoMonthSet.add(`${visit.ownerId}:${visit.key}`);
+    }
+  });
+
+  return { totals: finalizeQualityTotals(totals), byCommercial: qualityMapToObject(byCommercial) };
+}
+
+async function fetchClientsByCommercialWithOptionalSize(source, commercialIds, params = {}) {
+  try {
+    return await fetchByCommercialChunks(source.clients, "id,nom,numero_compte,commercial_user_id,taille_client", commercialIds, params);
+  } catch (error) {
+    if (!isMissingColumnError(error, "taille_client")) throw error;
+    const rows = await fetchByCommercialChunks(source.clients, "id,nom,numero_compte,commercial_user_id", commercialIds, params);
+    return rows.map((row) => ({ ...row, taille_client: CLIENT_SIZE_DEFAULT }));
+  }
+}
+
+async function fetchClientsByIdsWithOptionalSize(source, clientIds) {
+  try {
+    return await fetchByChunks(source.clients, "id,nom,numero_compte,commercial_user_id,taille_client", "id", clientIds);
+  } catch (error) {
+    if (!isMissingColumnError(error, "taille_client")) throw error;
+    const rows = await fetchByChunks(source.clients, "id,nom,numero_compte,commercial_user_id", "id", clientIds);
+    return rows.map((row) => ({ ...row, taille_client: CLIENT_SIZE_DEFAULT }));
+  }
+}
+
+async function fetchLinesByVisitsWithOptionalDemo(source, visitIds) {
+  try {
+    return await fetchByChunks(source.lignes, "id,visite_id,quantite,prix_unitaire,demo_effectuee", "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
+  } catch (error) {
+    if (!isMissingColumnError(error, "demo_effectuee")) throw error;
+    const rows = await fetchByChunks(source.lignes, "id,visite_id,quantite,prix_unitaire", "visite_id", visitIds, { order: "visite_id.asc,id.asc" });
+    return rows.map((row) => ({ ...row, demo_effectuee: false }));
+  }
 }
 
 function summarizeSalesFastRows(dailyRows, visitsMonthlyRows, clientsTotalRows, detailRows, period, options = {}) {
@@ -1449,6 +1624,7 @@ function enrichCommercial(commercial, blocks) {
   const real = blocks.realBlock.byCommercial[commercial.id] || emptyRealCommercialObject();
   const docs = blocks.documentsBlock.byCommercial[commercial.id] || emptyDocumentCommercial();
   const campaigns = blocks.campaignsBlock.byCommercial[commercial.id] || emptyCampaignCommercial();
+  const quality = blocks.qualityBlock.byCommercial[commercial.id] || emptyQualityCommercialObject();
   return {
     ...commercial,
     metrics: {
@@ -1465,6 +1641,11 @@ function enrichCommercial(commercial, blocks) {
       terrainMois: sales.terrainMonth || 0,
       clientsMois: sales.clientsMonth || 0,
       clientsTotal: sales.clientsTotal || 0,
+      clientsTailleTotal: quality.clientsTotalBySize || emptySizeCounts(),
+      clientsTailleMois: quality.clientsVisitedBySizeMonth || emptySizeCounts(),
+      caMoisParTaille: quality.caMonthBySize || emptySizeCounts(),
+      demosMois: quality.demosMonth || 0,
+      visitesAvecDemoMois: quality.visitsWithDemoMonth || 0,
       ventesAnnee: sales.ventesAnnee || 0,
       lignesAnnee: sales.lignesAnnee || 0,
       budgetAnnuel: roundMoney(budget.year),
@@ -1784,6 +1965,18 @@ function isMissingDashboardFastViewError(error) {
   return /v_kent_dashboard_|schema cache|column .* does not exist|relation .* does not exist|could not find/i.test(message);
 }
 
+function isMissingColumnError(error, columnName) {
+  const message = [
+    error?.message,
+    error?.payload?.message,
+    error?.payload?.details,
+    error?.payload?.hint
+  ].filter(Boolean).join(" ");
+  const escapedColumn = String(columnName || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(escapedColumn, "i").test(message)
+    && /(schema cache|column|does not exist|could not find|introuvable|existe pas)/i.test(message);
+}
+
 function normalizeDocumentRow(row) {
   return {
     id: row.id,
@@ -1962,6 +2155,104 @@ function emptyMonthlyArray() {
   return Array.from({ length: 12 }, () => 0);
 }
 
+function emptySizeCounts() {
+  return CLIENT_SIZE_KEYS.reduce((acc, size) => {
+    acc[size] = 0;
+    return acc;
+  }, {});
+}
+
+function emptySizeSets() {
+  return CLIENT_SIZE_KEYS.reduce((acc, size) => {
+    acc[size] = new Set();
+    return acc;
+  }, {});
+}
+
+function normalizeClientSize(value) {
+  const size = normalizeText(value).toUpperCase();
+  return CLIENT_SIZE_KEYS.includes(size) ? size : CLIENT_SIZE_DEFAULT;
+}
+
+function isTruthyFlag(value) {
+  if (value === true || value === 1) return true;
+  const text = normalizeText(value).toLowerCase();
+  return ["true", "1", "oui", "yes", "y"].includes(text);
+}
+
+function emptyQualityTotals() {
+  return {
+    clientsTotalBySize: emptySizeCounts(),
+    clientsVisitedBySizeMonth: emptySizeCounts(),
+    clientsVisitedBySizeMonthSets: emptySizeSets(),
+    caMonthBySize: emptySizeCounts(),
+    demosMonth: 0,
+    visitsWithDemoMonth: 0,
+    visitsWithDemoMonthSet: new Set()
+  };
+}
+
+function finalizeQualityTotals(totals) {
+  const clientsVisitedBySizeMonth = emptySizeCounts();
+  CLIENT_SIZE_KEYS.forEach((size) => {
+    clientsVisitedBySizeMonth[size] = totals.clientsVisitedBySizeMonthSets?.[size]?.size || totals.clientsVisitedBySizeMonth?.[size] || 0;
+    totals.caMonthBySize[size] = roundMoney(totals.caMonthBySize[size]);
+  });
+  return {
+    clientsTotalBySize: totals.clientsTotalBySize || emptySizeCounts(),
+    clientsVisitedBySizeMonth,
+    caMonthBySize: totals.caMonthBySize || emptySizeCounts(),
+    demosMonth: Number(totals.demosMonth || 0),
+    visitsWithDemoMonth: totals.visitsWithDemoMonthSet?.size || Number(totals.visitsWithDemoMonth || 0)
+  };
+}
+
+function emptyQualityCommercial() {
+  return {
+    clientsTotalBySize: emptySizeCounts(),
+    clientsVisitedBySizeMonthSets: emptySizeSets(),
+    caMonthBySize: emptySizeCounts(),
+    demosMonth: 0,
+    visitsWithDemoMonthSet: new Set()
+  };
+}
+
+function emptyQualityCommercialObject() {
+  return {
+    clientsTotalBySize: emptySizeCounts(),
+    clientsVisitedBySizeMonth: emptySizeCounts(),
+    caMonthBySize: emptySizeCounts(),
+    demosMonth: 0,
+    visitsWithDemoMonth: 0
+  };
+}
+
+function ensureQualityCommercial(map, commercialId) {
+  const key = normalizeText(commercialId) || "unknown";
+  if (!map.has(key)) map.set(key, emptyQualityCommercial());
+  return map.get(key);
+}
+
+function qualityMapToObject(map) {
+  return Object.fromEntries(
+    Array.from(map.entries()).map(([commercialId, value]) => {
+      const clientsVisitedBySizeMonth = emptySizeCounts();
+      const caMonthBySize = emptySizeCounts();
+      CLIENT_SIZE_KEYS.forEach((size) => {
+        clientsVisitedBySizeMonth[size] = value.clientsVisitedBySizeMonthSets[size].size;
+        caMonthBySize[size] = roundMoney(value.caMonthBySize[size]);
+      });
+      return [commercialId, {
+        clientsTotalBySize: value.clientsTotalBySize,
+        clientsVisitedBySizeMonth,
+        caMonthBySize,
+        demosMonth: Number(value.demosMonth || 0),
+        visitsWithDemoMonth: value.visitsWithDemoMonthSet.size
+      }];
+    })
+  );
+}
+
 function emptyMetrics() {
   return {
     caJour: 0,
@@ -1977,6 +2268,11 @@ function emptyMetrics() {
     terrainMois: 0,
     clientsMois: 0,
     clientsTotal: 0,
+    clientsTailleTotal: emptySizeCounts(),
+    clientsTailleMois: emptySizeCounts(),
+    caMoisParTaille: emptySizeCounts(),
+    demosMois: 0,
+    visitesAvecDemoMois: 0,
     ventesAnnee: 0,
     lignesAnnee: 0,
     budgetAnnuel: 0,
@@ -2067,6 +2363,13 @@ function emptySalesBlock() {
     monthlyRows: [],
     yearlyRows: [],
     topClientsMonth: []
+  };
+}
+
+function emptyQualityBlock() {
+  return {
+    totals: finalizeQualityTotals(emptyQualityTotals()),
+    byCommercial: {}
   };
 }
 
