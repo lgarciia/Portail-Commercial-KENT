@@ -234,7 +234,7 @@ async function supabaseStorageFetch(path, options = {}) {
     headers: {
       apikey: config.serviceKey,
       Authorization: `Bearer ${config.serviceKey}`,
-      "Content-Type": "application/json",
+      ...(options.body == null ? {} : { "Content-Type": "application/json" }),
       ...(options.headers || {})
     }
   });
