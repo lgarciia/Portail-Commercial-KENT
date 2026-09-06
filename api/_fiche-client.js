@@ -53,7 +53,7 @@ export default async function handler(request, response) {
       return;
     }
 
-    const commercialId = await resolveCommercialId(guard.session);
+    const commercialId = normalizeUuid(guard.session.dbUserId);
     if (!commercialId) {
       throw forbidden("Compte commercial non rattaché. Reconnecte-toi avec un utilisateur commercial valide.");
     }
@@ -250,12 +250,7 @@ async function runUpdate({ table, select, filters, payload, single, config, comm
 }
 
 async function runDelete({ table, filters, config, commercialId }) {
-  if (table.kind === "clients") {
-    const ids = extractFilterValues(filters, "id");
-    if (!ids.length) throw forbidden("Suppression client limitée à un client précis.");
-    await ensureClientsBelongToCommercial(config, commercialId, ids);
-    filters = [...filters, { op: "eq", column: "commercial_user_id", value: commercialId }];
-  } else if (table.kind === "accounts") {
+  if (table.kind === "accounts") {
     await ensureAccountDeleteScope(config, commercialId, filters);
   } else if (table.kind === "visits") {
     const ids = extractFilterValues(filters, "id");
@@ -319,7 +314,7 @@ function resolveTable(config, tableName) {
     ...lineTokens
   ]);
   const allowed = new Map([
-    [config.clients, { name: config.clients, kind: "clients", actions: new Set(["select", "insert", "update", "delete"]), selectTokens: clientTokens }],
+    [config.clients, { name: config.clients, kind: "clients", actions: new Set(["select", "insert", "update"]), selectTokens: clientTokens }],
     [config.accounts, { name: config.accounts, kind: "accounts", actions: new Set(["select", "upsert", "update", "delete"]), selectTokens: tokenSet(["id", "client_id", "numero_compte", "libelle", "is_default", "created_at", "updated_at"]) }],
     [config.products, { name: config.products, kind: "products", actions: new Set(["select"]), selectTokens: tokenSet(["id", "nom", "actif", "reference_produit", "prix_vente", "origine", "created_by_user_id", "promo_deleted_at"]) }],
     [config.tariffs, { name: config.tariffs, kind: "tariffs", actions: new Set(["select"]), selectTokens: tokenSet(["plaque_id", "produit_id", "prix_vente"]) }],
@@ -559,44 +554,6 @@ async function getCommercialClientIds(config, commercialId) {
     filters: [`commercial_user_id=eq.${encodeURIComponent(commercialId)}`]
   });
   return rows.map((row) => normalizeText(row.id)).filter(Boolean);
-}
-
-async function resolveCommercialId(session) {
-  const directId = normalizeUuid(session?.dbUserId);
-  if (directId) return directId;
-
-  const lookupValues = uniqueValues([
-    session?.userId,
-    session?.name
-  ].map(normalizeLookupValue)).filter(Boolean);
-  if (!lookupValues.length) return "";
-
-  const rows = await fetchPortalCommercials();
-
-  const found = rows.find((row) => {
-    const candidates = [
-      row?.id,
-      row?.identifier,
-      row?.identifier_lookup,
-      row?.display_name
-    ].map(normalizeLookupValue);
-    return candidates.some((candidate) => candidate && lookupValues.includes(candidate));
-  });
-
-  return normalizeUuid(found?.id);
-}
-
-async function fetchPortalCommercials() {
-  try {
-    return await fetchAllRows("portal_users", "id,identifier,identifier_lookup,display_name,role", {
-      filters: ["role=eq.commercial"]
-    });
-  } catch (error) {
-    if (!isMissingColumn(error, "identifier_lookup")) throw error;
-    return fetchAllRows("portal_users", "id,identifier,display_name,role", {
-      filters: ["role=eq.commercial"]
-    });
-  }
 }
 
 async function getPlaqueAccess(config, commercialId) {
@@ -846,13 +803,6 @@ function normalizeUuid(value) {
   return UUID_RE.test(text) ? text : "";
 }
 
-function normalizeLookupValue(value) {
-  return normalizeText(value)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
 function normalizeScalar(value) {
   return normalizeText(value);
 }
@@ -935,43 +885,21 @@ function isMissingAccessTable(error) {
     message.includes("42p01");
 }
 
-function isMissingColumn(error, columnName) {
-  const column = normalizeText(columnName).toLowerCase();
-  const message = normalizeText(`${error?.message || ""} ${error?.payload?.message || ""} ${error?.payload?.code || ""}`).toLowerCase();
-  return Boolean(column) && (
-    message.includes(column) ||
-    message.includes("42703") ||
-    message.includes("schema cache")
-  );
-}
-
 async function readBody(request) {
-  if (isParsedJsonBody(request.body)) return request.body;
+  if (request.body && typeof request.body === "object" && !Buffer.isBuffer(request.body)) return request.body;
   if (typeof request.body === "string") return parseJsonBody(request.body);
   if (Buffer.isBuffer(request.body)) return parseJsonBody(request.body.toString("utf8"));
-  if (request.body && request.body[Symbol.asyncIterator]) return parseJsonBody(await readStreamText(request.body));
   if (!request[Symbol.asyncIterator]) return {};
 
-  return parseJsonBody(await readStreamText(request));
-}
-
-async function readStreamText(stream) {
   const chunks = [];
   let size = 0;
-  for await (const chunk of stream) {
+  for await (const chunk of request) {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     size += buffer.length;
     if (size > MAX_STORAGE_UPLOAD_BYTES * 2) throw badRequest("Requête trop volumineuse.");
     chunks.push(buffer);
   }
-  return Buffer.concat(chunks).toString("utf8");
-}
-
-function isParsedJsonBody(value) {
-  if (!value || typeof value !== "object" || Buffer.isBuffer(value)) return false;
-  if (typeof value.pipe === "function" || typeof value.on === "function") return false;
-  if (typeof value.getReader === "function" || value[Symbol.asyncIterator]) return false;
-  return Array.isArray(value) || Object.getPrototypeOf(value) === Object.prototype;
+  return parseJsonBody(Buffer.concat(chunks).toString("utf8"));
 }
 
 function parseJsonBody(raw) {
