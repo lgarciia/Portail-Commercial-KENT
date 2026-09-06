@@ -417,6 +417,14 @@
       grid-template-columns: repeat(2, minmax(0,1fr));
       gap: 14px;
       margin-top: 14px;
+      align-items:start;
+    }
+
+    .dashboard-column{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      min-width:0;
     }
 
     .card{
@@ -429,6 +437,14 @@
       position:relative;
       overflow:hidden;
       min-height: 220px;
+    }
+
+    .card.card-compact{
+      min-height: 146px;
+    }
+
+    .card.activity-card{
+      min-height: 380px;
     }
 
     .card::before{
@@ -511,6 +527,15 @@
     .links.split-links{
       display:grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .links.activity-links{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .links.activity-links .wide-link{
+      grid-column: 1 / -1;
     }
 
     .link{
@@ -609,6 +634,17 @@
       color: var(--chipText);
       backdrop-filter: blur(10px);
     }
+
+    @media (max-width: 900px){
+      .grid,
+      .links.activity-links{
+        grid-template-columns: 1fr;
+      }
+
+      .links.activity-links .wide-link{
+        grid-column: auto;
+      }
+    }
   </style>
 </head>
 
@@ -661,209 +697,193 @@
     <div class="hint"></div>
 
     <div class="grid" id="grid">
-
-      <!-- BUDGET -->
-      <section class="card" data-cat="Budget">
-        <div class="cardHeader">
-          <div class="cat">
-            <div class="catIcon">€</div>
-            <div class="catText">
-              <b>Budget</b>
-              <span>Outils de pilotage, atterrissage, exports, reporting.</span>
+      <div class="dashboard-column">
+        <!-- BUDGET -->
+        <section class="card" data-cat="Budget">
+          <div class="cardHeader">
+            <div class="cat">
+              <div class="catIcon">€</div>
+              <div class="catText">
+                <b>Budget</b>
+                <span>Outils de pilotage, atterrissage, exports, reporting.</span>
+              </div>
             </div>
+            <div class="badge">4 modules</div>
           </div>
-          <div class="badge">4 modules</div>
-        </div>
 
-        <div class="links">
-          <a class="link app" href="accbudget.html" data-tags="budget atterrissage synthese">
-            <div class="left">
-              <div class="name">Budget annuel</div>
-              <div class="desc">Etablissement du budget N+1</div>
-            </div>
-            <div class="chev">›</div>
-          </a>
+          <div class="links">
+            <a class="link app" href="accbudget.html" data-tags="budget atterrissage synthese">
+              <div class="left">
+                <div class="name">Budget annuel</div>
+                <div class="desc">Établissement du budget N+1</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
 
+            <a class="link app" href="projection-budget.html" data-tags="projection budget atterrissage reel budget ecart prevision">
+              <div class="left">
+                <div class="name">Projection</div>
+                <div class="desc">Atterrissage réel vs budget mois par mois</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
 
-          <a class="link app" href="projection-budget.html" data-tags="projection budget atterrissage reel budget ecart prevision">
-            <div class="left">
-              <div class="name">Projection</div>
-              <div class="desc">Atterrissage réel vs budget mois par mois</div>
-            </div>
-            <div class="chev">&rsaquo;</div>
-          </a>
-          <a class="link app" href="mes-budgets.html" data-tags="budget budgets valides actifs entites projections">
-            <div class="left">
-              <div class="name">Mes budgets</div>
-              <div class="desc">Suivi des budgets actifs et inactifs par entité</div>
-            </div>
-            <div class="chev">&rsaquo;</div>
-          </a>
-        </div>
-      </section>
-
-      <!-- CLIENT -->
-      <section class="card" data-cat="Client">
-        <div class="cardHeader">
-          <div class="cat">
-            <div class="catIcon">👤</div>
-            <div class="catText">
-              <b>Client</b>
-              <span>Recherche rapide “1 clic” : historique, produits, quantités.</span>
-            </div>
+            <a class="link app" href="mes-budgets.html" data-tags="budget budgets valides actifs entites projections">
+              <div class="left">
+                <div class="name">Mes budgets</div>
+                <div class="desc">Suivi des budgets actifs et inactifs par entité</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
           </div>
-          <div class="badge">4 modules</div>
-        </div>
+        </section>
 
-        <div class="links">
-      <a class="link app" href="psa.html" data-tags="client psa lookup recherche">
-            <div class="left">
-              <div class="name">Client PSA</div>
-              <div class="desc">Lookup + Recherche produits</div>
+        <!-- REQUÊTES -->
+        <section class="card" data-cat="Requetes">
+          <div class="cardHeader">
+            <div class="cat">
+              <div class="catIcon">📊</div>
+              <div class="catText">
+                <b>Requêtes</b>
+                <span>Requêtes type TCD : période → vendeur → client → produits → CA.</span>
+              </div>
             </div>
-            <div class="chev">›</div>
-          </a>
-
-      <a class="link app" href="gueudet.html" data-tags="client gueudet lookup recherche">
-            <div class="left">
-              <div class="name">Client Gueudet</div>
-              <div class="desc">Lookup + Recherche produits</div>
-            </div>
-            <div class="chev">›</div>
-          </a>
-
-          <a class="link app" href="ford.html" data-tags="client ford lookup recherche">
-            <div class="left">
-              <div class="name">Client Ford</div>
-              <div class="desc">Lookup + Recherche produits</div>
-            </div>
-            <div class="chev">›</div>
-          </a>
-          <a class="link app" href="action-promo.html" data-tags="action promo mailing campagne produit clients email">
-            <div class="left">
-              <div class="name">Action Promo</div>
-              <div class="desc">Ciblage clients par produit + mailing preparatoire</div>
-            </div>
-            <div class="chev">&rsaquo;</div>
-          </a>
-        </div>
-      </section>
-
-      <!-- REQUÊTES -->
-      <section class="card" data-cat="Requetes">
-        <div class="cardHeader">
-          <div class="cat">
-            <div class="catIcon">📊</div>
-            <div class="catText">
-              <b>Requêtes</b>
-              <span>Requêtes type TCD : période → vendeur → client → produits → CA.</span>
-            </div>
+            <div class="badge">4 modules</div>
           </div>
-          <div class="badge">3 modules</div>
-        </div>
 
-        <div class="links">
-          <a class="link app" href="accrequeteant.html" data-tags="requete sur les années précedentes">
-            <div class="left">
-              <div class="name">Requ&ecirc;te ant&eacute;rieure</div>
-              <div class="desc">Filtres en colonnes + cumul/détail + tri CA</div>
-            </div>
-            <div class="chev">›</div>
-          </a>
+          <div class="links">
+            <a class="link app" href="accrequeteant.html" data-tags="requete sur les années précedentes">
+              <div class="left">
+                <div class="name">Requ&ecirc;te ant&eacute;rieure</div>
+                <div class="desc">Filtres en colonnes + cumul/détail + tri CA</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
 
-          <a class="link app" href="accrequete.html" data-tags="requete de l'année">
-            <div class="left">
-              <div class="name">Requête annuelle</div>
-              <div class="desc">Filtres en colonnes + cumul/détail + tri CA</div>
-            </div>
-            <div class="chev">›</div>
-          </a>
+            <a class="link app" href="accrequete.html" data-tags="requete de l'année">
+              <div class="left">
+                <div class="name">Requête annuelle</div>
+                <div class="desc">Filtres en colonnes + cumul/détail + tri CA</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
 
-          <a class="link app live-source" href="requete-commerce.html" data-tags="requete commerce ventes reelles auto industrie supabase">
-            <div class="left">
-              <div class="name">Requête Commerce</div>
-              <div class="desc">Ventes réelles Auto + Industrie depuis Supabase</div>
-            </div>
-            <div class="chev">&rsaquo;</div>
-          </a>
+            <a class="link app live-source" href="requete-commerce.html" data-tags="requete commerce ventes reelles auto industrie supabase">
+              <div class="left">
+                <div class="name">Requête Commerce</div>
+                <div class="desc">Ventes réelles Auto + Industrie depuis Supabase</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
 
-          <a class="link app live-source" href="requete-client.html" data-tags="requete client taille ca date ventes cloturees auto industrie">
-            <div class="left">
-              <div class="name">Requête client</div>
-              <div class="desc">Taille client, CA à date, trois derniers mois et dernière vente</div>
-            </div>
-            <div class="chev">&rsaquo;</div>
-          </a>
-        </div>
-      </section>
-
-      <!-- ACTIVITÉ -->
-      <section class="card" data-cat="Activite">
-        <div class="cardHeader">
-          <div class="cat">
-            <div class="catIcon">⚡</div>
-            <div class="catText">
-              <b>Activité</b>
-              <span>Suivi activité / BI / dashboards.</span>
-            </div>
+            <a class="link app live-source" href="requete-client.html" data-tags="requete client taille ca date ventes cloturees auto industrie">
+              <div class="left">
+                <div class="name">Requête client</div>
+                <div class="desc">Taille client, CA à date, trois derniers mois et dernière vente</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
           </div>
-          <div class="badge">6 modules</div>
-        </div>
+        </section>
+      </div>
 
-        <div class="links">
-          <a class="link app" href="accreport.html" data-tags="activite bi dashboard analyse">
-            <div class="left">
-              <div class="name">Mes Reporting</div>
-              <div class="desc">Comparatif budget / réalisé</div>
+      <div class="dashboard-column">
+        <!-- CLIENT -->
+        <section class="card card-compact" data-cat="Client">
+          <div class="cardHeader">
+            <div class="cat">
+              <div class="catIcon">👤</div>
+              <div class="catText">
+                <b>Client</b>
+                <span>Action promo, ciblage clients et préparation de campagne.</span>
+              </div>
             </div>
-            <div class="chev">›</div>
-          </a>
-        </div>
-        <div class="links split-links">
-          <a class="link app live-source" href="ficherclt.html" data-tags="Fiche client auto automobile fiches clients">
-            <div class="left">
-              <div class="name">Fiche client Auto</div>
-              <div class="desc">Consultation fiches clients automobile</div>
-            </div>
-            <div class="chev">&rsaquo;</div>
-          </a>
+            <div class="badge">1 module</div>
+          </div>
 
-          <a class="link app live-source" href="ficherclt-industrie.html" data-tags="Fiche client industrie indus fiches clients">
-            <div class="left">
-              <div class="name">Fiche client Industrie</div>
-              <div class="desc">Consultation fiches clients industrie</div>
-            </div>
-            <div class="chev">&rsaquo;</div>
-          </a>
-        </div>
-                        <div class="links">
-                    <a class="link app live-source" href="commerce.html" data-tags="Commerce automobile auto">
-            <div class="left">
-              <div class="name">Commerce Automobile</div>
-              <div class="desc">Commerce automobile / Rapport journalier / Tableau de bord</div>
-            </div>
-            <div class="chev">›</div>
-          </a>
+          <div class="links">
+            <a class="link app" href="action-promo.html" data-tags="action promo mailing campagne produit clients email">
+              <div class="left">
+                <div class="name">Action Promo</div>
+                <div class="desc">Ciblage clients par produit + mailing préparatoire</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
+          </div>
+        </section>
 
-          <a class="link app live-source" href="commerce-industrie.html" data-tags="Commerce Industrie industrial clients tarifs">
-            <div class="left">
-              <div class="name">Commerce Industrie</div>
-              <div class="desc">Hub industrie separe / Clients industrie / Futurs tarifs industrie</div>
+        <!-- ACTIVITÉ -->
+        <section class="card activity-card" data-cat="Activite">
+          <div class="cardHeader">
+            <div class="cat">
+              <div class="catIcon">⚡</div>
+              <div class="catText">
+                <b>Activité</b>
+                <span>Suivi activité / BI / dashboards.</span>
+              </div>
             </div>
-            <div class="chev">›</div>
-          </a>
+            <div class="badge">7 modules</div>
+          </div>
 
-          <a class="link app live-source" href="reporting-commerce-global.html" data-tags="reporting commerce global auto industrie ca ventes semaines">
-            <div class="left">
-              <div class="name">Reporting Commerce Global</div>
-              <div class="desc">CA HT Auto + Industrie par mois et par semaine</div>
-            </div>
-            <div class="chev">&rsaquo;</div>
-          </a>
-        </div>
-                              
-      </section>
+          <div class="links activity-links">
+            <a class="link app" href="accreport.html" data-tags="activite bi dashboard analyse">
+              <div class="left">
+                <div class="name">Mes Reporting</div>
+                <div class="desc">Comparatif budget / réalisé</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
 
+            <a class="link app live-source" href="ficherclt.html" data-tags="Fiche client auto automobile fiches clients">
+              <div class="left">
+                <div class="name">Fiche client Auto</div>
+                <div class="desc">Consultation fiches clients automobile</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
+
+            <a class="link app live-source" href="ficherclt-industrie.html" data-tags="Fiche client industrie indus fiches clients">
+              <div class="left">
+                <div class="name">Fiche client Industrie</div>
+                <div class="desc">Consultation fiches clients industrie</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
+
+            <a class="link app live-source" href="commerce.html" data-tags="Commerce automobile auto">
+              <div class="left">
+                <div class="name">Commerce Automobile</div>
+                <div class="desc">Commerce automobile / Rapport journalier / Tableau de bord</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
+
+            <a class="link app live-source" href="commerce-industrie.html" data-tags="Commerce Industrie industrial clients tarifs">
+              <div class="left">
+                <div class="name">Commerce Industrie</div>
+                <div class="desc">Hub industrie séparé / Clients industrie / Tarifs industrie</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
+
+            <a class="link app live-source" href="rapportjournalier-global.html" data-tags="rapport journalier global auto industrie pdf visites terrain">
+              <div class="left">
+                <div class="name">Rapport journalier</div>
+                <div class="desc">PDF quotidien Auto + Industrie consolidé</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
+
+            <a class="link app live-source wide-link" href="reporting-commerce-global.html" data-tags="reporting commerce global auto industrie ca ventes semaines">
+              <div class="left">
+                <div class="name">Reporting Commerce Global</div>
+                <div class="desc">CA HT Auto + Industrie par mois et par semaine</div>
+              </div>
+              <div class="chev">&rsaquo;</div>
+            </a>
+          </div>
+        </section>
+      </div>
     </div>
 
     <div class="footer">
@@ -879,6 +899,7 @@
   const portalCommercialTitle = document.getElementById("portalCommercialTitle");
   const apps = [...document.querySelectorAll(".app")];
   const cards = [...document.querySelectorAll(".card")];
+  const columns = [...document.querySelectorAll(".dashboard-column")];
   const RELEASE_NOTES = [
     {
       id: "2026-07-18-budget-system",
@@ -1008,6 +1029,7 @@
     if (!q){
       apps.forEach(a => a.style.display = "");
       cards.forEach(c => c.style.display = "");
+      columns.forEach(c => c.style.display = "");
       return;
     }
     apps.forEach(a => {
@@ -1019,6 +1041,10 @@
     cards.forEach(card => {
       const visible = [...card.querySelectorAll(".app")].some(a => a.style.display !== "none");
       card.style.display = visible ? "" : "none";
+    });
+    columns.forEach(column => {
+      const visible = [...column.querySelectorAll(".card")].some(card => card.style.display !== "none");
+      column.style.display = visible ? "" : "none";
     });
   }
   search.addEventListener("input", applyFilter);
