@@ -1302,15 +1302,13 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./fiche-client-api-client.js"></script>
   <script>
-    const SUPABASE_URL = "https://qcdkmwtzdxnmltqvsxmd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZGttd3R6ZHhubWx0cXZzeG1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTE1ODksImV4cCI6MjA4OTU4NzU4OX0.DUD3kcysi9iGevaPiz2ANYEowS1-xQK4itPpZ-z61ZY";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const DOCUMENTS_BUCKET = "documents-commerciaux";
     const DOCUMENTS_TABLE = "documents_commerciaux";
     const DOCUMENTS_SECTOR = "auto";
     const CLIENT_ACCOUNTS_TABLE = "client_comptes";
+    const supabaseClient = window.createFicheClientApiClient({ secteur: DOCUMENTS_SECTOR });
 
     const state = {
       clients: [],
@@ -4457,8 +4455,10 @@
       const safeType = String(type || "document").replace(/[^a-z0-9_-]/gi, "").toLowerCase() || "document";
       const safeDate = String(dateStr || getTodayIsoLocal()).replace(/[^0-9-]/g, "") || getTodayIsoLocal();
       const safeFilename = String(filename || "document.pdf").replace(/[\\/:*?"<>|]+/g, "-");
+      const ownerFolder = String(state.portalSessionUser?.dbUserId || "").trim().replace(/[^a-z0-9-]/gi, "");
       const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      return `${DOCUMENTS_SECTOR}/${safeType}/${safeDate}/${suffix}-${safeFilename}`;
+      if (!ownerFolder) throw new Error("Commercial non rattaché pour l'archivage du document.");
+      return `${DOCUMENTS_SECTOR}/${ownerFolder}/${safeType}/${safeDate}/${suffix}-${safeFilename}`;
     }
 
     function isDocumentStatusSchemaError(error) {
