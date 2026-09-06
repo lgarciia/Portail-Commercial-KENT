@@ -530,13 +530,15 @@
     }
     .product-row{
       display:grid;
-      grid-template-columns:minmax(210px,1.45fr) minmax(135px,.8fr) minmax(74px,.38fr) minmax(86px,.45fr) minmax(96px,.5fr) minmax(104px,.55fr) minmax(96px,.5fr) minmax(74px,.36fr) auto;
-      gap:8px;align-items:end;padding:12px;border-radius:18px;
+      grid-template-columns:minmax(74px,.36fr) minmax(200px,1.28fr) minmax(126px,.72fr) minmax(70px,.34fr) minmax(82px,.4fr) minmax(90px,.44fr) minmax(98px,.48fr) minmax(86px,.42fr) minmax(68px,.32fr) auto;
+      gap:8px;align-items:start;padding:12px;border-radius:18px;
       background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
     }
     .product-row .field-group{gap:6px}
     .product-row label{font-size:.74rem;white-space:nowrap}
     .product-row input,.product-row select{min-height:42px;padding:10px 11px;font-size:.86rem}
+    .product-row .stcmd-group input{text-align:center;padding-left:8px;padding-right:8px;font-weight:800}
+    .product-row .row-action-group{padding-top:22px}
     .product-search-wrap{position:relative}
     .product-search-wrap input{padding-right:46px;appearance:none;-webkit-appearance:none;background-image:none!important}
     .product-search-wrap input[list]::-webkit-calendar-picker-indicator{
@@ -743,6 +745,7 @@
       .hero-card,.control-layout{grid-template-columns:1fr}
       .product-row{grid-template-columns:repeat(2,minmax(0,1fr))}
       .product-row .field-group:last-child{grid-column:1/-1}
+      .product-row .row-action-group{padding-top:0}
       .recommendation-product-builder{grid-template-columns:repeat(2,minmax(0,1fr))}
       .recommendation-add-btn{grid-column:1/-1}
       .top-product-item{grid-template-columns:1fr}
@@ -1634,6 +1637,10 @@
     function isMissingColumnError(error, columnName) {
       const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ").toLowerCase();
       return message.includes(String(columnName || "").toLowerCase());
+    }
+
+    function normalizeStockCommandeInfo(value) {
+      return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, 40);
     }
 
     function formatDateTime(value) {
@@ -2609,10 +2616,17 @@
         const chunkSize = 100;
         for (let i = 0; i < visiteIds.length; i += chunkSize) {
           const chunk = visiteIds.slice(i, i + chunkSize);
-          const { data: lignesData, error: lignesError } = await supabaseClient
+          let { data: lignesData, error: lignesError } = await supabaseClient
             .from("visite_commandes")
-            .select("id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire, demo_effectuee")
+            .select("id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire, demo_effectuee, stock_commande_info")
             .in("visite_id", chunk);
+
+          if (lignesError && isMissingColumnError(lignesError, "stock_commande_info")) {
+            ({ data: lignesData, error: lignesError } = await supabaseClient
+              .from("visite_commandes")
+              .select("id, visite_id, produit_id, quantite, stock_client, couleur, prix_unitaire, demo_effectuee")
+              .in("visite_id", chunk));
+          }
 
           if (lignesError) {
             console.warn("Fallback visite_commandes indisponible:", lignesError.message);
@@ -2630,8 +2644,12 @@
       return visites.map(visite => {
         const nestedCommandes = Array.isArray(visite.visite_commandes) ? visite.visite_commandes : [];
         const fallbackCommandes = commandesByVisiteId.get(String(visite.id)) || [];
-        const commandes = (nestedCommandes.length ? nestedCommandes : fallbackCommandes)
-          .map(commande => ({ ...commande, demo_effectuee: Boolean(commande.demo_effectuee) }));
+        const commandes = (fallbackCommandes.length ? fallbackCommandes : nestedCommandes)
+          .map(commande => ({
+            ...commande,
+            demo_effectuee: Boolean(commande.demo_effectuee),
+            stock_commande_info: normalizeStockCommandeInfo(commande.stock_commande_info)
+          }));
 
         return {
           ...visite,
@@ -3847,6 +3865,7 @@
     function getProductRowKeyboardState(row) {
       return {
         produitId: row.querySelector(".produit-id-input")?.value || "",
+        stockCommandeInfo: normalizeStockCommandeInfo(row.querySelector(".stock-commande-info-input")?.value),
         typedValue: row.querySelector(".produit-search-input")?.value.trim() || "",
         quantite: parseInt(row.querySelector(".quantite-input")?.value, 10) || 0,
         stockClient: parseInt(row.querySelector(".stock-input")?.value, 10) || 0,
@@ -3855,8 +3874,8 @@
     }
 
     function hasProductRowKeyboardData(row) {
-      const { typedValue, quantite, stockClient, demoEffectuee } = getProductRowKeyboardState(row);
-      return Boolean(typedValue || quantite > 0 || stockClient > 0 || demoEffectuee);
+      const { stockCommandeInfo, typedValue, quantite, stockClient, demoEffectuee } = getProductRowKeyboardState(row);
+      return Boolean(stockCommandeInfo || typedValue || quantite > 0 || stockClient > 0 || demoEffectuee);
     }
 
     function isProductRowReadyForKeyboardAdd(row) {
@@ -3926,6 +3945,7 @@
       const frozenPrice = prefill?.prix_unitaire != null;
       const quantiteValue = prefill?.quantite != null ? Number(prefill.quantite || 0) : "";
       const demoChecked = Boolean(prefill?.demo_effectuee);
+      const stockCommandeInfo = normalizeStockCommandeInfo(prefill?.stock_commande_info);
 
       const row = document.createElement("div");
       row.className = "product-row";
@@ -3934,6 +3954,11 @@
       row.dataset.originalPlaqueId = linePlaqueId ? String(linePlaqueId) : "";
 
       row.innerHTML = `
+        <div class="field-group stcmd-group">
+          <label>ST / Cmd</label>
+          <input type="text" class="stock-commande-info-input" maxlength="40" placeholder="-" autocomplete="off" value="${escapeHtml(stockCommandeInfo)}" />
+        </div>
+
         <div class="field-group">
           <label>Produit</label>
           <div class="product-search-wrap">
@@ -3988,7 +4013,7 @@
           </label>
         </div>
 
-        <div class="field-group">
+        <div class="field-group row-action-group">
           <button class="btn btn-danger btn-sm remove-product-row-btn" type="button">Supprimer</button>
         </div>
       `;
@@ -4051,7 +4076,7 @@
         priceInput.value = normalized;
       });
 
-      row.querySelectorAll(".produit-search-input, .line-plaque-select, .quantite-input, .stock-input, .price-edit-input, .demo-input").forEach(control => {
+      row.querySelectorAll(".stock-commande-info-input, .produit-search-input, .line-plaque-select, .quantite-input, .stock-input, .price-edit-input, .demo-input").forEach(control => {
         control.addEventListener("keydown", event => handleProductRowEnter(event, row));
       });
 
@@ -4191,13 +4216,14 @@
 
       rows.forEach(row => {
         const produitId = row.querySelector(".produit-id-input").value;
+        const stockCommandeInfo = normalizeStockCommandeInfo(row.querySelector(".stock-commande-info-input")?.value);
         const typedValue = row.querySelector(".produit-search-input").value.trim();
         const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
         const stockClient = parseInt(row.querySelector(".stock-input").value, 10) || 0;
         const couleur = row.querySelector(".color-picker")?.dataset.selected || "green";
         const demoEffectuee = Boolean(row.querySelector(".demo-input")?.checked);
         const prixUnitaire = roundPrice(row.querySelector(".prix-unitaire-input").value || 0);
-        const rowHasData = typedValue || quantite > 0 || stockClient > 0 || demoEffectuee;
+        const rowHasData = stockCommandeInfo || typedValue || quantite > 0 || stockClient > 0 || demoEffectuee;
 
         if (rowHasData && !produitId) {
           invalidFilledRow = true;
@@ -4209,6 +4235,7 @@
             produit_id: produitId,
             quantite,
             stock_client: stockClient,
+            stock_commande_info: stockCommandeInfo,
             couleur,
             prix_unitaire: roundPrice(prixUnitaire),
             demo_effectuee: demoEffectuee
@@ -4301,10 +4328,11 @@
 
       rows.forEach(row => {
         const produitId = row.querySelector(".produit-id-input").value;
+        const stockCommandeInfo = normalizeStockCommandeInfo(row.querySelector(".stock-commande-info-input")?.value);
         const typedValue = row.querySelector(".produit-search-input").value.trim();
         const quantite = parseInt(row.querySelector(".quantite-input").value, 10) || 0;
         const prixUnitaire = roundPrice(row.querySelector(".prix-unitaire-input").value || 0);
-        const rowHasData = typedValue || quantite > 0;
+        const rowHasData = stockCommandeInfo || typedValue || quantite > 0;
 
         if (rowHasData && !produitId) {
           invalidFilledRow = true;
@@ -4321,6 +4349,7 @@
             produit_id: produitId,
             ref_5: ref5,
             code_produit: conditionnement?.code_produit || "",
+            stock_commande_info: stockCommandeInfo,
             categorie: conditionnement?.categorie || "",
             famille: conditionnement?.famille || "",
             sous_famille: conditionnement?.sous_famille || "",
@@ -4812,6 +4841,7 @@
         doc.autoTable({
           startY: 64,
           head: [[
+            "ST / Cmd",
             "Ref 5",
             "Code Produit",
             "Categorie / Famille",
@@ -4825,6 +4855,7 @@
           body: lignes.map(ligne => {
             const family = [ligne.categorie, ligne.famille, ligne.sous_famille].filter(Boolean).join(" / ");
             return [
+              String(ligne.stock_commande_info || ""),
               String(ligne.ref_5 || ""),
               String(ligne.code_produit || ""),
               family,
@@ -4857,15 +4888,16 @@
             fillColor: [246, 249, 252]
           },
           columnStyles: {
-            0: { cellWidth: 23 },
-            1: { cellWidth: 25 },
-            2: { cellWidth: 36 },
-            3: { cellWidth: 13, halign: "center" },
-            4: { cellWidth: 27 },
-            5: { cellWidth: 70 },
-            6: { cellWidth: 18, halign: "center" },
-            7: { cellWidth: 26, halign: "right" },
-            8: { cellWidth: 30, halign: "right" }
+            0: { cellWidth: 16, halign: "center" },
+            1: { cellWidth: 21 },
+            2: { cellWidth: 23 },
+            3: { cellWidth: 32 },
+            4: { cellWidth: 12, halign: "center" },
+            5: { cellWidth: 25 },
+            6: { cellWidth: 62 },
+            7: { cellWidth: 16, halign: "center" },
+            8: { cellWidth: 24, halign: "right" },
+            9: { cellWidth: 28, halign: "right" }
           },
           theme: "grid",
           pageBreak: "auto",
@@ -5014,6 +5046,38 @@
       return { data: fallbackData, usedFallback: true };
     }
 
+    function buildCommandLinePayload(visiteId, commande) {
+      return {
+        visite_id: visiteId,
+        produit_id: commande.produit_id,
+        quantite: commande.quantite,
+        stock_client: commande.stock_client,
+        stock_commande_info: normalizeStockCommandeInfo(commande.stock_commande_info),
+        couleur: commande.couleur,
+        prix_unitaire: commande.prix_unitaire,
+        demo_effectuee: Boolean(commande.demo_effectuee)
+      };
+    }
+
+    async function insertCommandLinesWithStockInfo(tableName, lignes) {
+      if (!lignes.length) return;
+
+      let { error } = await supabaseClient
+        .from(tableName)
+        .insert(lignes);
+
+      if (!error) return;
+      if (!isMissingColumnError(error, "stock_commande_info")) throw error;
+
+      const legacyLignes = lignes.map(({ stock_commande_info, ...ligne }) => ligne);
+      ({ error } = await supabaseClient
+        .from(tableName)
+        .insert(legacyLignes));
+
+      if (error) throw error;
+      showToast("Visite enregistrée. Lance le SQL pour conserver aussi ST / Cmd.", "warning");
+    }
+
     async function saveVisit(event) {
       event.preventDefault();
 
@@ -5053,20 +5117,8 @@
           if (deleteCommandesError) throw deleteCommandesError;
 
           if (productEntryVisit && commandes.length) {
-            const lignes = commandes.map(commande => ({
-              visite_id: visiteId,
-              produit_id: commande.produit_id,
-              quantite: commande.quantite,
-              stock_client: commande.stock_client,
-              couleur: commande.couleur,
-              prix_unitaire: commande.prix_unitaire,
-              demo_effectuee: Boolean(commande.demo_effectuee)
-            }));
-
-            const { error: insertCommandesError } = await supabaseClient
-              .from("visite_commandes")
-              .insert(lignes);
-            if (insertCommandesError) throw insertCommandesError;
+            const lignes = commandes.map(commande => buildCommandLinePayload(visiteId, commande));
+            await insertCommandLinesWithStockInfo("visite_commandes", lignes);
           }
 
           await linkPendingDocumentsToVisit(visiteId);
@@ -5079,20 +5131,8 @@
           const { data: visiteData, usedFallback } = await insertVisitRecordWithPhoneFallback(visitPayload, typeVisite);
 
           if (productEntryVisit && commandes.length) {
-            const lignes = commandes.map(commande => ({
-              visite_id: visiteData.id,
-              produit_id: commande.produit_id,
-              quantite: commande.quantite,
-              stock_client: commande.stock_client,
-              couleur: commande.couleur,
-              prix_unitaire: commande.prix_unitaire,
-              demo_effectuee: Boolean(commande.demo_effectuee)
-            }));
-
-            const { error: insertCommandesError } = await supabaseClient
-              .from("visite_commandes")
-              .insert(lignes);
-            if (insertCommandesError) throw insertCommandesError;
+            const lignes = commandes.map(commande => buildCommandLinePayload(visiteData.id, commande));
+            await insertCommandLinesWithStockInfo("visite_commandes", lignes);
           }
 
           await linkPendingDocumentsToVisit(visiteData.id);
