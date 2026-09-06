@@ -110,6 +110,14 @@
         return this;
       }
 
+      limit(count) {
+        const value = Number(count);
+        if (Number.isInteger(value) && value > 0) {
+          this.rangeSpec = { from: 0, to: value - 1 };
+        }
+        return this;
+      }
+
       single() {
         this.returnSingle = true;
         return this;

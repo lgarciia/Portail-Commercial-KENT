@@ -250,7 +250,12 @@ async function runUpdate({ table, select, filters, payload, single, config, comm
 }
 
 async function runDelete({ table, filters, config, commercialId }) {
-  if (table.kind === "accounts") {
+  if (table.kind === "clients") {
+    const ids = extractFilterValues(filters, "id");
+    if (!ids.length) throw forbidden("Suppression client limitée à un client précis.");
+    await ensureClientsBelongToCommercial(config, commercialId, ids);
+    filters = [...filters, { op: "eq", column: "commercial_user_id", value: commercialId }];
+  } else if (table.kind === "accounts") {
     await ensureAccountDeleteScope(config, commercialId, filters);
   } else if (table.kind === "visits") {
     const ids = extractFilterValues(filters, "id");
@@ -314,7 +319,7 @@ function resolveTable(config, tableName) {
     ...lineTokens
   ]);
   const allowed = new Map([
-    [config.clients, { name: config.clients, kind: "clients", actions: new Set(["select", "insert", "update"]), selectTokens: clientTokens }],
+    [config.clients, { name: config.clients, kind: "clients", actions: new Set(["select", "insert", "update", "delete"]), selectTokens: clientTokens }],
     [config.accounts, { name: config.accounts, kind: "accounts", actions: new Set(["select", "upsert", "update", "delete"]), selectTokens: tokenSet(["id", "client_id", "numero_compte", "libelle", "is_default", "created_at", "updated_at"]) }],
     [config.products, { name: config.products, kind: "products", actions: new Set(["select"]), selectTokens: tokenSet(["id", "nom", "actif", "reference_produit", "prix_vente", "origine", "created_by_user_id", "promo_deleted_at"]) }],
     [config.tariffs, { name: config.tariffs, kind: "tariffs", actions: new Set(["select"]), selectTokens: tokenSet(["plaque_id", "produit_id", "prix_vente"]) }],
